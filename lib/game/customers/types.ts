@@ -4,7 +4,6 @@ export enum CustomerStatus {
   // Arrival / Queue
   Arriving = 'arriving',       // walking into the shop
   Waiting = 'waiting',         // in queue for service
-  LeftAngry = 'left_angry',   // patience ran out, leaves
   
   // Service
   InService = 'in_service',    // being served by staff/equipment
@@ -13,15 +12,17 @@ export enum CustomerStatus {
   // Exit
   Paying = 'paying',           // finished service, heading to checkout
   Completed = 'completed',     // paid & happy, increases score
-  Leaving = 'leaving',         // walking out (animation, transitional)
+  LeavingAngry = 'leaving_angry', // walking out angrily (patience ran out)
 }
 
 export interface Customer {
   id: string;
-  emoji: string;
+  imageSrc: string; // 32x32 avatar frame (top-left if sprite)
   x: number;
   y: number;
   service: Service;
   status: CustomerStatus;
   serviceTimeLeft: number; // ticks remaining for service completion
+  patienceLeft: number; // ticks remaining before leaving (while waiting)
+  maxPatience: number; // maximum patience ticks for this customer
 }

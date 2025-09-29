@@ -1,5 +1,5 @@
 import { Customer, CustomerStatus } from './types';
-import { CUSTOMER_EMOJIS, CUSTOMER_SPAWN_AREA } from './config';
+import { CUSTOMER_SPAWN_AREA, DEFAULT_PATIENCE_SECONDS, CUSTOMER_IMAGES, DEFAULT_CUSTOMER_IMAGE } from './config';
 import { getRandomService } from '../services/mechanics';
 import { secondsToTicks } from '../core/constants';
 
@@ -7,17 +7,20 @@ import { secondsToTicks } from '../core/constants';
  * Creates a new customer with random properties
  */
 export function spawnCustomer(): Customer {
-  const randomEmoji = CUSTOMER_EMOJIS[Math.floor(Math.random() * CUSTOMER_EMOJIS.length)];
   const service = getRandomService();
+  const imageSrc = CUSTOMER_IMAGES[Math.floor(Math.random() * CUSTOMER_IMAGES.length)] || DEFAULT_CUSTOMER_IMAGE;
+  const patience = secondsToTicks(DEFAULT_PATIENCE_SECONDS);
   
   return {
     id: Math.random().toString(36).substr(2, 9),
-    emoji: randomEmoji,
+    imageSrc,
     x: Math.random() * (CUSTOMER_SPAWN_AREA.x.max - CUSTOMER_SPAWN_AREA.x.min) + CUSTOMER_SPAWN_AREA.x.min,
     y: Math.random() * (CUSTOMER_SPAWN_AREA.y.max - CUSTOMER_SPAWN_AREA.y.min) + CUSTOMER_SPAWN_AREA.y.min,
     service: service,
     status: CustomerStatus.Waiting,
-    serviceTimeLeft: secondsToTicks(service.duration)
+    serviceTimeLeft: secondsToTicks(service.duration),
+    patienceLeft: patience,
+    maxPatience: patience
   };
 }
 
@@ -31,6 +34,18 @@ export function tickCustomer(customer: Customer): Customer | null {
       return null; // Customer completed service, should be removed
     }
     return { ...customer, serviceTimeLeft: newServiceTimeLeft };
+  }
+  if (customer.status === CustomerStatus.Waiting) {
+    const newPatience = customer.patienceLeft - 1;
+    if (newPatience <= 0) {
+      // Move to LeavingAngry state to show UI feedback
+      return { ...customer, status: CustomerStatus.LeavingAngry };
+    }
+    return { ...customer, patienceLeft: newPatience };
+  }
+  if (customer.status === CustomerStatus.LeavingAngry) {
+    // Keep as-is; removal timing handled by game tick
+    return customer;
   }
   return customer;
 }

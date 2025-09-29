@@ -5,9 +5,4 @@ export interface Industry {
   description: string;
   color: string;
   services: string[]; // references to service IDs
-  customerConfig?: {
-    patience?: number;
-    spawnRate?: number;
-    maxCapacity?: number;
-  };
 }
