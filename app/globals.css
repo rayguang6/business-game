@@ -18,3 +18,62 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Reusable Text Stroke Utilities */
+.text-stroke {
+  --text-fill: #fff;
+  --text-stroke: #000;
+  --stroke-width: 2px;
+  --stroke-blur: 4px;
+  
+  color: var(--text-fill);
+  text-shadow: 
+    calc(-1 * var(--stroke-width)) calc(-1 * var(--stroke-width)) 0 var(--text-stroke),
+    var(--stroke-width) calc(-1 * var(--stroke-width)) 0 var(--text-stroke),
+    calc(-1 * var(--stroke-width)) var(--stroke-width) 0 var(--text-stroke),
+    var(--stroke-width) var(--stroke-width) 0 var(--text-stroke),
+    0 0 var(--stroke-blur) var(--text-stroke);
+}
+
+/* Text stroke variants */
+.text-stroke-thin {
+  --stroke-width: 1px;
+  --stroke-blur: 2px;
+}
+
+.text-stroke-thick {
+  --stroke-width: 3px;
+  --stroke-blur: 6px;
+}
+
+.text-stroke-extra-thick {
+  --stroke-width: 4px;
+  --stroke-blur: 8px;
+}
+
+.text-stroke-massive {
+  --stroke-width: 6px;
+  --stroke-blur: 12px;
+}
+
+/* Color variants */
+.text-stroke-black {
+  --text-stroke: #000;
+}
+
+.text-stroke-blue {
+  --text-stroke: #23AAF6;
+}
+
+.text-stroke-dark-blue {
+  --text-stroke: #1057DA;
+}
+
+.text-stroke-gold {
+  --text-stroke: #8B4513;
+}
+
+.text-stroke-white {
+  --text-stroke: #fff;
+}
+
