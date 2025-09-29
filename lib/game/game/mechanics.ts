@@ -1,7 +1,7 @@
 import { GameState } from './types';
 import { TICKS_PER_SECOND, CUSTOMER_SPAWN_INTERVAL } from '../core/constants';
 import { Customer, CustomerStatus } from '../customers/types';
-import { spawnCustomer as createCustomer, tickCustomer, startService, getAvailableSlots } from '../customers/mechanics';
+import { spawnCustomer as createCustomer, tickCustomer, startService, getAvailableSlots, getAvailableRooms } from '../customers/mechanics';
 import { processServiceCompletion, endOfWeek, handleWeekTransition, getWeeklyBaseExpenses } from '../economy/mechanics';
 import { getCurrentWeek, isNewWeek } from '../core/constants';
 
@@ -107,15 +107,16 @@ export function tickOnce(state: {
     newCustomers.push(newCustomer);
   }
 
-  // 4) Customers update and service completion
-  const availableSlots = getAvailableSlots(newCustomers);
-  let slotsRemaining = availableSlots;
-  newCustomers = newCustomers
-    .map((customer) => {
-      if (customer.status === CustomerStatus.Waiting && slotsRemaining > 0) {
-        slotsRemaining -= 1;
-        return startService(customer);
-      } else if (customer.status === CustomerStatus.InService) {
+        // 4) Customers update and service completion
+        const availableRooms = getAvailableRooms(newCustomers);
+        let roomsRemaining = [...availableRooms];
+        newCustomers = newCustomers
+          .map((customer) => {
+            if (customer.status === CustomerStatus.Waiting && roomsRemaining.length > 0) {
+              const assignedRoom = roomsRemaining.shift()!;
+              const customerWithRoom = { ...customer, roomId: assignedRoom };
+              return startService(customerWithRoom);
+            } else if (customer.status === CustomerStatus.InService) {
         const updatedCustomer = tickCustomer(customer);
         if (updatedCustomer === null) {
           const { cash: newCash, reputation: newReputation } = processServiceCompletion(

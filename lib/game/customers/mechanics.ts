@@ -75,6 +75,31 @@ export function getWaitingCustomers(customers: Customer[]): Customer[] {
 }
 
 /**
+ * Gets customers in specific room
+ */
+export function getCustomersInRoom(customers: Customer[], roomId: number): Customer[] {
+  return customers.filter(c => c.roomId === roomId && c.status === CustomerStatus.InService);
+}
+
+/**
+ * Gets available rooms (rooms with no customers)
+ */
+export function getAvailableRooms(customers: Customer[], maxRooms: number = 2): number[] {
+  const occupiedRooms = customers
+    .filter(c => c.status === CustomerStatus.InService)
+    .map(c => c.roomId)
+    .filter(Boolean) as number[];
+  
+  const availableRooms: number[] = [];
+  for (let i = 1; i <= maxRooms; i++) {
+    if (!occupiedRooms.includes(i)) {
+      availableRooms.push(i);
+    }
+  }
+  return availableRooms;
+}
+
+/**
  * Calculates available service slots
  */
 export function getAvailableSlots(customers: Customer[]): number {

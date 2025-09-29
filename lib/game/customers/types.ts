@@ -25,4 +25,5 @@ export interface Customer {
   serviceTimeLeft: number; // ticks remaining for service completion
   patienceLeft: number; // ticks remaining before leaving (while waiting)
   maxPatience: number; // maximum patience ticks for this customer
+  roomId?: number; // assigned treatment room (1, 2, 3, etc.)
 }
