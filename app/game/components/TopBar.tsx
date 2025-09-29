@@ -2,10 +2,12 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/store/gameStore';
 
 export function TopBar() {
-  const { selectedIndustry, isPaused, unpauseGame, pauseGame, gameTime, currentWeek } = useGameStore();
+  const { selectedIndustry, isPaused, unpauseGame, pauseGame, gameTime, currentWeek, resetAllGame } = useGameStore();
+  const router = useRouter();
   const [open, setOpen] = React.useState(false);
 
   if (!selectedIndustry) return null;
@@ -20,6 +22,13 @@ export function TopBar() {
   const closeSettings = () => {
     setOpen(false);
     unpauseGame();
+  };
+
+  const quitGame = () => {
+    // Reset all game state and navigate home
+    resetAllGame();
+    setOpen(false);
+    router.push('/');
   };
 
   return (
@@ -65,12 +74,12 @@ export function TopBar() {
             <h2 className="text-lg font-semibold text-gray-800 mb-3">Settings</h2>
             <p className="text-sm text-gray-600 mb-4">Game is paused while settings are open.</p>
             <div className="flex flex-col gap-2">
-              <Link
-                href="/"
+              <button
+                onClick={quitGame}
                 className="w-full text-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
               >
                 Quit Game (Back to Home)
-              </Link>
+              </button>
               <button
                 onClick={closeSettings}
                 className="w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
