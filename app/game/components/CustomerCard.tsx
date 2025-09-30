@@ -37,94 +37,91 @@ export function CustomerCard({ customer, showPatience = false, showServiceProgre
   };
 
   return (
-    <div className="flex items-start gap-2">
-      {/* Avatar */}
-      <div className="mt-1 w-8 h-8 rounded overflow-hidden bg-white shadow-sm border border-gray-200 flex items-center justify-center">
-        <img 
-          src={customer.imageSrc} 
-          alt="avatar" 
-          className="w-8 h-8" 
-          style={{ 
-            objectFit: 'none', 
-            objectPosition: '0 0',
-            width: '32px',
-            height: '32px'
-          }} 
-        />
-      </div>
-      
-      {/* Card */}
-      <div className="bg-white rounded-xl p-3 shadow-md border border-gray-200 w-full">
-        <div className="border-b border-gray-100 pb-2 mb-2">
-          <div className="font-semibold text-gray-800 text-sm">{customer.service.name}</div>
-          <div className="flex justify-between items-center text-xs text-gray-600">
-            <span>${customer.service.price}</span>
-            <span>{customer.service.duration}s</span>
+      <div className="bg-white rounded-lg p-2 shadow-sm border border-gray-200">
+        {/* Row 1: Avatar + Service info + Status icon */}
+        <div className="flex items-center gap-2 mb-1">
+          {/* Avatar inside card */}
+          <div className="w-5 h-5 rounded overflow-hidden bg-gray-100 flex items-center justify-center flex-shrink-0">
+            <img 
+              src={customer.imageSrc} 
+              alt="avatar" 
+              className="w-5 h-5" 
+              style={{ 
+                objectFit: 'none', 
+                objectPosition: '0 0',
+                width: '20px',
+                height: '20px'
+              }} 
+            />
+          </div>
+          
+          {/* Service info */}
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-gray-800 text-xs truncate">{customer.service.name}</div>
+            <div className="text-xs text-gray-600">${customer.service.price}</div>
+          </div>
+
+          {/* Status icon in top right */}
+          <div className="flex-shrink-0">
+            {customer.status === CustomerStatus.Waiting && (
+              <span className="text-yellow-600 text-sm">⏳</span>
+            )}
+            {customer.status === CustomerStatus.InService && (
+              <span className="text-blue-600 text-sm">🔧</span>
+            )}
+            {customer.status === CustomerStatus.LeavingAngry && (
+              <span className="text-red-600 text-sm">😡</span>
+            )}
           </div>
         </div>
-        
-        {/* Status Badge */}
-        <div className="mb-2">
-          {customer.status === CustomerStatus.Waiting && (
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">⏳ Waiting</span>
-          )}
-          {customer.status === CustomerStatus.InService && (
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">🔧 In Service</span>
-          )}
-          {customer.status === CustomerStatus.LeavingAngry && (
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">😡 Left Angry</span>
-          )}
-        </div>
-        
-        {/* Patience Bar (for waiting customers) */}
+      
+        {/* Row 2: Patience Bar (for waiting customers) */}
         {showPatience && customer.status === CustomerStatus.Waiting && (
-          <div>
+          <div className="mt-1">
             {(() => {
               const progress = getPatienceProgress(customer);
               return (
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm">{getPatienceEmoji(progress)}</span>
-                      <span className="text-xs text-gray-600">Patience</span>
-                    </div>
-                    <span className="text-xs text-gray-600 font-medium">{Math.ceil(ticksToSeconds(customer.patienceLeft))}s</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs">{getPatienceEmoji(progress)}</span>
+                  <div className="flex-1 bg-gray-200 rounded-full h-1">
                     <div
                       key={`patience-${customer.id}`}
-                      className={`${getPatienceColor(progress)} h-2 rounded-full transition-all duration-300`}
+                      className={`${getPatienceColor(progress)} h-1 rounded-full transition-all duration-300`}
                       style={{ width: `${progress}%` }}
                     />
                   </div>
+                  <span className="text-xs text-gray-600">{Math.ceil(ticksToSeconds(customer.patienceLeft))}s</span>
                 </div>
               );
             })()}
           </div>
         )}
-        
-        {/* Service Progress Bar (for in-service customers) */}
+      
+        {/* Row 2: Service Progress Bar (for in-service customers) */}
         {showServiceProgress && customer.status === CustomerStatus.InService && (
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-xs text-gray-600">Service Progress</span>
+          <div className="mt-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-blue-600">🔧</span>
+              <div className="flex-1 bg-gray-200 rounded-full h-1">
+                <div
+                  key={`progress-${customer.id}-${customer.serviceTimeLeft}`}
+                  className="bg-blue-500 h-1 rounded-full transition-all duration-300"
+                  style={{ width: `${getServiceProgress(customer)}%` }}
+                />
+              </div>
               <span className="text-xs text-blue-600 font-medium">{Math.ceil(ticksToSeconds(customer.serviceTimeLeft))}s</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                key={`progress-${customer.id}-${customer.serviceTimeLeft}`}
-                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${getServiceProgress(customer)}%` }}
-              />
             </div>
           </div>
         )}
-        
-        {/* Angry Message (for leaving customers) */}
+      
+        {/* Row 2: Angry Message (for leaving customers) */}
         {customer.status === CustomerStatus.LeavingAngry && (
-          <div className="text-xs text-red-600 font-medium">Reputation -1</div>
+          <div className="mt-1 flex items-center gap-2">
+            <span className="text-xs text-red-600">😡</span>
+            <span className="text-xs text-red-600 font-medium">Reputation -1</span>
+          </div>
         )}
       </div>
-    </div>
+
   );
 }

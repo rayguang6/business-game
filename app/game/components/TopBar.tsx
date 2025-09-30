@@ -33,37 +33,33 @@ export function TopBar() {
 
   return (
     <>
-      <div className="grid grid-cols-3 items-center mb-8 gap-3">
-        {/* Left: Industry */}
-        <div className="flex items-center space-x-3">
+      <div className="flex items-center justify-between px-4 py-3">
+        {/* Left: Industry Profile (Clickable for Settings) */}
+        <button
+          onClick={openSettings}
+          className="flex items-center space-x-3 hover:bg-white/10 rounded-lg p-2 transition-colors"
+        >
           <div className="text-3xl">{selectedIndustry.icon}</div>
-          <div className="hidden sm:block">
-            <h1 className="text-3xl font-bold text-gray-800">{selectedIndustry.name}</h1>
-            <p className="text-gray-600 text-sm">Manage your business</p>
+          <div className="text-left">
+            <h1 className="text-lg font-bold text-white">{selectedIndustry.name}</h1>
+            <p className="text-gray-300 text-xs">Settings</p>
           </div>
-          <div className="sm:hidden text-lg font-semibold text-gray-800">{selectedIndustry.name}</div>
-        </div>
+        </button>
 
-        {/* Middle: Week progress */}
-        <div className="flex items-center justify-center">
-          <div className="flex items-center gap-2 text-indigo-600 font-semibold whitespace-nowrap text-sm sm:text-base">
-            <span>Week {currentWeek}</span>
-            <div className="w-24 sm:w-40 bg-gray-200 rounded-full h-2 overflow-hidden">
-              <div className="bg-indigo-500 h-2" style={{ width: `${progressPct}%` }} />
-            </div>
-            <span className="text-gray-500 text-xs">{Math.floor(gameTime % 30)}s</span>
+        {/* Right: Week Progress */}
+        <div className="flex items-center space-x-3">
+          <div className="text-right">
+            <div className="text-sm font-bold text-white">Week {currentWeek}</div>
+            <div className="text-xs text-gray-300">{Math.floor(gameTime % 30)}s left</div>
           </div>
-        </div>
-
-        {/* Right: Settings button */}
-        <div className="flex items-center justify-end">
-          <button
-            onClick={openSettings}
-            className="px-3 py-1.5 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
-            aria-label="Open settings"
-          >
-            ⚙️ Settings
-          </button>
+          
+          {/* Simple Progress Bar */}
+          <div className="w-20 bg-gray-600 rounded-full h-2 overflow-hidden">
+            <div 
+              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
         </div>
       </div>
 

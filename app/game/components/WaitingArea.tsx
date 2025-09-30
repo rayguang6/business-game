@@ -14,12 +14,12 @@ export function WaitingArea({ customers }: WaitingAreaProps) {
 
   return (
     <div className="flex-1">
-      <div className="flex items-center justify-between mb-3">
-        <h4 className="text-sm font-semibold text-gray-700">Waiting Area</h4>
+      <div className="flex items-center justify-between mb-1">
+        <h4 className="text-xs font-semibold text-gray-700">Waiting Area</h4>
         <div className="text-xs text-gray-500">{waitingCustomers.length} waiting</div>
       </div>
       
-      <div className="space-y-3">
+      <div className="space-y-1">
         {/* Show angry customers who are leaving */}
         {leavingCustomers.map((customer) => (
           <div key={customer.id} className="opacity-80">

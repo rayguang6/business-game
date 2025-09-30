@@ -39,9 +39,10 @@ export default function GamePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-blue-100 to-blue-200 relative pb-20">
+      
       {/* Top HUD Section */}
-      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm border-b-2 border-gray-200">
+      <div className="sticky top-0 z-10 bg-gradient-to-b from-sky-400  to-blue-600 relative">
         <TopBar />
         <KeyMetrics />
       </div>

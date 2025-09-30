@@ -14,9 +14,9 @@ export function TreatmentRoom({ roomId, customers }: TreatmentRoomProps) {
   const isOccupied = roomCustomers.length > 0;
 
   return (
-    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium text-gray-700">Room {roomId}</span>
+    <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs font-medium text-gray-700">Room {roomId}</span>
         <span className="text-xs text-gray-500">
           {isOccupied ? 'Occupied' : 'Available'}
         </span>
