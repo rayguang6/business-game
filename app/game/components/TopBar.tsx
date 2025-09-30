@@ -33,34 +33,34 @@ export function TopBar() {
 
   return (
     <>
-      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center justify-between px-2 py-1 h-12">
         {/* Left: Industry Profile (Clickable for Settings) */}
-        <button
-          onClick={openSettings}
-          className="flex items-center space-x-3 hover:bg-white/10 rounded-lg p-2 transition-colors"
-        >
-          <div className="text-3xl">{selectedIndustry.icon}</div>
-          <div className="text-left">
-            <h1 className="text-lg font-bold text-white">{selectedIndustry.name}</h1>
-            <p className="text-gray-300 text-xs">Settings</p>
-          </div>
-        </button>
+            <button
+              onClick={openSettings}
+              className="flex items-center space-x-1 hover:bg-white/10 rounded px-1 py-0.5 transition-colors"
+            >
+              <div className="text-lg">{selectedIndustry.icon}</div>
+              <div className="text-left">
+                <h1 className="text-xs font-bold text-white">{selectedIndustry.name}</h1>
+                <p className="text-gray-300 text-xs">⚙️</p>
+              </div>
+            </button>
 
-        {/* Right: Week Progress */}
-        <div className="flex items-center space-x-3">
-          <div className="text-right">
-            <div className="text-sm font-bold text-white">Week {currentWeek}</div>
-            <div className="text-xs text-gray-300">{Math.floor(gameTime % 30)}s left</div>
-          </div>
-          
-          {/* Simple Progress Bar */}
-          <div className="w-20 bg-gray-600 rounded-full h-2 overflow-hidden">
-            <div 
-              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
-        </div>
+            {/* Right: Week Progress */}
+            <div className="flex items-center space-x-1">
+              <div className="text-right">
+                <div className="text-xs font-bold text-white">W{currentWeek}</div>
+                <div className="text-xs text-gray-300">{Math.floor(gameTime % 30)}s</div>
+              </div>
+              
+              {/* Simple Progress Bar */}
+              <div className="w-12 bg-gray-600 rounded-full h-1 overflow-hidden">
+                <div 
+                  className="bg-blue-500 h-1 rounded-full transition-all duration-300"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+            </div>
       </div>
 
       {/* Settings Modal */}

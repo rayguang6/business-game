@@ -13,7 +13,7 @@ export function GameCanvas() {
 
   return (
     <div className="flex justify-center p-4">
-      <div className="w-80 h-80 bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-4">
+        <div className="w-72 h-72 bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-3">
         <div className="h-full">
           <div className="flex h-full gap-3">
             {/* Waiting Area */}
