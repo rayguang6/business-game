@@ -34,18 +34,49 @@ export default function GamePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-20">
+      {/* Top HUD Section */}
+      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm border-b-2 border-gray-200">f
         <TopBar />
+        <KeyMetrics />
+      </div>
 
-                <KeyMetrics />
-
-                <FinancePNL />
-
-                {/* Service Status summary removed (canvas shows statuses) */}
-
-        <div className="mb-6" />
+      {/* Middle Canvas Section */}
+      <div className="bg-gradient-to-b from-blue-100 to-blue-200">
         <GameCanvas />
+      </div>
+
+      {/* PNL Section - scrollable content */}
+      <div className="bg-white/90 backdrop-blur-sm border-t-2 border-gray-200">
+        <div className="px-4 py-2">
+          <FinancePNL />
+        </div>
+      </div>
+
+      {/* Fixed Bottom Navigation Menu */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-sm border-t-2 border-gray-200">
+        <div className="flex items-center justify-around py-3 px-4">
+          <div className="text-center">
+            <div className="w-8 h-8 bg-blue-500 rounded-lg mx-auto mb-1"></div>
+            <span className="text-xs font-semibold text-gray-700">Staff</span>
+          </div>
+          <div className="text-center">
+            <div className="w-8 h-8 bg-green-500 rounded-lg mx-auto mb-1"></div>
+            <span className="text-xs font-semibold text-gray-700">Upgrades</span>
+          </div>
+          <div className="text-center">
+            <div className="w-8 h-8 bg-yellow-500 rounded-lg mx-auto mb-1"></div>
+            <span className="text-xs font-semibold text-gray-700">Stats</span>
+          </div>
+          <div className="text-center">
+            <div className="w-8 h-8 bg-purple-500 rounded-lg mx-auto mb-1"></div>
+            <span className="text-xs font-semibold text-gray-700">Marketing</span>
+          </div>
+          <div className="text-center">
+            <div className="w-8 h-8 bg-red-500 rounded-lg mx-auto mb-1"></div>
+            <span className="text-xs font-semibold text-gray-700">Settings</span>
+          </div>
+        </div>
       </div>
     </div>
   );

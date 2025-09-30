@@ -23,7 +23,7 @@ export default function WelcomePage() {
           <Image
             src="/images/business-empire-title.png"
             alt="Business Empire"
-            width={600}
+            width={300}
             height={200}
             className="max-w-sm md:max-w-md lg:max-w-lg h-auto"
             priority
