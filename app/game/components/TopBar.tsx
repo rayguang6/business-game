@@ -33,30 +33,30 @@ export function TopBar() {
 
   return (
     <>
-        <div className="flex items-center justify-between px-2 py-1 h-12">
+        <div className="flex items-center justify-between px-2 py-0.5 h-8">
         {/* Left: Industry Profile (Clickable for Settings) */}
             <button
               onClick={openSettings}
-              className="flex items-center space-x-1 hover:bg-white/10 rounded px-1 py-0.5 transition-colors"
+              className="flex items-center space-x-1 hover:bg-white/10 rounded px-1 py-0 transition-colors"
             >
-              <div className="text-lg">{selectedIndustry.icon}</div>
+              <div className="text-sm">{selectedIndustry.icon}</div>
               <div className="text-left">
-                <h1 className="text-xs font-bold text-white">{selectedIndustry.name}</h1>
-                <p className="text-gray-300 text-xs">⚙️</p>
+                <h1 className="text-xs font-bold text-white leading-none">{selectedIndustry.name}</h1>
+                <p className="text-gray-300 text-xs leading-none">⚙️</p>
               </div>
             </button>
 
             {/* Right: Week Progress */}
             <div className="flex items-center space-x-1">
               <div className="text-right">
-                <div className="text-xs font-bold text-white">W{currentWeek}</div>
-                <div className="text-xs text-gray-300">{Math.floor(gameTime % 30)}s</div>
+                <div className="text-xs font-bold text-white leading-none">W{currentWeek}</div>
+                <div className="text-xs text-gray-300 leading-none">{Math.floor(gameTime % 30)}s</div>
               </div>
               
               {/* Simple Progress Bar */}
-              <div className="w-12 bg-gray-600 rounded-full h-1 overflow-hidden">
+              <div className="w-10 bg-gray-600 rounded-full h-0.5 overflow-hidden">
                 <div 
-                  className="bg-blue-500 h-1 rounded-full transition-all duration-300"
+                  className="bg-blue-500 h-0.5 rounded-full transition-all duration-300"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
