@@ -1,8 +1,12 @@
 import { Industry } from './types';
 import { DentalIndustry } from './dental';
+import { RestaurantIndustry } from './restaurant';
+import { GymIndustry } from './gym';
 
 export const INDUSTRIES = {
   dental: DentalIndustry,
+  restaurant: RestaurantIndustry,
+  gym: GymIndustry,
 } as const;
 
 export type IndustryId = keyof typeof INDUSTRIES;
@@ -21,10 +25,3 @@ export function getIndustryById(id: string): Industry | undefined {
   return INDUSTRIES[id as IndustryId];
 }
 
-/**
- * Gets a random industry
- * Now we make dental only
- */
-export function getRandomIndustry(): Industry {
-  return INDUSTRIES.dental;
-}

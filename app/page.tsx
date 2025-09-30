@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import GameButton from './components/ui/GameButton';
 
 export default function WelcomePage() {
@@ -17,10 +18,17 @@ export default function WelcomePage() {
       
       {/* Game Title and Button */}
       <div className="relative z-10 text-center">
-        {/* Game Title */}
-        <h1 className="text-6xl md:text-8xl font-bold mb-8 text-stroke text-stroke-dark-blue text-stroke-massive">
-          Business Empire
-        </h1>
+        {/* Game Title Image */}
+        <div className="mb-8 flex justify-center">
+          <Image
+            src="/images/business-empire-title.png"
+            alt="Business Empire"
+            width={600}
+            height={200}
+            className="max-w-sm md:max-w-md lg:max-w-lg h-auto"
+            priority
+          />
+        </div>
         
         {/* Game Button */}
         <GameButton color="blue" href="/select-industry">Start Game</GameButton>
