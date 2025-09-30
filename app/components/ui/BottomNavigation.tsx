@@ -20,10 +20,10 @@ export default function BottomNavigation({ activeTab, onTabChange }: BottomNavig
   ];
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 
-                    bg-white/80 backdrop-blur-md border border-gray-200 
-                    rounded-2xl shadow-xl px-6 py-3 w-[90%] max-w-md">
-      <div className="flex items-center justify-around">
+    <div className="fixed bottom-0 left-0 right-0 z-20 
+                    bg-gray-900 border-t-2 border-gray-700 
+                    shadow-xl px-6 py-3">
+      <div className="flex items-center justify-around max-w-md mx-auto">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -54,7 +54,7 @@ export default function BottomNavigation({ activeTab, onTabChange }: BottomNavig
             
             {/* Label */}
             <span className={`text-xs font-semibold mt-1 
-              ${activeTab === tab.id ? tab.activeColor : 'text-gray-600'}`}>
+              ${activeTab === tab.id ? tab.activeColor : 'text-gray-300'}`}>
               {tab.label}
             </span>
           </button>
