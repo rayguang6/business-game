@@ -9,44 +9,62 @@ export function KeyMetrics() {
 
   const metricsData = [
     {
-      icon: '💰',
-      value: `$${metrics.cash}`,
+      icon: '💎',
+      image: '/images/icons/finance.png',
+      value: metrics.cash.toLocaleString(),
       label: 'Cash',
-      color: 'text-green-600'
+      color: 'text-green-400'
     },
     {
-      icon: '📈',
-      value: `$${last ? last.revenue : 0}`,
+      icon: '💎',
+      image: '/images/icons/home.png',
+      value: (last ? last.revenue : 0).toLocaleString(),
       label: 'Revenue',
-      color: 'text-purple-600'
+      color: 'text-blue-400'
     },
     {
-      icon: '📉',
-      value: `$${last ? last.expenses : 0}`,
-      label: 'Expenses',
-      color: 'text-red-600'
-    },
-    {
-      icon: '⭐',
-      value: metrics.reputation.toString(),
+      icon: '💎',
+      image: '/images/icons/marketing.png',
+      value: metrics.reputation.toLocaleString(),
       label: 'Reputation',
-      color: 'text-blue-600'
+      color: 'text-yellow-400'
+    },
+    {
+      icon: '💎',
+      image: '/images/icons/staff.png',
+      value: (last ? last.expenses : 0).toLocaleString(),
+      label: 'Expenses',
+      color: 'text-red-400'
     }
   ];
 
   return (
-    <div className="px-2 py-0 h-6">
-      <div className="flex items-center justify-around gap-0.5 h-full">
-        {metricsData.map((metric, index) => (
-          <div key={index} className="flex items-center gap-0.5 px-0.5 py-0 bg-white/10 backdrop-blur-sm rounded border border-white/20 flex-1 h-5">
-            <span className="text-xs">{metric.icon}</span>
-            <div className="text-left min-w-0 flex-1">
-              <div className="text-xs font-bold text-white truncate leading-none">{metric.value}</div>
-              <div className="text-xs text-white truncate leading-none">{metric.label}</div>
-            </div>
+    <div className="grid grid-cols-2 gap-y-2 gap-x-4">
+      {metricsData.map((metric, index) => (
+        <div key={index} className="flex items-center bg-black/45 py-0.5 px-1 rounded relative w-full">
+          {/* Icon positioned outside from the left */}
+          <div className="absolute -left-3 top-1/2 transform -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center z-10 overflow-hidden">
+            {metric.image ? (
+              <img 
+                src={metric.image} 
+                alt={metric.label}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-white text-sm transform rotate-5">{metric.icon}</span>
+            )}
           </div>
-        ))}
-      </div>
+
+          <div className="flex flex-col min-w-0 flex-1 pl-2 ms-2">
+            <span className={`text-[10px] font-bold ${metric.color} truncate`}>
+              {metric.label}
+            </span>
+            <span className="text-white text-[10px] font-bold truncate">
+              {metric.value}
+            </span>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

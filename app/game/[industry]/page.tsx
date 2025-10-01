@@ -8,7 +8,6 @@ import { useGameLoop } from '@/hooks/useGameLoop';
 import { CustomerStatus, Customer } from '@/lib/game/customers/types';
 import { TICKS_PER_SECOND, ticksToSeconds } from '@/lib/game/core/constants';
 import { TopBar } from '@/app/game/components/TopBar';
-import { KeyMetrics } from '@/app/game/components/KeyMetrics';
 import { FinancePNL } from '@/app/game/components/FinancePNL';
 import { GameCanvas } from '@/app/game/components/GameCanvas';
 import { HomeTab } from '@/app/game/components/HomeTab';
@@ -44,9 +43,7 @@ export default function GamePage() {
   }
 
   return (
-        <div className="h-screen relative flex flex-col overflow-hidden">
-
-      
+    <div className="h-screen relative flex flex-col overflow-hidden">
       {/* Background Image */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -55,35 +52,34 @@ export default function GamePage() {
         }}
       />
       
-      {/* Top HUD Section */}
-      <div className="relative z-10">
-        <TopBar />
-        <KeyMetrics />
-      </div>
-
-      {/* Middle Canvas Section */}
-      <div className="relative z-10">
-        <GameCanvas />
-      </div>
-
-      {/* Tab Content Area - Takes remaining space */}
-      <div className="relative z-10 flex-1 min-h-0 bg-gray-900 border-t-2 border-gray-700">
-        <div className="h-full overflow-y-auto px-6 py-6 pb-24">
-          {activeTab === 'staff' && <StaffTab />}
-          
-          {activeTab === 'finance' && <FinanceTab />}
-          
-          {activeTab === 'home' && <HomeTab />}
-          
-          {activeTab === 'upgrades' && <UpgradesTab />}
-          
-          {activeTab === 'marketing' && <MarketingTab />}
+      {/* Top Section - Game Canvas Area (50% height) */}
+      <div className="relative h-1/2 flex items-center justify-center">
+        {/* TopBar Overlay */}
+        <div className="absolute top-0 left-0 right-0 z-20">
+          <TopBar />
+        </div>
+        
+        {/* Game Canvas - Full Area */}
+        <div className="relative z-10 w-full h-full bg-gray-800 flex items-center justify-center">
+          <GameCanvas />
         </div>
       </div>
 
-      {/* Bottom Navigation - Full width, no background image visible */}
-      <div className="relative z-20">
-        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      {/* Bottom Section - Navigation & Tabs (50% height) */}
+      <div className="relative z-20 bg-gray-900 border-t-2 border-gray-700 h-1/2 flex flex-col">
+        {/* Tab Content Area */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 pb-20">
+          {activeTab === 'staff' && <StaffTab />}
+          {activeTab === 'finance' && <FinanceTab />}
+          {activeTab === 'home' && <HomeTab />}
+          {activeTab === 'upgrades' && <UpgradesTab />}
+          {activeTab === 'marketing' && <MarketingTab />}
+        </div>
+        
+        {/* Bottom Navigation */}
+        <div className="relative z-30">
+          <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+        </div>
       </div>
     </div>
   );
