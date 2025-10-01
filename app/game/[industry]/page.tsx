@@ -15,7 +15,6 @@ import { StaffTab } from '@/app/game/components/StaffTab';
 import { FinanceTab } from '@/app/game/components/FinanceTab';
 import { UpgradesTab } from '@/app/game/components/UpgradesTab';
 import { MarketingTab } from '@/app/game/components/MarketingTab';
-import BottomNavigation from '@/app/components/ui/BottomNavigation';
 
 type TabType = 'staff' | 'finance' | 'home' | 'upgrades' | 'marketing';
 
@@ -43,7 +42,7 @@ export default function GamePage() {
   }
 
   return (
-    <div className="h-screen relative flex flex-col overflow-hidden">
+    <div className="h-screen relative flex flex-col md:flex-row overflow-hidden">
       {/* Background Image */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -52,8 +51,9 @@ export default function GamePage() {
         }}
       />
       
-      {/* Top Section - Game Canvas Area (50% height) */}
-      <div className="relative h-1/2 flex items-center justify-center">
+      {/* Mobile: Top Section - Game Canvas Area (50% height) */}
+      {/* Desktop: Left Section - Game Canvas Area (50% width) */}
+      <div className="relative h-1/2 md:h-full md:w-1/2 flex items-center justify-center">
         {/* TopBar Overlay */}
         <div className="absolute top-0 left-0 right-0 z-20">
           <TopBar />
@@ -65,10 +65,11 @@ export default function GamePage() {
         </div>
       </div>
 
-      {/* Bottom Section - Navigation & Tabs (50% height) */}
-      <div className="relative z-20 bg-gray-900 border-t-2 border-gray-700 h-1/2 flex flex-col">
+      {/* Mobile: Bottom Section - Navigation & Tabs (50% height) */}
+      {/* Desktop: Right Section - Navigation & Tabs (50% width) */}
+      <div className="relative z-20 bg-gray-900 border-t-2 md:border-t-0 md:border-l-2 border-gray-700 h-1/2 md:h-full md:w-1/2 flex flex-col overflow-hidden">
         {/* Tab Content Area */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 pb-20">
+        <div className="flex-1 overflow-y-auto px-6 py-4">
           {activeTab === 'staff' && <StaffTab />}
           {activeTab === 'finance' && <FinanceTab />}
           {activeTab === 'home' && <HomeTab />}
@@ -76,9 +77,51 @@ export default function GamePage() {
           {activeTab === 'marketing' && <MarketingTab />}
         </div>
         
-        {/* Bottom Navigation */}
-        <div className="relative z-30">
-          <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+        {/* Bottom Navigation - Contained within right side only */}
+        <div className="relative z-30 bg-gray-900 border-t-2 border-gray-700 px-6 py-3 flex-shrink-0">
+          <div className="flex items-center justify-around">
+            {[
+              { id: 'staff', label: 'Staff', icon: '/images/icons/staff.png', activeColor: 'text-blue-600' },
+              { id: 'finance', label: 'Finance', icon: '/images/icons/finance.png', activeColor: 'text-green-600' },
+              { id: 'home', label: 'Home', icon: '/images/icons/home.png', activeColor: 'text-yellow-600', isHome: true },
+              { id: 'upgrades', label: 'Upgrades', icon: '/images/icons/upgrades.png', activeColor: 'text-purple-600' },
+              { id: 'marketing', label: 'Marketing', icon: '/images/icons/marketing.png', activeColor: 'text-red-600' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as TabType)}
+                className={`relative flex flex-col items-center transition-all duration-200 
+                  ${activeTab === tab.id ? 'scale-110' : 'hover:scale-105'}`}
+              >
+                {/* Icon with subtle active state */}
+                <div className={`p-1 rounded-xl transition-all duration-200 ${
+                  tab.isHome 
+                    ? 'bg-gradient-to-br from-yellow-200 to-yellow-400 p-2 rounded-full' 
+                    : activeTab === tab.id 
+                      ? 'bg-gray-100/50 rounded-full' 
+                      : ''
+                }`}>
+                  <img 
+                    src={tab.icon} 
+                    alt={tab.label}
+                    width={tab.isHome ? 48 : 32}
+                    height={tab.isHome ? 48 : 32}
+                    className={`mx-auto transition-all duration-200 ${
+                      activeTab === tab.id && !tab.isHome 
+                        ? 'brightness-110 contrast-110' 
+                        : ''
+                    }`}
+                  />
+                </div>
+                
+                {/* Label */}
+                <span className={`text-xs font-semibold mt-1 
+                  ${activeTab === tab.id ? tab.activeColor : 'text-gray-300'}`}>
+                  {tab.label}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

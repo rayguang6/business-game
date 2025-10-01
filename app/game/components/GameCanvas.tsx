@@ -12,27 +12,30 @@ export function GameCanvas() {
   if (!selectedIndustry) return null;
 
   return (
-    <div 
-      className="h-full w-full md:aspect-square md:max-w-full bg-[#8ed0fb] border-gray-200 p-3 md:mx-auto relative overflow-hidden"
-      style={{
-        backgroundImage: "url('/images/maps/dental-map.png')",
-        backgroundSize: "contain",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat"
-      }}
-    >
-      <div className="h-full">
-        <div className="flex h-full gap-3 pt-20">
-          {/* Waiting Area */}
-          <div className="flex-1">
+    <div className="h-full w-full bg-[#8ed0fb] relative overflow-hidden flex items-center justify-center">
+      {/* Inner Canvas Container - Maintains 1:1 aspect ratio */}
+      <div 
+        className="relative"
+        style={{
+          // Maintain 1:1 aspect ratio (square)
+          aspectRatio: '1/1',
+          width: 'min(100%, 100vh)', // Don't exceed container width or height
+          height: 'min(100%, 100vw)', // Don't exceed container height or width
+          backgroundImage: "url('/images/maps/dental-map.png')",
+          backgroundSize: "contain",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat"
+        }}
+      >
+        {/* HUD Overlay - Positioned relative to the inner canvas */}
+        <div className="absolute inset-0 flex items-center justify-between px-4 pt-20 pointer-events-none">
+          {/* Left HUD Panel - Waiting Area */}
+          <div className="w-64 pointer-events-auto">
             <WaitingArea customers={customers} />
           </div>
 
-          {/* Divider */}
-          <div className="w-px bg-gray-200 self-stretch" />
-
-          {/* Treatment Rooms */}
-          <div className="flex-1">
+          {/* Right HUD Panel - Treatment Rooms */}
+          <div className="w-64 pointer-events-auto">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-semibold text-gray-700">Treatment Rooms</h4>
               <div className="text-xs text-gray-500">
