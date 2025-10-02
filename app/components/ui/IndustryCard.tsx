@@ -1,16 +1,10 @@
 // IndustryCard.tsx
 import React from 'react';
 import Image from 'next/image';
+import { Industry } from '@/lib/game/industry/types';
 
 interface IndustryCardProps {
-  industry: {
-    id: string;
-    name: string;
-    icon: string;
-    description: string;
-    image?: string;
-    color?: string;
-  };
+  industry: Industry;
   onClick: () => void;
 }
 

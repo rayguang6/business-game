@@ -1,5 +1,5 @@
 import { Industry } from './types';
-import { DentalIndustry } from './dental';
+import { DentalIndustry } from './dentalIndustry';
 import { RestaurantIndustry } from './restaurant';
 import { GymIndustry } from './gym';
 

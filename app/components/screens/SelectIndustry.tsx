@@ -2,15 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import IndustryCard from '../ui/IndustryCard';
-
-interface Industry {
-  id: string;
-  name: string;
-  icon: string;
-  description: string;
-  image?: string;
-  color?: string;
-}
+import { Industry } from '@/lib/game/industry/types';
 
 interface SelectIndustryProps {
   industries: Industry[];

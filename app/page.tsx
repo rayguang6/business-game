@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import GameButton from './components/ui/GameButton';
+import GameButton from '@/app/components/ui/GameButton';
 
 export default function WelcomePage() {
 

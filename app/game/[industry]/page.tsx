@@ -15,8 +15,7 @@ import { StaffTab } from '@/app/game/components/StaffTab';
 import { FinanceTab } from '@/app/game/components/FinanceTab';
 import { UpgradesTab } from '@/app/game/components/UpgradesTab';
 import { MarketingTab } from '@/app/game/components/MarketingTab';
-
-type TabType = 'staff' | 'finance' | 'home' | 'upgrades' | 'marketing';
+import { TabType, TAB_CONFIGS } from '@/lib/types/ui';
 
 export default function GamePage() {
   const { selectedIndustry, isGameStarted, isPaused, metrics, weeklyRevenue, weeklyExpenses, weeklyHistory, gameTime, currentWeek, customers, startGame, pauseGame, unpauseGame } = useGameStore();
@@ -80,13 +79,7 @@ export default function GamePage() {
         {/* Bottom Navigation - Contained within right side only */}
         <div className="relative z-30 bg-gray-900 border-t-2 border-gray-700 px-6 py-3 flex-shrink-0">
           <div className="flex items-center justify-around">
-            {[
-              { id: 'staff', label: 'Staff', icon: '/images/icons/staff.png', activeColor: 'text-blue-600' },
-              { id: 'finance', label: 'Finance', icon: '/images/icons/finance.png', activeColor: 'text-green-600' },
-              { id: 'home', label: 'Home', icon: '/images/icons/home.png', activeColor: 'text-yellow-600', isHome: true },
-              { id: 'upgrades', label: 'Upgrades', icon: '/images/icons/upgrades.png', activeColor: 'text-purple-600' },
-              { id: 'marketing', label: 'Marketing', icon: '/images/icons/marketing.png', activeColor: 'text-red-600' },
-            ].map((tab) => (
+            {TAB_CONFIGS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as TabType)}
