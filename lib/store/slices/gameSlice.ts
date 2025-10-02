@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand';
-import { getWeeklyBaseExpenses } from '@/lib/game/economy/mechanics';
-import { tickOnce } from '@/lib/game/game/mechanics';
+import { getWeeklyBaseExpenses } from '@/lib/features/economy';
+import { tickOnce } from '@/lib/game/mechanics';
 import { GameState } from '../types';
 
 export interface GameSlice {

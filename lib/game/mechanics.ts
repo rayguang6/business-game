@@ -1,9 +1,7 @@
-import { GameState } from './types';
-import { TICKS_PER_SECOND, CUSTOMER_SPAWN_INTERVAL } from '../core/constants';
-import { Customer, CustomerStatus } from '../customers/types';
-import { spawnCustomer as createCustomer, tickCustomer, startService, getAvailableSlots, getAvailableRooms } from '../customers/mechanics';
-import { processServiceCompletion, endOfWeek, handleWeekTransition, getWeeklyBaseExpenses } from '../economy/mechanics';
-import { getCurrentWeek, isNewWeek } from '../core/constants';
+import { GameState } from '@/lib/store/types';
+import { TICKS_PER_SECOND, CUSTOMER_SPAWN_INTERVAL, getCurrentWeek, isNewWeek } from '@/lib/core/constants';
+import { Customer, CustomerStatus, LEAVING_ANGRY_DURATION_TICKS, spawnCustomer as createCustomer, tickCustomer, startService, getAvailableSlots, getAvailableRooms } from '@/lib/features/customers';
+import { processServiceCompletion, endOfWeek, handleWeekTransition, getWeeklyBaseExpenses } from '@/lib/features/economy';
 
 /**
  * Updates game timer based on ticks
@@ -74,31 +72,34 @@ export function tickOnce(state: {
     const weekResult = endOfWeek(
       newMetrics.cash,
       newWeeklyRevenue,
-      newWeeklyExpenses,
-      newMetrics.reputation,
-      newCurrentWeek
+      newWeeklyExpenses
     );
     newMetrics = {
       ...newMetrics,
       cash: weekResult.cash,
-      reputation: weekResult.reputation,
       totalRevenue: newMetrics.totalRevenue,
-      totalExpenses: newMetrics.totalExpenses + weekResult.weeklyExpenses,
+      totalExpenses: newMetrics.totalExpenses + newWeeklyExpenses,
     };
     const previousReputation = newWeeklyHistory.length > 0
       ? newWeeklyHistory[newWeeklyHistory.length - 1].reputation
       : 0;
     newWeeklyHistory.push({
       week: newCurrentWeek - 1,
-      revenue: weekResult.weeklyRevenue,
-      expenses: weekResult.weeklyExpenses,
-      profit: weekResult.weeklyRevenue - weekResult.weeklyExpenses,
+      revenue: newWeeklyRevenue,
+      expenses: newWeeklyExpenses,
+      profit: weekResult.profit,
       reputation: newMetrics.reputation,
       reputationChange: newMetrics.reputation - previousReputation,
     });
-    const weekTransition = handleWeekTransition();
+    const weekTransition = handleWeekTransition(
+      newCurrentWeek,
+      newMetrics.cash,
+      newWeeklyRevenue,
+      newWeeklyExpenses,
+      newMetrics.reputation
+    );
     newWeeklyRevenue = weekTransition.weeklyRevenue;
-    newWeeklyExpenses = getWeeklyBaseExpenses();
+    newWeeklyExpenses = weekTransition.weeklyExpenses;
   }
 
   // 3) Spawn
@@ -114,11 +115,10 @@ export function tickOnce(state: {
           .map((customer) => {
             if (customer.status === CustomerStatus.Waiting && roomsRemaining.length > 0) {
               const assignedRoom = roomsRemaining.shift()!;
-              const customerWithRoom = { ...customer, roomId: assignedRoom };
-              return startService(customerWithRoom);
+              return startService(customer, assignedRoom);
             } else if (customer.status === CustomerStatus.InService) {
         const updatedCustomer = tickCustomer(customer);
-        if (updatedCustomer === null) {
+        if (updatedCustomer.status === CustomerStatus.Paying) {
           const { cash: newCash, reputation: newReputation } = processServiceCompletion(
             newMetrics.cash,
             newMetrics.reputation,
@@ -128,22 +128,22 @@ export function tickOnce(state: {
           newMetrics.reputation = newReputation;
           newMetrics.totalRevenue += customer.service.price;
           newWeeklyRevenue += customer.service.price;
-          return null;
+          return null; // Remove completed customer
         }
         return updatedCustomer;
       } else if (customer.status === CustomerStatus.Waiting) {
         const updatedCustomer = tickCustomer(customer);
-        if (updatedCustomer === null) {
+        if (updatedCustomer.status === CustomerStatus.LeavingAngry) {
           // Patience ran out → customer leaves angrily; deduct reputation
           newMetrics.reputation = Math.max(0, newMetrics.reputation - 1);
-          return null;
+          return updatedCustomer;
         }
         return updatedCustomer;
       } else if (customer.status === CustomerStatus.LeavingAngry) {
         // After ~1 second (10 ticks at 100ms), remove the customer
         // Simple approach: remove after 10 ticks in LeavingAngry state
-        const leavingTicks = (customer as any).leavingTicks || 0;
-        if (leavingTicks >= 10) {
+        const leavingTicks = customer.leavingTicks || 0;
+        if (leavingTicks >= LEAVING_ANGRY_DURATION_TICKS) {
           return null; // Remove customer
         }
         return { ...customer, leavingTicks: leavingTicks + 1 };

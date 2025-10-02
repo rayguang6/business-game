@@ -1,7 +1,7 @@
 // IndustryCard.tsx
 import React from 'react';
 import Image from 'next/image';
-import { Industry } from '@/lib/game/industry/types';
+import { Industry } from '@/lib/features/industries';
 
 interface IndustryCardProps {
   industry: Industry;

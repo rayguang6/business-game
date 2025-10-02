@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
-import { Customer, CustomerStatus } from '@/lib/game/customers/types';
+import { Customer, CustomerStatus } from '@/lib/features/customers';
 import { WaitingArea } from './WaitingArea';
 import { TreatmentRoom } from './TreatmentRoom';
 

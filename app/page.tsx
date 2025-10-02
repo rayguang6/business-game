@@ -4,13 +4,23 @@ import Link from 'next/link';
 import Image from 'next/image';
 import GameButton from '@/app/components/ui/GameButton';
 
+// Welcome page constants
+const WELCOME_CONFIG = {
+  backgroundImage: "/images/start-screen-bg.png",
+  titleImage: "/images/business-empire-title.png",
+  titleAlt: "Business Empire",
+  titleWidth: 300,
+  titleHeight: 200,
+  startGameHref: "/select-industry"
+} as const;
+
 export default function WelcomePage() {
 
   return (
     <div 
       className="min-h-screen flex items-center justify-center p-4 relative bg-cover bg-center bg-no-repeat"
       style={{
-        backgroundImage: "url('/images/start-screen-bg.png')"
+        backgroundImage: `url('${WELCOME_CONFIG.backgroundImage}')`
       }}
     >
       {/* Fallback background color in case image doesn't load */}
@@ -21,17 +31,17 @@ export default function WelcomePage() {
         {/* Game Title Image */}
         <div className="mb-8 flex justify-center">
           <Image
-            src="/images/business-empire-title.png"
-            alt="Business Empire"
-            width={300}
-            height={200}
+            src={WELCOME_CONFIG.titleImage}
+            alt={WELCOME_CONFIG.titleAlt}
+            width={WELCOME_CONFIG.titleWidth}
+            height={WELCOME_CONFIG.titleHeight}
             className="max-w-sm md:max-w-md lg:max-w-lg h-auto"
             priority
           />
         </div>
         
         {/* Game Button */}
-        <GameButton color="blue" href="/select-industry">Start Game</GameButton>
+        <GameButton color="blue" href={WELCOME_CONFIG.startGameHref}>Start Game</GameButton>
       </div>
     </div>
   );

@@ -2,8 +2,8 @@
  * Shared types for the game store slices
  */
 
-import { Industry } from '@/lib/game/industry/types';
-import { Customer } from '@/lib/game/customers/types';
+import { Industry } from '@/lib/features/industries';
+import { Customer } from '@/lib/features/customers';
 
 export interface Metrics {
   cash: number;

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/store/gameStore';
 import { KeyMetrics } from './KeyMetrics';
+import { ROUND_DURATION_SECONDS } from '@/lib/core/constants';
 
 export function TopBar() {
   const { selectedIndustry, isPaused, unpauseGame, pauseGame, gameTime, currentWeek, resetAllGame } = useGameStore();
@@ -13,7 +14,7 @@ export function TopBar() {
 
   if (!selectedIndustry) return null;
 
-  const progressPct = ((gameTime % 30) / 30) * 100;
+  const progressPct = ((gameTime % ROUND_DURATION_SECONDS) / ROUND_DURATION_SECONDS) * 100;
 
   const openSettings = () => {
     pauseGame();
@@ -75,7 +76,7 @@ export function TopBar() {
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
-              <div className="text-stroke text-stroke-thin text-white text-[8px] md:text-[10px] leading-none font-bold flex-shrink-0">{30-Math.floor(gameTime % 30)}s</div>
+              <div className="text-stroke text-stroke-thin text-white text-[8px] md:text-[10px] leading-none font-bold flex-shrink-0">{ROUND_DURATION_SECONDS-Math.floor(gameTime % ROUND_DURATION_SECONDS)}s</div>
             </div>
           </div>
         </div>

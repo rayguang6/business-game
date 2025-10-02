@@ -1,14 +1,10 @@
 'use client';
 
 import React from 'react';
-import { useGameStore } from '@/lib/store/gameStore';
+import { useFinanceData } from '@/hooks/useFinanceData';
 
 export function FinanceTab() {
-  const { metrics, weeklyHistory } = useGameStore();
-  const totalProfit = metrics.totalRevenue - metrics.totalExpenses;
-  
-  // Get the last week's data for comparison
-  const lastWeek = weeklyHistory.length > 0 ? weeklyHistory[weeklyHistory.length - 1] : null;
+  const { metrics, weeklyHistory, totalProfit, lastWeek } = useFinanceData();
 
   return (
     <div>

@@ -1,11 +1,10 @@
 'use client';
 
 import React from 'react';
-import { useGameStore } from '@/lib/store/gameStore';
+import { useFinanceData } from '@/hooks/useFinanceData';
 
 export function KeyMetrics() {
-  const { metrics, weeklyHistory } = useGameStore();
-  const last = weeklyHistory.length > 0 ? weeklyHistory[weeklyHistory.length - 1] : null;
+  const { metrics, lastWeek } = useFinanceData();
 
   const metricsData = [
     {
@@ -18,7 +17,7 @@ export function KeyMetrics() {
     {
       icon: '💎',
       image: '/images/icons/home.png',
-      value: (last ? last.revenue : 0).toLocaleString(),
+      value: (lastWeek ? lastWeek.revenue : 0).toLocaleString(),
       label: 'Revenue',
       color: 'text-blue-400'
     },
@@ -32,7 +31,7 @@ export function KeyMetrics() {
     {
       icon: '💎',
       image: '/images/icons/staff.png',
-      value: (last ? last.expenses : 0).toLocaleString(),
+      value: (lastWeek ? lastWeek.expenses : 0).toLocaleString(),
       label: 'Expenses',
       color: 'text-red-400'
     }

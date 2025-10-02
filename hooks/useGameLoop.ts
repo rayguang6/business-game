@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
+import { TICK_INTERVAL_MS } from '@/lib/core/constants';
 
 export const useGameLoop = () => {
   const { isGameStarted, isPaused, tickGame } = useGameStore();
@@ -11,10 +12,10 @@ export const useGameLoop = () => {
       return;
     }
 
-    // Run loop every 100ms
+    // Run loop every tick interval (100ms)
     loopRef.current = setInterval(() => {
       tickGame(); // tick-based system
-    }, 100);
+    }, TICK_INTERVAL_MS);
 
     return () => {
       if (loopRef.current) clearInterval(loopRef.current);

@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Customer, CustomerStatus } from '@/lib/game/customers/types';
-import { TICKS_PER_SECOND, ticksToSeconds } from '@/lib/game/core/constants';
-import { DEFAULT_PATIENCE_SECONDS } from '@/lib/game/customers/config';
+import { Customer, CustomerStatus } from '@/lib/features/customers';
+import { TICKS_PER_SECOND, ticksToSeconds } from '@/lib/core/constants';
+import { DEFAULT_PATIENCE_SECONDS } from '@/lib/features/customers';
 
 interface CustomerCardProps {
   customer: Customer;

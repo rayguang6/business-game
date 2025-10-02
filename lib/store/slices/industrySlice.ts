@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import { Industry } from '@/lib/game/industry/types';
+import { Industry } from '@/lib/features/industries';
 import { GameState } from '../types';
 
 export interface IndustrySlice {

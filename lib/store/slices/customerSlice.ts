@@ -1,6 +1,5 @@
 import { StateCreator } from 'zustand';
-import { Customer } from '@/lib/game/customers/types';
-import { spawnCustomer as createCustomer, startService } from '@/lib/game/customers/mechanics';
+import { Customer, spawnCustomer as createCustomer, startService } from '@/lib/features/customers';
 import { GameState } from '../types';
 
 export interface CustomerSlice {
@@ -30,7 +29,7 @@ export const createCustomerSlice: StateCreator<GameState, [], [], CustomerSlice>
     set((state) => ({
       customers: state.customers.map(customer => 
         customer.id === customerId 
-          ? startService(customer)
+          ? startService(customer, 1) // Default to room 1 for now
           : customer
       )
     }));

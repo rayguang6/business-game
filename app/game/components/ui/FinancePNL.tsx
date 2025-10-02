@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import { useGameStore } from '@/lib/store/gameStore';
+import { useFinanceData } from '@/hooks/useFinanceData';
 
 export function FinancePNL() {
-  const { metrics, weeklyHistory } = useGameStore();
+  const { metrics, weeklyHistory } = useFinanceData();
 
   return (
     <div className="bg-white rounded-lg p-4 mb-6 shadow-lg">

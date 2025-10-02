@@ -5,20 +5,26 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/store/gameStore';
 import { useGameLoop } from '@/hooks/useGameLoop';
-import { CustomerStatus, Customer } from '@/lib/game/customers/types';
-import { TICKS_PER_SECOND, ticksToSeconds } from '@/lib/game/core/constants';
-import { TopBar } from '@/app/game/components/TopBar';
-import { FinancePNL } from '@/app/game/components/FinancePNL';
-import { GameCanvas } from '@/app/game/components/GameCanvas';
-import { HomeTab } from '@/app/game/components/HomeTab';
-import { StaffTab } from '@/app/game/components/StaffTab';
-import { FinanceTab } from '@/app/game/components/FinanceTab';
-import { UpgradesTab } from '@/app/game/components/UpgradesTab';
-import { MarketingTab } from '@/app/game/components/MarketingTab';
+import { CustomerStatus, Customer } from '@/lib/features/customers';
+import { TICKS_PER_SECOND, ticksToSeconds } from '@/lib/core/constants';
+import { TopBar } from '@/app/game/components/ui/TopBar';
+import { FinancePNL } from '@/app/game/components/ui/FinancePNL';
+import { GameCanvas } from '@/app/game/components/canvas/GameCanvas';
+import { HomeTab } from '@/app/game/components/tabs/HomeTab';
+import { StaffTab } from '@/app/game/components/tabs/StaffTab';
+import { FinanceTab } from '@/app/game/components/tabs/FinanceTab';
+import { UpgradesTab } from '@/app/game/components/tabs/UpgradesTab';
+import { MarketingTab } from '@/app/game/components/tabs/MarketingTab';
 import { TabType, TAB_CONFIGS } from '@/lib/types/ui';
 
+// Game page constants
+const GAME_CONFIG = {
+  backgroundImage: "/images/game-screen-bg.png"
+} as const;
+
 export default function GamePage() {
-  const { selectedIndustry, isGameStarted, isPaused, metrics, weeklyRevenue, weeklyExpenses, weeklyHistory, gameTime, currentWeek, customers, startGame, pauseGame, unpauseGame } = useGameStore();
+  const gameStore = useGameStore();
+  const { selectedIndustry, isGameStarted, startGame } = gameStore;
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('home');
   
@@ -46,7 +52,7 @@ export default function GamePage() {
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: "url('/images/game-screen-bg.png')"
+          backgroundImage: `url('${GAME_CONFIG.backgroundImage}')`
         }}
       />
       

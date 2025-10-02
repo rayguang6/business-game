@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Customer, CustomerStatus } from '@/lib/game/customers/types';
+import { Customer, CustomerStatus } from '@/lib/features/customers';
 import { CustomerCard } from './CustomerCard';
 
 interface WaitingAreaProps {

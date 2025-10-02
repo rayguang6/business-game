@@ -1,5 +1,18 @@
-import { Service } from '@/lib/game/services/types';
-import { DENTAL_SERVICES } from '@/lib/game/industry/configs/dentalServices';
+/**
+ * Services Feature
+ * Handles all service-related types and mechanics
+ */
+
+// Types
+export interface Service {
+  id: string;
+  name: string;
+  duration: number; // in seconds
+  price: number; // in dollars
+}
+
+// Mechanics
+import { DENTAL_SERVICES } from './industries';
 
 /**
  * Gets a random service from the available services
@@ -23,5 +36,5 @@ export function getAllServices(): Service[] {
  * Currently searches dental services - easy to extend for other industries
  */
 export function getServiceById(id: string): Service | undefined {
-  return DENTAL_SERVICES.find(service => service.id === id);
+  return DENTAL_SERVICES.find((service: Service) => service.id === id);
 }
