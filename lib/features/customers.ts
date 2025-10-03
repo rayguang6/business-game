@@ -140,7 +140,7 @@ export function startService(customer: Customer, roomId: number): Customer {
  */
 export function getAvailableSlots(customers: Customer[], maxRooms?: number): number[] {
   const occupiedRooms = customers
-    .filter(c => c.status === CustomerStatus.InService && c.roomId)
+    .filter(c => (c.status === CustomerStatus.InService || c.status === CustomerStatus.WalkingToRoom) && c.roomId)
     .map(c => c.roomId!);
   
   const roomCount = maxRooms || MAX_CUSTOMER_CAPACITY;
