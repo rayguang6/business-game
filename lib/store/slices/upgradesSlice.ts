@@ -8,6 +8,9 @@ export interface UpgradesSlice {
   
   // Upgrade actions
   upgradeTreatmentRooms: () => { success: boolean; message: string };
+  upgradeEquipment: () => { success: boolean; message: string };
+  upgradeStaff: () => { success: boolean; message: string };
+  upgradeMarketing: () => { success: boolean; message: string };
   
   // Helper functions
   canAffordUpgrade: (cost: number) => boolean;
@@ -18,6 +21,9 @@ export interface UpgradesSlice {
 export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice> = (set, get) => ({
   upgrades: {
     treatmentRooms: (getUpgradesForIndustry('dental') as any).treatmentRooms?.starting || DEFAULT_UPGRADE_VALUES.TREATMENT_ROOMS_STARTING,
+    equipment: 0,
+    staff: 0,
+    marketing: 0,
   },
   
   canAffordUpgrade: (cost: number) => {
@@ -81,6 +87,81 @@ export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice>
     // Perform upgrade
     set((state) => ({
       upgrades: { ...state.upgrades, treatmentRooms: state.upgrades.treatmentRooms + 1 },
+      metrics: { ...state.metrics, cash: state.metrics.cash - cost }
+    }));
+    
+    return { success: true, message: `${config.name} upgraded! Cost: $${cost}` };
+  },
+  
+  upgradeEquipment: () => {
+    const { upgrades } = get();
+    const cost = (get() as any).getUpgradeCost('equipment');
+    const config = (get() as any).getUpgradeConfig('equipment');
+    
+    if (!config) {
+      return { success: false, message: 'Upgrade configuration not found!' };
+    }
+    
+    if (upgrades.equipment >= config.max) {
+      return { success: false, message: `Maximum ${config.name.toLowerCase()} level reached!` };
+    }
+    
+    if (!(get() as any).canAffordUpgrade(cost)) {
+      return { success: false, message: `Need $${cost} to upgrade ${config.name.toLowerCase()}!` };
+    }
+    
+    set((state) => ({
+      upgrades: { ...state.upgrades, equipment: state.upgrades.equipment + 1 },
+      metrics: { ...state.metrics, cash: state.metrics.cash - cost }
+    }));
+    
+    return { success: true, message: `${config.name} upgraded! Cost: $${cost}` };
+  },
+  
+  upgradeStaff: () => {
+    const { upgrades } = get();
+    const cost = (get() as any).getUpgradeCost('staff');
+    const config = (get() as any).getUpgradeConfig('staff');
+    
+    if (!config) {
+      return { success: false, message: 'Upgrade configuration not found!' };
+    }
+    
+    if (upgrades.staff >= config.max) {
+      return { success: false, message: `Maximum ${config.name.toLowerCase()} level reached!` };
+    }
+    
+    if (!(get() as any).canAffordUpgrade(cost)) {
+      return { success: false, message: `Need $${cost} to upgrade ${config.name.toLowerCase()}!` };
+    }
+    
+    set((state) => ({
+      upgrades: { ...state.upgrades, staff: state.upgrades.staff + 1 },
+      metrics: { ...state.metrics, cash: state.metrics.cash - cost }
+    }));
+    
+    return { success: true, message: `${config.name} upgraded! Cost: $${cost}` };
+  },
+  
+  upgradeMarketing: () => {
+    const { upgrades } = get();
+    const cost = (get() as any).getUpgradeCost('marketing');
+    const config = (get() as any).getUpgradeConfig('marketing');
+    
+    if (!config) {
+      return { success: false, message: 'Upgrade configuration not found!' };
+    }
+    
+    if (upgrades.marketing >= config.max) {
+      return { success: false, message: `Maximum ${config.name.toLowerCase()} level reached!` };
+    }
+    
+    if (!(get() as any).canAffordUpgrade(cost)) {
+      return { success: false, message: `Need $${cost} to upgrade ${config.name.toLowerCase()}!` };
+    }
+    
+    set((state) => ({
+      upgrades: { ...state.upgrades, marketing: state.upgrades.marketing + 1 },
       metrics: { ...state.metrics, cash: state.metrics.cash - cost }
     }));
     

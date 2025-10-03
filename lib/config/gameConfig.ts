@@ -17,7 +17,7 @@ export const GAME_TIMING = {
   WEEK_DURATION_SECONDS: 30,
   
   // Customer spawn
-  CUSTOMER_SPAWN_INTERVAL_SECONDS: 1, // Every 3 seconds
+  CUSTOMER_SPAWN_INTERVAL_SECONDS: 3, // Every 3 seconds
   
   // Customer patience
   DEFAULT_PATIENCE_SECONDS: 10,
@@ -66,21 +66,21 @@ export const SERVICE_CONFIG = {
     {
       id: 'dental_cleaning',
       name: 'Teeth Cleaning',
-      duration: 4,    // seconds
+      duration: 6,    // seconds
       price: 100,      // dollars
       demand: 0.5     // 50% of customers want this
     },
     {
       id: 'dental_filling',
       name: 'Cavity Filling',
-      duration: 5,   // seconds
+      duration: 8,   // seconds
       price: 200,     // dollars
       demand: 0.3     // 30% of customers
     },
     {
       id: 'dental_root_canal',
       name: 'Root Canal',
-      duration: 6,   // seconds
+      duration: 10,   // seconds
       price: 300,     // dollars
       demand: 0.2     // 20% of customers
     }
@@ -126,6 +126,39 @@ export const DENTAL_UPGRADES = {
     max: 5,
     costs: [1000, 2500, 5000], // Cost for rooms 3, 4, 5
     weeklyExpenses: 200, // Per room
+  },
+  
+  equipment: {
+    name: 'Modern Equipment',
+    description: 'Faster treatment times with better equipment',
+    icon: '⚡',
+    starting: 0,
+    max: 3,
+    costs: [800, 1500, 3000], // Cost for levels 1, 2, 3
+    weeklyExpenses: 150, // Per level
+    speedMultiplier: [0.8, 0.6, 0.5], // Service time multiplier (0.8x = 20% faster, 0.6x = 40% faster, 0.5x = 50% faster)
+  },
+  
+  staff: {
+    name: 'Staff Training',
+    description: 'Better trained staff for improved service quality',
+    icon: '👥',
+    starting: 0,
+    max: 3,
+    costs: [500, 1200, 2500], // Cost for levels 1, 2, 3
+    weeklyExpenses: 300, // Per level
+    qualityMultiplier: [2, 3, 4], // Reputation gain multiplier (2x, 3x, 4x reputation gain)
+  },
+  
+  marketing: {
+    name: 'Marketing Campaign',
+    description: 'Attract more customers with better marketing',
+    icon: '📢',
+    starting: 0,
+    max: 3,
+    costs: [600, 1400, 2800], // Cost for levels 1, 2, 3
+    weeklyExpenses: 100, // Per level
+    spawnMultiplier: [0.7, 0.5, 0.3], // Customer spawn rate multiplier (0.7x = 43% more customers, 0.5x = 100% more, 0.3x = 233% more)
   }
 } as const;
 

@@ -48,6 +48,9 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
       },
       upgrades: {
         treatmentRooms: (getUpgradesForIndustry('dental') as any).treatmentRooms?.starting || DEFAULT_UPGRADE_VALUES.TREATMENT_ROOMS_STARTING,
+        equipment: 0,
+        staff: 0,
+        marketing: 0,
       }
     });
   },
@@ -84,6 +87,9 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
       },
       upgrades: {
         treatmentRooms: (getUpgradesForIndustry('dental') as any).treatmentRooms?.starting || DEFAULT_UPGRADE_VALUES.TREATMENT_ROOMS_STARTING,
+        equipment: 0,
+        staff: 0,
+        marketing: 0,
       },
       // Keep the selectedIndustry unchanged
       selectedIndustry: state.selectedIndustry,
@@ -111,6 +117,9 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
       },
       upgrades: {
         treatmentRooms: (getUpgradesForIndustry('dental') as any).treatmentRooms?.starting || DEFAULT_UPGRADE_VALUES.TREATMENT_ROOMS_STARTING,
+        equipment: 0,
+        staff: 0,
+        marketing: 0,
       },
     });
   },

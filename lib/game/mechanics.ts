@@ -2,6 +2,7 @@ import { GameState } from '@/lib/store/types';
 import { TICKS_PER_SECOND, CUSTOMER_SPAWN_INTERVAL, getCurrentWeek, isNewWeek } from '@/lib/core/constants';
 import { Customer, CustomerStatus, LEAVING_ANGRY_DURATION_TICKS, spawnCustomer as createCustomer, tickCustomer, startService, getAvailableSlots, getAvailableRooms } from '@/lib/features/customers';
 import { processServiceCompletion, endOfWeek, handleWeekTransition } from '@/lib/features/economy';
+import { shouldSpawnCustomerWithUpgrades, getEffectiveReputationMultiplier, getEffectiveServiceSpeedMultiplier } from '@/lib/features/upgrades';
 
 /**
  * Updates game timer based on ticks
@@ -45,7 +46,7 @@ export function tickOnce(state: {
   weeklyExpenses: number;
   weeklyOneTimeCosts: number;
   weeklyHistory: Array<{ week: number; revenue: number; expenses: number; profit: number; reputation: number; reputationChange: number }>;
-  upgrades: { treatmentRooms: number };
+  upgrades: { treatmentRooms: number; equipment: number; staff: number; marketing: number };
 }): {
   gameTick: number;
   gameTime: number;
@@ -56,7 +57,7 @@ export function tickOnce(state: {
   weeklyExpenses: number;
   weeklyOneTimeCosts: number;
   weeklyHistory: Array<{ week: number; revenue: number; expenses: number; profit: number; reputation: number; reputationChange: number }>;
-  upgrades: { treatmentRooms: number };
+  upgrades: { treatmentRooms: number; equipment: number; staff: number; marketing: number };
 } {
   const nextTick = state.gameTick + 1;
   let newCustomers = [...state.customers];
@@ -111,9 +112,10 @@ export function tickOnce(state: {
     newWeeklyOneTimeCosts = weekTransition.weeklyOneTimeCosts;
   }
 
-  // 3) Spawn
-  if (shouldSpawnCustomer(nextTick)) {
-    const newCustomer = createCustomer();
+  // 3) Spawn customers (with marketing upgrades)
+  if (shouldSpawnCustomerWithUpgrades(nextTick, state.upgrades)) {
+    const serviceSpeedMultiplier = getEffectiveServiceSpeedMultiplier(state.upgrades);
+    const newCustomer = createCustomer(serviceSpeedMultiplier);
     newCustomers.push(newCustomer);
   }
 
@@ -134,10 +136,12 @@ export function tickOnce(state: {
             
             // Step 3: Handle happy customers (service completed)
             if (updatedCustomer.status === CustomerStatus.WalkingOutHappy) {
+              const reputationMultiplier = getEffectiveReputationMultiplier(state.upgrades);
               const { cash: newCash, reputation: newReputation } = processServiceCompletion(
                 newMetrics.cash,
                 newMetrics.reputation,
-                customer.service.price
+                customer.service.price,
+                reputationMultiplier
               );
               newMetrics.cash = newCash;
               newMetrics.reputation = newReputation;

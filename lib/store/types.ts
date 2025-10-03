@@ -14,10 +14,9 @@ export interface Metrics {
 
 export interface Upgrades {
   treatmentRooms: number; // For dental: 2-5 rooms
-  // Future upgrades will be added here:
-  // equipment: number;
-  // staff: number;
-  // marketing: number;
+  equipment: number; // 0-3 levels
+  staff: number; // 0-3 levels  
+  marketing: number; // 0-3 levels
 }
 
 export interface WeeklyHistoryEntry {

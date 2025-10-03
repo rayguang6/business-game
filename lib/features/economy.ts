@@ -4,6 +4,7 @@
  */
 
 import { ECONOMY_CONFIG } from '@/lib/config/gameConfig';
+import { getEffectiveReputationMultiplier } from './upgrades';
 
 // Configuration (now using centralized config)
 export const INITIAL_MONEY = ECONOMY_CONFIG.INITIAL_MONEY;
@@ -23,8 +24,9 @@ export function addServiceRevenue(currentMoney: number, servicePrice: number): n
 /**
  * Adds score from a completed service
  */
-export function addServiceScore(currentScore: number): number {
-  return currentScore + SCORE_PER_CUSTOMER;
+export function addServiceScore(currentScore: number, reputationMultiplier: number = 1): number {
+  const reputationGain = Math.floor(SCORE_PER_CUSTOMER * reputationMultiplier);
+  return currentScore + reputationGain;
 }
 
 /**
@@ -33,11 +35,12 @@ export function addServiceScore(currentScore: number): number {
 export function processServiceCompletion(
   currentCash: number, 
   currentReputation: number, 
-  servicePrice: number
+  servicePrice: number,
+  reputationMultiplier: number = 1
 ): { cash: number; reputation: number } {
   return {
     cash: addServiceRevenue(currentCash, servicePrice), 
-    reputation: addServiceScore(currentReputation)
+    reputation: addServiceScore(currentReputation, reputationMultiplier)
   };
 }
 

@@ -6,6 +6,7 @@
 import { Service } from './services';
 import { secondsToTicks } from '@/lib/core/constants';
 import { GAME_TIMING, CUSTOMER_CONFIG } from '@/lib/config/gameConfig';
+import { getEffectiveServiceSpeedMultiplier } from './upgrades';
 
 // Types
 export enum CustomerStatus {
@@ -56,10 +57,13 @@ import { getRandomService } from './services';
 /**
  * Creates a new customer with random properties
  */
-export function spawnCustomer(): Customer {
+export function spawnCustomer(serviceSpeedMultiplier: number = 1): Customer {
   const service = getRandomService();
   const imageSrc = CUSTOMER_IMAGES[Math.floor(Math.random() * CUSTOMER_IMAGES.length)] || DEFAULT_CUSTOMER_IMAGE;
   const patience = secondsToTicks(DEFAULT_PATIENCE_SECONDS);
+  
+  // Apply equipment upgrades to service duration
+  const effectiveDuration = service.duration * serviceSpeedMultiplier;
   
   return {
     id: Math.random().toString(36).substr(2, 9),
@@ -68,7 +72,7 @@ export function spawnCustomer(): Customer {
     y: Math.random() * (CUSTOMER_SPAWN_AREA.y.max - CUSTOMER_SPAWN_AREA.y.min) + CUSTOMER_SPAWN_AREA.y.min,
     service: service,
     status: CustomerStatus.Spawning, // Start at door!
-    serviceTimeLeft: secondsToTicks(service.duration),
+    serviceTimeLeft: secondsToTicks(effectiveDuration),
     patienceLeft: patience,
     maxPatience: patience,
   };
