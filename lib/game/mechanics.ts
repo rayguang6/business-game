@@ -1,7 +1,7 @@
 import { GameState } from '@/lib/store/types';
 import { TICKS_PER_SECOND, CUSTOMER_SPAWN_INTERVAL, getCurrentWeek, isNewWeek } from '@/lib/core/constants';
 import { Customer, CustomerStatus, LEAVING_ANGRY_DURATION_TICKS, spawnCustomer as createCustomer, tickCustomer, startService, getAvailableSlots, getAvailableRooms } from '@/lib/features/customers';
-import { processServiceCompletion, endOfWeek, handleWeekTransition, getWeeklyBaseExpenses } from '@/lib/features/economy';
+import { processServiceCompletion, endOfWeek, handleWeekTransition } from '@/lib/features/economy';
 
 /**
  * Updates game timer based on ticks
@@ -43,6 +43,7 @@ export function tickOnce(state: {
   metrics: { cash: number; totalRevenue: number; totalExpenses: number; reputation: number };
   weeklyRevenue: number;
   weeklyExpenses: number;
+  weeklyOneTimeCosts: number;
   weeklyHistory: Array<{ week: number; revenue: number; expenses: number; profit: number; reputation: number; reputationChange: number }>;
 }): {
   gameTick: number;
@@ -52,6 +53,7 @@ export function tickOnce(state: {
   metrics: { cash: number; totalRevenue: number; totalExpenses: number; reputation: number };
   weeklyRevenue: number;
   weeklyExpenses: number;
+  weeklyOneTimeCosts: number;
   weeklyHistory: Array<{ week: number; revenue: number; expenses: number; profit: number; reputation: number; reputationChange: number }>;
 } {
   const nextTick = state.gameTick + 1;
@@ -59,6 +61,7 @@ export function tickOnce(state: {
   let newMetrics = { ...state.metrics };
   let newWeeklyRevenue = state.weeklyRevenue;
   let newWeeklyExpenses = state.weeklyExpenses;
+  let newWeeklyOneTimeCosts = state.weeklyOneTimeCosts;
   let newWeeklyHistory = [...state.weeklyHistory];
   let newGameTime = state.gameTime;
   let newCurrentWeek = state.currentWeek;
@@ -72,13 +75,14 @@ export function tickOnce(state: {
     const weekResult = endOfWeek(
       newMetrics.cash,
       newWeeklyRevenue,
-      newWeeklyExpenses
+      newWeeklyExpenses,
+      newWeeklyOneTimeCosts
     );
     newMetrics = {
       ...newMetrics,
       cash: weekResult.cash,
       totalRevenue: newMetrics.totalRevenue,
-      totalExpenses: newMetrics.totalExpenses + newWeeklyExpenses,
+      totalExpenses: newMetrics.totalExpenses + weekResult.totalExpenses,
     };
     const previousReputation = newWeeklyHistory.length > 0
       ? newWeeklyHistory[newWeeklyHistory.length - 1].reputation
@@ -86,7 +90,7 @@ export function tickOnce(state: {
     newWeeklyHistory.push({
       week: newCurrentWeek - 1,
       revenue: newWeeklyRevenue,
-      expenses: newWeeklyExpenses,
+      expenses: weekResult.totalExpenses,
       profit: weekResult.profit,
       reputation: newMetrics.reputation,
       reputationChange: newMetrics.reputation - previousReputation,
@@ -96,10 +100,12 @@ export function tickOnce(state: {
       newMetrics.cash,
       newWeeklyRevenue,
       newWeeklyExpenses,
+      newWeeklyOneTimeCosts,
       newMetrics.reputation
     );
     newWeeklyRevenue = weekTransition.weeklyRevenue;
     newWeeklyExpenses = weekTransition.weeklyExpenses;
+    newWeeklyOneTimeCosts = weekTransition.weeklyOneTimeCosts;
   }
 
   // 3) Spawn
@@ -113,44 +119,48 @@ export function tickOnce(state: {
         let roomsRemaining = [...availableRooms];
         newCustomers = newCustomers
           .map((customer) => {
-            if (customer.status === CustomerStatus.Waiting && roomsRemaining.length > 0) {
+            // Step 1: Update customer state (movement, patience, service progress)
+            const updatedCustomer = tickCustomer(customer);
+            
+            // Step 2: Assign to service room if waiting and room available
+            if (updatedCustomer.status === CustomerStatus.Waiting && roomsRemaining.length > 0) {
               const assignedRoom = roomsRemaining.shift()!;
-              return startService(customer, assignedRoom);
-            } else if (customer.status === CustomerStatus.InService) {
-        const updatedCustomer = tickCustomer(customer);
-        if (updatedCustomer.status === CustomerStatus.Paying) {
-          const { cash: newCash, reputation: newReputation } = processServiceCompletion(
-            newMetrics.cash,
-            newMetrics.reputation,
-            customer.service.price
-          );
-          newMetrics.cash = newCash;
-          newMetrics.reputation = newReputation;
-          newMetrics.totalRevenue += customer.service.price;
-          newWeeklyRevenue += customer.service.price;
-          return null; // Remove completed customer
-        }
-        return updatedCustomer;
-      } else if (customer.status === CustomerStatus.Waiting) {
-        const updatedCustomer = tickCustomer(customer);
-        if (updatedCustomer.status === CustomerStatus.LeavingAngry) {
-          // Patience ran out → customer leaves angrily; deduct reputation
-          newMetrics.reputation = Math.max(0, newMetrics.reputation - 1);
-          return updatedCustomer;
-        }
-        return updatedCustomer;
-      } else if (customer.status === CustomerStatus.LeavingAngry) {
-        // After ~1 second (10 ticks at 100ms), remove the customer
-        // Simple approach: remove after 10 ticks in LeavingAngry state
-        const leavingTicks = customer.leavingTicks || 0;
-        if (leavingTicks >= LEAVING_ANGRY_DURATION_TICKS) {
-          return null; // Remove customer
-        }
-        return { ...customer, leavingTicks: leavingTicks + 1 };
-      }
-      return customer;
-    })
-    .filter(Boolean) as Customer[];
+              return startService(updatedCustomer, assignedRoom);
+            }
+            
+            // Step 3: Handle happy customers (service completed)
+            if (updatedCustomer.status === CustomerStatus.WalkingOutHappy) {
+              const { cash: newCash, reputation: newReputation } = processServiceCompletion(
+                newMetrics.cash,
+                newMetrics.reputation,
+                customer.service.price
+              );
+              newMetrics.cash = newCash;
+              newMetrics.reputation = newReputation;
+              newMetrics.totalRevenue += customer.service.price;
+              newWeeklyRevenue += customer.service.price;
+              return null; // Remove happy customer (they've left the building)
+            }
+            
+            // Step 4: Handle customers who just became angry
+            if (updatedCustomer.status === CustomerStatus.LeavingAngry && customer.status !== CustomerStatus.LeavingAngry) {
+              newMetrics.reputation = Math.max(0, newMetrics.reputation - 1);
+              return updatedCustomer; // Keep customer (they're now walking out angrily)
+            }
+            
+            // Step 5: Handle angry customers who've been walking out for too long
+            if (customer.status === CustomerStatus.LeavingAngry) {
+              const leavingTicks = customer.leavingTicks || 0;
+              if (leavingTicks >= LEAVING_ANGRY_DURATION_TICKS) {
+                return null; // Remove customer (they've left the building)
+              }
+              return { ...customer, leavingTicks: leavingTicks + 1 }; // Update leaving timer
+            }
+            
+            // Step 6: Keep all other customers as-is
+            return updatedCustomer;
+          })
+          .filter(Boolean) as Customer[];
 
   return {
     gameTick: nextTick,
@@ -160,6 +170,7 @@ export function tickOnce(state: {
     metrics: newMetrics,
     weeklyRevenue: newWeeklyRevenue,
     weeklyExpenses: newWeeklyExpenses,
+    weeklyOneTimeCosts: newWeeklyOneTimeCosts,
     weeklyHistory: newWeeklyHistory,
   };
 }

@@ -5,20 +5,23 @@
 
 import { Service } from './services';
 import { secondsToTicks } from '@/lib/core/constants';
+import { GAME_TIMING, CUSTOMER_CONFIG } from '@/lib/config/gameConfig';
 
 // Types
 export enum CustomerStatus {
-  // Arrival / Queue
-  Arriving = 'arriving',       // walking into the shop
-  Waiting = 'waiting',         // in queue for service
+  // Arrival
+  Spawning = 'spawning',       // at door (1s animation)
+  WalkingToChair = 'walking_to_chair', // moving to waiting area
+  
+  // Waiting
+  Waiting = 'waiting',         // sitting, patience ticking
   
   // Service
+  WalkingToRoom = 'walking_to_room', // moving to treatment room
   InService = 'in_service',    // being served by staff/equipment
-  Paused = 'paused',           // service interrupted (e.g. event)
   
   // Exit
-  Paying = 'paying',           // finished service, heading to checkout
-  Completed = 'completed',     // paid & happy, increases score
+  WalkingOutHappy = 'walking_out_happy', // leaving satisfied
   LeavingAngry = 'leaving_angry', // walking out angrily (patience ran out)
 }
 
@@ -36,32 +39,16 @@ export interface Customer {
   leavingTicks?: number; // ticks spent in LeavingAngry state
 }
 
-// Configuration
+// Configuration (now using centralized config)
 export const CUSTOMER_EMOJIS = ['😊', '😄', '😃', '🙂', '😌', '😋', '🤔', '😎'];
 
-export const CUSTOMER_SPAWN_AREA = {
-  x: { min: 50, max: 350 },
-  y: { min: 50, max: 250 }
-};
-
-export const MAX_CUSTOMER_CAPACITY = 2; // maximum customers that can be served simultaneously
-export const DEFAULT_PATIENCE_SECONDS = 12;
-export const LEAVING_ANGRY_DURATION_TICKS = 10; // How long angry customers stay visible
-
-export const CUSTOMER_IMAGES: string[] = [
-  '/images/customer/customer1.png',
-  '/images/customer/customer2.png',
-  '/images/customer/customer3.png',
-  '/images/customer/customer4.png',
-  '/images/customer/customer5.png',
-  '/images/customer/customer6.png',
-  '/images/customer/customer7.png',
-  '/images/customer/customer8.png',
-  '/images/customer/customer9.png',
-  '/images/customer/customer10.png',
-];
-
-export const DEFAULT_CUSTOMER_IMAGE = '/images/customer/customer1.png';
+// Re-export from centralized config
+export const CUSTOMER_SPAWN_AREA = CUSTOMER_CONFIG.SPAWN_AREA;
+export const MAX_CUSTOMER_CAPACITY = CUSTOMER_CONFIG.MAX_TREATMENT_ROOMS;
+export const DEFAULT_PATIENCE_SECONDS = GAME_TIMING.DEFAULT_PATIENCE_SECONDS;
+export const LEAVING_ANGRY_DURATION_TICKS = GAME_TIMING.LEAVING_ANGRY_DURATION_TICKS;
+export const CUSTOMER_IMAGES = CUSTOMER_CONFIG.IMAGES;
+export const DEFAULT_CUSTOMER_IMAGE = CUSTOMER_CONFIG.DEFAULT_IMAGE;
 
 // Mechanics
 import { getRandomService } from './services';
@@ -80,7 +67,7 @@ export function spawnCustomer(): Customer {
     x: Math.random() * (CUSTOMER_SPAWN_AREA.x.max - CUSTOMER_SPAWN_AREA.x.min) + CUSTOMER_SPAWN_AREA.x.min,
     y: Math.random() * (CUSTOMER_SPAWN_AREA.y.max - CUSTOMER_SPAWN_AREA.y.min) + CUSTOMER_SPAWN_AREA.y.min,
     service: service,
-    status: CustomerStatus.Waiting,
+    status: CustomerStatus.Spawning, // Start at door!
     serviceTimeLeft: secondsToTicks(service.duration),
     patienceLeft: patience,
     maxPatience: patience,
@@ -92,6 +79,20 @@ export function spawnCustomer(): Customer {
  */
 export function tickCustomer(customer: Customer): Customer {
   switch (customer.status) {
+    case CustomerStatus.Spawning:
+      // After 1 second (10 ticks), move to walking to chair
+      return {
+        ...customer,
+        status: CustomerStatus.WalkingToChair,
+      };
+    
+    case CustomerStatus.WalkingToChair:
+      // After moving animation, start waiting
+      return {
+        ...customer,
+        status: CustomerStatus.Waiting,
+      };
+    
     case CustomerStatus.Waiting:
       return {
         ...customer,
@@ -99,12 +100,24 @@ export function tickCustomer(customer: Customer): Customer {
         status: customer.patienceLeft <= 1 ? CustomerStatus.LeavingAngry : CustomerStatus.Waiting,
       };
     
+    case CustomerStatus.WalkingToRoom:
+      // After moving animation, start service
+      return {
+        ...customer,
+        status: CustomerStatus.InService,
+      };
+    
     case CustomerStatus.InService:
       return {
         ...customer,
         serviceTimeLeft: Math.max(0, customer.serviceTimeLeft - 1),
-        status: customer.serviceTimeLeft <= 1 ? CustomerStatus.Paying : CustomerStatus.InService,
+        status: customer.serviceTimeLeft <= 1 ? CustomerStatus.WalkingOutHappy : CustomerStatus.InService,
       };
+    
+    case CustomerStatus.WalkingOutHappy:
+    case CustomerStatus.LeavingAngry:
+      // These states are handled in the main game loop
+      return customer;
     
     default:
       return customer;
@@ -117,7 +130,7 @@ export function tickCustomer(customer: Customer): Customer {
 export function startService(customer: Customer, roomId: number): Customer {
   return {
     ...customer,
-    status: CustomerStatus.InService,
+    status: CustomerStatus.WalkingToRoom, // First walk to room, then service starts
     roomId,
   };
 }

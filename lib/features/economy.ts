@@ -3,16 +3,14 @@
  * Handles all economy-related config and mechanics
  */
 
-// Configuration
-export const INITIAL_MONEY = 1000;
-export const INITIAL_SCORE = 0;
-export const SCORE_PER_CUSTOMER = 1;
+import { ECONOMY_CONFIG } from '@/lib/config/gameConfig';
 
-export const BASE_EXPENSES = {
-  rent: 200,
-  utilities: 50,
-  supplies: 30,
-};
+// Configuration (now using centralized config)
+export const INITIAL_MONEY = ECONOMY_CONFIG.INITIAL_MONEY;
+export const INITIAL_SCORE = ECONOMY_CONFIG.INITIAL_REPUTATION;
+export const SCORE_PER_CUSTOMER = ECONOMY_CONFIG.REPUTATION_GAIN_PER_HAPPY_CUSTOMER;
+
+export const BASE_EXPENSES = ECONOMY_CONFIG.WEEKLY_BASE_EXPENSES;
 
 // Mechanics
 /**
@@ -38,32 +36,49 @@ export function processServiceCompletion(
   servicePrice: number
 ): { cash: number; reputation: number } {
   return {
-    cash: addServiceRevenue(currentCash, servicePrice),
+    cash: addServiceRevenue(currentCash, servicePrice), 
     reputation: addServiceScore(currentReputation)
   };
 }
 
 /**
- * Calculates weekly base expenses
+ * Calculates weekly base expenses using loop (scalable)
  */
 export function getWeeklyBaseExpenses(): number {
-  return BASE_EXPENSES.rent + BASE_EXPENSES.utilities + BASE_EXPENSES.supplies;
+  return Object.values(BASE_EXPENSES).reduce((total, expense) => total + expense, 0);
 }
 
 /**
  * Handles end of week calculations
+ * Note: Cash is updated instantly during the week, so we only deduct expenses here
  */
 export function endOfWeek(
   currentCash: number,
   weeklyRevenue: number,
-  weeklyExpenses: number
-): { cash: number; profit: number } {
-  const profit = weeklyRevenue - weeklyExpenses;
-  const newCash = currentCash + profit;
+  weeklyExpenses: number = 0,
+  weeklyOneTimeCosts: number = 0
+): { cash: number; profit: number; totalExpenses: number; baseExpenses: number; additionalExpenses: number; oneTimeCosts: number } {
+  // weeklyExpenses already contains base expenses, so don't add them again
+  // Total expenses = weeklyExpenses (which includes base) + one-time costs
+  const totalExpenses = weeklyExpenses + weeklyOneTimeCosts;
+  
+  // Only deduct expenses (cash was already updated during the week)
+  const newCash = currentCash - totalExpenses;
+  
+  // Calculate profit for reporting (revenue - expenses)
+  const profit = weeklyRevenue - totalExpenses;
+  
+  // For reporting, separate base from additional expenses
+  const baseExpenses = getWeeklyBaseExpenses();
+  const additionalExpenses = weeklyExpenses - baseExpenses;
   
   return {
     cash: newCash,
-    profit
+    profit,
+    totalExpenses,
+    baseExpenses,
+    additionalExpenses,
+    oneTimeCosts: weeklyOneTimeCosts
   };
 }
 
@@ -75,21 +90,24 @@ export function handleWeekTransition(
   currentCash: number,
   weeklyRevenue: number,
   weeklyExpenses: number,
+  weeklyOneTimeCosts: number,
   currentReputation: number
 ): {
   currentWeek: number;
   cash: number;
   weeklyRevenue: number;
   weeklyExpenses: number;
+  weeklyOneTimeCosts: number;
   reputation: number;
 } {
-  const { cash, profit } = endOfWeek(currentCash, weeklyRevenue, weeklyExpenses);
+  const { cash, profit } = endOfWeek(currentCash, weeklyRevenue, weeklyExpenses, weeklyOneTimeCosts);
   
   return {
     currentWeek: currentWeek + 1,
     cash,
     weeklyRevenue: 0, // Reset weekly tracking
-    weeklyExpenses: 0, // Reset weekly tracking
+    weeklyExpenses: getWeeklyBaseExpenses(), // Reset to base expenses for new week
+    weeklyOneTimeCosts: 0, // Reset one-time costs
     reputation: currentReputation, // Reputation persists
   };
 }

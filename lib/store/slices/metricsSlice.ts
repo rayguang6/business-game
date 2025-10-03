@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand';
 import { Metrics } from '../types';
 import { GameState } from '../types';
+import { ECONOMY_CONFIG } from '@/lib/config/gameConfig';
 
 export interface MetricsSlice {
   metrics: Metrics;
@@ -8,14 +9,15 @@ export interface MetricsSlice {
   updateMetrics: (updates: Partial<Metrics>) => void;
   updateWeeklyRevenue: (amount: number) => void;
   updateWeeklyExpenses: (amount: number) => void;
+  addOneTimeCost: (amount: number) => void;
 }
 
 export const createMetricsSlice: StateCreator<GameState, [], [], MetricsSlice> = (set) => ({
   metrics: {
-    cash: 1000,
+    cash: ECONOMY_CONFIG.INITIAL_MONEY,
     totalRevenue: 0,
     totalExpenses: 0,
-    reputation: 0,
+    reputation: ECONOMY_CONFIG.INITIAL_REPUTATION,
   },
   
   updateMetrics: (updates: Partial<Metrics>) => {
@@ -38,11 +40,14 @@ export const createMetricsSlice: StateCreator<GameState, [], [], MetricsSlice> =
   updateWeeklyExpenses: (amount: number) => {
     set((state) => ({
       weeklyExpenses: state.weeklyExpenses + amount,
-      metrics: {
-        ...state.metrics,
-        cash: state.metrics.cash - amount,
-        totalExpenses: state.metrics.totalExpenses + amount
-      }
+      // Note: Additional expenses are only deducted at end of week, not immediately
+    }));
+  },
+  
+  addOneTimeCost: (amount: number) => {
+    set((state) => ({
+      weeklyOneTimeCosts: state.weeklyOneTimeCosts + amount,
+      // Note: One-time costs are only deducted at end of week, not immediately
     }));
   },
 });

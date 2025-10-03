@@ -36,6 +36,7 @@ export interface GameState {
   // Weekly Tracking
   weeklyRevenue: number;
   weeklyExpenses: number;
+  weeklyOneTimeCosts: number; // One-time costs (events, marketing campaigns, etc.)
   weeklyHistory: WeeklyHistoryEntry[];
   
   // Customers

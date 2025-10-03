@@ -2,6 +2,7 @@ import { StateCreator } from 'zustand';
 import { getWeeklyBaseExpenses } from '@/lib/features/economy';
 import { tickOnce } from '@/lib/game/mechanics';
 import { GameState } from '../types';
+import { ECONOMY_CONFIG } from '@/lib/config/gameConfig';
 
 export interface GameSlice {
   isGameStarted: boolean;
@@ -36,13 +37,14 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
       currentWeek: 1,
       weeklyRevenue: 0,
       weeklyExpenses: getWeeklyBaseExpenses(),
+      weeklyOneTimeCosts: 0,
       weeklyHistory: [],
       customers: [],
       metrics: {
-        cash: 1000,
+        cash: ECONOMY_CONFIG.INITIAL_MONEY,
         totalRevenue: 0,
         totalExpenses: 0,
-        reputation: 0,
+        reputation: ECONOMY_CONFIG.INITIAL_REPUTATION,
       }
     });
   },
@@ -68,13 +70,14 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
       currentWeek: 1,
       weeklyRevenue: 0,
       weeklyExpenses: getWeeklyBaseExpenses(),
+      weeklyOneTimeCosts: 0,
       weeklyHistory: [],
       customers: [],
       metrics: {
-        cash: 1000,
+        cash: ECONOMY_CONFIG.INITIAL_MONEY,
         totalRevenue: 0,
         totalExpenses: 0,
-        reputation: 0,
+        reputation: ECONOMY_CONFIG.INITIAL_REPUTATION,
       },
       // Keep the selectedIndustry unchanged
       selectedIndustry: state.selectedIndustry,
@@ -91,13 +94,14 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
       currentWeek: 1,
       weeklyRevenue: 0,
       weeklyExpenses: getWeeklyBaseExpenses(),
+      weeklyOneTimeCosts: 0,
       weeklyHistory: [],
       customers: [],
       metrics: {
-        cash: 1000,
+        cash: ECONOMY_CONFIG.INITIAL_MONEY,
         totalRevenue: 0,
         totalExpenses: 0,
-        reputation: 0,
+        reputation: ECONOMY_CONFIG.INITIAL_REPUTATION,
       },
     });
   },
@@ -122,6 +126,7 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
         metrics: state.metrics,
         weeklyRevenue: state.weeklyRevenue,
         weeklyExpenses: state.weeklyExpenses,
+        weeklyOneTimeCosts: state.weeklyOneTimeCosts,
         weeklyHistory: state.weeklyHistory,
       });
       return { ...state, ...updated };

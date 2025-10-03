@@ -1,20 +1,20 @@
 /**
  * Central timing constants - Single source of truth
+ * 
+ * NOTE: Most constants moved to lib/config/gameConfig.ts
+ * This file now only contains helper functions and legacy compatibility
  */
 
-// Core game timing
-export const TICKS_PER_SECOND = 10; // 100ms per tick
-export const TICK_INTERVAL_MS = 100; // milliseconds between ticks
+import { GAME_TIMING } from '@/lib/config/gameConfig';
 
-// Game intervals (in seconds - much more readable!)
-export const CUSTOMER_SPAWN_INTERVAL_SECONDS = 4; // spawn every 4 seconds
-export const GAME_TIMER_UPDATE_SECONDS = 1; // update timer every 1 second
+// Re-export from centralized config for backward compatibility
+export const TICKS_PER_SECOND = GAME_TIMING.TICKS_PER_SECOND;
+export const TICK_INTERVAL_MS = GAME_TIMING.TICK_INTERVAL_MS;
+export const ROUND_DURATION_SECONDS = GAME_TIMING.WEEK_DURATION_SECONDS;
+export const SECONDS_PER_WEEK = ROUND_DURATION_SECONDS;
 
-// Round/Week system
-export const ROUND_DURATION_SECONDS = 30; // 1 round = 30 seconds = 1 week
-export const SECONDS_PER_WEEK = ROUND_DURATION_SECONDS; // For clarity
-
-// Legacy constants for backward compatibility
+// Legacy constants (will be replaced with dynamic difficulty)
+export const CUSTOMER_SPAWN_INTERVAL_SECONDS = GAME_TIMING.CUSTOMER_SPAWN_INTERVAL_SECONDS;
 export const CUSTOMER_SPAWN_INTERVAL = secondsToTicks(CUSTOMER_SPAWN_INTERVAL_SECONDS);
 
 // Helper functions to convert between seconds and ticks

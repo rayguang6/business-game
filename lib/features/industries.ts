@@ -4,6 +4,7 @@
  */
 
 import { Service } from './services';
+import { SERVICE_CONFIG } from '@/lib/config/gameConfig';
 
 // Types
 export interface Industry {
@@ -16,27 +17,8 @@ export interface Industry {
   services: string[]; // references to service IDs
 }
 
-// Dental Services Configuration
-export const DENTAL_SERVICES: Service[] = [
-  {
-    id: 'dental_whitening',
-    name: 'Teeth Whitening',
-    duration: 18,
-    price: 100
-  },
-  {
-    id: 'dental_cleaning',
-    name: 'Dental Cleaning',
-    duration: 15,
-    price: 150
-  },
-  {
-    id: 'dental_filling',
-    name: 'Cavity Filling',
-    duration: 10,
-    price: 200
-  }
-];
+// Dental Services Configuration (now using centralized config)
+export const DENTAL_SERVICES: Service[] = [...SERVICE_CONFIG.DENTAL_SERVICES];
 
 export const DENTAL_SERVICE_IDS = DENTAL_SERVICES.map(service => service.id);
 

@@ -4,7 +4,7 @@ import React from 'react';
 import { useFinanceData } from '@/hooks/useFinanceData';
 
 export function KeyMetrics() {
-  const { metrics, lastWeek } = useFinanceData();
+  const { metrics, lastWeek, weeklyExpenses } = useFinanceData();
 
   const metricsData = [
     {
@@ -31,8 +31,8 @@ export function KeyMetrics() {
     {
       icon: '💎',
       image: '/images/icons/staff.png',
-      value: (lastWeek ? lastWeek.expenses : 0).toLocaleString(),
-      label: 'Expenses',
+      value: weeklyExpenses.toLocaleString(),
+      label: 'Weekly Expenses',
       color: 'text-red-400'
     }
   ];
