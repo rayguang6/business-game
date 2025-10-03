@@ -4,9 +4,10 @@ import { createGameSlice, GameSlice } from './slices/gameSlice';
 import { createMetricsSlice, MetricsSlice } from './slices/metricsSlice';
 import { createWeeklySlice, WeeklySlice } from './slices/weeklySlice';
 import { createCustomerSlice, CustomerSlice } from './slices/customerSlice';
+import { createUpgradesSlice, UpgradesSlice } from './slices/upgradesSlice';
 
 // Combine all slices into the main store
-export type GameStore = IndustrySlice & GameSlice & MetricsSlice & WeeklySlice & CustomerSlice;
+export type GameStore = IndustrySlice & GameSlice & MetricsSlice & WeeklySlice & CustomerSlice & UpgradesSlice;
 
 export const useGameStore = create<GameStore>()((...args) => ({
   ...createIndustrySlice(...args),
@@ -14,4 +15,5 @@ export const useGameStore = create<GameStore>()((...args) => ({
   ...createMetricsSlice(...args),
   ...createWeeklySlice(...args),
   ...createCustomerSlice(...args),
+  ...createUpgradesSlice(...args),
 }));

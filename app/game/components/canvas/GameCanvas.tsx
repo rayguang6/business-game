@@ -7,7 +7,7 @@ import { WaitingArea } from './WaitingArea';
 import { TreatmentRoom } from './TreatmentRoom';
 
 export function GameCanvas() {
-  const { selectedIndustry, customers } = useGameStore();
+  const { selectedIndustry, customers, upgrades } = useGameStore();
 
   if (!selectedIndustry) return null;
 
@@ -39,12 +39,13 @@ export function GameCanvas() {
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-semibold text-gray-700">Treatment Rooms</h4>
               <div className="text-xs text-gray-500">
-                {customers.filter((c) => c.status === CustomerStatus.InService).length}/2 in service
+                {customers.filter((c) => c.status === CustomerStatus.InService).length}/{upgrades.treatmentRooms} in service
               </div>
             </div>
             <div className="space-y-2">
-              <TreatmentRoom roomId={1} customers={customers} />
-              <TreatmentRoom roomId={2} customers={customers} />
+              {Array.from({ length: upgrades.treatmentRooms }, (_, index) => (
+                <TreatmentRoom key={index + 1} roomId={index + 1} customers={customers} />
+              ))}
             </div>
           </div>
         </div>

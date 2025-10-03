@@ -17,7 +17,7 @@ export const GAME_TIMING = {
   WEEK_DURATION_SECONDS: 30,
   
   // Customer spawn
-  CUSTOMER_SPAWN_INTERVAL_SECONDS: 3, // Every 3 seconds
+  CUSTOMER_SPAWN_INTERVAL_SECONDS: 1, // Every 3 seconds
   
   // Customer patience
   DEFAULT_PATIENCE_SECONDS: 10,
@@ -110,6 +110,53 @@ export const ECONOMY_CONFIG = {
   // Economic targets (realistic based on calculations)
   TARGET_WEEKLY_REVENUE: 1500, // Goal: $1.5k per week (realistic with 70% efficiency)
   TARGET_TOTAL_MONEY: 30000,   // Goal: $30k total (20 weeks × $1.5k)
+} as const;
+
+// ============================================================================
+// INDUSTRY-SPECIFIC UPGRADE CONFIGURATIONS
+// ============================================================================
+
+// Dental Industry Upgrades
+export const DENTAL_UPGRADES = {
+  treatmentRooms: {
+    name: 'Treatment Rooms',
+    description: 'More rooms for simultaneous dental procedures',
+    icon: '🦷',
+    starting: 2,
+    max: 5,
+    costs: [1000, 2500, 5000], // Cost for rooms 3, 4, 5
+    weeklyExpenses: 200, // Per room
+  }
+} as const;
+
+// Future: Restaurant Industry Upgrades
+export const RESTAURANT_UPGRADES = {
+  kitchenEquipment: {
+    name: 'Kitchen Equipment', 
+    description: 'Better cooking equipment for faster service',
+    icon: '🍳',
+    starting: 2,
+    max: 5,
+    costs: [1000, 2500, 5000],
+    weeklyExpenses: 200,
+  }
+} as const;
+
+// Get upgrades for current industry (defaults to dental)
+export function getUpgradesForIndustry(industry: string = 'dental') {
+  switch (industry) {
+    case 'dental':
+      return DENTAL_UPGRADES;
+    case 'restaurant':
+      return RESTAURANT_UPGRADES;
+    default:
+      return DENTAL_UPGRADES;
+  }
+}
+
+// Default values for fallbacks
+export const DEFAULT_UPGRADE_VALUES = {
+  TREATMENT_ROOMS_STARTING: 2,
 } as const;
 
 // ============================================================================

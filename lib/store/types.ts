@@ -12,6 +12,14 @@ export interface Metrics {
   reputation: number;
 }
 
+export interface Upgrades {
+  treatmentRooms: number; // For dental: 2-5 rooms
+  // Future upgrades will be added here:
+  // equipment: number;
+  // staff: number;
+  // marketing: number;
+}
+
 export interface WeeklyHistoryEntry {
   week: number;
   revenue: number;
@@ -32,6 +40,9 @@ export interface GameState {
   
   // Business Metrics
   metrics: Metrics;
+  
+  // Upgrades
+  upgrades: Upgrades;
   
   // Weekly Tracking
   weeklyRevenue: number;

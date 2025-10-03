@@ -2,7 +2,7 @@ import { StateCreator } from 'zustand';
 import { getWeeklyBaseExpenses } from '@/lib/features/economy';
 import { tickOnce } from '@/lib/game/mechanics';
 import { GameState } from '../types';
-import { ECONOMY_CONFIG } from '@/lib/config/gameConfig';
+import { ECONOMY_CONFIG, getUpgradesForIndustry, DEFAULT_UPGRADE_VALUES } from '@/lib/config/gameConfig';
 
 export interface GameSlice {
   isGameStarted: boolean;
@@ -45,6 +45,9 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
         totalRevenue: 0,
         totalExpenses: 0,
         reputation: ECONOMY_CONFIG.INITIAL_REPUTATION,
+      },
+      upgrades: {
+        treatmentRooms: (getUpgradesForIndustry('dental') as any).treatmentRooms?.starting || DEFAULT_UPGRADE_VALUES.TREATMENT_ROOMS_STARTING,
       }
     });
   },
@@ -79,6 +82,9 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
         totalExpenses: 0,
         reputation: ECONOMY_CONFIG.INITIAL_REPUTATION,
       },
+      upgrades: {
+        treatmentRooms: (getUpgradesForIndustry('dental') as any).treatmentRooms?.starting || DEFAULT_UPGRADE_VALUES.TREATMENT_ROOMS_STARTING,
+      },
       // Keep the selectedIndustry unchanged
       selectedIndustry: state.selectedIndustry,
     }));
@@ -103,6 +109,9 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
         totalExpenses: 0,
         reputation: ECONOMY_CONFIG.INITIAL_REPUTATION,
       },
+      upgrades: {
+        treatmentRooms: (getUpgradesForIndustry('dental') as any).treatmentRooms?.starting || DEFAULT_UPGRADE_VALUES.TREATMENT_ROOMS_STARTING,
+      },
     });
   },
   
@@ -118,17 +127,18 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
     }
     
     set((state) => {
-      const updated = tickOnce({
-        gameTick: state.gameTick,
-        gameTime: state.gameTime,
-        currentWeek: state.currentWeek,
-        customers: state.customers,
-        metrics: state.metrics,
-        weeklyRevenue: state.weeklyRevenue,
-        weeklyExpenses: state.weeklyExpenses,
-        weeklyOneTimeCosts: state.weeklyOneTimeCosts,
-        weeklyHistory: state.weeklyHistory,
-      });
+        const updated = tickOnce({
+          gameTick: state.gameTick,
+          gameTime: state.gameTime,
+          currentWeek: state.currentWeek,
+          customers: state.customers,
+          metrics: state.metrics,
+          weeklyRevenue: state.weeklyRevenue,
+          weeklyExpenses: state.weeklyExpenses,
+          weeklyOneTimeCosts: state.weeklyOneTimeCosts,
+          weeklyHistory: state.weeklyHistory,
+          upgrades: state.upgrades,
+        });
       return { ...state, ...updated };
     });
   },

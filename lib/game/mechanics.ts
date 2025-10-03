@@ -45,6 +45,7 @@ export function tickOnce(state: {
   weeklyExpenses: number;
   weeklyOneTimeCosts: number;
   weeklyHistory: Array<{ week: number; revenue: number; expenses: number; profit: number; reputation: number; reputationChange: number }>;
+  upgrades: { treatmentRooms: number };
 }): {
   gameTick: number;
   gameTime: number;
@@ -55,6 +56,7 @@ export function tickOnce(state: {
   weeklyExpenses: number;
   weeklyOneTimeCosts: number;
   weeklyHistory: Array<{ week: number; revenue: number; expenses: number; profit: number; reputation: number; reputationChange: number }>;
+  upgrades: { treatmentRooms: number };
 } {
   const nextTick = state.gameTick + 1;
   let newCustomers = [...state.customers];
@@ -65,6 +67,7 @@ export function tickOnce(state: {
   let newWeeklyHistory = [...state.weeklyHistory];
   let newGameTime = state.gameTime;
   let newCurrentWeek = state.currentWeek;
+  let newUpgrades = { ...state.upgrades };
 
   // 1) Update game time
   newGameTime = updateGameTimer(newGameTime, nextTick);
@@ -115,7 +118,8 @@ export function tickOnce(state: {
   }
 
         // 4) Customers update and service completion
-        const availableRooms = getAvailableRooms(newCustomers);
+        // Use dynamic upgrade value instead of hardcoded constant
+        const availableRooms = getAvailableRooms(newCustomers, newUpgrades.treatmentRooms);
         let roomsRemaining = [...availableRooms];
         newCustomers = newCustomers
           .map((customer) => {
@@ -172,5 +176,6 @@ export function tickOnce(state: {
     weeklyExpenses: newWeeklyExpenses,
     weeklyOneTimeCosts: newWeeklyOneTimeCosts,
     weeklyHistory: newWeeklyHistory,
+    upgrades: newUpgrades,
   };
 }

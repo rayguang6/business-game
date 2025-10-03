@@ -138,19 +138,19 @@ export function startService(customer: Customer, roomId: number): Customer {
 /**
  * Gets available service slots (rooms)
  */
-export function getAvailableSlots(customers: Customer[]): number[] {
+export function getAvailableSlots(customers: Customer[], maxRooms?: number): number[] {
   const occupiedRooms = customers
     .filter(c => c.status === CustomerStatus.InService && c.roomId)
     .map(c => c.roomId!);
   
-  const maxRooms = MAX_CUSTOMER_CAPACITY;
-  return Array.from({ length: maxRooms }, (_, i) => i + 1)
+  const roomCount = maxRooms || MAX_CUSTOMER_CAPACITY;
+  return Array.from({ length: roomCount }, (_, i) => i + 1)
     .filter(roomId => !occupiedRooms.includes(roomId));
 }
 
 /**
  * Gets available rooms (alias for getAvailableSlots)
  */
-export function getAvailableRooms(customers: Customer[]): number[] {
-  return getAvailableSlots(customers);
+export function getAvailableRooms(customers: Customer[], maxRooms?: number): number[] {
+  return getAvailableSlots(customers, maxRooms);
 }
