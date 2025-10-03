@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import GameButton from '@/app/components/ui/GameButton';
+import { AudioPrompt } from '@/app/components/ui/AudioPrompt';
 import { useAudio } from '@/hooks/useAudio';
 
 // Welcome page constants
@@ -28,6 +29,9 @@ export default function WelcomePage() {
     >
       {/* Fallback background color in case image doesn't load */}
       <div className="absolute inset-0 bg-gradient-to-b from-sky-300 to-blue-500 -z-10"></div>
+      
+      {/* Audio Prompt */}
+      <AudioPrompt />
       
       {/* Game Title and Button */}
       <div className="relative z-10 text-center">

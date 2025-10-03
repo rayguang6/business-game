@@ -105,5 +105,12 @@ export function useAudioControls() {
       audioManager.stopCurrentTrack();
       setAudioState(audioManager.getState());
     },
+    isAudioReady: () => {
+      return audioManager.isAudioReady();
+    },
+    enableAudio: () => {
+      audioManager.enableAudio();
+      setAudioState(audioManager.getState());
+    },
   };
 }

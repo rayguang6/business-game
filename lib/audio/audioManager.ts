@@ -10,6 +10,8 @@ export interface AudioState {
   isPlaying: boolean;
   volume: number;
   isMuted: boolean;
+  userHasInteracted: boolean;
+  pendingTrack: AudioTrack | null;
 }
 
 class AudioManager {
@@ -19,11 +21,14 @@ class AudioManager {
   private volume: number = 0.5; // Default volume (50%)
   private isMuted: boolean = false;
   private isInitialized: boolean = false;
+  private userHasInteracted: boolean = false;
+  private pendingTrack: AudioTrack | null = null;
 
   constructor() {
     // Only initialize on client side
     if (typeof window !== 'undefined') {
       this.initializeAudioElements();
+      this.setupUserInteractionHandler();
     }
   }
 
@@ -40,20 +45,56 @@ class AudioManager {
     ];
 
     tracks.forEach(({ track, src }) => {
-      const audio = new Audio(src);
-      audio.loop = true;
-      audio.volume = this.volume;
-      audio.preload = 'auto';
-      
-      // Handle audio loading errors gracefully
-      audio.addEventListener('error', () => {
-        console.warn(`Failed to load audio track: ${track} (${src})`);
-      });
+      try {
+        const audio = new Audio(src);
+        audio.loop = true;
+        audio.volume = this.volume;
+        audio.preload = 'auto';
+        
+        // Handle audio loading errors gracefully
+        audio.addEventListener('error', () => {
+          console.warn(`Failed to load audio track: ${track} (${src})`);
+        });
 
-      this.audioElements.set(track, audio);
+        // Handle successful loading
+        audio.addEventListener('canplaythrough', () => {
+          console.log(`Audio track loaded successfully: ${track}`);
+        });
+
+        this.audioElements.set(track, audio);
+      } catch (error) {
+        console.warn(`Failed to create audio element for track: ${track}`, error);
+      }
     });
 
     this.isInitialized = true;
+  }
+
+  private setupUserInteractionHandler() {
+    // Listen for first user interaction to enable audio
+    const enableAudio = () => {
+      console.log('🎵 User interaction detected - enabling audio');
+      this.userHasInteracted = true;
+      
+      // Play pending track if there is one
+      if (this.pendingTrack) {
+        console.log(`🎵 Playing pending track: ${this.pendingTrack}`);
+        this.playTrack(this.pendingTrack);
+        this.pendingTrack = null;
+      }
+      
+      // Remove event listeners after first interaction
+      document.removeEventListener('click', enableAudio);
+      document.removeEventListener('keydown', enableAudio);
+      document.removeEventListener('touchstart', enableAudio);
+    };
+
+    // Listen for various user interactions
+    document.addEventListener('click', enableAudio, { once: true });
+    document.addEventListener('keydown', enableAudio, { once: true });
+    document.addEventListener('touchstart', enableAudio, { once: true });
+    
+    console.log('🎵 Audio interaction listeners set up');
   }
 
   /**
@@ -72,6 +113,13 @@ class AudioManager {
 
     if (track === 'none') {
       this.stopCurrentTrack();
+      return;
+    }
+
+    // If user hasn't interacted yet, store the track to play later
+    if (!this.userHasInteracted) {
+      this.pendingTrack = track;
+      console.log(`Audio will start after user interaction: ${track}`);
       return;
     }
 
@@ -94,9 +142,16 @@ class AudioManager {
       audio.volume = this.isMuted ? 0 : this.volume;
       
       await audio.play();
+      console.log(`Audio track playing: ${track}`);
     } catch (error) {
       console.warn(`Failed to play audio track: ${track}`, error);
       this.isPlaying = false;
+      
+      // If it's a user interaction error, store the track for later
+      if (error instanceof Error && error.name === 'NotAllowedError') {
+        this.pendingTrack = track;
+        console.log(`Audio blocked by browser, will retry after user interaction: ${track}`);
+      }
     }
   }
 
@@ -199,7 +254,27 @@ class AudioManager {
       isPlaying: this.isPlaying,
       volume: this.volume,
       isMuted: this.isMuted,
+      userHasInteracted: this.userHasInteracted,
+      pendingTrack: this.pendingTrack,
     };
+  }
+
+  /**
+   * Check if audio is ready to play (user has interacted)
+   */
+  isAudioReady(): boolean {
+    return this.userHasInteracted;
+  }
+
+  /**
+   * Manually enable audio (for testing or special cases)
+   */
+  enableAudio(): void {
+    this.userHasInteracted = true;
+    if (this.pendingTrack) {
+      this.playTrack(this.pendingTrack);
+      this.pendingTrack = null;
+    }
   }
 
   /**
