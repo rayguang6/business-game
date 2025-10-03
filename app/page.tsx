@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import GameButton from '@/app/components/ui/GameButton';
+import { useAudio } from '@/hooks/useAudio';
 
 // Welcome page constants
 const WELCOME_CONFIG = {
@@ -15,6 +16,8 @@ const WELCOME_CONFIG = {
 } as const;
 
 export default function WelcomePage() {
+  // Play welcome music when component mounts
+  useAudio('welcome', true);
 
   return (
     <div 

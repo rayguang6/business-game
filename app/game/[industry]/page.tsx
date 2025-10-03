@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/store/gameStore';
 import { useGameLoop } from '@/hooks/useGameLoop';
+import { useAudio } from '@/hooks/useAudio';
 import { CustomerStatus, Customer } from '@/lib/features/customers';
 import { TICKS_PER_SECOND, ticksToSeconds } from '@/lib/core/constants';
 import { TopBar } from '@/app/game/components/ui/TopBar';
@@ -27,6 +28,9 @@ export default function GamePage() {
   const { selectedIndustry, isGameStarted, startGame } = gameStore;
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('home');
+  
+  // Play game music when component mounts
+  useAudio('game', true);
   
   // Progress logic moved into GameCanvas component
   

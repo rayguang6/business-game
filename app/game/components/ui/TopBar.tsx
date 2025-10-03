@@ -6,11 +6,13 @@ import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/store/gameStore';
 import { KeyMetrics } from './KeyMetrics';
 import { ROUND_DURATION_SECONDS } from '@/lib/core/constants';
+import { useAudioControls } from '@/hooks/useAudio';
 
 export function TopBar() {
   const { selectedIndustry, isPaused, unpauseGame, pauseGame, gameTime, currentWeek, resetAllGame } = useGameStore();
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
+  const { audioState, setVolume, toggleMute } = useAudioControls();
 
   if (!selectedIndustry) return null;
 
@@ -93,6 +95,45 @@ export function TopBar() {
           <div className="bg-white rounded-lg shadow-xl w-80 p-5">
             <h2 className="text-lg font-semibold text-gray-800 mb-3">Settings</h2>
             <p className="text-sm text-gray-600 mb-4">Game is paused while settings are open.</p>
+            
+            {/* Audio Controls */}
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">Audio Settings</h3>
+              
+              {/* Mute Toggle */}
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-600">Music</span>
+                <button
+                  onClick={toggleMute}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                    audioState.isMuted 
+                      ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+                      : 'bg-green-100 text-green-700 hover:bg-green-200'
+                  }`}
+                >
+                  {audioState.isMuted ? '🔇 Muted' : '🔊 On'}
+                </button>
+              </div>
+              
+              {/* Volume Slider */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Volume:</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={audioState.volume}
+                  onChange={(e) => setVolume(parseFloat(e.target.value))}
+                  className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  disabled={audioState.isMuted}
+                />
+                <span className="text-xs text-gray-500 w-8">
+                  {Math.round(audioState.volume * 100)}%
+                </span>
+              </div>
+            </div>
+            
             <div className="flex flex-col gap-2">
               <button
                 onClick={quitGame}
