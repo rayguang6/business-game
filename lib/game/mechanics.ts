@@ -48,6 +48,7 @@ export function tickOnce(state: {
   weeklyHistory: Array<{ week: number; revenue: number; expenses: number; profit: number; reputation: number; reputationChange: number }>;
   upgrades: { treatmentRooms: number; equipment: number; staff: number; marketing: number };
   industryId?: string;
+  weeklyExpenseAdjustments: number;
 }): {
   gameTick: number;
   gameTime: number;
@@ -59,6 +60,7 @@ export function tickOnce(state: {
   weeklyOneTimeCosts: number;
   weeklyHistory: Array<{ week: number; revenue: number; expenses: number; profit: number; reputation: number; reputationChange: number }>;
   upgrades: { treatmentRooms: number; equipment: number; staff: number; marketing: number };
+  weeklyExpenseAdjustments: number;
 } {
   const industryId = state.industryId ?? 'dental';
   const nextTick = state.gameTick + 1;
@@ -71,6 +73,7 @@ export function tickOnce(state: {
   let newGameTime = state.gameTime;
   let newCurrentWeek = state.currentWeek;
   const newUpgrades = { ...state.upgrades };
+  let newWeeklyExpenseAdjustments = state.weeklyExpenseAdjustments ?? 0;
 
   // 1) Update game time
   newGameTime = updateGameTimer(newGameTime, nextTick);
@@ -84,11 +87,13 @@ export function tickOnce(state: {
       newWeeklyExpenses,
       newWeeklyOneTimeCosts
     );
+    const alreadyAccountedExpenses = state.weeklyExpenseAdjustments ?? 0;
+    const netExpensesForMetrics = Math.max(0, weekResult.totalExpenses - alreadyAccountedExpenses);
     newMetrics = {
       ...newMetrics,
       cash: weekResult.cash,
       totalRevenue: newMetrics.totalRevenue,
-      totalExpenses: newMetrics.totalExpenses + weekResult.totalExpenses,
+      totalExpenses: newMetrics.totalExpenses + netExpensesForMetrics,
     };
     const previousReputation = newWeeklyHistory.length > 0
       ? newWeeklyHistory[newWeeklyHistory.length - 1].reputation
@@ -107,11 +112,14 @@ export function tickOnce(state: {
       newWeeklyRevenue,
       newWeeklyExpenses,
       newWeeklyOneTimeCosts,
-      newMetrics.reputation
+      newMetrics.reputation,
+      newUpgrades,
+      industryId
     );
     newWeeklyRevenue = weekTransition.weeklyRevenue;
     newWeeklyExpenses = weekTransition.weeklyExpenses;
     newWeeklyOneTimeCosts = weekTransition.weeklyOneTimeCosts;
+    newWeeklyExpenseAdjustments = weekTransition.weeklyExpenseAdjustments;
   }
 
   // 3) Spawn customers (with marketing upgrades)
@@ -183,5 +191,6 @@ export function tickOnce(state: {
     weeklyOneTimeCosts: newWeeklyOneTimeCosts,
     weeklyHistory: newWeeklyHistory,
     upgrades: newUpgrades,
+    weeklyExpenseAdjustments: newWeeklyExpenseAdjustments,
   };
 }

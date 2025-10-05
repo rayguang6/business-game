@@ -48,7 +48,8 @@ export interface GameState {
   weeklyExpenses: number;
   weeklyOneTimeCosts: number; // One-time costs (events, marketing campaigns, etc.)
   weeklyHistory: WeeklyHistoryEntry[];
-  
+  weeklyExpenseAdjustments: number;
+
   // Customers
   customers: Customer[];
 }
