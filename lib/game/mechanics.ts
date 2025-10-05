@@ -1,8 +1,195 @@
-import { GameState } from '@/lib/store/types';
-import { TICKS_PER_SECOND, CUSTOMER_SPAWN_INTERVAL, getCurrentWeek, isNewWeek } from '@/lib/core/constants';
-import { Customer, CustomerStatus, LEAVING_ANGRY_DURATION_TICKS, spawnCustomer as createCustomer, tickCustomer, startService, getAvailableSlots, getAvailableRooms } from '@/lib/features/customers';
-import { processServiceCompletion, endOfWeek, handleWeekTransition } from '@/lib/features/economy';
-import { shouldSpawnCustomerWithUpgrades, getEffectiveReputationMultiplier, getEffectiveServiceSpeedMultiplier } from '@/lib/features/upgrades';
+import { GameState, Metrics, Upgrades, WeeklyHistoryEntry } from '@/lib/store/types';
+import { TICKS_PER_SECOND, CUSTOMER_SPAWN_INTERVAL, isNewWeek } from '@/lib/core/constants';
+import {
+  Customer,
+  CustomerStatus,
+  LEAVING_ANGRY_DURATION_TICKS,
+  spawnCustomer as createCustomer,
+  tickCustomer,
+  startService,
+  getAvailableRooms,
+} from '@/lib/features/customers';
+import {
+  processServiceCompletion,
+  endOfWeek,
+  getWeeklyBaseExpenses,
+  calculateUpgradeWeeklyExpenses,
+} from '@/lib/features/economy';
+import {
+  shouldSpawnCustomerWithUpgrades,
+  getEffectiveReputationMultiplier,
+  getEffectiveServiceSpeedMultiplier,
+} from '@/lib/features/upgrades';
+
+interface TickSnapshot {
+  gameTick: number;
+  gameTime: number;
+  currentWeek: number;
+  customers: Customer[];
+  metrics: Metrics;
+  weeklyRevenue: number;
+  weeklyExpenses: number;
+  weeklyOneTimeCosts: number;
+  weeklyHistory: WeeklyHistoryEntry[];
+  upgrades: Upgrades;
+  industryId?: string;
+  weeklyExpenseAdjustments: number;
+}
+
+type TickResult = Omit<TickSnapshot, 'industryId'>;
+
+interface WeekTransitionParams {
+  currentWeek: number;
+  metrics: Metrics;
+  weeklyRevenue: number;
+  weeklyExpenses: number;
+  weeklyOneTimeCosts: number;
+  weeklyHistory: WeeklyHistoryEntry[];
+  weeklyExpenseAdjustments: number;
+  upgrades: Upgrades;
+  industryId: string;
+}
+
+interface WeekTransitionResult {
+  metrics: Metrics;
+  weeklyRevenue: number;
+  weeklyExpenses: number;
+  weeklyOneTimeCosts: number;
+  weeklyHistory: WeeklyHistoryEntry[];
+  currentWeek: number;
+  weeklyExpenseAdjustments: number;
+}
+
+interface ProcessCustomersParams {
+  customers: Customer[];
+  upgrades: Upgrades;
+  metrics: Metrics;
+  weeklyRevenue: number;
+  industryId: string;
+}
+
+interface ProcessCustomersResult {
+  customers: Customer[];
+  metrics: Metrics;
+  weeklyRevenue: number;
+}
+
+function processWeekTransition({
+  currentWeek,
+  metrics,
+  weeklyRevenue,
+  weeklyExpenses,
+  weeklyOneTimeCosts,
+  weeklyHistory,
+  weeklyExpenseAdjustments,
+  upgrades,
+  industryId,
+}: WeekTransitionParams): WeekTransitionResult {
+  const weekResult = endOfWeek(metrics.cash, weeklyRevenue, weeklyExpenses, weeklyOneTimeCosts);
+  const alreadyAccounted = weeklyExpenseAdjustments ?? 0;
+  const netExpensesForMetrics = Math.max(0, weekResult.totalExpenses - alreadyAccounted);
+
+  const updatedMetrics: Metrics = {
+    ...metrics,
+    cash: weekResult.cash,
+    totalExpenses: metrics.totalExpenses + netExpensesForMetrics,
+  };
+
+  const previousReputation = weeklyHistory.length > 0 ? weeklyHistory[weeklyHistory.length - 1].reputation : 0;
+  const updatedHistory: WeeklyHistoryEntry[] = [
+    ...weeklyHistory,
+    {
+      week: currentWeek,
+      revenue: weeklyRevenue,
+      expenses: weekResult.totalExpenses,
+      profit: weekResult.profit,
+      reputation: updatedMetrics.reputation,
+      reputationChange: updatedMetrics.reputation - previousReputation,
+    },
+  ];
+
+  const baseExpenses = getWeeklyBaseExpenses();
+  const upgradeExpenses = calculateUpgradeWeeklyExpenses(upgrades, industryId);
+
+  return {
+    metrics: updatedMetrics,
+    weeklyRevenue: 0,
+    weeklyExpenses: baseExpenses + upgradeExpenses,
+    weeklyOneTimeCosts: 0,
+    weeklyHistory: updatedHistory,
+    currentWeek: currentWeek + 1,
+    weeklyExpenseAdjustments: 0,
+  };
+}
+
+function processCustomersForTick({
+  customers,
+  upgrades,
+  metrics,
+  weeklyRevenue,
+  industryId,
+}: ProcessCustomersParams): ProcessCustomersResult {
+  const roomsRemaining = [...getAvailableRooms(customers, upgrades.treatmentRooms)];
+  const updatedCustomers: Customer[] = [];
+  let metricsAccumulator: Metrics = { ...metrics };
+  let revenueAccumulator = weeklyRevenue;
+  const reputationMultiplier = getEffectiveReputationMultiplier(upgrades, industryId);
+
+  customers.forEach((customer) => {
+    const updatedCustomer = tickCustomer(customer);
+
+    if (updatedCustomer.status === CustomerStatus.Waiting && roomsRemaining.length > 0) {
+      const assignedRoom = roomsRemaining.shift()!;
+      updatedCustomers.push(startService(updatedCustomer, assignedRoom));
+      return;
+    }
+
+    if (updatedCustomer.status === CustomerStatus.WalkingOutHappy) {
+      const servicePrice = updatedCustomer.service.price;
+      const { cash: newCash, reputation: newReputation } = processServiceCompletion(
+        metricsAccumulator.cash,
+        metricsAccumulator.reputation,
+        servicePrice,
+        reputationMultiplier,
+      );
+
+      metricsAccumulator = {
+        ...metricsAccumulator,
+        cash: newCash,
+        reputation: newReputation,
+        totalRevenue: metricsAccumulator.totalRevenue + servicePrice,
+      };
+      revenueAccumulator += servicePrice;
+      return;
+    }
+
+    if (customer.status !== CustomerStatus.LeavingAngry && updatedCustomer.status === CustomerStatus.LeavingAngry) {
+      metricsAccumulator = {
+        ...metricsAccumulator,
+        reputation: Math.max(0, metricsAccumulator.reputation - 1),
+      };
+      updatedCustomers.push(updatedCustomer);
+      return;
+    }
+
+    if (customer.status === CustomerStatus.LeavingAngry) {
+      const leavingTicks = (customer.leavingTicks ?? 0) + 1;
+      if (leavingTicks >= LEAVING_ANGRY_DURATION_TICKS) {
+        return;
+      }
+      updatedCustomers.push({ ...updatedCustomer, leavingTicks });
+      return;
+    }
+
+    updatedCustomers.push(updatedCustomer);
+  });
+
+  return {
+    customers: updatedCustomers,
+    metrics: metricsAccumulator,
+    weeklyRevenue: revenueAccumulator,
+  };
+}
 
 /**
  * Updates game timer based on ticks
@@ -36,161 +223,68 @@ export function createInitialGameState(): Partial<GameState> {
 /**
  * Pure tick processor: given the current store state, returns updated fields.
  */
-export function tickOnce(state: {
-  gameTick: number;
-  gameTime: number;
-  currentWeek: number;
-  customers: Customer[];
-  metrics: { cash: number; totalRevenue: number; totalExpenses: number; reputation: number };
-  weeklyRevenue: number;
-  weeklyExpenses: number;
-  weeklyOneTimeCosts: number;
-  weeklyHistory: Array<{ week: number; revenue: number; expenses: number; profit: number; reputation: number; reputationChange: number }>;
-  upgrades: { treatmentRooms: number; equipment: number; staff: number; marketing: number };
-  industryId?: string;
-  weeklyExpenseAdjustments: number;
-}): {
-  gameTick: number;
-  gameTime: number;
-  currentWeek: number;
-  customers: Customer[];
-  metrics: { cash: number; totalRevenue: number; totalExpenses: number; reputation: number };
-  weeklyRevenue: number;
-  weeklyExpenses: number;
-  weeklyOneTimeCosts: number;
-  weeklyHistory: Array<{ week: number; revenue: number; expenses: number; profit: number; reputation: number; reputationChange: number }>;
-  upgrades: { treatmentRooms: number; equipment: number; staff: number; marketing: number };
-  weeklyExpenseAdjustments: number;
-} {
+export function tickOnce(state: TickSnapshot): TickResult {
   const industryId = state.industryId ?? 'dental';
   const nextTick = state.gameTick + 1;
-  let newCustomers = [...state.customers];
-  let newMetrics = { ...state.metrics };
-  let newWeeklyRevenue = state.weeklyRevenue;
-  let newWeeklyExpenses = state.weeklyExpenses;
-  let newWeeklyOneTimeCosts = state.weeklyOneTimeCosts;
-  const newWeeklyHistory = [...state.weeklyHistory];
-  let newGameTime = state.gameTime;
-  let newCurrentWeek = state.currentWeek;
-  const newUpgrades = { ...state.upgrades };
-  let newWeeklyExpenseAdjustments = state.weeklyExpenseAdjustments ?? 0;
 
-  // 1) Update game time
-  newGameTime = updateGameTimer(newGameTime, nextTick);
+  const nextGameTime = updateGameTimer(state.gameTime, nextTick);
 
-  // 2) Week transition
-  if (isNewWeek(newGameTime, state.gameTime)) {
-    newCurrentWeek = getCurrentWeek(newGameTime);
-    const weekResult = endOfWeek(
-      newMetrics.cash,
-      newWeeklyRevenue,
-      newWeeklyExpenses,
-      newWeeklyOneTimeCosts
-    );
-    const alreadyAccountedExpenses = state.weeklyExpenseAdjustments ?? 0;
-    const netExpensesForMetrics = Math.max(0, weekResult.totalExpenses - alreadyAccountedExpenses);
-    newMetrics = {
-      ...newMetrics,
-      cash: weekResult.cash,
-      totalRevenue: newMetrics.totalRevenue,
-      totalExpenses: newMetrics.totalExpenses + netExpensesForMetrics,
-    };
-    const previousReputation = newWeeklyHistory.length > 0
-      ? newWeeklyHistory[newWeeklyHistory.length - 1].reputation
-      : 0;
-    newWeeklyHistory.push({
-      week: newCurrentWeek - 1,
-      revenue: newWeeklyRevenue,
-      expenses: weekResult.totalExpenses,
-      profit: weekResult.profit,
-      reputation: newMetrics.reputation,
-      reputationChange: newMetrics.reputation - previousReputation,
+  let customers = [...state.customers];
+  let metrics = { ...state.metrics };
+  let weeklyRevenue = state.weeklyRevenue;
+  let weeklyExpenses = state.weeklyExpenses;
+  let weeklyOneTimeCosts = state.weeklyOneTimeCosts;
+  let weeklyHistory = [...state.weeklyHistory];
+  let currentWeek = state.currentWeek;
+  let weeklyExpenseAdjustments = state.weeklyExpenseAdjustments ?? 0;
+
+  if (isNewWeek(nextGameTime, state.gameTime)) {
+    const transition = processWeekTransition({
+      currentWeek,
+      metrics,
+      weeklyRevenue,
+      weeklyExpenses,
+      weeklyOneTimeCosts,
+      weeklyHistory,
+      weeklyExpenseAdjustments,
+      upgrades: state.upgrades,
+      industryId,
     });
-    const weekTransition = handleWeekTransition(
-      newCurrentWeek,
-      newMetrics.cash,
-      newWeeklyRevenue,
-      newWeeklyExpenses,
-      newWeeklyOneTimeCosts,
-      newMetrics.reputation,
-      newUpgrades,
-      industryId
-    );
-    newWeeklyRevenue = weekTransition.weeklyRevenue;
-    newWeeklyExpenses = weekTransition.weeklyExpenses;
-    newWeeklyOneTimeCosts = weekTransition.weeklyOneTimeCosts;
-    newWeeklyExpenseAdjustments = weekTransition.weeklyExpenseAdjustments;
+
+    metrics = transition.metrics;
+    weeklyRevenue = transition.weeklyRevenue;
+    weeklyExpenses = transition.weeklyExpenses;
+    weeklyOneTimeCosts = transition.weeklyOneTimeCosts;
+    weeklyHistory = transition.weeklyHistory;
+    currentWeek = transition.currentWeek;
+    weeklyExpenseAdjustments = transition.weeklyExpenseAdjustments;
   }
 
-  // 3) Spawn customers (with marketing upgrades)
   if (shouldSpawnCustomerWithUpgrades(nextTick, state.upgrades, industryId)) {
     const serviceSpeedMultiplier = getEffectiveServiceSpeedMultiplier(state.upgrades, industryId);
-    const newCustomer = createCustomer(serviceSpeedMultiplier, industryId);
-    newCustomers.push(newCustomer);
+    customers = [...customers, createCustomer(serviceSpeedMultiplier, industryId)];
   }
 
-        // 4) Customers update and service completion
-        // Use dynamic upgrade value instead of hardcoded constant
-        const availableRooms = getAvailableRooms(newCustomers, newUpgrades.treatmentRooms);
-        const roomsRemaining = [...availableRooms];
-        newCustomers = newCustomers
-          .map((customer) => {
-            // Step 1: Update customer state (movement, patience, service progress)
-            const updatedCustomer = tickCustomer(customer);
-            
-            // Step 2: Assign to service room if waiting and room available
-            if (updatedCustomer.status === CustomerStatus.Waiting && roomsRemaining.length > 0) {
-              const assignedRoom = roomsRemaining.shift()!;
-              return startService(updatedCustomer, assignedRoom);
-            }
-            
-            // Step 3: Handle happy customers (service completed)
-            if (updatedCustomer.status === CustomerStatus.WalkingOutHappy) {
-              const reputationMultiplier = getEffectiveReputationMultiplier(state.upgrades, industryId);
-              const { cash: newCash, reputation: newReputation } = processServiceCompletion(
-                newMetrics.cash,
-                newMetrics.reputation,
-                customer.service.price,
-                reputationMultiplier
-              );
-              newMetrics.cash = newCash;
-              newMetrics.reputation = newReputation;
-              newMetrics.totalRevenue += customer.service.price;
-              newWeeklyRevenue += customer.service.price;
-              return null; // Remove happy customer (they've left the building)
-            }
-            
-            // Step 4: Handle customers who just became angry
-            if (updatedCustomer.status === CustomerStatus.LeavingAngry && customer.status !== CustomerStatus.LeavingAngry) {
-              newMetrics.reputation = Math.max(0, newMetrics.reputation - 1);
-              return updatedCustomer; // Keep customer (they're now walking out angrily)
-            }
-            
-            // Step 5: Handle angry customers who've been walking out for too long
-            if (customer.status === CustomerStatus.LeavingAngry) {
-              const leavingTicks = customer.leavingTicks || 0;
-              if (leavingTicks >= LEAVING_ANGRY_DURATION_TICKS) {
-                return null; // Remove customer (they've left the building)
-              }
-              return { ...customer, leavingTicks: leavingTicks + 1 }; // Update leaving timer
-            }
-            
-            // Step 6: Keep all other customers as-is
-            return updatedCustomer;
-          })
-          .filter(Boolean) as Customer[];
+  const { customers: processedCustomers, metrics: processedMetrics, weeklyRevenue: processedWeeklyRevenue } =
+    processCustomersForTick({
+      customers,
+      upgrades: state.upgrades,
+      metrics,
+      weeklyRevenue,
+      industryId,
+    });
 
   return {
     gameTick: nextTick,
-    gameTime: newGameTime,
-    currentWeek: newCurrentWeek,
-    customers: newCustomers,
-    metrics: newMetrics,
-    weeklyRevenue: newWeeklyRevenue,
-    weeklyExpenses: newWeeklyExpenses,
-    weeklyOneTimeCosts: newWeeklyOneTimeCosts,
-    weeklyHistory: newWeeklyHistory,
-    upgrades: newUpgrades,
-    weeklyExpenseAdjustments: newWeeklyExpenseAdjustments,
+    gameTime: nextGameTime,
+    currentWeek,
+    customers: processedCustomers,
+    metrics: processedMetrics,
+    weeklyRevenue: processedWeeklyRevenue,
+    weeklyExpenses,
+    weeklyOneTimeCosts,
+    weeklyHistory,
+    upgrades: state.upgrades,
+    weeklyExpenseAdjustments,
   };
 }
