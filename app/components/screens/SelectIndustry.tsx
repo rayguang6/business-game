@@ -2,7 +2,6 @@
 import React from 'react';
 import Link from 'next/link';
 import IndustryCard from '../ui/IndustryCard';
-import { AudioPrompt } from '../ui/AudioPrompt';
 import { Industry } from '@/lib/features/industries';
 
 interface SelectIndustryProps {
@@ -16,8 +15,6 @@ export default function SelectIndustry({ industries, onIndustrySelect }: SelectI
       {/* Dark overlay for better contrast */}
       <div className="absolute inset-0 bg-black/20 pointer-events-none"></div>
       
-      {/* Audio Prompt */}
-      <AudioPrompt />
 
       <div className="relative max-w-6xl mx-auto">
         {/* Header Section */}

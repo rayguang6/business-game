@@ -12,8 +12,8 @@ export default function SelectIndustryPage() {
   const setSelectedIndustry = useGameStore((state) => state.setSelectedIndustry);
   const industries = getAllIndustries();
   
-  // Play welcome music (same as welcome page)
-  useAudio('welcome', true);
+  // Play selection music (different from welcome and game pages)
+  useAudio('selection', true);
 
   const handleIndustrySelect = (industry: Industry) => {
     setSelectedIndustry(industry);

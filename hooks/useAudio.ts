@@ -25,11 +25,11 @@ export function useAudio(track: AudioTrack, autoPlay: boolean = true) {
 
   // Handle track changes
   useEffect(() => {
-    if (autoPlay && track !== audioState.currentTrack) {
+    if (autoPlay && (track !== audioState.currentTrack || !audioState.isPlaying)) {
       audioManager.playTrack(track);
       setAudioState(audioManager.getState());
     }
-  }, [track, autoPlay, audioState.currentTrack]);
+  }, [track, autoPlay, audioState.currentTrack, audioState.isPlaying]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -103,13 +103,6 @@ export function useAudioControls() {
     },
     stopTrack: () => {
       audioManager.stopCurrentTrack();
-      setAudioState(audioManager.getState());
-    },
-    isAudioReady: () => {
-      return audioManager.isAudioReady();
-    },
-    enableAudio: () => {
-      audioManager.enableAudio();
       setAudioState(audioManager.getState());
     },
   };
