@@ -12,11 +12,12 @@ export interface CustomerSlice {
   clearCustomers: () => void;
 }
 
-export const createCustomerSlice: StateCreator<GameState, [], [], CustomerSlice> = (set) => ({
+export const createCustomerSlice: StateCreator<GameState, [], [], CustomerSlice> = (set, get) => ({
   customers: [],
   
   spawnCustomer: () => {
-    return createCustomer();
+    const industryId = get().selectedIndustry?.id ?? 'dental';
+    return createCustomer(1, industryId);
   },
   
   removeCustomer: (customerId: string) => {

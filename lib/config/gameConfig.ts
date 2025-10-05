@@ -84,8 +84,82 @@ export const SERVICE_CONFIG = {
       price: 300,     // dollars
       demand: 0.2     // 20% of customers
     }
+  ],
+
+  // Restaurant services
+  RESTAURANT_SERVICES: [
+    {
+      id: 'restaurant_fast_meal',
+      name: 'Express Meal',
+      duration: 5,
+      price: 18,
+      demand: 0.45
+    },
+    {
+      id: 'restaurant_full_course',
+      name: 'Full Course Dinner',
+      duration: 9,
+      price: 32,
+      demand: 0.35
+    },
+    {
+      id: 'restaurant_family_combo',
+      name: 'Family Combo',
+      duration: 12,
+      price: 48,
+      demand: 0.2
+    }
+  ],
+
+  // Gym services
+  GYM_SERVICES: [
+    {
+      id: 'gym_quick_session',
+      name: 'Quick Training Session',
+      duration: 5,
+      price: 25,
+      demand: 0.5
+    },
+    {
+      id: 'gym_group_class',
+      name: 'Group Fitness Class',
+      duration: 8,
+      price: 40,
+      demand: 0.3
+    },
+    {
+      id: 'gym_personal_training',
+      name: 'Personal Training',
+      duration: 11,
+      price: 70,
+      demand: 0.2
+    }
   ]
+  
 } as const;
+
+
+// ============================================================================
+// UPGRADE CONFIG TYPES
+// ============================================================================
+
+export type UpgradeKey = 'treatmentRooms' | 'equipment' | 'staff' | 'marketing';
+
+export interface UpgradeDefinition {
+  name: string;
+  description: string;
+  icon: string;
+  starting: number;
+  max: number;
+  costs: number[];
+  weeklyExpenses?: number;
+  speedMultiplier?: number[];
+  qualityMultiplier?: number[];
+  spawnMultiplier?: number[];
+}
+
+export type IndustryUpgradeConfig = Partial<Record<UpgradeKey, UpgradeDefinition>>;
+
 
 // ============================================================================
 // ECONOMIC CONFIGURATION
@@ -117,7 +191,7 @@ export const ECONOMY_CONFIG = {
 // ============================================================================
 
 // Dental Industry Upgrades
-export const DENTAL_UPGRADES = {
+export const DENTAL_UPGRADES: IndustryUpgradeConfig = {
   treatmentRooms: {
     name: 'Treatment Rooms',
     description: 'More rooms for simultaneous dental procedures',
@@ -160,28 +234,112 @@ export const DENTAL_UPGRADES = {
     weeklyExpenses: 100, // Per level
     spawnMultiplier: [0.7, 0.5, 0.3], // Customer spawn rate multiplier (0.7x = 43% more customers, 0.5x = 100% more, 0.3x = 233% more)
   }
-} as const;
+};
+
+
 
 // Future: Restaurant Industry Upgrades
-export const RESTAURANT_UPGRADES = {
-  kitchenEquipment: {
-    name: 'Kitchen Equipment', 
-    description: 'Better cooking equipment for faster service',
+export const RESTAURANT_UPGRADES: IndustryUpgradeConfig = {
+  treatmentRooms: {
+    name: 'Serving Stations',
+    description: 'More stations allow serving more guests at once',
+    icon: '🍽️',
+    starting: 3,
+    max: 6,
+    costs: [1200, 2600, 5200],
+    weeklyExpenses: 180,
+  },
+  equipment: {
+    name: 'Kitchen Equipment',
+    description: 'Modern appliances speed up food preparation',
     icon: '🍳',
+    starting: 0,
+    max: 3,
+    costs: [900, 1800, 3200],
+    weeklyExpenses: 200,
+    speedMultiplier: [0.85, 0.65, 0.55],
+  },
+
+  staff: {
+    name: 'Staff Training',
+    description: 'Improved service quality and upselling skills',
+    icon: '👩‍🍳',
+    starting: 0,
+    max: 3,
+    costs: [600, 1400, 2800],
+    weeklyExpenses: 260,
+    qualityMultiplier: [2, 3, 4],
+  },
+
+  marketing: {
+    name: 'Local Marketing',
+    description: 'Attract more diners with community buzz',
+    icon: '📣',
+    starting: 0,
+    max: 3,
+    costs: [500, 1200, 2400],
+    weeklyExpenses: 120,
+    spawnMultiplier: [0.75, 0.55, 0.4],
+  },
+};
+
+
+// Gym Industry Upgrades
+export const GYM_UPGRADES: IndustryUpgradeConfig = {
+  treatmentRooms: {
+    name: 'Workout Zones',
+    description: 'Expand training zones for more members',
+    icon: '🏋️',
     starting: 2,
     max: 5,
-    costs: [1000, 2500, 5000],
-    weeklyExpenses: 200,
-  }
-} as const;
+    costs: [1000, 2300, 4600],
+    weeklyExpenses: 150,
+  },
+
+  equipment: {
+    name: 'Gym Equipment',
+    description: 'High-end gear boosts workout efficiency',
+    icon: '💪',
+    starting: 0,
+    max: 3,
+    costs: [850, 1700, 3000],
+    weeklyExpenses: 220,
+    speedMultiplier: [0.9, 0.7, 0.55],
+  },
+
+  staff: {
+    name: 'Trainer Certifications',
+    description: 'Advanced coaching improves member satisfaction',
+    icon: '🧑‍🏫',
+    starting: 0,
+    max: 3,
+    costs: [550, 1300, 2600],
+    weeklyExpenses: 240,
+    qualityMultiplier: [2, 3, 4],
+  },
+
+  marketing: {
+    name: 'Membership Marketing',
+    description: 'Grow membership with targeted campaigns',
+    icon: '📢',
+    starting: 0,
+    max: 3,
+    costs: [450, 1100, 2200],
+    weeklyExpenses: 110,
+    spawnMultiplier: [0.8, 0.6, 0.45],
+  },
+};
+
 
 // Get upgrades for current industry (defaults to dental)
-export function getUpgradesForIndustry(industry: string = 'dental') {
+export function getUpgradesForIndustry(industry: string = 'dental'): IndustryUpgradeConfig {
   switch (industry) {
     case 'dental':
       return DENTAL_UPGRADES;
     case 'restaurant':
       return RESTAURANT_UPGRADES;
+    case 'gym':
+      return GYM_UPGRADES;
     default:
       return DENTAL_UPGRADES;
   }

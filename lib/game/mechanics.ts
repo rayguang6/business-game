@@ -47,6 +47,7 @@ export function tickOnce(state: {
   weeklyOneTimeCosts: number;
   weeklyHistory: Array<{ week: number; revenue: number; expenses: number; profit: number; reputation: number; reputationChange: number }>;
   upgrades: { treatmentRooms: number; equipment: number; staff: number; marketing: number };
+  industryId?: string;
 }): {
   gameTick: number;
   gameTime: number;
@@ -59,16 +60,17 @@ export function tickOnce(state: {
   weeklyHistory: Array<{ week: number; revenue: number; expenses: number; profit: number; reputation: number; reputationChange: number }>;
   upgrades: { treatmentRooms: number; equipment: number; staff: number; marketing: number };
 } {
+  const industryId = state.industryId ?? 'dental';
   const nextTick = state.gameTick + 1;
   let newCustomers = [...state.customers];
   let newMetrics = { ...state.metrics };
   let newWeeklyRevenue = state.weeklyRevenue;
   let newWeeklyExpenses = state.weeklyExpenses;
   let newWeeklyOneTimeCosts = state.weeklyOneTimeCosts;
-  let newWeeklyHistory = [...state.weeklyHistory];
+  const newWeeklyHistory = [...state.weeklyHistory];
   let newGameTime = state.gameTime;
   let newCurrentWeek = state.currentWeek;
-  let newUpgrades = { ...state.upgrades };
+  const newUpgrades = { ...state.upgrades };
 
   // 1) Update game time
   newGameTime = updateGameTimer(newGameTime, nextTick);
@@ -113,16 +115,16 @@ export function tickOnce(state: {
   }
 
   // 3) Spawn customers (with marketing upgrades)
-  if (shouldSpawnCustomerWithUpgrades(nextTick, state.upgrades)) {
-    const serviceSpeedMultiplier = getEffectiveServiceSpeedMultiplier(state.upgrades);
-    const newCustomer = createCustomer(serviceSpeedMultiplier);
+  if (shouldSpawnCustomerWithUpgrades(nextTick, state.upgrades, industryId)) {
+    const serviceSpeedMultiplier = getEffectiveServiceSpeedMultiplier(state.upgrades, industryId);
+    const newCustomer = createCustomer(serviceSpeedMultiplier, industryId);
     newCustomers.push(newCustomer);
   }
 
         // 4) Customers update and service completion
         // Use dynamic upgrade value instead of hardcoded constant
         const availableRooms = getAvailableRooms(newCustomers, newUpgrades.treatmentRooms);
-        let roomsRemaining = [...availableRooms];
+        const roomsRemaining = [...availableRooms];
         newCustomers = newCustomers
           .map((customer) => {
             // Step 1: Update customer state (movement, patience, service progress)
@@ -136,7 +138,7 @@ export function tickOnce(state: {
             
             // Step 3: Handle happy customers (service completed)
             if (updatedCustomer.status === CustomerStatus.WalkingOutHappy) {
-              const reputationMultiplier = getEffectiveReputationMultiplier(state.upgrades);
+              const reputationMultiplier = getEffectiveReputationMultiplier(state.upgrades, industryId);
               const { cash: newCash, reputation: newReputation } = processServiceCompletion(
                 newMetrics.cash,
                 newMetrics.reputation,

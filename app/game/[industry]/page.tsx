@@ -1,15 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/store/gameStore';
 import { useGameLoop } from '@/hooks/useGameLoop';
 import { useAudio } from '@/hooks/useAudio';
-import { CustomerStatus, Customer } from '@/lib/features/customers';
-import { TICKS_PER_SECOND, ticksToSeconds } from '@/lib/core/constants';
 import { TopBar } from '@/app/game/components/ui/TopBar';
-import { FinancePNL } from '@/app/game/components/ui/FinancePNL';
 import { GameCanvas } from '@/app/game/components/canvas/GameCanvas';
 import { HomeTab } from '@/app/game/components/tabs/HomeTab';
 import { StaffTab } from '@/app/game/components/tabs/StaffTab';
@@ -18,11 +14,6 @@ import { UpgradesTab } from '@/app/game/components/tabs/UpgradesTab';
 import { MarketingTab } from '@/app/game/components/tabs/MarketingTab';
 import { TabType, TAB_CONFIGS } from '@/lib/types/ui';
 import { useAudioControls } from '@/hooks/useAudio';
-
-// Game page constants
-const GAME_CONFIG = {
-  backgroundImage: "/images/game-screen-bg.png"
-} as const;
 
 export default function GamePage() {
   const gameStore = useGameStore();
@@ -71,13 +62,7 @@ export default function GamePage() {
 
   return (
     <div className="h-screen relative flex flex-col md:flex-row overflow-hidden">
-      {/* Background Image */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `url('${GAME_CONFIG.backgroundImage}')`
-        }}
-      />
+      
       
       {/* Mobile: Top Section - Game Canvas Area (50% height) */}
       {/* Desktop: Left Section - Game Canvas Area (50% width) */}

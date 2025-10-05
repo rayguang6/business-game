@@ -7,22 +7,48 @@ import { getUpgradesForIndustry } from '@/lib/config/gameConfig';
 
 export function UpgradesTab() {
   const { 
-    upgrades, 
-    metrics, 
+    upgrades,
     upgradeTreatmentRooms, 
     upgradeEquipment, 
     upgradeStaff, 
     upgradeMarketing,
     getUpgradeCost, 
-    canAffordUpgrade 
+    canAffordUpgrade,
+    selectedIndustry
   } = useGameStore();
   
-  // Get dental upgrade config
-  const dentalConfig = getUpgradesForIndustry('dental');
-  const treatmentRoomsConfig = (dentalConfig as any).treatmentRooms;
-  const equipmentConfig = (dentalConfig as any).equipment;
-  const staffConfig = (dentalConfig as any).staff;
-  const marketingConfig = (dentalConfig as any).marketing;
+  if (!selectedIndustry) {
+    return null;
+  }
+
+  const industryConfig = getUpgradesForIndustry(selectedIndustry.id);
+  const treatmentRoomsConfig = industryConfig.treatmentRooms;
+  const equipmentConfig = industryConfig.equipment;
+  const staffConfig = industryConfig.staff;
+  const marketingConfig = industryConfig.marketing;
+
+  const formatLevelRange = (config?: { starting: number; max: number }) => {
+    if (!config || config.starting === undefined || config.max === undefined) {
+      return '';
+    }
+    const levels: number[] = [];
+    for (let level = config.starting; level <= config.max; level += 1) {
+      levels.push(level);
+    }
+    return levels.join(' → ');
+  };
+
+  const formatMultiplier = (values?: number[], suffix?: string) => {
+    if (!values || values.length === 0) {
+      return '';
+    }
+    return values.map((value) => `${value}${suffix ?? ''}`).join(' → ');
+  };
+
+  const treatmentRange = formatLevelRange(treatmentRoomsConfig);
+  const equipmentSpeeds = formatMultiplier(equipmentConfig?.speedMultiplier, 'x');
+  const staffQuality = formatMultiplier(staffConfig?.qualityMultiplier, 'x');
+  const marketingSpawn = formatMultiplier(marketingConfig?.spawnMultiplier, 'x');
   
   // Calculate current upgrade costs and states
   const treatmentRoomsCost = getUpgradeCost('treatmentRooms');
@@ -30,15 +56,16 @@ export function UpgradesTab() {
   const staffCost = getUpgradeCost('staff');
   const marketingCost = getUpgradeCost('marketing');
   
-  const canUpgradeTreatmentRooms = canAffordUpgrade(treatmentRoomsCost) && upgrades.treatmentRooms < treatmentRoomsConfig.max;
-  const canUpgradeEquipment = canAffordUpgrade(equipmentCost) && upgrades.equipment < equipmentConfig.max;
-  const canUpgradeStaff = canAffordUpgrade(staffCost) && upgrades.staff < staffConfig.max;
-  const canUpgradeMarketing = canAffordUpgrade(marketingCost) && upgrades.marketing < marketingConfig.max;
+  const canUpgradeTreatmentRooms = canAffordUpgrade(treatmentRoomsCost) && (treatmentRoomsConfig?.max === undefined || upgrades.treatmentRooms < treatmentRoomsConfig.max);
+  const canUpgradeEquipment = canAffordUpgrade(equipmentCost) && (equipmentConfig?.max === undefined || upgrades.equipment < equipmentConfig.max);
+  const canUpgradeStaff = canAffordUpgrade(staffCost) && (staffConfig?.max === undefined || upgrades.staff < staffConfig.max);
+  const canUpgradeMarketing = canAffordUpgrade(marketingCost) && (marketingConfig?.max === undefined || upgrades.marketing < marketingConfig.max);
+
+  const isTreatmentRoomsMaxed = treatmentRoomsConfig?.max !== undefined && upgrades.treatmentRooms >= treatmentRoomsConfig.max;
+  const isEquipmentMaxed = equipmentConfig?.max !== undefined && upgrades.equipment >= equipmentConfig.max;
+  const isStaffMaxed = staffConfig?.max !== undefined && upgrades.staff >= staffConfig.max;
+  const isMarketingMaxed = marketingConfig?.max !== undefined && upgrades.marketing >= marketingConfig.max;
   
-  const isTreatmentRoomsMaxed = upgrades.treatmentRooms >= treatmentRoomsConfig.max;
-  const isEquipmentMaxed = upgrades.equipment >= equipmentConfig.max;
-  const isStaffMaxed = upgrades.staff >= staffConfig.max;
-  const isMarketingMaxed = upgrades.marketing >= marketingConfig.max;
   
   const handleTreatmentRoomsUpgrade = () => {
     const result = upgradeTreatmentRooms();
@@ -88,28 +115,28 @@ export function UpgradesTab() {
             {/* Left: Info and Status */}
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center border-2 border-blue-500 flex-shrink-0">
-                <span className="text-xl">{treatmentRoomsConfig.icon}</span>
+                <span className="text-xl">{treatmentRoomsConfig?.icon ?? '🏢'}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="text-white font-bold text-sm mb-1 truncate">{treatmentRoomsConfig.name}</h4>
-                <p className="text-blue-300 text-xs mb-1">
+              <h4 className="text-white font-bold text-sm mb-1 truncate">{treatmentRoomsConfig?.name ?? 'Treatment Rooms'}</h4>
+              <p className="text-blue-300 text-xs mb-1">
                          {isTreatmentRoomsMaxed
-                           ? `Max Level (${upgrades.treatmentRooms} rooms)`
+                           ? `Max Level (${upgrades.treatmentRooms}/${treatmentRoomsConfig?.max ?? upgrades.treatmentRooms})`
                            : `Level ${upgrades.treatmentRooms} → ${upgrades.treatmentRooms + 1}`
                          }
                 </p>
                 <div className="flex flex-col gap-1 text-xs">
                   <div className="flex items-center gap-1">
                     <span className="text-gray-400">Current:</span>
-                    <span className="text-white font-semibold">{upgrades.treatmentRooms} rooms</span>
+                    <span className="text-white font-semibold">{upgrades.treatmentRooms}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-gray-400">Capacity:</span>
-                    <span className="text-green-400 font-semibold">2 → 3 → 4 → 5 Rooms</span>
+                    <span className="text-green-400 font-semibold">{treatmentRange || 'N/A'}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-gray-400">Weekly Cost:</span>
-                    <span className="text-red-400 font-semibold">+${treatmentRoomsConfig.weeklyExpenses}/room</span>
+                    <span className="text-red-400 font-semibold">{treatmentRoomsConfig?.weeklyExpenses ? `+$${treatmentRoomsConfig.weeklyExpenses}/unit` : 'Included'}</span>
                   </div>
                 </div>
               </div>
@@ -140,13 +167,13 @@ export function UpgradesTab() {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center border-2 border-purple-500 flex-shrink-0">
-                <span className="text-xl">{equipmentConfig.icon}</span>
+              <span className="text-xl">{equipmentConfig?.icon ?? '⚙️'}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="text-white font-bold text-sm mb-1 truncate">{equipmentConfig.name}</h4>
-                <p className="text-purple-300 text-xs mb-1">
+              <h4 className="text-white font-bold text-sm mb-1 truncate">{equipmentConfig?.name ?? 'Equipment'}</h4>
+              <p className="text-purple-300 text-xs mb-1">
                   {isEquipmentMaxed
-                    ? `Max Level (${upgrades.equipment}/3)`
+                    ? `Max Level (${upgrades.equipment}/${equipmentConfig?.max ?? upgrades.equipment})`
                     : `Level ${upgrades.equipment} → ${upgrades.equipment + 1}`
                   }
                 </p>
@@ -157,11 +184,11 @@ export function UpgradesTab() {
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-gray-400">Speed:</span>
-                    <span className="text-green-400 font-semibold">0.8x → 0.6x → 0.5x Service Time</span>
+                    <span className="text-green-400 font-semibold">{equipmentSpeeds ? `${equipmentSpeeds} Service Time` : 'N/A'}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-gray-400">Weekly Cost:</span>
-                    <span className="text-red-400 font-semibold">+${equipmentConfig.weeklyExpenses}/level</span>
+                    <span className="text-red-400 font-semibold">{equipmentConfig?.weeklyExpenses ? `+$${equipmentConfig.weeklyExpenses}/level` : 'Included'}</span>
                   </div>
                 </div>
               </div>
@@ -191,13 +218,13 @@ export function UpgradesTab() {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center border-2 border-green-500 flex-shrink-0">
-                <span className="text-xl">{staffConfig.icon}</span>
+              <span className="text-xl">{staffConfig?.icon ?? '👥'}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="text-white font-bold text-sm mb-1 truncate">{staffConfig.name}</h4>
+              <h4 className="text-white font-bold text-sm mb-1 truncate">{staffConfig?.name ?? 'Staff'}</h4>
                 <p className="text-green-300 text-xs mb-1">
                   {isStaffMaxed
-                    ? `Max Level (${upgrades.staff}/3)`
+                    ? `Max Level (${upgrades.staff}/${staffConfig?.max ?? upgrades.staff})`
                     : `Level ${upgrades.staff} → ${upgrades.staff + 1}`
                   }
                 </p>
@@ -208,11 +235,11 @@ export function UpgradesTab() {
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-gray-400">Reputation:</span>
-                    <span className="text-green-400 font-semibold">2x → 3x → 4x Reputation Gain</span>
+                    <span className="text-green-400 font-semibold">{staffQuality ? `${staffQuality} Reputation Gain` : 'N/A'}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-gray-400">Weekly Cost:</span>
-                    <span className="text-red-400 font-semibold">+${staffConfig.weeklyExpenses}/level</span>
+                    <span className="text-red-400 font-semibold">{staffConfig?.weeklyExpenses ? `+$${staffConfig.weeklyExpenses}/level` : 'Included'}</span>
                   </div>
                 </div>
               </div>
@@ -242,13 +269,13 @@ export function UpgradesTab() {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center border-2 border-orange-500 flex-shrink-0">
-                <span className="text-xl">{marketingConfig.icon}</span>
+              <span className="text-xl">{marketingConfig?.icon ?? '📣'}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="text-white font-bold text-sm mb-1 truncate">{marketingConfig.name}</h4>
+                <h4 className="text-white font-bold text-sm mb-1 truncate">{marketingConfig?.name ?? 'Marketing'}</h4>
                 <p className="text-orange-300 text-xs mb-1">
                   {isMarketingMaxed
-                    ? `Max Level (${upgrades.marketing}/3)`
+                    ? `Max Level (${upgrades.marketing}/${marketingConfig?.max ?? upgrades.marketing})`
                     : `Level ${upgrades.marketing} → ${upgrades.marketing + 1}`
                   }
                 </p>
@@ -259,11 +286,11 @@ export function UpgradesTab() {
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-gray-400">Spawn Rate:</span>
-                    <span className="text-green-400 font-semibold">0.7x → 0.5x → 0.3x Spawn Interval</span>
+                    <span className="text-green-400 font-semibold">{marketingSpawn ? `${marketingSpawn} Spawn Interval` : 'N/A'}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-gray-400">Weekly Cost:</span>
-                    <span className="text-red-400 font-semibold">+${marketingConfig.weeklyExpenses}/level</span>
+                    <span className="text-red-400 font-semibold">{marketingConfig?.weeklyExpenses ? `+$${marketingConfig.weeklyExpenses}/level` : 'Included'}</span>
                   </div>
                 </div>
               </div>

@@ -2,14 +2,20 @@
 
 import React from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
-import { Customer, CustomerStatus } from '@/lib/features/customers';
+import { CustomerStatus } from '@/lib/features/customers';
 import { WaitingArea } from './WaitingArea';
 import { TreatmentRoom } from './TreatmentRoom';
+import { getUpgradesForIndustry } from '@/lib/config/gameConfig';
+
 
 export function GameCanvas() {
   const { selectedIndustry, customers, upgrades } = useGameStore();
 
   if (!selectedIndustry) return null;
+
+  const industryUpgrades = getUpgradesForIndustry(selectedIndustry.id);
+  const treatmentRoomsLabel = industryUpgrades.treatmentRooms?.name ?? 'Treatment Rooms';
+  const mapBackground = selectedIndustry.mapImage ?? '/images/maps/dental-map.png';
 
   return (
     <div className="h-full w-full bg-[#8ed0fb] relative overflow-hidden flex items-center justify-center">
@@ -21,7 +27,7 @@ export function GameCanvas() {
           aspectRatio: '1/1',
           width: 'min(100%, 100vh)', // Don't exceed container width or height
           height: 'min(100%, 100vw)', // Don't exceed container height or width
-          backgroundImage: "url('/images/maps/dental-map.png')",
+          backgroundImage: `url(${mapBackground})`,
           backgroundSize: "contain",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat"
@@ -37,7 +43,7 @@ export function GameCanvas() {
           {/* Right HUD Panel - Treatment Rooms */}
           <div className="w-64 pointer-events-auto">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-semibold text-gray-700">Treatment Rooms</h4>
+              <h4 className="text-xs font-semibold text-gray-700">{treatmentRoomsLabel}</h4>
               <div className="text-xs text-gray-500">
                 {customers.filter((c) => c.status === CustomerStatus.InService).length}/{upgrades.treatmentRooms} in service
               </div>

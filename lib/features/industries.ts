@@ -13,14 +13,20 @@ export interface Industry {
   icon: string;
   description: string;
   image?: string; // Optional image path for industry cards
+  mapImage?: string; // Optional map image path for industry map
   color: string;
   services: string[]; // references to service IDs
 }
 
 // Dental Services Configuration (now using centralized config)
 export const DENTAL_SERVICES: Service[] = [...SERVICE_CONFIG.DENTAL_SERVICES];
-
 export const DENTAL_SERVICE_IDS = DENTAL_SERVICES.map(service => service.id);
+
+export const RESTAURANT_SERVICES: Service[] = [...SERVICE_CONFIG.RESTAURANT_SERVICES];
+export const RESTAURANT_SERVICE_IDS = RESTAURANT_SERVICES.map(service => service.id);
+
+export const GYM_SERVICES: Service[] = [...SERVICE_CONFIG.GYM_SERVICES];
+export const GYM_SERVICE_IDS = GYM_SERVICES.map(service => service.id);
 
 // Industry Definitions
 export const DentalIndustry: Industry = {
@@ -29,6 +35,7 @@ export const DentalIndustry: Industry = {
   icon: '🦷',
   description: 'Keep your patients smiling with clean teeth!',
   image: '/images/industries/dental.jpg',
+  mapImage: '/images/maps/dental-map.png',
   color: 'bg-blue-500',
   services: DENTAL_SERVICE_IDS,
 };
@@ -39,8 +46,9 @@ export const RestaurantIndustry: Industry = {
   icon: '🍽️',
   description: 'Serve delicious meals and build a culinary empire!',
   image: '/images/industries/restaurant.jpg',
+  mapImage: '/images/maps/restaurant-map.png',
   color: 'bg-orange-500',
-  services: ['service1', 'service2', 'service3'], // Placeholder for future implementation
+  services: RESTAURANT_SERVICE_IDS,
 };
 
 export const GymIndustry: Industry = {
@@ -49,8 +57,9 @@ export const GymIndustry: Industry = {
   icon: '💪',
   description: 'Help people get fit and build a healthy community!',
   image: '/images/industries/gym.jpg',
+  mapImage: '/images/maps/gym-map.png',
   color: 'bg-red-500',
-  services: ['service1', 'service2', 'service3'], // Placeholder for future implementation
+  services: GYM_SERVICE_IDS,
 };
 
 // Industry Registry

@@ -3,7 +3,7 @@ import { useGameStore } from '@/lib/store/gameStore';
 import { TICK_INTERVAL_MS } from '@/lib/core/constants';
 
 export const useGameLoop = () => {
-  const { isGameStarted, isPaused, tickGame } = useGameStore();
+  const { isGameStarted, tickGame } = useGameStore();
   const loopRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -14,7 +14,7 @@ export const useGameLoop = () => {
 
     // Run loop every tick interval (100ms)
     loopRef.current = setInterval(() => {
-      tickGame(); // tick-based system
+      tickGame(); // tick-based system 
     }, TICK_INTERVAL_MS);
 
     return () => {

@@ -3,6 +3,14 @@ import { Metrics } from '../types';
 import { GameState } from '../types';
 import { ECONOMY_CONFIG } from '@/lib/config/gameConfig';
 
+// Shared initial metrics state - single source of truth
+export const getInitialMetrics = (): Metrics => ({
+  cash: ECONOMY_CONFIG.INITIAL_MONEY,
+  totalRevenue: 0,
+  totalExpenses: 0,
+  reputation: ECONOMY_CONFIG.INITIAL_REPUTATION,
+});
+
 export interface MetricsSlice {
   metrics: Metrics;
   
@@ -13,12 +21,7 @@ export interface MetricsSlice {
 }
 
 export const createMetricsSlice: StateCreator<GameState, [], [], MetricsSlice> = (set) => ({
-  metrics: {
-    cash: ECONOMY_CONFIG.INITIAL_MONEY,
-    totalRevenue: 0,
-    totalExpenses: 0,
-    reputation: ECONOMY_CONFIG.INITIAL_REPUTATION,
-  },
+  metrics: getInitialMetrics(),
   
   updateMetrics: (updates: Partial<Metrics>) => {
     set((state) => ({

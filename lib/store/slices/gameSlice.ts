@@ -2,7 +2,31 @@ import { StateCreator } from 'zustand';
 import { getWeeklyBaseExpenses } from '@/lib/features/economy';
 import { tickOnce } from '@/lib/game/mechanics';
 import { GameState } from '../types';
-import { ECONOMY_CONFIG, getUpgradesForIndustry, DEFAULT_UPGRADE_VALUES } from '@/lib/config/gameConfig';
+import { getInitialMetrics } from './metricsSlice';
+import { ECONOMY_CONFIG, getUpgradesForIndustry, DEFAULT_UPGRADE_VALUES, IndustryUpgradeConfig } from '@/lib/config/gameConfig';
+
+
+// Shared initial game state - DRY principle
+const getInitialGameState = (keepIndustry: boolean = false) => ({
+  isGameStarted: false,
+  isPaused: false,
+  gameTime: 0,
+  gameTick: 0,
+  currentWeek: 1,
+  weeklyRevenue: 0,
+  weeklyExpenses: getWeeklyBaseExpenses(),
+  weeklyOneTimeCosts: 0,
+  weeklyHistory: [],
+  customers: [],
+  metrics: getInitialMetrics(),
+  upgrades: {
+    treatmentRooms: (getUpgradesForIndustry('dental') as any).treatmentRooms?.starting || DEFAULT_UPGRADE_VALUES.TREATMENT_ROOMS_STARTING,
+    equipment: 0,
+    staff: 0,
+    marketing: 0,
+  },
+  ...(keepIndustry ? {} : { selectedIndustry: null }),
+});
 
 export interface GameSlice {
   isGameStarted: boolean;
@@ -15,43 +39,37 @@ export interface GameSlice {
   stopGame: () => void;
   pauseGame: () => void;
   unpauseGame: () => void;
-  resetGame: () => void;
   resetAllGame: () => void;
   updateGameTimer: () => void;
   tickGame: () => void;
 }
 
-export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set, get) => ({
-  isGameStarted: false,
-  isPaused: false,
-  gameTime: 0,
-  gameTick: 0,
-  currentWeek: 1,
+export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set, get) => {
+  const buildStartingUpgrades = (config: IndustryUpgradeConfig) => ({
+    treatmentRooms: config.treatmentRooms?.starting || DEFAULT_UPGRADE_VALUES.TREATMENT_ROOMS_STARTING,
+    equipment: config.equipment?.starting || 0,
+    staff: config.staff?.starting || 0,
+    marketing: config.marketing?.starting || 0,
+  });
+
+  return ({
+    isGameStarted: false,
+    isPaused: false,
+    gameTime: 0,
+    gameTick: 0,
+    currentWeek: 1,
   
   startGame: () => {
+    const selectedIndustry = get().selectedIndustry;
+    const industryId = selectedIndustry?.id ?? 'dental';
+    const industryUpgrades = getUpgradesForIndustry(industryId);
+    const startingUpgrades = buildStartingUpgrades(industryUpgrades);
+
+    // Reset to initial state but keep industry selection and start the game
     set({ 
-      isGameStarted: true, 
-      isPaused: false, 
-      gameTime: 0, 
-      gameTick: 0, 
-      currentWeek: 1,
-      weeklyRevenue: 0,
-      weeklyExpenses: getWeeklyBaseExpenses(),
-      weeklyOneTimeCosts: 0,
-      weeklyHistory: [],
-      customers: [],
-      metrics: {
-        cash: ECONOMY_CONFIG.INITIAL_MONEY,
-        totalRevenue: 0,
-        totalExpenses: 0,
-        reputation: ECONOMY_CONFIG.INITIAL_REPUTATION,
-      },
-      upgrades: {
-        treatmentRooms: (getUpgradesForIndustry('dental') as any).treatmentRooms?.starting || DEFAULT_UPGRADE_VALUES.TREATMENT_ROOMS_STARTING,
-        equipment: 0,
-        staff: 0,
-        marketing: 0,
-      }
+      ...getInitialGameState(true), // keepIndustry = true
+      isGameStarted: true, // Override to start the game
+      upgrades: startingUpgrades,
     });
   },
   
@@ -67,60 +85,15 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
     set({ isPaused: false });
   },
   
-  resetGame: () => {
-    set((state) => ({
-      isGameStarted: false,
-      isPaused: false,
-      gameTime: 0,
-      gameTick: 0,
-      currentWeek: 1,
-      weeklyRevenue: 0,
-      weeklyExpenses: getWeeklyBaseExpenses(),
-      weeklyOneTimeCosts: 0,
-      weeklyHistory: [],
-      customers: [],
-      metrics: {
-        cash: ECONOMY_CONFIG.INITIAL_MONEY,
-        totalRevenue: 0,
-        totalExpenses: 0,
-        reputation: ECONOMY_CONFIG.INITIAL_REPUTATION,
-      },
-      upgrades: {
-        treatmentRooms: (getUpgradesForIndustry('dental') as any).treatmentRooms?.starting || DEFAULT_UPGRADE_VALUES.TREATMENT_ROOMS_STARTING,
-        equipment: 0,
-        staff: 0,
-        marketing: 0,
-      },
-      // Keep the selectedIndustry unchanged
-      selectedIndustry: state.selectedIndustry,
-    }));
-  },
-  
   resetAllGame: () => {
+    const selectedIndustry = get().selectedIndustry;
+    const industryId = selectedIndustry?.id ?? 'dental';
+    const industryUpgrades = getUpgradesForIndustry(industryId);
+    const startingUpgrades = buildStartingUpgrades(industryUpgrades);
+    // Reset everything to initial state including industry selection
     set({
-      selectedIndustry: null,
-      isGameStarted: false,
-      isPaused: false,
-      gameTime: 0,
-      gameTick: 0,
-      currentWeek: 1,
-      weeklyRevenue: 0,
-      weeklyExpenses: getWeeklyBaseExpenses(),
-      weeklyOneTimeCosts: 0,
-      weeklyHistory: [],
-      customers: [],
-      metrics: {
-        cash: ECONOMY_CONFIG.INITIAL_MONEY,
-        totalRevenue: 0,
-        totalExpenses: 0,
-        reputation: ECONOMY_CONFIG.INITIAL_REPUTATION,
-      },
-      upgrades: {
-        treatmentRooms: (getUpgradesForIndustry('dental') as any).treatmentRooms?.starting || DEFAULT_UPGRADE_VALUES.TREATMENT_ROOMS_STARTING,
-        equipment: 0,
-        staff: 0,
-        marketing: 0,
-      },
+      ...getInitialGameState(false), // keepIndustry = false
+      upgrades: startingUpgrades,
     });
   },
   
@@ -136,19 +109,21 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
     }
     
     set((state) => {
-        const updated = tickOnce({
-          gameTick: state.gameTick,
-          gameTime: state.gameTime,
-          currentWeek: state.currentWeek,
-          customers: state.customers,
-          metrics: state.metrics,
-          weeklyRevenue: state.weeklyRevenue,
-          weeklyExpenses: state.weeklyExpenses,
-          weeklyOneTimeCosts: state.weeklyOneTimeCosts,
-          weeklyHistory: state.weeklyHistory,
-          upgrades: state.upgrades,
-        });
+      const updated = tickOnce({
+        gameTick: state.gameTick,
+        gameTime: state.gameTime,
+        currentWeek: state.currentWeek,
+        customers: state.customers,
+        metrics: state.metrics,
+        weeklyRevenue: state.weeklyRevenue,
+        weeklyExpenses: state.weeklyExpenses,
+        weeklyOneTimeCosts: state.weeklyOneTimeCosts,
+        weeklyHistory: state.weeklyHistory,
+        upgrades: state.upgrades,
+        industryId: state.selectedIndustry?.id ?? 'dental',
+      });
       return { ...state, ...updated };
     });
   },
 });
+};

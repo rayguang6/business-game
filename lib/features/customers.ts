@@ -6,7 +6,6 @@
 import { Service } from './services';
 import { secondsToTicks } from '@/lib/core/constants';
 import { GAME_TIMING, CUSTOMER_CONFIG } from '@/lib/config/gameConfig';
-import { getEffectiveServiceSpeedMultiplier } from './upgrades';
 
 // Types
 export enum CustomerStatus {
@@ -57,8 +56,8 @@ import { getRandomService } from './services';
 /**
  * Creates a new customer with random properties
  */
-export function spawnCustomer(serviceSpeedMultiplier: number = 1): Customer {
-  const service = getRandomService();
+export function spawnCustomer(serviceSpeedMultiplier: number = 1, industryId: string = 'dental'): Customer {
+  const service = getRandomService(industryId);
   const imageSrc = CUSTOMER_IMAGES[Math.floor(Math.random() * CUSTOMER_IMAGES.length)] || DEFAULT_CUSTOMER_IMAGE;
   const patience = secondsToTicks(DEFAULT_PATIENCE_SECONDS);
   
