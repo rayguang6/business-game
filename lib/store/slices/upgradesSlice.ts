@@ -33,50 +33,50 @@ export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice>
   const defaultUpgrades = buildStartingUpgrades(getUpgradesForIndustry('dental'));
 
   return {
-  upgrades: defaultUpgrades,
+    upgrades: defaultUpgrades,
 
-  canAffordUpgrade: (cost: number) => {
-    const { metrics } = get();
-    return metrics.cash >= cost;
-  },
-  
-  getUpgradeConfig: (upgradeType: keyof Upgrades): UpgradeDefinition | null => {
-    const industryUpgrades = resolveIndustryConfig();
-    const config = industryUpgrades[upgradeType as UpgradeKey];
+    canAffordUpgrade: (cost: number) => {
+      const { metrics } = get();
+      return metrics.cash >= cost;
+    },
 
-    if (!config) {
-      const industryId = get().selectedIndustry?.id ?? 'dental';
-      console.warn(`Upgrade config not found for ${upgradeType} in ${industryId} industry`);
-      return null;
-    }
+    getUpgradeConfig: (upgradeType: keyof Upgrades): UpgradeDefinition | null => {
+      const industryUpgrades = resolveIndustryConfig();
+      const config = industryUpgrades[upgradeType as UpgradeKey];
 
-    return config;
-  },
+      if (!config) {
+        const industryId = get().selectedIndustry?.id ?? 'dental';
+        console.warn(`Upgrade config not found for ${upgradeType} in ${industryId} industry`);
+        return null;
+      }
 
-  getUpgradeCost: (upgradeType: keyof Upgrades) => {
-    const store = get() as GameState & UpgradesSlice;
-    const { upgrades } = store;
-    const config = store.getUpgradeConfig(upgradeType);
+      return config;
+    },
 
-    if (!config) {
-      return 0;
-    }
+    getUpgradeCost: (upgradeType: keyof Upgrades) => {
+      const store = get() as GameState & UpgradesSlice;
+      const { upgrades } = store;
+      const config = store.getUpgradeConfig(upgradeType);
 
-    const currentLevel = upgrades[upgradeType];
-    const startingLevel = config.starting ?? 0;
+      if (!config) {
+        return 0;
+      }
 
-    // Calculate which upgrade level we're on
-    const upgradeIndex = currentLevel - startingLevel;
+      const currentLevel = upgrades[upgradeType];
+      const startingLevel = config.starting ?? 0;
 
-    // If we're at max level, return 0
-    if (currentLevel >= config.max) {
-      return 0;
-    }
+      // Calculate which upgrade level we're on
+      const upgradeIndex = currentLevel - startingLevel;
 
-  return config.costs?.[upgradeIndex] || 0;
-  },
+      // If we're at max level, return 0
+      if (currentLevel >= config.max) {
+        return 0;
+      }
 
-  upgradeTreatmentRooms: () => {
+      return config.costs?.[upgradeIndex] || 0;
+    },
+
+    upgradeTreatmentRooms: () => {
     const store = get() as GameState & UpgradesSlice;
     const { upgrades } = store;
     const cost = store.getUpgradeCost('treatmentRooms');
@@ -97,10 +97,28 @@ export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice>
     }
 
     // Perform upgrade
-    set((state) => ({
-      upgrades: { ...state.upgrades, treatmentRooms: state.upgrades.treatmentRooms + 1 },
-      metrics: { ...state.metrics, cash: state.metrics.cash - cost }
-    }));
+    const weeklyExpenseDelta = config.weeklyExpenses ?? 0;
+
+    set((state) => {
+      const metricsUpdate = {
+        ...state.metrics,
+        cash: state.metrics.cash - cost,
+        ...(weeklyExpenseDelta > 0
+          ? { totalExpenses: state.metrics.totalExpenses + weeklyExpenseDelta }
+          : {}),
+      };
+
+      return {
+        upgrades: { ...state.upgrades, treatmentRooms: state.upgrades.treatmentRooms + 1 },
+        metrics: metricsUpdate,
+        ...(weeklyExpenseDelta > 0
+          ? {
+              weeklyExpenses: state.weeklyExpenses + weeklyExpenseDelta,
+              weeklyExpenseAdjustments: state.weeklyExpenseAdjustments + weeklyExpenseDelta,
+            }
+          : {}),
+      };
+    });
 
     return { success: true, message: `${config.name} upgraded! Cost: $${cost}` };
   },
@@ -123,10 +141,28 @@ export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice>
       return { success: false, message: `Need $${cost} to upgrade ${config.name.toLowerCase()}!` };
     }
 
-    set((state) => ({
-      upgrades: { ...state.upgrades, equipment: state.upgrades.equipment + 1 },
-      metrics: { ...state.metrics, cash: state.metrics.cash - cost }
-    }));
+    const weeklyExpenseDelta = config.weeklyExpenses ?? 0;
+
+    set((state) => {
+      const metricsUpdate = {
+        ...state.metrics,
+        cash: state.metrics.cash - cost,
+        ...(weeklyExpenseDelta > 0
+          ? { totalExpenses: state.metrics.totalExpenses + weeklyExpenseDelta }
+          : {}),
+      };
+
+      return {
+        upgrades: { ...state.upgrades, equipment: state.upgrades.equipment + 1 },
+        metrics: metricsUpdate,
+        ...(weeklyExpenseDelta > 0
+          ? {
+              weeklyExpenses: state.weeklyExpenses + weeklyExpenseDelta,
+              weeklyExpenseAdjustments: state.weeklyExpenseAdjustments + weeklyExpenseDelta,
+            }
+          : {}),
+      };
+    });
 
     return { success: true, message: `${config.name} upgraded! Cost: $${cost}` };
   },
@@ -150,10 +186,28 @@ export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice>
       return { success: false, message: `Need $${cost} to upgrade ${config.name.toLowerCase()}!` };
     }
 
-    set((state) => ({
-      upgrades: { ...state.upgrades, staff: state.upgrades.staff + 1 },
-      metrics: { ...state.metrics, cash: state.metrics.cash - cost }
-    }));
+    const weeklyExpenseDelta = config.weeklyExpenses ?? 0;
+
+    set((state) => {
+      const metricsUpdate = {
+        ...state.metrics,
+        cash: state.metrics.cash - cost,
+        ...(weeklyExpenseDelta > 0
+          ? { totalExpenses: state.metrics.totalExpenses + weeklyExpenseDelta }
+          : {}),
+      };
+
+      return {
+        upgrades: { ...state.upgrades, staff: state.upgrades.staff + 1 },
+        metrics: metricsUpdate,
+        ...(weeklyExpenseDelta > 0
+          ? {
+              weeklyExpenses: state.weeklyExpenses + weeklyExpenseDelta,
+              weeklyExpenseAdjustments: state.weeklyExpenseAdjustments + weeklyExpenseDelta,
+            }
+          : {}),
+      };
+    });
 
     return { success: true, message: `${config.name} upgraded! Cost: $${cost}` };
   },
@@ -176,10 +230,28 @@ export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice>
       return { success: false, message: `Need $${cost} to upgrade ${config.name.toLowerCase()}!` };
     }
 
-    set((state) => ({
-      upgrades: { ...state.upgrades, marketing: state.upgrades.marketing + 1 },
-      metrics: { ...state.metrics, cash: state.metrics.cash - cost }
-    }));
+    const weeklyExpenseDelta = config.weeklyExpenses ?? 0;
+
+    set((state) => {
+      const metricsUpdate = {
+        ...state.metrics,
+        cash: state.metrics.cash - cost,
+        ...(weeklyExpenseDelta > 0
+          ? { totalExpenses: state.metrics.totalExpenses + weeklyExpenseDelta }
+          : {}),
+      };
+
+      return {
+        upgrades: { ...state.upgrades, marketing: state.upgrades.marketing + 1 },
+        metrics: metricsUpdate,
+        ...(weeklyExpenseDelta > 0
+          ? {
+              weeklyExpenses: state.weeklyExpenses + weeklyExpenseDelta,
+              weeklyExpenseAdjustments: state.weeklyExpenseAdjustments + weeklyExpenseDelta,
+            }
+          : {}),
+      };
+    });
 
     return { success: true, message: `${config.name} upgraded! Cost: $${cost}` };
   },

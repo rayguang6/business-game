@@ -3,7 +3,8 @@
  * Handles all economy-related config and mechanics
  */
 
-import { ECONOMY_CONFIG } from '@/lib/config/gameConfig';
+import { ECONOMY_CONFIG, getUpgradesForIndustry, UpgradeKey } from '@/lib/config/gameConfig';
+import { Upgrades } from '@/lib/store/types';
 import { getEffectiveReputationMultiplier } from './upgrades';
 
 // Configuration (now using centralized config)
@@ -52,6 +53,26 @@ export function getWeeklyBaseExpenses(): number {
 }
 
 /**
+ * Calculates the total weekly expenses contributed by upgrades.
+ */
+export function calculateUpgradeWeeklyExpenses(
+  upgrades: Upgrades,
+  industryId: string = 'dental'
+): number {
+  const industryUpgrades = getUpgradesForIndustry(industryId);
+
+  return (Object.entries(upgrades) as Array<[UpgradeKey, number]>).reduce((total, [key, level]) => {
+    const config = industryUpgrades[key];
+
+    if (!config?.weeklyExpenses) {
+      return total;
+    }
+
+    return total + Math.max(level, 0) * config.weeklyExpenses;
+  }, 0);
+}
+
+/**
  * Handles end of week calculations
  * Note: Cash is updated instantly during the week, so we only deduct expenses here
  */
@@ -73,7 +94,7 @@ export function endOfWeek(
   
   // For reporting, separate base from additional expenses
   const baseExpenses = getWeeklyBaseExpenses();
-  const additionalExpenses = weeklyExpenses - baseExpenses;
+  const additionalExpenses = Math.max(weeklyExpenses - baseExpenses, 0);
   
   return {
     cash: newCash,
@@ -94,7 +115,9 @@ export function handleWeekTransition(
   weeklyRevenue: number,
   weeklyExpenses: number,
   weeklyOneTimeCosts: number,
-  currentReputation: number
+  currentReputation: number,
+  upgrades: Upgrades,
+  industryId: string
 ): {
   currentWeek: number;
   cash: number;
@@ -102,15 +125,17 @@ export function handleWeekTransition(
   weeklyExpenses: number;
   weeklyOneTimeCosts: number;
   reputation: number;
+  weeklyExpenseAdjustments: number;
 } {
-  const { cash, profit } = endOfWeek(currentCash, weeklyRevenue, weeklyExpenses, weeklyOneTimeCosts);
-  
+  const { cash } = endOfWeek(currentCash, weeklyRevenue, weeklyExpenses, weeklyOneTimeCosts);
+
   return {
     currentWeek: currentWeek + 1,
     cash,
     weeklyRevenue: 0, // Reset weekly tracking
-    weeklyExpenses: getWeeklyBaseExpenses(), // Reset to base expenses for new week
+    weeklyExpenses: getWeeklyBaseExpenses() + calculateUpgradeWeeklyExpenses(upgrades, industryId),
     weeklyOneTimeCosts: 0, // Reset one-time costs
     reputation: currentReputation, // Reputation persists
+    weeklyExpenseAdjustments: 0,
   };
 }
