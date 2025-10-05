@@ -4,7 +4,16 @@ import React from 'react';
 import { useFinanceData } from '@/hooks/useFinanceData';
 
 export function FinanceTab() {
-  const { metrics, weeklyHistory, totalProfit, lastWeek } = useFinanceData();
+  const {
+    metrics,
+    weeklyHistory,
+    totalProfit,
+    lastWeek,
+    weeklyExpenses,
+    baseWeeklyExpenses,
+    upgradeWeeklyExpenses,
+    otherWeeklyExpenses,
+  } = useFinanceData();
 
   return (
     <div>
@@ -47,6 +56,16 @@ export function FinanceTab() {
             <div className="text-red-300 text-xs">
               {lastWeek ? `Week ${lastWeek.week}: $${lastWeek.expenses}` : 'No data yet'}
             </div>
+            <div className="text-red-300 text-xs mt-2">
+              Current weekly burn: ${weeklyExpenses}
+            </div>
+            <div className="text-red-300 text-xs">Base ${baseWeeklyExpenses}</div>
+            <div className="text-red-300 text-xs">
+              Upgrades {upgradeWeeklyExpenses > 0 ? `+$${upgradeWeeklyExpenses}` : '$0'}
+            </div>
+            {otherWeeklyExpenses > 0 && (
+              <div className="text-red-300 text-xs">Other +${otherWeeklyExpenses}</div>
+            )}
           </div>
         </div>
         
