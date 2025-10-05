@@ -17,6 +17,7 @@ import { FinanceTab } from '@/app/game/components/tabs/FinanceTab';
 import { UpgradesTab } from '@/app/game/components/tabs/UpgradesTab';
 import { MarketingTab } from '@/app/game/components/tabs/MarketingTab';
 import { TabType, TAB_CONFIGS } from '@/lib/types/ui';
+import { useAudioControls } from '@/hooks/useAudio';
 
 // Game page constants
 const GAME_CONFIG = {
@@ -25,9 +26,11 @@ const GAME_CONFIG = {
 
 export default function GamePage() {
   const gameStore = useGameStore();
-  const { selectedIndustry, isGameStarted, startGame } = gameStore;
+  const { selectedIndustry, isGameStarted, startGame, isPaused, unpauseGame, resetAllGame } = gameStore;
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('home');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const { audioState, setVolume, toggleMute } = useAudioControls();
   
   // Play game music when component mounts
   useAudio('game', true);
@@ -45,6 +48,22 @@ export default function GamePage() {
       startGame();
     }
   }, [selectedIndustry, router, isGameStarted, startGame]);
+
+  const openSettings = () => {
+    setSettingsOpen(true);
+  };
+
+  const closeSettings = () => {
+    setSettingsOpen(false);
+    unpauseGame();
+  };
+
+  const quitGame = () => {
+    // Reset all game state and navigate home
+    resetAllGame();
+    setSettingsOpen(false);
+    router.push('/');
+  };
 
   if (!selectedIndustry) {
     return null; // Return null while redirecting
@@ -65,7 +84,7 @@ export default function GamePage() {
       <div className="relative h-1/2 md:h-full md:w-1/2 flex items-center justify-center">
         {/* TopBar Overlay */}
         <div className="absolute top-0 left-0 right-0 z-20">
-          <TopBar />
+          <TopBar onSettingsOpen={openSettings} />
         </div>
         
         {/* Game Canvas - Full Area */}
@@ -127,6 +146,69 @@ export default function GamePage() {
           </div>
         </div>
       </div>
+
+      {/* Settings Modal - Top Level */}
+      {settingsOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-xl w-80 p-5 max-h-[90vh] overflow-y-auto mx-4">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3">Settings</h2>
+            <p className="text-sm text-gray-600 mb-4">Game is paused while settings are open.</p>
+            
+            {/* Audio Controls */}
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">Audio Settings</h3>
+              
+              {/* Mute Toggle */}
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-600">Music</span>
+                <button
+                  onClick={toggleMute}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                    audioState.isMuted 
+                      ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+                      : 'bg-green-100 text-green-700 hover:bg-green-200'
+                  }`}
+                >
+                  {audioState.isMuted ? '🔇 Muted' : '🔊 On'}
+                </button>
+              </div>
+              
+              {/* Volume Slider */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Volume:</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={audioState.volume}
+                  onChange={(e) => setVolume(parseFloat(e.target.value))}
+                  className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  disabled={audioState.isMuted}
+                />
+                <span className="text-xs text-gray-500 w-8">
+                  {Math.round(audioState.volume * 100)}%
+                </span>
+              </div>
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={quitGame}
+                className="w-full text-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                Quit Game (Back to Home)
+              </button>
+              <button
+                onClick={closeSettings}
+                className="w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Close & Resume
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
