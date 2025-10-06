@@ -132,48 +132,77 @@ export function FinanceTab() {
           </div>
         ) : (
           <div className="space-y-3">
-            {weeklyHistory.slice(-5).reverse().map((w, index) => (
-              <div key={`week-${w.week}`} className="bg-gray-700 rounded-lg p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-yellow-400 font-bold text-sm">Week {w.week}</span>
-                    {index === 0 && (
-                      <span className="bg-green-600 text-white px-2 py-1 rounded text-xs">Latest</span>
-                    )}
+            {weeklyHistory.slice(-5).reverse().map((w, index) => {
+              // Calculate recurring vs one-time expenses
+              const oneTimeCostsTotal = w.oneTimeCosts?.reduce((sum, cost) => sum + cost.amount, 0) || 0;
+              const recurringExpenses = w.expenses - oneTimeCostsTotal;
+              
+              return (
+                <div key={`week-${w.week}`} className="bg-gray-700 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-yellow-400 font-bold text-sm">Week {w.week}</span>
+                      {index === 0 && (
+                        <span className="bg-green-600 text-white px-2 py-1 rounded text-xs">Latest</span>
+                      )}
+                    </div>
+                    <div className={`font-bold ${w.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      Profit: ${w.profit}
+                    </div>
                   </div>
-                  <div className={`font-bold ${w.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    ${w.profit}
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Revenue Section */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm font-semibold">
+                        <span className="text-green-300">Revenue</span>
+                        <span className="text-green-400">${w.revenue}</span>
+                      </div>
+                      <div className="pl-3 space-y-1 text-xs text-gray-400 border-l-2 border-green-700">
+                        <div className="flex justify-between">
+                          <span>Customer payments</span>
+                          <span className="text-green-300">${w.revenue}</span>
+                        </div>
+                        {/* Future: Can add more revenue sources here */}
+                        {/* <div className="flex justify-between">
+                          <span>Bonuses</span>
+                          <span className="text-green-300">$0</span>
+                        </div> */}
+                      </div>
+                    </div>
+                    
+                    {/* Expenses Section */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm font-semibold">
+                        <span className="text-red-300">Expenses</span>
+                        <span className="text-red-400">${w.expenses}</span>
+                      </div>
+                      <div className="pl-3 space-y-1 text-xs text-gray-400 border-l-2 border-red-700">
+                        <div className="flex justify-between">
+                          <span>Recurring costs</span>
+                          <span className="text-red-300">${recurringExpenses}</span>
+                        </div>
+                        {w.oneTimeCosts && w.oneTimeCosts.length > 0 && (
+                          <>
+                            {w.oneTimeCosts.map((cost, costIndex) => (
+                              <div key={costIndex} className="flex justify-between">
+                                <span>
+                                  {cost.category === 'upgrade' && '🔧 '}
+                                  {cost.category === 'repair' && '🔨 '}
+                                  {cost.category === 'event' && '📋 '}
+                                  {cost.label}
+                                </span>
+                                <span className="text-orange-300">${cost.amount}</span>
+                              </div>
+                            ))}
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Revenue:</span>
-                    <span className="text-green-400">${w.revenue}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Expenses:</span>
-                    <span className="text-red-400">${w.expenses}</span>
-                  </div>
-                </div>
-                
-                {/* Progress bar for profit */}
-                <div className="mt-2">
-                  <div className="flex justify-between text-xs text-gray-400 mb-1">
-                    <span>Performance</span>
-                    <span>{w.profit >= 0 ? '+' : ''}{Math.round((w.profit / Math.max(w.revenue, 1)) * 100)}%</span>
-                  </div>
-                  <div className="w-full bg-gray-600 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        w.profit >= 0 ? 'bg-green-500' : 'bg-red-500'
-                      }`}
-                      style={{ width: `${Math.min(Math.abs((w.profit / Math.max(w.revenue, 1)) * 100), 100)}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

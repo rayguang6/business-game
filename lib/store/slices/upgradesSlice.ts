@@ -56,16 +56,28 @@ export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice>
     const newUpgradeExpenses = calculateUpgradeWeeklyExpenses(nextActiveUpgrades);
     const weeklyExpenseDelta = newUpgradeExpenses - previousUpgradeExpenses;
 
-    set((state) => ({
-      upgrades: nextActiveUpgrades,
-      metrics: {
-        ...state.metrics,
-        cash: state.metrics.cash - upgrade.cost,
-        totalExpenses: state.metrics.totalExpenses + Math.max(0, weeklyExpenseDelta),
-      },
-      weeklyExpenses: BASE_WEEKLY_EXPENSES + newUpgradeExpenses,
-      weeklyExpenseAdjustments: state.weeklyExpenseAdjustments + Math.max(0, weeklyExpenseDelta),
-    }));
+    set((state) => {
+      // Add upgrade purchase as a one-time cost (this will be tracked in weekly history)
+      const addOneTimeCost = (state as any).addOneTimeCost;
+      if (addOneTimeCost) {
+        addOneTimeCost({
+          label: upgrade.name,
+          amount: upgrade.cost,
+          category: 'upgrade' as const,
+        });
+      }
+
+      return {
+        upgrades: nextActiveUpgrades,
+        metrics: {
+          ...state.metrics,
+          cash: state.metrics.cash - upgrade.cost,
+          totalExpenses: state.metrics.totalExpenses + Math.max(0, weeklyExpenseDelta),
+        },
+        weeklyExpenses: BASE_WEEKLY_EXPENSES + newUpgradeExpenses,
+        weeklyExpenseAdjustments: state.weeklyExpenseAdjustments + Math.max(0, weeklyExpenseDelta),
+      };
+    });
 
     return { success: true, message: `${upgrade.name} unlocked! Cost: $${upgrade.cost}` };
   },

@@ -76,8 +76,8 @@ export function UpgradesTab() {
   };
 
   const metricsOverview = (Object.keys(metricLabels) as MetricKey[]).map((metric) => {
-    const baseValue = summary.baseMetrics[metric];
-    const currentValue = summary.currentMetrics[metric];
+    const baseValue = summary.baseMetrics[metric as keyof typeof summary.baseMetrics];
+    const currentValue = summary.currentMetrics[metric as keyof typeof summary.currentMetrics];
     const hasChanged = Math.abs(currentValue - baseValue) > 0.001;
     return (
       <div key={metric} className="bg-gray-800 rounded-lg p-3 border border-gray-700">

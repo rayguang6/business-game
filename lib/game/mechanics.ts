@@ -1,4 +1,4 @@
-import { GameState, Metrics, Upgrades, WeeklyHistoryEntry } from '@/lib/store/types';
+import { GameState, Metrics, Upgrades, WeeklyHistoryEntry, OneTimeCost } from '@/lib/store/types';
 import { TICKS_PER_SECOND, isNewWeek, BUSINESS_STATS } from '@/lib/game/config';
 
 import {
@@ -26,6 +26,7 @@ interface TickSnapshot {
   weeklyRevenue: number;
   weeklyExpenses: number;
   weeklyOneTimeCosts: number;
+  weeklyOneTimeCostDetails: OneTimeCost[];
   weeklyHistory: WeeklyHistoryEntry[];
   upgrades: Upgrades;
   industryId?: string;
@@ -40,6 +41,7 @@ interface WeekTransitionParams {
   weeklyRevenue: number;
   weeklyExpenses: number;
   weeklyOneTimeCosts: number;
+  weeklyOneTimeCostDetails: OneTimeCost[];
   weeklyHistory: WeeklyHistoryEntry[];
   weeklyExpenseAdjustments: number;
   upgrades: Upgrades;
@@ -50,6 +52,7 @@ interface WeekTransitionResult {
   weeklyRevenue: number;
   weeklyExpenses: number;
   weeklyOneTimeCosts: number;
+  weeklyOneTimeCostDetails: OneTimeCost[];
   weeklyHistory: WeeklyHistoryEntry[];
   currentWeek: number;
   weeklyExpenseAdjustments: number;
@@ -74,6 +77,7 @@ function processWeekTransition({
   weeklyRevenue,
   weeklyExpenses,
   weeklyOneTimeCosts,
+  weeklyOneTimeCostDetails,
   weeklyHistory,
   weeklyExpenseAdjustments,
   upgrades,
@@ -95,6 +99,7 @@ function processWeekTransition({
       week: currentWeek,
       revenue: weeklyRevenue,
       expenses: weekResult.totalExpenses,
+      oneTimeCosts: weeklyOneTimeCostDetails,
       profit: weekResult.profit,
       reputation: updatedMetrics.reputation,
       reputationChange: updatedMetrics.reputation - previousReputation,
@@ -109,6 +114,7 @@ function processWeekTransition({
     weeklyRevenue: 0,
     weeklyExpenses: baseExpenses + upgradeExpenses,
     weeklyOneTimeCosts: 0,
+    weeklyOneTimeCostDetails: [],
     weeklyHistory: updatedHistory,
     currentWeek: currentWeek + 1,
     weeklyExpenseAdjustments: 0,
@@ -227,6 +233,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
   let weeklyRevenue = state.weeklyRevenue;
   let weeklyExpenses = state.weeklyExpenses;
   let weeklyOneTimeCosts = state.weeklyOneTimeCosts;
+  let weeklyOneTimeCostDetails = [...state.weeklyOneTimeCostDetails];
   let weeklyHistory = [...state.weeklyHistory];
   let currentWeek = state.currentWeek;
   let weeklyExpenseAdjustments = state.weeklyExpenseAdjustments ?? 0;
@@ -238,6 +245,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
       weeklyRevenue,
       weeklyExpenses,
       weeklyOneTimeCosts,
+      weeklyOneTimeCostDetails,
       weeklyHistory,
       weeklyExpenseAdjustments,
       upgrades: state.upgrades,
@@ -247,6 +255,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
     weeklyRevenue = transition.weeklyRevenue;
     weeklyExpenses = transition.weeklyExpenses;
     weeklyOneTimeCosts = transition.weeklyOneTimeCosts;
+    weeklyOneTimeCostDetails = transition.weeklyOneTimeCostDetails;
     weeklyHistory = transition.weeklyHistory;
     currentWeek = transition.currentWeek;
     weeklyExpenseAdjustments = transition.weeklyExpenseAdjustments;
@@ -275,6 +284,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
     weeklyRevenue: processedWeeklyRevenue,
     weeklyExpenses,
     weeklyOneTimeCosts,
+    weeklyOneTimeCostDetails,
     weeklyHistory,
     upgrades: state.upgrades,
     weeklyExpenseAdjustments,
