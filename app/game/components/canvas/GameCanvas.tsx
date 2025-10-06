@@ -5,17 +5,19 @@ import { useGameStore } from '@/lib/store/gameStore';
 import { CustomerStatus } from '@/lib/features/customers';
 import { WaitingArea } from './WaitingArea';
 import { TreatmentRoom } from './TreatmentRoom';
+import { Character2D } from './Character2D';
+import { GridOverlay } from './GridOverlay';
 import { getUpgradeEffects } from '@/lib/features/upgrades';
 
 // Canvas scaling configuration
 const CANVAS_CONFIG = {
-  // Reference size (what we design for)
-  REFERENCE_SIZE: 500,
+  // Reference size (what we design for) - 10x10 tiles at 32px each
+  REFERENCE_SIZE: 320, // 10 tiles × 32px = 320px
   // Responsive breakpoints
   BREAKPOINTS: {
-    mobile: 350,
-    tablet: 400, 
-    desktop: 500
+    mobile: 320,  // 1x scale
+    tablet: 384,  // 1.2x scale
+    desktop: 480  // 1.5x scale
   }
 };
 
@@ -86,7 +88,10 @@ export function GameCanvas() {
           backgroundRepeat: "no-repeat"
         }}
       >
-        {/* Future 2D Animation Layer */}
+        {/* Grid Overlay - For testing tile positioning */}
+        <GridOverlay scaleFactor={scaleFactor} showGrid={true} />
+
+        {/* 2D Animation Layer */}
         <div 
           className="absolute inset-0"
           style={{
@@ -96,8 +101,44 @@ export function GameCanvas() {
             transformOrigin: 'top left'
           }}
         >
-          {/* Future: 2D Character Sprites will go here */}
-          {/* Example: <Sprite x={100} y={200} spriteSheet="customer-walk.png" /> */}
+          {/* Test Character 1 - Idle facing down */}
+          <Character2D
+            x={2} // Grid position
+            y={1}
+            spriteSheet="/images/customer/customer1.png"
+            direction="down"
+            scaleFactor={scaleFactor}
+            isWalking={false}
+          />
+          
+          {/* Test Character 2 - Walking right */}
+          <Character2D
+            x={4}
+            y={1}
+            spriteSheet="/images/customer/customer1.png"
+            direction="right"
+            scaleFactor={scaleFactor}
+            isWalking={true}
+          />
+          
+          {/* Test Character 3 - Walking up */}
+          <Character2D
+            x={6}
+            y={1}
+            spriteSheet="/images/customer/customer1.png"
+            direction="up"
+            scaleFactor={scaleFactor}
+            isWalking={true}
+          />
+          
+          {/* Test Character 4 - Celebrating */}
+          <Character2D
+            x={8}
+            y={1}
+            spriteSheet="/images/customer/customer1.png"
+            scaleFactor={scaleFactor}
+            isCelebrating={true}
+          />
         </div>
 
         {/* HUD Overlay - Scales with canvas */}
