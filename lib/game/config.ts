@@ -62,6 +62,19 @@ export const MAP_CONFIG: MapConfig = {
 };
 
 // -----------------------------------------------------------------------------
+// MOVEMENT & ANIMATION CONFIGURATION
+// -----------------------------------------------------------------------------
+
+export const MOVEMENT_CONFIG = {
+  customerTilesPerTick: 0.15,
+  animationReferenceTilesPerTick: 0.15,
+  walkFrameDurationMs: 200,
+  minWalkFrameDurationMs: 80,
+  maxWalkFrameDurationMs: 320,
+  celebrationFrameDurationMs: 200,
+} as const;
+
+// -----------------------------------------------------------------------------
 // CORE GAME TIMING (derived from BUSINESS_STATS)
 // -----------------------------------------------------------------------------
 

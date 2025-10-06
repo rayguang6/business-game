@@ -4,7 +4,7 @@
  */
 
 import { Service } from './services';
-import { CUSTOMER_CONFIG, BUSINESS_STATS, secondsToTicks } from '@/lib/game/config';
+import { CUSTOMER_CONFIG, BUSINESS_STATS, MOVEMENT_CONFIG, secondsToTicks } from '@/lib/game/config';
 
 // Types
 export enum CustomerStatus {
@@ -85,7 +85,7 @@ export function spawnCustomer(serviceSpeedMultiplier: number = 1, industryId: st
 /**
  * Movement speed (tiles per tick)
  */
-const MOVEMENT_SPEED = 0.15;
+const MOVEMENT_SPEED = Math.max(0.01, MOVEMENT_CONFIG.customerTilesPerTick);
 
 /**
  * Moves customer towards target position following an optional path.
@@ -105,7 +105,7 @@ function moveTowardsTarget(customer: Customer): Customer {
   const dy = nextWaypoint.y - customer.y;
 
   // Close enough to waypoint - snap to position and advance path
-  if (Math.abs(dx) < MOVEMENT_SPEED && Math.abs(dy) < MOVEMENT_SPEED) {
+  if (Math.abs(dx) <= MOVEMENT_SPEED && Math.abs(dy) <= MOVEMENT_SPEED) {
     let facingDirection = customer.facingDirection;
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 0) {
       facingDirection = dx > 0 ? 'right' : 'left';
@@ -135,12 +135,16 @@ function moveTowardsTarget(customer: Customer): Customer {
   let newY = customer.y;
   let facingDirection = customer.facingDirection;
 
-  if (Math.abs(dx) > MOVEMENT_SPEED) {
-    newX = customer.x + (dx > 0 ? MOVEMENT_SPEED : -MOVEMENT_SPEED);
-    facingDirection = dx > 0 ? 'right' : 'left';
-  } else if (Math.abs(dy) > MOVEMENT_SPEED) {
-    newY = customer.y + (dy > 0 ? MOVEMENT_SPEED : -MOVEMENT_SPEED);
-    facingDirection = dy > 0 ? 'down' : 'up';
+  const prioritizeHorizontal = Math.abs(dx) >= Math.abs(dy);
+
+  if (prioritizeHorizontal && Math.abs(dx) > 0) {
+    const step = Math.sign(dx) * Math.min(MOVEMENT_SPEED, Math.abs(dx));
+    newX = customer.x + step;
+    facingDirection = step > 0 ? 'right' : 'left';
+  } else if (Math.abs(dy) > 0) {
+    const step = Math.sign(dy) * Math.min(MOVEMENT_SPEED, Math.abs(dy));
+    newY = customer.y + step;
+    facingDirection = step > 0 ? 'down' : 'up';
   }
 
   return {
@@ -180,16 +184,20 @@ export function tickCustomer(customer: Customer): Customer {
         return {
           ...movedToChair,
           status: CustomerStatus.Waiting,
+          facingDirection: 'right',
         };
       }
-      
+
       return movedToChair;
-    
+
     case CustomerStatus.Waiting:
+      const nextStatus = customer.patienceLeft <= 1 ? CustomerStatus.LeavingAngry : CustomerStatus.Waiting;
+
       return {
         ...customer,
         patienceLeft: Math.max(0, customer.patienceLeft - 1),
-        status: customer.patienceLeft <= 1 ? CustomerStatus.LeavingAngry : CustomerStatus.Waiting,
+        status: nextStatus,
+        facingDirection: nextStatus === CustomerStatus.Waiting ? 'right' : customer.facingDirection,
       };
     
     case CustomerStatus.WalkingToRoom:
@@ -201,16 +209,18 @@ export function tickCustomer(customer: Customer): Customer {
         return {
           ...movedToRoom,
           status: CustomerStatus.InService,
+          facingDirection: 'down',
         };
       }
-      
+
       return movedToRoom;
-    
+
     case CustomerStatus.InService:
       return {
         ...customer,
         serviceTimeLeft: Math.max(0, customer.serviceTimeLeft - 1),
         status: customer.serviceTimeLeft <= 1 ? CustomerStatus.WalkingOutHappy : CustomerStatus.InService,
+        facingDirection: 'down',
       };
     
     case CustomerStatus.WalkingOutHappy:
