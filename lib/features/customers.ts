@@ -29,8 +29,10 @@ export interface Customer {
   imageSrc: string; // 32x32 avatar frame (top-left if sprite)
   x: number;
   y: number;
+  facingDirection?: 'down' | 'left' | 'up' | 'right';
   targetX?: number; // Target position for walking
   targetY?: number;
+  path?: GridPosition[]; // Current path waypoints (excluding current tile)
   service: Service;
   status: CustomerStatus;
   serviceTimeLeft: number; // ticks remaining for service completion
@@ -53,7 +55,7 @@ export const DEFAULT_CUSTOMER_IMAGE = CUSTOMER_CONFIG.DEFAULT_IMAGE;
 
 // Mechanics
 import { getRandomService } from './services';
-import { ENTRY_POSITION } from '@/lib/game/positioning';
+import { ENTRY_POSITION, type GridPosition } from '@/lib/game/positioning';
 
 /**
  * Creates a new customer with random properties
@@ -71,6 +73,7 @@ export function spawnCustomer(serviceSpeedMultiplier: number = 1, industryId: st
     imageSrc,
     x: ENTRY_POSITION.x, // Spawn at entry position
     y: ENTRY_POSITION.y,
+    facingDirection: 'down',
     service: service,
     status: CustomerStatus.Spawning, // Start at door!
     serviceTimeLeft: secondsToTicks(effectiveDuration),
@@ -85,43 +88,67 @@ export function spawnCustomer(serviceSpeedMultiplier: number = 1, industryId: st
 const MOVEMENT_SPEED = 0.15;
 
 /**
- * Moves customer towards target position (horizontal or vertical only)
+ * Moves customer towards target position following an optional path.
+ * Movement is restricted to horizontal/vertical steps.
  */
 function moveTowardsTarget(customer: Customer): Customer {
   if (customer.targetX === undefined || customer.targetY === undefined) {
     return customer;
   }
 
-  const dx = customer.targetX - customer.x;
-  const dy = customer.targetY - customer.y;
+  const [nextWaypoint, ...remainingPath] =
+    customer.path && customer.path.length > 0
+      ? customer.path
+      : [{ x: customer.targetX, y: customer.targetY }];
 
-  // Close enough to target - snap to position
+  const dx = nextWaypoint.x - customer.x;
+  const dy = nextWaypoint.y - customer.y;
+
+  // Close enough to waypoint - snap to position and advance path
   if (Math.abs(dx) < MOVEMENT_SPEED && Math.abs(dy) < MOVEMENT_SPEED) {
+    let facingDirection = customer.facingDirection;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 0) {
+      facingDirection = dx > 0 ? 'right' : 'left';
+    } else if (Math.abs(dy) > 0) {
+      facingDirection = dy > 0 ? 'down' : 'up';
+    }
+
+    const hasMoreWaypoints = remainingPath.length > 0;
+    const reachedFinalWaypoint =
+      !hasMoreWaypoints &&
+      nextWaypoint.x === customer.targetX &&
+      nextWaypoint.y === customer.targetY;
+
     return {
       ...customer,
-      x: customer.targetX,
-      y: customer.targetY,
-      targetX: undefined,
-      targetY: undefined,
+      x: nextWaypoint.x,
+      y: nextWaypoint.y,
+      facingDirection,
+      path: hasMoreWaypoints ? remainingPath : undefined,
+      targetX: reachedFinalWaypoint ? undefined : customer.targetX,
+      targetY: reachedFinalWaypoint ? undefined : customer.targetY,
     };
   }
 
   // Move horizontally or vertically only (not diagonal)
   let newX = customer.x;
   let newY = customer.y;
+  let facingDirection = customer.facingDirection;
 
   if (Math.abs(dx) > MOVEMENT_SPEED) {
-    // Move horizontally
     newX = customer.x + (dx > 0 ? MOVEMENT_SPEED : -MOVEMENT_SPEED);
+    facingDirection = dx > 0 ? 'right' : 'left';
   } else if (Math.abs(dy) > MOVEMENT_SPEED) {
-    // Move vertically
     newY = customer.y + (dy > 0 ? MOVEMENT_SPEED : -MOVEMENT_SPEED);
+    facingDirection = dy > 0 ? 'down' : 'up';
   }
 
   return {
     ...customer,
     x: newX,
     y: newY,
+    facingDirection,
+    path: customer.path,
   };
 }
 
