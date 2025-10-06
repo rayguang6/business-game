@@ -5,6 +5,7 @@ import { ActiveUpgradeIds } from '@/lib/features/upgrades';
 import { calculateUpgradeWeeklyExpenses, getWeeklyBaseExpenses } from '@/lib/features/economy';
 
 const BASE_WEEKLY_EXPENSES = getWeeklyBaseExpenses();
+import { DEFAULT_UPGRADE_VALUES, IndustryUpgradeConfig, UpgradeDefinition, UpgradeKey, getUpgradesForIndustry } from '@/lib/game/config';
 
 export interface UpgradesSlice {
   upgrades: ActiveUpgradeIds;
