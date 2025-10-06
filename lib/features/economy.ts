@@ -4,7 +4,8 @@
  */
 
 import { BASE_UPGRADE_METRICS, BUSINESS_METRICS, BUSINESS_STATS, getUpgradeById, UpgradeDefinition } from '@/lib/game/config';
-import { ActiveUpgradeIds, calculateActiveUpgradeMetrics } from './upgrades';
+import { calculateActiveUpgradeMetrics, getUpgradeLevel } from './upgrades';
+import { Upgrades } from '@/lib/store/types';
 
 const SCORE_PER_CUSTOMER = BUSINESS_STATS.reputationGainPerHappyCustomer;
 const BASE_WEEKLY_EXPENSES = BUSINESS_METRICS.weeklyExpenses;
@@ -71,7 +72,7 @@ function calculateUpgradeExpenseFromDefinition(upgrade: UpgradeDefinition): numb
 }
 
 export function buildWeeklyExpenseBreakdown(
-  upgrades: ActiveUpgradeIds,
+  upgrades: Upgrades,
   weeklyOneTimeCosts: number = 0,
 ): ExpenseBreakdownItem[] {
   const breakdown: ExpenseBreakdownItem[] = [
@@ -82,14 +83,17 @@ export function buildWeeklyExpenseBreakdown(
     },
   ];
 
-  upgrades
-    .map((upgradeId) => getUpgradeById(upgradeId))
-    .filter((upgrade): upgrade is UpgradeDefinition => Boolean(upgrade))
-    .forEach((upgrade) => {
-      const additionalExpenses = calculateUpgradeExpenseFromDefinition(upgrade);
+  Object.entries(upgrades)
+    .filter(([_, level]) => level > 0)
+    .forEach(([upgradeId, level]) => {
+      const upgrade = getUpgradeById(upgradeId as any);
+      if (!upgrade) return;
+      
+      const additionalExpenses = calculateUpgradeExpenseFromDefinition(upgrade) * level;
       if (additionalExpenses > 0) {
+        const label = level > 1 ? `${upgrade.name} (Lvl ${level})` : upgrade.name;
         breakdown.push({
-          label: upgrade.name,
+          label,
           amount: additionalExpenses,
           category: 'upgrade',
           sourceId: upgrade.id,
@@ -111,7 +115,7 @@ export function buildWeeklyExpenseBreakdown(
 /**
  * Calculates the total weekly expenses contributed by upgrades.
  */
-export function calculateUpgradeWeeklyExpenses(upgrades: ActiveUpgradeIds): number {
+export function calculateUpgradeWeeklyExpenses(upgrades: Upgrades): number {
   const { currentMetrics } = calculateActiveUpgradeMetrics(upgrades);
   return Math.max(0, currentMetrics.weeklyExpenses - BASE_UPGRADE_METRICS.weeklyExpenses);
 }
@@ -160,7 +164,7 @@ export function handleWeekTransition(
   weeklyExpenses: number,
   weeklyOneTimeCosts: number,
   currentReputation: number,
-  upgrades: ActiveUpgradeIds,
+  upgrades: Upgrades,
 ): {
   currentWeek: number;
   cash: number;

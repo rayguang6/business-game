@@ -108,7 +108,7 @@ export function HomeTab() {
     economics: { title: 'Economics', color: 'purple' },
   };
   
-  const hasUpgrades = upgrades.length > 0;
+  const hasUpgrades = Object.values(upgrades).some(level => level > 0);
   
   return (
     <div className="space-y-6">
