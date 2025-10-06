@@ -7,17 +7,32 @@ import { CustomerCard } from './CustomerCard';
 interface TreatmentRoomProps {
   roomId: number;
   customers: Customer[];
+  scaleFactor: number;
 }
 
-export function TreatmentRoom({ roomId, customers }: TreatmentRoomProps) {
+export function TreatmentRoom({ roomId, customers, scaleFactor }: TreatmentRoomProps) {
   const roomCustomers = customers.filter(c => c.roomId === roomId && c.status === CustomerStatus.InService);
   const isOccupied = roomCustomers.length > 0;
 
   return (
-    <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
+    <div 
+      className="bg-gray-50 rounded-lg border border-gray-200"
+      style={{
+        padding: `${8 * scaleFactor}px`,
+        borderRadius: `${8 * scaleFactor}px`
+      }}
+    >
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-medium text-gray-700">Room {roomId}</span>
-        <span className="text-xs text-gray-500">
+        <span 
+          className="font-medium text-gray-700"
+          style={{ fontSize: `${12 * scaleFactor}px` }}
+        >
+          Room {roomId}
+        </span>
+        <span 
+          className="text-gray-500"
+          style={{ fontSize: `${12 * scaleFactor}px` }}
+        >
           {isOccupied ? 'Occupied' : 'Available'}
         </span>
       </div>
@@ -27,6 +42,7 @@ export function TreatmentRoom({ roomId, customers }: TreatmentRoomProps) {
           key={customer.id} 
           customer={customer} 
           showServiceProgress={true}
+          scaleFactor={scaleFactor}
         />
       ))}
     </div>

@@ -9,9 +9,10 @@ interface CustomerCardProps {
   customer: Customer;
   showPatience?: boolean;
   showServiceProgress?: boolean;
+  scaleFactor: number;
 }
 
-export function CustomerCard({ customer, showPatience = false, showServiceProgress = false }: CustomerCardProps) {
+export function CustomerCard({ customer, showPatience = false, showServiceProgress = false, scaleFactor }: CustomerCardProps) {
   const getServiceProgress = (customer: Customer) => {
     const totalTicks = customer.service.duration * TICKS_PER_SECOND;
     const elapsedTicks = totalTicks - customer.serviceTimeLeft;
@@ -37,40 +38,80 @@ export function CustomerCard({ customer, showPatience = false, showServiceProgre
   };
 
   return (
-      <div className="bg-white rounded-lg p-2 shadow-sm border border-gray-200">
+      <div 
+        className="bg-white rounded-lg shadow-sm border border-gray-200"
+        style={{
+          padding: `${8 * scaleFactor}px`,
+          borderRadius: `${8 * scaleFactor}px`
+        }}
+      >
         {/* Row 1: Avatar + Service info + Status icon */}
-        <div className="flex items-center gap-2 mb-1">
+        <div 
+          className="flex items-center gap-2 mb-1"
+          style={{ gap: `${8 * scaleFactor}px` }}
+        >
           {/* Avatar inside card */}
-          <div className="w-5 h-5 rounded overflow-hidden bg-gray-100 flex items-center justify-center flex-shrink-0">
+          <div 
+            className="rounded overflow-hidden bg-gray-100 flex items-center justify-center flex-shrink-0"
+            style={{
+              width: `${20 * scaleFactor}px`,
+              height: `${20 * scaleFactor}px`,
+              borderRadius: `${4 * scaleFactor}px`
+            }}
+          >
             <img 
               src={customer.imageSrc} 
               alt="avatar" 
-              className="w-5 h-5" 
               style={{ 
                 objectFit: 'none', 
                 objectPosition: '0 0',
-                width: '20px',
-                height: '20px'
+                width: `${20 * scaleFactor}px`,
+                height: `${20 * scaleFactor}px`
               }} 
             />
           </div>
           
           {/* Service info */}
           <div className="flex-1 min-w-0">
-            <div className="font-medium text-gray-800 text-xs truncate">{customer.service.name}</div>
-            <div className="text-xs text-gray-600">${customer.service.price}</div>
+            <div 
+              className="font-medium text-gray-800 truncate"
+              style={{ fontSize: `${12 * scaleFactor}px` }}
+            >
+              {customer.service.name}
+            </div>
+            <div 
+              className="text-gray-600"
+              style={{ fontSize: `${10 * scaleFactor}px` }}
+            >
+              ${customer.service.price}
+            </div>
           </div>
 
           {/* Status icon in top right */}
           <div className="flex-shrink-0">
             {customer.status === CustomerStatus.Waiting && (
-              <span className="text-yellow-600 text-sm">⏳</span>
+              <span 
+                className="text-yellow-600"
+                style={{ fontSize: `${14 * scaleFactor}px` }}
+              >
+                ⏳
+              </span>
             )}
             {customer.status === CustomerStatus.InService && (
-              <span className="text-blue-600 text-sm">🔧</span>
+              <span 
+                className="text-blue-600"
+                style={{ fontSize: `${14 * scaleFactor}px` }}
+              >
+                🔧
+              </span>
             )}
             {customer.status === CustomerStatus.LeavingAngry && (
-              <span className="text-red-600 text-sm">😡</span>
+              <span 
+                className="text-red-600"
+                style={{ fontSize: `${14 * scaleFactor}px` }}
+              >
+                😡
+              </span>
             )}
           </div>
         </div>
@@ -81,16 +122,40 @@ export function CustomerCard({ customer, showPatience = false, showServiceProgre
             {(() => {
               const progress = getPatienceProgress(customer);
               return (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs">{getPatienceEmoji(progress)}</span>
-                  <div className="flex-1 bg-gray-200 rounded-full h-1">
+                <div 
+                  className="flex items-center"
+                  style={{ 
+                    gap: `${8 * scaleFactor}px`,
+                    marginTop: `${4 * scaleFactor}px`
+                  }}
+                >
+                  <span 
+                    style={{ fontSize: `${12 * scaleFactor}px` }}
+                  >
+                    {getPatienceEmoji(progress)}
+                  </span>
+                  <div 
+                    className="flex-1 bg-gray-200 rounded-full"
+                    style={{ 
+                      height: `${4 * scaleFactor}px`,
+                      borderRadius: `${2 * scaleFactor}px`
+                    }}
+                  >
                     <div
                       key={`patience-${customer.id}`}
-                      className={`${getPatienceColor(progress)} h-1 rounded-full transition-all duration-300`}
-                      style={{ width: `${progress}%` }}
+                      className={`${getPatienceColor(progress)} rounded-full transition-all duration-300`}
+                      style={{ 
+                        width: `${progress}%`,
+                        height: `${4 * scaleFactor}px`
+                      }}
                     />
                   </div>
-                  <span className="text-xs text-gray-600">{Math.ceil(ticksToSeconds(customer.patienceLeft))}s</span>
+                  <span 
+                    className="text-gray-600"
+                    style={{ fontSize: `${10 * scaleFactor}px` }}
+                  >
+                    {Math.ceil(ticksToSeconds(customer.patienceLeft))}s
+                  </span>
                 </div>
               );
             })()}
@@ -100,25 +165,66 @@ export function CustomerCard({ customer, showPatience = false, showServiceProgre
         {/* Row 2: Service Progress Bar (for in-service customers) */}
         {showServiceProgress && customer.status === CustomerStatus.InService && (
           <div className="mt-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-blue-600">🔧</span>
-              <div className="flex-1 bg-gray-200 rounded-full h-1">
+            <div 
+              className="flex items-center"
+              style={{ 
+                gap: `${8 * scaleFactor}px`,
+                marginTop: `${4 * scaleFactor}px`
+              }}
+            >
+              <span 
+                className="text-blue-600"
+                style={{ fontSize: `${12 * scaleFactor}px` }}
+              >
+                🔧
+              </span>
+              <div 
+                className="flex-1 bg-gray-200 rounded-full"
+                style={{ 
+                  height: `${4 * scaleFactor}px`,
+                  borderRadius: `${2 * scaleFactor}px`
+                }}
+              >
                 <div
                   key={`progress-${customer.id}-${customer.serviceTimeLeft}`}
-                  className="bg-blue-500 h-1 rounded-full transition-all duration-300"
-                  style={{ width: `${getServiceProgress(customer)}%` }}
+                  className="bg-blue-500 rounded-full transition-all duration-300"
+                  style={{ 
+                    width: `${getServiceProgress(customer)}%`,
+                    height: `${4 * scaleFactor}px`
+                  }}
                 />
               </div>
-              <span className="text-xs text-blue-600 font-medium">{Math.ceil(ticksToSeconds(customer.serviceTimeLeft))}s</span>
+              <span 
+                className="text-blue-600 font-medium"
+                style={{ fontSize: `${10 * scaleFactor}px` }}
+              >
+                {Math.ceil(ticksToSeconds(customer.serviceTimeLeft))}s
+              </span>
             </div>
           </div>
         )}
       
         {/* Row 2: Angry Message (for leaving customers) */}
         {customer.status === CustomerStatus.LeavingAngry && (
-          <div className="mt-1 flex items-center gap-2">
-            <span className="text-xs text-red-600">😡</span>
-            <span className="text-xs text-red-600 font-medium">Reputation -1</span>
+          <div 
+            className="flex items-center"
+            style={{ 
+              gap: `${8 * scaleFactor}px`,
+              marginTop: `${4 * scaleFactor}px`
+            }}
+          >
+            <span 
+              className="text-red-600"
+              style={{ fontSize: `${12 * scaleFactor}px` }}
+            >
+              😡
+            </span>
+            <span 
+              className="text-red-600 font-medium"
+              style={{ fontSize: `${10 * scaleFactor}px` }}
+            >
+              Reputation -1
+            </span>
           </div>
         )}
       </div>

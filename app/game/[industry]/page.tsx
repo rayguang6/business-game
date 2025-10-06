@@ -65,9 +65,9 @@ export default function GamePage() {
     <div id="game-shell" className="h-screen relative flex flex-col md:flex-row overflow-hidden">
       
       
-      {/* Mobile: Top Section - Game Canvas Area (50% height) */}
+      {/* Mobile: Top Section - Game Canvas Area (flexible height) */}
       {/* Desktop: Left Section - Game Canvas Area (50% width) */}
-      <div className="relative h-1/2 md:h-full md:w-1/2 flex items-center justify-center">
+      <div className="relative md:h-full md:w-1/2 flex items-center justify-center py-4 md:py-0">
         {/* TopBar Overlay */}
         <div className="absolute top-0 left-0 right-0 z-20">
           <TopBar onSettingsOpen={openSettings} />
@@ -83,9 +83,9 @@ export default function GamePage() {
         </div>
       </div>
 
-      {/* Mobile: Bottom Section - Navigation & Tabs (50% height) */}
+      {/* Mobile: Bottom Section - Navigation & Tabs (flexible height) */}
       {/* Desktop: Right Section - Navigation & Tabs (50% width) */}
-      <div className="relative z-20 bg-gray-900 border-t-2 md:border-t-0 md:border-l-2 border-gray-700 h-1/2 md:h-full md:w-1/2 flex flex-col overflow-hidden">
+      <div className="relative z-20 bg-gray-900 border-t-2 md:border-t-0 md:border-l-2 border-gray-700 flex-1 md:h-full md:w-1/2 flex flex-col overflow-hidden">
         {/* Tab Content Area */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
           {activeTab === 'staff' && <StaffTab />}
