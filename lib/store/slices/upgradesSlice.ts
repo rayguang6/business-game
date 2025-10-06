@@ -1,15 +1,16 @@
 import { StateCreator } from 'zustand';
-import { GameState } from '../types';
+import { GameState, Upgrades } from '../types';
 import { UpgradeDefinition, UpgradeId, getAllUpgrades, getUpgradeById } from '@/lib/game/config';
-import { ActiveUpgradeIds } from '@/lib/features/upgrades';
 import { calculateUpgradeWeeklyExpenses, getWeeklyBaseExpenses } from '@/lib/features/economy';
+import { getUpgradeLevel, canUpgradeMore } from '@/lib/features/upgrades';
 
 const BASE_WEEKLY_EXPENSES = getWeeklyBaseExpenses();
 
 export interface UpgradesSlice {
-  upgrades: ActiveUpgradeIds;
+  upgrades: Upgrades;
   canAffordUpgrade: (cost: number) => boolean;
-  isUpgradePurchased: (upgradeId: UpgradeId) => boolean;
+  getUpgradeLevel: (upgradeId: UpgradeId) => number;
+  canUpgradeMore: (upgradeId: UpgradeId) => boolean;
   getUpgradeDefinition: (upgradeId: UpgradeId) => UpgradeDefinition | null;
   getAvailableUpgrades: () => UpgradeDefinition[];
   purchaseUpgrade: (upgradeId: UpgradeId) => { success: boolean; message: string };
@@ -17,15 +18,19 @@ export interface UpgradesSlice {
 }
 
 export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice> = (set, get) => ({
-  upgrades: [],
+  upgrades: {},
 
   canAffordUpgrade: (cost: number) => {
     const { metrics } = get();
     return metrics.cash >= cost;
   },
 
-  isUpgradePurchased: (upgradeId: UpgradeId) => {
-    return get().upgrades.includes(upgradeId);
+  getUpgradeLevel: (upgradeId: UpgradeId) => {
+    return getUpgradeLevel(get().upgrades, upgradeId);
+  },
+
+  canUpgradeMore: (upgradeId: UpgradeId) => {
+    return canUpgradeMore(get().upgrades, upgradeId);
   },
 
   getUpgradeDefinition: (upgradeId: UpgradeId) => {
@@ -42,9 +47,10 @@ export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice>
     }
 
     const store = get() as GameState & UpgradesSlice;
+    const currentLevel = store.getUpgradeLevel(upgradeId);
 
-    if (store.isUpgradePurchased(upgradeId)) {
-      return { success: false, message: `${upgrade.name} is already purchased.` };
+    if (currentLevel >= upgrade.maxLevel) {
+      return { success: false, message: `${upgrade.name} is already at max level.` };
     }
 
     if (!store.canAffordUpgrade(upgrade.cost)) {
@@ -52,23 +58,31 @@ export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice>
     }
 
     const previousUpgradeExpenses = calculateUpgradeWeeklyExpenses(store.upgrades);
-    const nextActiveUpgrades: ActiveUpgradeIds = [...store.upgrades, upgradeId];
-    const newUpgradeExpenses = calculateUpgradeWeeklyExpenses(nextActiveUpgrades);
+    const nextUpgrades: Upgrades = {
+      ...store.upgrades,
+      [upgradeId]: currentLevel + 1,
+    };
+    const newUpgradeExpenses = calculateUpgradeWeeklyExpenses(nextUpgrades);
     const weeklyExpenseDelta = newUpgradeExpenses - previousUpgradeExpenses;
+
+    const newLevel = currentLevel + 1;
+    const upgradeLabel = upgrade.maxLevel > 1 
+      ? `${upgrade.name} (Lvl ${newLevel})`
+      : upgrade.name;
 
     set((state) => {
       // Add upgrade purchase as a one-time cost (this will be tracked in weekly history)
       const addOneTimeCost = (state as any).addOneTimeCost;
       if (addOneTimeCost) {
         addOneTimeCost({
-          label: upgrade.name,
+          label: upgradeLabel,
           amount: upgrade.cost,
           category: 'upgrade' as const,
         });
       }
 
       return {
-        upgrades: nextActiveUpgrades,
+        upgrades: nextUpgrades,
         metrics: {
           ...state.metrics,
           cash: state.metrics.cash - upgrade.cost,
@@ -79,12 +93,13 @@ export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice>
       };
     });
 
-    return { success: true, message: `${upgrade.name} unlocked! Cost: $${upgrade.cost}` };
+    const levelText = upgrade.maxLevel > 1 ? ` Level ${newLevel}` : '';
+    return { success: true, message: `${upgrade.name}${levelText} unlocked! Cost: $${upgrade.cost}` };
   },
 
   resetUpgrades: () => {
     set({
-      upgrades: [],
+      upgrades: {},
       weeklyExpenses: BASE_WEEKLY_EXPENSES,
       weeklyExpenseAdjustments: 0,
     });

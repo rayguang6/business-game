@@ -13,7 +13,8 @@ export interface Metrics {
   reputation: number;
 }
 
-export type Upgrades = UpgradeId[];
+// Map of upgrade ID to current level
+export type Upgrades = Record<UpgradeId, number>;
 
 export interface OneTimeCost {
   label: string;

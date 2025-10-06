@@ -21,7 +21,7 @@ const getInitialGameState = (keepIndustry: boolean = false) => {
     weeklyHistory: [],
     customers: [],
     metrics: getInitialMetrics(),
-    upgrades: [],
+    upgrades: {},
     weeklyExpenseAdjustments: 0,
     ...(keepIndustry ? {} : { selectedIndustry: null }),
   };

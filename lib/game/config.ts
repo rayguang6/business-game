@@ -156,8 +156,9 @@ export interface UpgradeDefinition {
   name: string;
   description: string;
   icon: string;
-  cost: number;
-  effects: UpgradeEffect[];
+  cost: number; // Cost per level (flat rate)
+  maxLevel: number; // Maximum level (1 = single purchase, 2+ = multi-level)
+  effects: UpgradeEffect[]; // Effects per level (multiplied by level)
 }
 
 export type UpgradeId = UpgradeDefinition['id'];
@@ -177,6 +178,7 @@ export const DENTAL_UPGRADES: UpgradeDefinition[] = [
     description: 'Add another treatment room so more patients can be helped at once.',
     icon: '🦷',
     cost: 1200,
+    maxLevel: 3, // Can buy up to 3 times
     effects: [
       { metric: 'treatmentRooms', type: 'add', value: 1, source: 'Extra Treatment Room' },
       { metric: 'weeklyExpenses', type: 'add', value: 150, source: 'Extra Treatment Room' },
@@ -188,6 +190,7 @@ export const DENTAL_UPGRADES: UpgradeDefinition[] = [
     description: 'Speed up service time with modern dental equipment.',
     icon: '⚡',
     cost: 900,
+    maxLevel: 2, // Can upgrade twice
     effects: [
       { metric: 'serviceSpeedMultiplier', type: 'percent', value: -0.2, source: 'Modern Equipment' },
       { metric: 'weeklyExpenses', type: 'add', value: 90, source: 'Modern Equipment' },
@@ -199,6 +202,7 @@ export const DENTAL_UPGRADES: UpgradeDefinition[] = [
     description: 'Improve customer experience and reputation gains with staff coaching.',
     icon: '👩‍⚕️',
     cost: 700,
+    maxLevel: 3, // Can train multiple times
     effects: [
       { metric: 'reputationMultiplier', type: 'percent', value: 0.25, source: 'Staff Training Program' },
       { metric: 'weeklyExpenses', type: 'add', value: 80, source: 'Staff Training Program' },
@@ -210,6 +214,7 @@ export const DENTAL_UPGRADES: UpgradeDefinition[] = [
     description: 'Bring patients in faster with a short marketing campaign.',
     icon: '📣',
     cost: 600,
+    maxLevel: 2, // Can boost twice
     effects: [
       { metric: 'spawnIntervalSeconds', type: 'percent', value: -0.15, source: 'Local Marketing Blitz' },
       { metric: 'weeklyExpenses', type: 'add', value: 70, source: 'Local Marketing Blitz' },
@@ -221,6 +226,7 @@ export const DENTAL_UPGRADES: UpgradeDefinition[] = [
     description: 'Create a relaxing environment that keeps customers calm and patient.',
     icon: '🛋️',
     cost: 450,
+    maxLevel: 1, // Single purchase only
     effects: [
       { metric: 'reputationMultiplier', type: 'percent', value: 0.15, source: 'Spa Waiting Area' },
       { metric: 'weeklyExpenses', type: 'add', value: 60, source: 'Spa Waiting Area' },
