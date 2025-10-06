@@ -6,6 +6,7 @@ import { CustomerStatus } from '@/lib/features/customers';
 import { WaitingArea } from './WaitingArea';
 import { TreatmentRoom } from './TreatmentRoom';
 import { Character2D } from './Character2D';
+import { SpriteCustomer } from './SpriteCustomer';
 import { GridOverlay } from './GridOverlay';
 import { getUpgradeEffects } from '@/lib/features/upgrades';
 
@@ -101,100 +102,72 @@ export function GameCanvas() {
             transformOrigin: 'top left'
           }}
         >
-          {/* Test Character 1 - Idle facing down */}
-          <Character2D
-            x={2} // Grid position
-            y={1}
-            spriteSheet="/images/customer/customer1.png"
-            direction="down"
-            scaleFactor={scaleFactor}
-            isWalking={false}
-          />
-          
-          {/* Test Character 2 - Walking right */}
-          <Character2D
-            x={4}
-            y={1}
-            spriteSheet="/images/customer/customer1.png"
-            direction="right"
-            scaleFactor={scaleFactor}
-            isWalking={true}
-          />
-          
-          {/* Test Character 3 - Walking up */}
-          <Character2D
-            x={6}
-            y={1}
-            spriteSheet="/images/customer/customer1.png"
-            direction="up"
-            scaleFactor={scaleFactor}
-            isWalking={true}
-          />
-          
-          {/* Test Character 4 - Celebrating */}
-          <Character2D
-            x={8}
-            y={1}
-            spriteSheet="/images/customer/customer1.png"
-            scaleFactor={scaleFactor}
-            isCelebrating={true}
-          />
-        </div>
-
-        {/* HUD Overlay - Scales with canvas */}
-        <div 
-          className="absolute inset-0 flex items-center justify-between pointer-events-none"
-          style={{
-            padding: `${16 * scaleFactor}px`,
-            paddingTop: `${80 * scaleFactor}px`
-          }}
-        >
-          {/* Left HUD Panel - Waiting Area */}
-          <div 
-            className="pointer-events-auto"
-            style={{
-              width: `${256 * scaleFactor}px`
-            }}
-          >
-            <WaitingArea 
-              customers={customers} 
+          {/* Render all customers as sprites */}
+          {customers.map((customer) => (
+            <SpriteCustomer
+              key={customer.id}
+              customer={customer}
               scaleFactor={scaleFactor}
             />
-          </div>
+          ))}
+        </div>
 
-          {/* Right HUD Panel - Treatment Rooms */}
+        {/* OLD UI - BACKUP (Hidden for now, keeping for reference) */}
+        {false && (
           <div 
-            className="pointer-events-auto"
+            className="absolute inset-0 flex items-center justify-between pointer-events-none"
             style={{
-              width: `${256 * scaleFactor}px`
+              padding: `${16 * scaleFactor}px`,
+              paddingTop: `${80 * scaleFactor}px`
             }}
           >
-            <div className="flex items-center justify-between mb-2">
-              <h4 
-                className="font-semibold text-gray-700"
-                style={{ fontSize: `${12 * scaleFactor}px` }}
-              >
-                {treatmentRoomsLabel}
-              </h4>
-              <div 
-                className="text-gray-500"
-                style={{ fontSize: `${12 * scaleFactor}px` }}
-              >
-                {customers.filter((c) => c.status === CustomerStatus.InService).length}/{treatmentRooms} in service
+            {/* Left HUD Panel - Waiting Area */}
+            <div 
+              className="pointer-events-auto"
+              style={{
+                width: `${256 * scaleFactor}px`
+              }}
+            >
+              <WaitingArea 
+                customers={customers} 
+                scaleFactor={scaleFactor}
+              />
+            </div>
+
+            {/* Right HUD Panel - Treatment Rooms */}
+            <div 
+              className="pointer-events-auto"
+              style={{
+                width: `${256 * scaleFactor}px`
+              }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h4 
+                  className="font-semibold text-gray-700"
+                  style={{ fontSize: `${12 * scaleFactor}px` }}
+                >
+                  {treatmentRoomsLabel}
+                </h4>
+                <div 
+                  className="text-gray-500"
+                  style={{ fontSize: `${12 * scaleFactor}px` }}
+                >
+                  {customers.filter((c) => c.status === CustomerStatus.InService).length}/{treatmentRooms} in service
+                </div>
+              </div>
+              <div className="space-y-2">
+                {Array.from({ length: treatmentRooms }, (_, index) => (
+                  <TreatmentRoom 
+                    key={index + 1} 
+                    roomId={index + 1} 
+                    customers={customers}
+                    scaleFactor={scaleFactor}
+                  />
+                ))}
               </div>
             </div>
-            <div className="space-y-2">
-              {Array.from({ length: treatmentRooms }, (_, index) => (
-                <TreatmentRoom 
-                  key={index + 1} 
-                  roomId={index + 1} 
-                  customers={customers}
-                  scaleFactor={scaleFactor}
-                />
-              ))}
-            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

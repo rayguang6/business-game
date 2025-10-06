@@ -23,8 +23,8 @@ export const BUSINESS_STATS = {
   customerPatienceSeconds: 10,
   leavingAngryDurationTicks: 10,
   customerSpawnArea: {
-    x: { min: 50, max: 350 },
-    y: { min: 50, max: 250 },
+    x: { min: 0, max: 2 }, // Grid coordinates (0-9 for 10x10 grid)
+    y: { min: 7, max: 9 }, // Bottom area for waiting
   },
   waitingChairs: 4,
   treatmentRooms: 2,
@@ -73,13 +73,13 @@ export const SERVICE_CONFIG = {
     {
       id: 'dental_cleaning',
       name: 'Teeth Cleaning',
-      duration: 6,
+      duration: 10,
       price: 100,
     },
     {
       id: 'dental_filling',
       name: 'Cavity Filling',
-      duration: 8,
+      duration: 10,
       price: 200,
     },
     {
