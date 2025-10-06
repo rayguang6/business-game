@@ -14,9 +14,6 @@ export const BUSINESS_METRICS = {
   startingCash: 3000,
   weeklyExpenses: 800,
   startingReputation: 0,
-  reputationGainPerHappyCustomer: 1,
-  reputationLossPerAngryCustomer: 1,
-  baseHappyProbability: 0.7,
 } as const;
 
 export const BUSINESS_STATS = {
@@ -31,24 +28,18 @@ export const BUSINESS_STATS = {
   },
   waitingChairs: 4,
   treatmentRooms: 2,
+  reputationGainPerHappyCustomer: 1,
+  reputationLossPerAngryCustomer: 1,
+  baseHappyProbability: 0.7,
 } as const;
 
 // -----------------------------------------------------------------------------
-// CORE GAME TIMING
+// CORE GAME TIMING (derived from BUSINESS_STATS)
 // -----------------------------------------------------------------------------
 
-export const GAME_TIMING = {
-  TICKS_PER_SECOND: BUSINESS_STATS.ticksPerSecond,
-  TICK_INTERVAL_MS: Math.round((1 / BUSINESS_STATS.ticksPerSecond) * 1000),
-  WEEK_DURATION_SECONDS: BUSINESS_STATS.weekDurationSeconds,
-  CUSTOMER_SPAWN_INTERVAL_SECONDS: BUSINESS_STATS.customerSpawnIntervalSeconds,
-  DEFAULT_PATIENCE_SECONDS: BUSINESS_STATS.customerPatienceSeconds,
-  LEAVING_ANGRY_DURATION_TICKS: BUSINESS_STATS.leavingAngryDurationTicks,
-} as const;
-
-export const TICKS_PER_SECOND = GAME_TIMING.TICKS_PER_SECOND;
-export const TICK_INTERVAL_MS = GAME_TIMING.TICK_INTERVAL_MS;
-export const ROUND_DURATION_SECONDS = GAME_TIMING.WEEK_DURATION_SECONDS;
+export const TICKS_PER_SECOND = BUSINESS_STATS.ticksPerSecond;
+export const TICK_INTERVAL_MS = Math.round((1 / BUSINESS_STATS.ticksPerSecond) * 1000);
+export const ROUND_DURATION_SECONDS = BUSINESS_STATS.weekDurationSeconds;
 
 // -----------------------------------------------------------------------------
 // CUSTOMER CONFIGURATION
@@ -280,8 +271,8 @@ export function calculateWeeklyRevenuePotential(): {
   potentialRevenue: number;
   realisticTarget: number;
 } {
-  const weekDurationSeconds = GAME_TIMING.WEEK_DURATION_SECONDS;
-  const spawnIntervalSeconds = GAME_TIMING.CUSTOMER_SPAWN_INTERVAL_SECONDS;
+  const weekDurationSeconds = BUSINESS_STATS.weekDurationSeconds;
+  const spawnIntervalSeconds = BUSINESS_STATS.customerSpawnIntervalSeconds;
 
   const customersPerWeek = Math.floor(weekDurationSeconds / spawnIntervalSeconds);
   const services = SERVICE_CONFIG.DENTAL_SERVICES;
