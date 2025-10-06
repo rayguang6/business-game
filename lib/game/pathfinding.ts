@@ -1,6 +1,12 @@
 import type { GridPosition } from './positioning';
 import { MAP_CONFIG, type MapConfig } from './config';
 
+interface FindPathOptions {
+  mapConfig?: MapConfig;
+  additionalWalls?: GridPosition[];
+  allowGoalOccupied?: boolean;
+}
+
 const DIRECTIONS: GridPosition[] = [
   { x: 1, y: 0 },
   { x: -1, y: 0 },
@@ -19,8 +25,13 @@ const isWithinBounds = (position: GridPosition, config: MapConfig): boolean => {
   );
 };
 
-const createWallSet = (config: MapConfig): Set<string> => {
-  return new Set(config.walls.map(serialize));
+const createWallSet = (config: MapConfig, additionalWalls: GridPosition[]): Set<string> => {
+  const serializedWalls = [
+    ...config.walls.map(serialize),
+    ...additionalWalls.map(serialize),
+  ];
+
+  return new Set(serializedWalls);
 };
 
 /**
@@ -30,13 +41,16 @@ const createWallSet = (config: MapConfig): Set<string> => {
 export function findPath(
   start: GridPosition,
   goal: GridPosition,
-  config: MapConfig = MAP_CONFIG
+  options: FindPathOptions = {}
 ): GridPosition[] {
   if (start.x === goal.x && start.y === goal.y) {
     return [];
   }
 
-  const walls = createWallSet(config);
+  const config = options.mapConfig ?? MAP_CONFIG;
+  const allowGoalOccupied = options.allowGoalOccupied ?? true;
+  const additionalWalls = options.additionalWalls ?? [];
+  const walls = createWallSet(config, additionalWalls);
   const startKey = serialize(start);
   const goalKey = serialize(goal);
 
@@ -63,7 +77,7 @@ export function findPath(
         continue;
       }
 
-      if (walls.has(nextKey)) {
+      if (walls.has(nextKey) && !(allowGoalOccupied && nextKey === goalKey)) {
         continue;
       }
 

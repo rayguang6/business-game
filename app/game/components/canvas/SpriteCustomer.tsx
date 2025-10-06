@@ -19,43 +19,28 @@ export function SpriteCustomer({ customer, scaleFactor }: SpriteCustomerProps) {
   const gridX = Math.floor(customer.x);
   const gridY = Math.floor(customer.y);
   
-  // Determine walking direction based on target position
-  const getWalkingDirection = (): 'down' | 'left' | 'up' | 'right' => {
-    if (customer.targetX === undefined || customer.targetY === undefined) {
-      return 'down';
-    }
-    
-    const dx = customer.targetX - customer.x;
-    const dy = customer.targetY - customer.y;
-    
-    // Determine primary direction (larger movement axis)
-    if (Math.abs(dx) > Math.abs(dy)) {
-      return dx > 0 ? 'right' : 'left';
-    } else {
-      return dy > 0 ? 'down' : 'up';
-    }
-  };
-  
   // Determine animation state based on customer status
   const getAnimationState = () => {
+    const facingDirection = customer.facingDirection ?? 'down';
+
     switch (customer.status) {
       case CustomerStatus.Spawning:
-        return { isWalking: false, isCelebrating: false, direction: 'down' as const };
-      
+        return { isWalking: false, isCelebrating: false, direction: facingDirection };
+
       case CustomerStatus.WalkingToChair:
       case CustomerStatus.WalkingToRoom:
-        return { isWalking: true, isCelebrating: false, direction: getWalkingDirection() };
-      
+        return { isWalking: true, isCelebrating: false, direction: facingDirection };
+
       case CustomerStatus.LeavingAngry:
-        return { isWalking: true, isCelebrating: false, direction: 'down' as const };
-      
+        return { isWalking: true, isCelebrating: false, direction: facingDirection };
+
       case CustomerStatus.WalkingOutHappy:
-        return { isWalking: false, isCelebrating: true, direction: 'down' as const };
-      
+        return { isWalking: false, isCelebrating: true, direction: facingDirection };
+
       case CustomerStatus.Waiting:
       case CustomerStatus.InService:
       default:
-        return { isWalking: false, isCelebrating: false, direction: 'down' as const };
+        return { isWalking: false, isCelebrating: false, direction: facingDirection };
     }
   };
 
