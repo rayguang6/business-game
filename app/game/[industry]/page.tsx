@@ -14,6 +14,7 @@ import { UpgradesTab } from '@/app/game/components/tabs/UpgradesTab';
 import { MarketingTab } from '@/app/game/components/tabs/MarketingTab';
 import { TabType, TAB_CONFIGS } from '@/lib/types/ui';
 import { useAudioControls } from '@/hooks/useAudio';
+import { FullscreenToggle } from '@/app/game/components/ui/FullscreenToggle';
 
 export default function GamePage() {
   const gameStore = useGameStore();
@@ -61,7 +62,7 @@ export default function GamePage() {
   }
 
   return (
-    <div className="h-screen relative flex flex-col md:flex-row overflow-hidden">
+    <div id="game-shell" className="h-screen relative flex flex-col md:flex-row overflow-hidden">
       
       
       {/* Mobile: Top Section - Game Canvas Area (50% height) */}
@@ -70,6 +71,10 @@ export default function GamePage() {
         {/* TopBar Overlay */}
         <div className="absolute top-0 left-0 right-0 z-20">
           <TopBar onSettingsOpen={openSettings} />
+        </div>
+
+        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-30">
+          <FullscreenToggle targetId="game-shell" />
         </div>
         
         {/* Game Canvas - Full Area */}
