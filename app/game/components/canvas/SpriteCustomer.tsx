@@ -11,16 +11,41 @@ interface SpriteCustomerProps {
 }
 
 export function SpriteCustomer({ customer, scaleFactor }: SpriteCustomerProps) {
-  // Round customer position to grid coordinates
+  // Use actual position for rendering (not rounded to grid)
+  const renderX = customer.x;
+  const renderY = customer.y;
+  
+  // Round for UI positioning
   const gridX = Math.floor(customer.x);
   const gridY = Math.floor(customer.y);
+  
+  // Determine walking direction based on target position
+  const getWalkingDirection = (): 'down' | 'left' | 'up' | 'right' => {
+    if (customer.targetX === undefined || customer.targetY === undefined) {
+      return 'down';
+    }
+    
+    const dx = customer.targetX - customer.x;
+    const dy = customer.targetY - customer.y;
+    
+    // Determine primary direction (larger movement axis)
+    if (Math.abs(dx) > Math.abs(dy)) {
+      return dx > 0 ? 'right' : 'left';
+    } else {
+      return dy > 0 ? 'down' : 'up';
+    }
+  };
   
   // Determine animation state based on customer status
   const getAnimationState = () => {
     switch (customer.status) {
       case CustomerStatus.Spawning:
+        return { isWalking: false, isCelebrating: false, direction: 'down' as const };
+      
       case CustomerStatus.WalkingToChair:
       case CustomerStatus.WalkingToRoom:
+        return { isWalking: true, isCelebrating: false, direction: getWalkingDirection() };
+      
       case CustomerStatus.LeavingAngry:
         return { isWalking: true, isCelebrating: false, direction: 'down' as const };
       
@@ -92,8 +117,8 @@ export function SpriteCustomer({ customer, scaleFactor }: SpriteCustomerProps) {
     <div className="relative">
       {/* Character Sprite */}
       <Character2D
-        x={gridX}
-        y={gridY}
+        x={renderX}
+        y={renderY}
         spriteSheet="/images/customer/customer1.png"
         direction={direction}
         scaleFactor={scaleFactor}

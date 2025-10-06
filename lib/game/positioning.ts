@@ -8,18 +8,16 @@ export interface GridPosition {
   y: number;
 }
 
-// Waiting area positions (10 spots total)
+// Waiting area positions (8 spots total)
 export const WAITING_POSITIONS: GridPosition[] = [
-  { x: 2, y: 5 },
-  { x: 2, y: 6 },
-  { x: 2, y: 7 },
-  { x: 2, y: 8 },
-  { x: 2, y: 9 },
-  { x: 3, y: 5 },
-  { x: 3, y: 6 },
-  { x: 3, y: 7 },
-  { x: 3, y: 8 },
-  { x: 3, y: 9 },
+  { x: 1, y: 1 },
+  { x: 1, y: 2 },
+  { x: 1, y: 3 },
+  { x: 1, y: 4 },
+  { x: 1, y: 5 },
+  { x: 1, y: 6 },
+  { x: 1, y: 7 },
+  { x: 1, y: 8 },
 ];
 
 // Service room positions (5 spots total)
@@ -32,7 +30,7 @@ export const SERVICE_ROOM_POSITIONS: GridPosition[] = [
 ];
 
 // Entry spawn position (where customers first appear)
-export const ENTRY_POSITION: GridPosition = { x: 0, y: 8 };
+export const ENTRY_POSITION: GridPosition = { x: 4, y: 9 };
 
 /**
  * Get an available waiting position based on current customers

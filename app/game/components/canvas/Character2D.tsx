@@ -8,8 +8,8 @@ const CANVAS_SIZE = 320; // 10x10 tiles = 320px (32px × 10)
 const GRID_SIZE = 10; // 10x10 grid
 
 interface Character2DProps {
-  x: number; // Grid position (0-9 for 10x10 grid)
-  y: number; // Grid position (0-9 for 10x10 grid)
+  x: number; // Position (can be float for smooth movement)
+  y: number; // Position (can be float for smooth movement)
   spriteSheet: string;
   frame?: number; // Which frame from the spritesheet (0-15)
   direction?: 'down' | 'left' | 'up' | 'right';
@@ -30,7 +30,7 @@ export function Character2D({
 }: Character2DProps) {
   const [currentFrame, setCurrentFrame] = useState(frame);
 
-  // Calculate position in pixels (32x32 grid system)
+  // Calculate position in pixels (32x32 grid system, supports floating point)
   const pixelX = x * TILE_SIZE;
   const pixelY = y * TILE_SIZE;
 
