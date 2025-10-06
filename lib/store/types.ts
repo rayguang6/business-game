@@ -4,6 +4,7 @@
 
 import { Industry } from '@/lib/features/industries';
 import { Customer } from '@/lib/features/customers';
+import { UpgradeId } from '@/lib/game/config';
 
 export interface Metrics {
   cash: number;
@@ -12,12 +13,7 @@ export interface Metrics {
   reputation: number;
 }
 
-export interface Upgrades {
-  treatmentRooms: number; // For dental: 2-5 rooms
-  equipment: number; // 0-3 levels
-  staff: number; // 0-3 levels  
-  marketing: number; // 0-3 levels
-}
+export type Upgrades = UpgradeId[];
 
 export interface WeeklyHistoryEntry {
   week: number;

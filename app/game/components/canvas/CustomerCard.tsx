@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Customer, CustomerStatus } from '@/lib/features/customers';
-import { TICKS_PER_SECOND, ticksToSeconds } from '@/lib/core/constants';
+import { TICKS_PER_SECOND, ticksToSeconds } from '@/lib/game/config';
 import { DEFAULT_PATIENCE_SECONDS } from '@/lib/features/customers';
 
 interface CustomerCardProps {

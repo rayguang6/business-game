@@ -1,87 +1,79 @@
 /**
  * Upgrades Feature
- * Centralized system for calculating effective values based on upgrades
- * 
- * This system calculates all upgrade effects in one place,
- * so the rest of the game just uses the calculated values.
+ * Simplified single-level upgrade calculations and helpers.
  */
 
-import { Upgrades } from '@/lib/store/types';
-import { getUpgradesForIndustry } from '@/lib/config/gameConfig';
-import { CUSTOMER_SPAWN_INTERVAL } from '@/lib/core/constants';
+import { BASE_UPGRADE_METRICS, UpgradeDefinition, UpgradeId, getAllUpgrades, getUpgradeById } from '@/lib/game/config';
+import { calculateUpgradeMetrics, UpgradeMetricsResult } from '@/lib/game/upgradeEngine';
+import { secondsToTicks } from '@/lib/game/config';
 
-/**
- * Calculates effective customer spawn interval based on marketing upgrades
- */
-export function getEffectiveSpawnInterval(upgrades: Upgrades, industryId: string = 'dental'): number {
-  const baseInterval = CUSTOMER_SPAWN_INTERVAL;
-  
-  if (upgrades.marketing === 0) return baseInterval;
-  
-  const industryConfig = getUpgradesForIndustry(industryId);
-  const marketingConfig = industryConfig.marketing;
-  const multiplier = marketingConfig?.spawnMultiplier?.[upgrades.marketing - 1] || 1;
-  
-  return Math.floor(baseInterval * multiplier);
+export type ActiveUpgradeIds = UpgradeId[];
+
+export interface UpgradeEffects {
+  spawnIntervalSeconds: number;
+  spawnIntervalTicks: number;
+  serviceSpeedMultiplier: number;
+  reputationMultiplier: number;
+  treatmentRooms: number;
+  weeklyExpenses: number;
 }
 
-/**
- * Calculates effective service duration multiplier based on equipment upgrades
- */
-export function getEffectiveServiceSpeedMultiplier(upgrades: Upgrades, industryId: string = 'dental'): number {
-  if (upgrades.equipment === 0) return 1;
-  
-  const industryConfig = getUpgradesForIndustry(industryId);
-  const equipmentConfig = industryConfig.equipment;
-  const multiplier = equipmentConfig?.speedMultiplier?.[upgrades.equipment - 1] || 1;
-  
-  return multiplier;
+function resolveActiveUpgrades(activeIds: ActiveUpgradeIds): UpgradeDefinition[] {
+  return activeIds
+    .map((id) => getUpgradeById(id))
+    .filter((upgrade): upgrade is UpgradeDefinition => Boolean(upgrade));
 }
 
-/**
- * Calculates effective reputation gain multiplier based on staff upgrades
- */
-export function getEffectiveReputationMultiplier(upgrades: Upgrades, industryId: string = 'dental'): number {
-  if (upgrades.staff === 0) return 1;
-  
-  const industryConfig = getUpgradesForIndustry(industryId);
-  const staffConfig = industryConfig.staff;
-  const multiplier = staffConfig?.qualityMultiplier?.[upgrades.staff - 1] || 1;
-  
-  return multiplier;
+export function calculateActiveUpgradeMetrics(activeIds: ActiveUpgradeIds): UpgradeMetricsResult {
+  const activeUpgrades = resolveActiveUpgrades(activeIds);
+  return calculateUpgradeMetrics(BASE_UPGRADE_METRICS, activeUpgrades);
 }
 
-/**
- * Calculates effective treatment room capacity based on treatment room upgrades
- */
-export function getEffectiveTreatmentRooms(upgrades: Upgrades): number {
-  return upgrades.treatmentRooms;
-}
+export function getUpgradeEffects(activeIds: ActiveUpgradeIds): UpgradeEffects {
+  const { currentMetrics } = calculateActiveUpgradeMetrics(activeIds);
 
-/**
- * Comprehensive upgrade effects calculation
- * Returns all effective values in one place
- */
-export function calculateUpgradeEffects(upgrades: Upgrades, industryId: string = 'dental') {
+  const spawnIntervalSeconds = Math.max(0.5, currentMetrics.spawnIntervalSeconds);
+  const spawnIntervalTicks = Math.max(1, secondsToTicks(spawnIntervalSeconds));
+
   return {
-    // Customer spawn rate
-    spawnInterval: getEffectiveSpawnInterval(upgrades, industryId),
-    
-    // Service speed
-    serviceSpeedMultiplier: getEffectiveServiceSpeedMultiplier(upgrades, industryId),
-    
-    // Reputation gain
-    reputationMultiplier: getEffectiveReputationMultiplier(upgrades, industryId),
-    
-    // Treatment capacity
-    treatmentRooms: getEffectiveTreatmentRooms(upgrades),
+    spawnIntervalSeconds,
+    spawnIntervalTicks,
+    serviceSpeedMultiplier: Math.max(0.1, currentMetrics.serviceSpeedMultiplier),
+    reputationMultiplier: Math.max(0, currentMetrics.reputationMultiplier),
+    treatmentRooms: Math.max(1, Math.round(currentMetrics.treatmentRooms)),
+    weeklyExpenses: currentMetrics.weeklyExpenses,
   };
 }
 
-/**
- * Helper function to check if it's time to spawn a customer with upgrades
- */
-export function shouldSpawnCustomerWithUpgrades(gameTick: number, upgrades: Upgrades, industryId: string = 'dental'): boolean {
-  const effectiveInterval = getEffectiveSpawnInterval(upgrades, industryId);
-  return gameTick % effectiveInterval === 0;
+export function getEffectiveSpawnInterval(activeIds: ActiveUpgradeIds): number {
+  return getUpgradeEffects(activeIds).spawnIntervalTicks;
+}
+
+export function getEffectiveServiceSpeedMultiplier(activeIds: ActiveUpgradeIds): number {
+  return getUpgradeEffects(activeIds).serviceSpeedMultiplier;
+}
+
+export function getEffectiveReputationMultiplier(activeIds: ActiveUpgradeIds): number {
+  return getUpgradeEffects(activeIds).reputationMultiplier;
+}
+
+export function getEffectiveTreatmentRooms(activeIds: ActiveUpgradeIds): number {
+  return getUpgradeEffects(activeIds).treatmentRooms;
+}
+
+export function shouldSpawnCustomerWithUpgrades(
+  gameTick: number,
+  activeIds: ActiveUpgradeIds,
+  effects?: UpgradeEffects,
+): boolean {
+  const upgradeEffects = effects ?? getUpgradeEffects(activeIds);
+  return upgradeEffects.spawnIntervalTicks > 0 && gameTick % upgradeEffects.spawnIntervalTicks === 0;
+}
+
+export function getUpgradeCatalog(): UpgradeDefinition[] {
+  return getAllUpgrades();
+}
+
+export function getUpgradeSummary(activeIds: ActiveUpgradeIds) {
+  return calculateActiveUpgradeMetrics(activeIds);
 }

@@ -9,11 +9,10 @@ export interface Service {
   name: string;
   duration: number; // in seconds
   price: number; // in dollars
-  demand?: number; // optional demand weighting
 }
 
 // Mechanics
-import { SERVICE_CONFIG } from '@/lib/config/gameConfig';
+import { SERVICE_CONFIG } from '@/lib/game/config';
 
 const SERVICE_LOOKUP: Record<string, Service[]> = {
   dental: SERVICE_CONFIG.DENTAL_SERVICES.map(service => ({ ...service })),

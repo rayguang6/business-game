@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
-import { ROUND_DURATION_SECONDS } from '@/lib/core/constants';
+import { ROUND_DURATION_SECONDS } from '@/lib/game/config';
 
 export function WeekProgress() {
   const { gameTime, currentWeek } = useGameStore();
