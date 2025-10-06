@@ -6,8 +6,6 @@
 import { BASE_UPGRADE_METRICS, UpgradeDefinition, UpgradeId, getAllUpgrades, getUpgradeById } from '@/lib/game/config';
 import { calculateUpgradeMetrics, UpgradeMetricsResult } from '@/lib/game/upgradeEngine';
 import { secondsToTicks } from '@/lib/game/config';
-import { Upgrades } from '@/lib/store/types';
-import { CUSTOMER_SPAWN_INTERVAL, getUpgradesForIndustry } from '@/lib/game/config';
 
 export type ActiveUpgradeIds = UpgradeId[];
 

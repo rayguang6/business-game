@@ -11,11 +11,6 @@ import {
   BASE_UPGRADE_METRICS,
 } from '@/lib/game/config';
 import { ActiveUpgradeIds, calculateActiveUpgradeMetrics } from './upgrades';
-  getUpgradesForIndustry,
-  UpgradeKey
-} from '@/lib/game/config';
-import { Upgrades } from '@/lib/store/types';
-import { getEffectiveReputationMultiplier } from './upgrades';
 
 // Configuration (now using centralized config)
 export const INITIAL_MONEY = INITIAL_CASH;
