@@ -34,6 +34,47 @@ export const BUSINESS_STATS = {
 } as const;
 
 // -----------------------------------------------------------------------------
+// MAP CONFIGURATION
+// -----------------------------------------------------------------------------
+
+export interface MapWall {
+  x: number;
+  y: number;
+}
+
+export interface MapConfig {
+  width: number;
+  height: number;
+  walls: MapWall[];
+}
+
+export const MAP_CONFIG: MapConfig = {
+  width: 10,
+  height: 10,
+  // Walls are defined using zero-based grid coordinates within the map bounds.
+  // Negative coordinates are not allowed – keep values between 0 and width/height - 1.
+  walls: [
+    { x: 3, y: 1 },
+    { x: 3, y: 2 },
+    { x: 3, y: 3 },
+    { x: 3, y: 4 },
+  ],
+};
+
+// -----------------------------------------------------------------------------
+// MOVEMENT & ANIMATION CONFIGURATION
+// -----------------------------------------------------------------------------
+
+export const MOVEMENT_CONFIG = {
+  customerTilesPerTick: 0.15,
+  animationReferenceTilesPerTick: 0.15,
+  walkFrameDurationMs: 200,
+  minWalkFrameDurationMs: 80,
+  maxWalkFrameDurationMs: 320,
+  celebrationFrameDurationMs: 200,
+} as const;
+
+// -----------------------------------------------------------------------------
 // CORE GAME TIMING (derived from BUSINESS_STATS)
 // -----------------------------------------------------------------------------
 
