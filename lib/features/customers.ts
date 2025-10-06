@@ -4,7 +4,7 @@
  */
 
 import { Service } from './services';
-import { CUSTOMER_CONFIG, GAME_TIMING, secondsToTicks } from '@/lib/game/config';
+import { CUSTOMER_CONFIG, BUSINESS_STATS, secondsToTicks } from '@/lib/game/config';
 
 // Types
 export enum CustomerStatus {
@@ -44,8 +44,8 @@ export const CUSTOMER_EMOJIS = ['😊', '😄', '😃', '🙂', '😌', '😋', 
 // Re-export from centralized config
 export const CUSTOMER_SPAWN_AREA = CUSTOMER_CONFIG.SPAWN_AREA;
 export const MAX_CUSTOMER_CAPACITY = CUSTOMER_CONFIG.MAX_TREATMENT_ROOMS;
-export const DEFAULT_PATIENCE_SECONDS = GAME_TIMING.DEFAULT_PATIENCE_SECONDS;
-export const LEAVING_ANGRY_DURATION_TICKS = GAME_TIMING.LEAVING_ANGRY_DURATION_TICKS;
+export const DEFAULT_PATIENCE_SECONDS = BUSINESS_STATS.customerPatienceSeconds;
+export const LEAVING_ANGRY_DURATION_TICKS = BUSINESS_STATS.leavingAngryDurationTicks;
 export const CUSTOMER_IMAGES = CUSTOMER_CONFIG.IMAGES;
 export const DEFAULT_CUSTOMER_IMAGE = CUSTOMER_CONFIG.DEFAULT_IMAGE;
 

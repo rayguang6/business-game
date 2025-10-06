@@ -1,5 +1,5 @@
 import { GameState, Metrics, Upgrades, WeeklyHistoryEntry } from '@/lib/store/types';
-import { TICKS_PER_SECOND, isNewWeek } from '@/lib/game/config';
+import { TICKS_PER_SECOND, isNewWeek, BUSINESS_STATS } from '@/lib/game/config';
 
 import {
   Customer,
@@ -11,7 +11,6 @@ import {
   getAvailableRooms,
 } from '@/lib/features/customers';
 import {
-  processServiceCompletion,
   endOfWeek,
   getWeeklyBaseExpenses,
   calculateUpgradeWeeklyExpenses,
@@ -139,27 +138,33 @@ function processCustomersForTick({
 
     if (updatedCustomer.status === CustomerStatus.WalkingOutHappy) {
       const servicePrice = updatedCustomer.service.price;
-      const { cash: newCash, reputation: newReputation } = processServiceCompletion(
-        metricsAccumulator.cash,
-        metricsAccumulator.reputation,
-        servicePrice,
-        reputationMultiplier,
-      );
+      
+      // Add revenue
+      const newCash = metricsAccumulator.cash + servicePrice;
+      
+      // Check if customer is happy based on probability
+      const isHappy = Math.random() < BUSINESS_STATS.baseHappyProbability;
+      const reputationGain = isHappy 
+        ? Math.floor(BUSINESS_STATS.reputationGainPerHappyCustomer * reputationMultiplier)
+        : 0;
 
       metricsAccumulator = {
         ...metricsAccumulator,
         cash: newCash,
-        reputation: newReputation,
+        reputation: metricsAccumulator.reputation + reputationGain,
         totalRevenue: metricsAccumulator.totalRevenue + servicePrice,
       };
       revenueAccumulator += servicePrice;
+      // Customer leaves happy - remove from game (don't push to updatedCustomers)
       return;
     }
 
     if (customer.status !== CustomerStatus.LeavingAngry && updatedCustomer.status === CustomerStatus.LeavingAngry) {
+      // Customer just became angry - deduct reputation and keep in game for exit animation
+      const reputationLoss = BUSINESS_STATS.reputationLossPerAngryCustomer;
       metricsAccumulator = {
         ...metricsAccumulator,
-        reputation: Math.max(0, metricsAccumulator.reputation - 1),
+        reputation: Math.max(0, metricsAccumulator.reputation - reputationLoss),
       };
       updatedCustomers.push(updatedCustomer);
       return;
@@ -168,8 +173,10 @@ function processCustomersForTick({
     if (customer.status === CustomerStatus.LeavingAngry) {
       const leavingTicks = (customer.leavingTicks ?? 0) + 1;
       if (leavingTicks >= LEAVING_ANGRY_DURATION_TICKS) {
+        // Exit animation complete - remove from game
         return;
       }
+      // Still leaving - keep in game to show animation
       updatedCustomers.push({ ...updatedCustomer, leavingTicks });
       return;
     }

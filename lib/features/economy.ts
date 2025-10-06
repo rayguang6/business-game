@@ -3,10 +3,10 @@
  * Handles all economy-related config and mechanics
  */
 
-import { BASE_UPGRADE_METRICS, BUSINESS_METRICS, getUpgradeById, UpgradeDefinition } from '@/lib/game/config';
+import { BASE_UPGRADE_METRICS, BUSINESS_METRICS, BUSINESS_STATS, getUpgradeById, UpgradeDefinition } from '@/lib/game/config';
 import { ActiveUpgradeIds, calculateActiveUpgradeMetrics } from './upgrades';
 
-const SCORE_PER_CUSTOMER = BUSINESS_METRICS.reputationGainPerHappyCustomer;
+const SCORE_PER_CUSTOMER = BUSINESS_STATS.reputationGainPerHappyCustomer;
 const BASE_WEEKLY_EXPENSES = BUSINESS_METRICS.weeklyExpenses;
 
 export interface ExpenseBreakdownItem {
