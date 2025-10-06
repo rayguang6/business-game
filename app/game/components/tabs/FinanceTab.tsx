@@ -10,10 +10,11 @@ export function FinanceTab() {
     totalProfit,
     lastWeek,
     weeklyExpenses,
-    baseWeeklyExpenses,
-    upgradeWeeklyExpenses,
-    otherWeeklyExpenses,
+    weeklyExpenseBreakdown,
   } = useFinanceData();
+
+  const recurringExpenses = weeklyExpenseBreakdown.filter((entry) => entry.category !== 'event');
+  const eventExpenses = weeklyExpenseBreakdown.filter((entry) => entry.category === 'event');
 
   return (
     <div>
@@ -57,18 +58,43 @@ export function FinanceTab() {
               {lastWeek ? `Week ${lastWeek.week}: $${lastWeek.expenses}` : 'No data yet'}
             </div>
             <div className="text-red-300 text-xs mt-2">
-              Current weekly burn: ${weeklyExpenses}
+              Current weekly expenses: ${weeklyExpenses}
             </div>
-            <div className="text-red-300 text-xs">Base ${baseWeeklyExpenses}</div>
-            <div className="text-red-300 text-xs">
-              Upgrades {upgradeWeeklyExpenses > 0 ? `+$${upgradeWeeklyExpenses}` : '$0'}
-            </div>
-            {otherWeeklyExpenses > 0 && (
-              <div className="text-red-300 text-xs">Other +${otherWeeklyExpenses}</div>
+            {weeklyExpenseBreakdown.length > 0 && (
+              <div className="text-left text-xs text-red-200 mt-3 space-y-1">
+                <div className="font-semibold text-red-100">Expense breakdown</div>
+                <ul className="space-y-1">
+                  {recurringExpenses.map((entry, index) => (
+                    <li key={`${entry.label}-${index}`} className="flex justify-between">
+                      <span>
+                        {entry.category === 'base'
+                          ? 'Base operations'
+                          : entry.category === 'upgrade'
+                          ? entry.label
+                          : entry.label}
+                      </span>
+                      <span>${entry.amount.toLocaleString()}</span>
+                    </li>
+                  ))}
+                  <li className="flex justify-between text-red-300/80">
+                    <span>Total (recurring)</span>
+                    <span>${weeklyExpenses.toLocaleString()}</span>
+                  </li>
+                  {eventExpenses.map((entry, index) => (
+                    <li
+                      key={`${entry.label}-event-${index}`}
+                      className="flex justify-between text-amber-300/80"
+                    >
+                      <span>{entry.label}</span>
+                      <span>${entry.amount.toLocaleString()}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
         </div>
-        
+
         {/* Profit Card */}
         <div className="bg-gradient-to-br from-blue-900 to-blue-800 rounded-xl p-4 border-2 border-blue-600 relative overflow-hidden col-span-2">
           <div className="flex items-center justify-between">
