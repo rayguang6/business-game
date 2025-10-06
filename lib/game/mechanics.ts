@@ -18,6 +18,7 @@ import {
 import { shouldSpawnCustomerWithUpgrades, getUpgradeEffects, UpgradeEffects } from '@/lib/features/upgrades';
 import { getWaitingPositionByIndex, getServiceRoomPosition } from '@/lib/game/positioning';
 import { findPath } from '@/lib/game/pathfinding';
+import { audioManager, AudioFx } from '@/lib/audio/audioManager';
 
 interface TickSnapshot {
   gameTick: number;
@@ -226,6 +227,8 @@ function processCustomersForTick({
         totalRevenue: metricsAccumulator.totalRevenue + servicePrice,
       };
       revenueAccumulator += servicePrice;
+      // Play sound effect for service finished
+      audioManager.playSoundEffect('serviceFinished');
       // Customer leaves happy - remove from game (don't push to updatedCustomers)
       return;
     }

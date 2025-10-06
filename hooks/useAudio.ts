@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { audioManager, AudioTrack, AudioState } from '@/lib/audio/audioManager';
+import { audioManager, AudioTrack, AudioState, AudioFx } from '@/lib/audio/audioManager';
 
 /**
  * Hook for managing background music in React components
@@ -64,6 +64,9 @@ export function useAudio(track: AudioTrack, autoPlay: boolean = true) {
     toggleMute: () => {
       audioManager.toggleMute();
       setAudioState(audioManager.getState());
+    },
+    playSoundEffect: (effect: AudioFx) => {
+      audioManager.playSoundEffect(effect);
     },
   };
 }
