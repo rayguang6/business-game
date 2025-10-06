@@ -8,7 +8,7 @@ const TILE_SIZE = 32;
 const CANVAS_SIZE = 320; // 10x10 tiles = 320px (32px × 10)
 const GRID_SIZE = 10; // 10x10 grid
 
-interface Character2DProps {
+export interface Character2DProps {
   x: number; // Position (can be float for smooth movement)
   y: number; // Position (can be float for smooth movement)
   spriteSheet: string;

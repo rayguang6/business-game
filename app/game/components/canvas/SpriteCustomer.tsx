@@ -4,6 +4,7 @@ import React from 'react';
 import { Customer, CustomerStatus } from '@/lib/features/customers';
 import { Character2D } from './Character2D';
 import { ticksToSeconds } from '@/lib/game/config';
+import { Character2DProps } from './Character2D';
 
 interface SpriteCustomerProps {
   customer: Customer;
@@ -20,8 +21,8 @@ export function SpriteCustomer({ customer, scaleFactor }: SpriteCustomerProps) {
   const gridY = Math.floor(customer.y);
   
   // Determine animation state based on customer status
-  const getAnimationState = () => {
-    const facingDirection = customer.facingDirection ?? 'down';
+  const getAnimationState = (): { isWalking: boolean; isCelebrating: boolean; direction: Character2DProps['direction'] } => {
+    const facingDirection: Character2DProps['direction'] = customer.facingDirection ?? 'down';
 
     switch (customer.status) {
       case CustomerStatus.Spawning:
@@ -47,6 +48,10 @@ export function SpriteCustomer({ customer, scaleFactor }: SpriteCustomerProps) {
   };
 
   const { isWalking, isCelebrating, direction } = getAnimationState();
+
+  const customerIdNumber = parseInt(customer.id, 36); // Convert base-36 string to number
+  const customerSpriteId = (customerIdNumber % 10) + 1; // This will give a number from 1 to 10
+  const spriteSheetPath = `/images/customer/customer${customerSpriteId}.png`;
 
   // Get emoji based on status
   const getEmoji = () => {
@@ -106,7 +111,7 @@ export function SpriteCustomer({ customer, scaleFactor }: SpriteCustomerProps) {
       <Character2D
         x={renderX}
         y={renderY}
-        spriteSheet="/images/customer/customer1.png"
+        spriteSheet={spriteSheetPath}
         direction={direction}
         scaleFactor={scaleFactor}
         isWalking={isWalking}
