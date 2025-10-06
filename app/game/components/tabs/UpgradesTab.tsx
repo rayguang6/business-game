@@ -5,7 +5,6 @@ import GameButton from '@/app/components/ui/GameButton';
 import { useGameStore } from '@/lib/store/gameStore';
 import { getUpgradeSummary, getUpgradeCatalog } from '@/lib/features/upgrades';
 import type { UpgradeEffect } from '@/lib/game/config';
-import { getUpgradesForIndustry } from '@/lib/game/config';
 
 const metricLabels: Record<string, string> = {
   treatmentRooms: 'Treatment Rooms',

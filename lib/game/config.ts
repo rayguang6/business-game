@@ -12,28 +12,12 @@
 
 export const BUSINESS_METRICS = {
   startingCash: 3000,
-  weeklyRent: 400,
-  weeklyUtilities: 200,
-  weeklySupplies: 200,
+  weeklyExpenses: 800,
   startingReputation: 0,
   reputationGainPerHappyCustomer: 1,
   reputationLossPerAngryCustomer: 1,
   baseHappyProbability: 0.7,
 } as const;
-
-export const WEEKLY_EXPENSES = {
-  rent: BUSINESS_METRICS.weeklyRent,
-  utilities: BUSINESS_METRICS.weeklyUtilities,
-  supplies: BUSINESS_METRICS.weeklySupplies,
-} as const;
-
-export const INITIAL_CASH = BUSINESS_METRICS.startingCash;
-export const STARTING_REPUTATION = BUSINESS_METRICS.startingReputation;
-export const REPUTATION_GAIN_PER_HAPPY_CUSTOMER =
-  BUSINESS_METRICS.reputationGainPerHappyCustomer;
-export const REPUTATION_LOSS_PER_ANGRY_CUSTOMER =
-  BUSINESS_METRICS.reputationLossPerAngryCustomer;
-export const BASE_HAPPY_PROBABILITY = BUSINESS_METRICS.baseHappyProbability;
 
 export const BUSINESS_STATS = {
   ticksPerSecond: 10,
@@ -65,8 +49,6 @@ export const GAME_TIMING = {
 export const TICKS_PER_SECOND = GAME_TIMING.TICKS_PER_SECOND;
 export const TICK_INTERVAL_MS = GAME_TIMING.TICK_INTERVAL_MS;
 export const ROUND_DURATION_SECONDS = GAME_TIMING.WEEK_DURATION_SECONDS;
-export const SECONDS_PER_WEEK = ROUND_DURATION_SECONDS;
-export const CUSTOMER_SPAWN_INTERVAL_SECONDS = GAME_TIMING.CUSTOMER_SPAWN_INTERVAL_SECONDS;
 
 // -----------------------------------------------------------------------------
 // CUSTOMER CONFIGURATION
@@ -121,19 +103,19 @@ export const SERVICE_CONFIG = {
       id: 'restaurant_fast_meal',
       name: 'Express Meal',
       duration: 5,
-      price: 18,
+      price: 60,
     },
     {
       id: 'restaurant_full_course',
       name: 'Full Course Dinner',
       duration: 9,
-      price: 32,
+      price: 90,
     },
     {
       id: 'restaurant_family_combo',
       name: 'Family Combo',
       duration: 12,
-      price: 48,
+      price: 130,
     },
   ],
   GYM_SERVICES: [
@@ -141,19 +123,19 @@ export const SERVICE_CONFIG = {
       id: 'gym_quick_session',
       name: 'Quick Training Session',
       duration: 5,
-      price: 25,
+      price: 65,
     },
     {
       id: 'gym_group_class',
       name: 'Group Fitness Class',
       duration: 8,
-      price: 40,
+      price: 95,
     },
     {
       id: 'gym_personal_training',
       name: 'Personal Training',
       duration: 11,
-      price: 70,
+      price: 140,
     },
   ],
 } as const;
@@ -190,7 +172,7 @@ export interface UpgradeDefinition {
 export type UpgradeId = UpgradeDefinition['id'];
 
 export const BASE_UPGRADE_METRICS: Record<UpgradeMetric, number> = {
-  weeklyExpenses: WEEKLY_EXPENSES.rent + WEEKLY_EXPENSES.utilities + WEEKLY_EXPENSES.supplies,
+  weeklyExpenses: BUSINESS_METRICS.weeklyExpenses,
   spawnIntervalSeconds: BUSINESS_STATS.customerSpawnIntervalSeconds,
   serviceSpeedMultiplier: 1,
   reputationMultiplier: 1,
@@ -271,51 +253,6 @@ export function getAllUpgrades(): UpgradeDefinition[] {
   return [...DENTAL_UPGRADES];
 }
 
-// -----------------------------------------------------------------------------
-// DIFFICULTY CURVE CONFIGURATION
-// -----------------------------------------------------------------------------
-
-export const DIFFICULTY_CURVE = {
-  WEEKS: {
-    '1-3': {
-      name: 'Learning Phase',
-      spawnIntervalMultiplier: 1.5,
-      patienceMultiplier: 1.5,
-      expenseMultiplier: 0.75,
-      description: 'Easy mode - learn the basics',
-    },
-    '4-8': {
-      name: 'Growth Phase',
-      spawnIntervalMultiplier: 1.0,
-      patienceMultiplier: 1.2,
-      expenseMultiplier: 1.0,
-      description: 'Normal difficulty - optimize your business',
-    },
-    '9-15': {
-      name: 'Pressure Phase',
-      spawnIntervalMultiplier: 0.8,
-      patienceMultiplier: 1.0,
-      expenseMultiplier: 1.25,
-      description: 'Hard mode - manage pressure points',
-    },
-    '16-20': {
-      name: 'Challenge Phase',
-      spawnIntervalMultiplier: 0.6,
-      patienceMultiplier: 0.8,
-      expenseMultiplier: 1.5,
-      description: 'Expert mode - maximum difficulty',
-    },
-  },
-} as const;
-
-// -----------------------------------------------------------------------------
-// UPGRADE SYSTEM CONFIGURATION
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-// HELPER UTILITIES
-// -----------------------------------------------------------------------------
-
 export function secondsToTicks(seconds: number): number {
   return Math.round(seconds * TICKS_PER_SECOND);
 }
@@ -323,8 +260,6 @@ export function secondsToTicks(seconds: number): number {
 export function ticksToSeconds(ticks: number): number {
   return ticks / TICKS_PER_SECOND;
 }
-
-export const CUSTOMER_SPAWN_INTERVAL = secondsToTicks(CUSTOMER_SPAWN_INTERVAL_SECONDS);
 
 export function getCurrentWeek(gameTimeSeconds: number): number {
   return Math.floor(gameTimeSeconds / ROUND_DURATION_SECONDS) + 1;
@@ -337,30 +272,6 @@ export function getWeekProgress(gameTimeSeconds: number): number {
 
 export function isNewWeek(gameTimeSeconds: number, previousGameTime: number): boolean {
   return getCurrentWeek(gameTimeSeconds) > getCurrentWeek(previousGameTime);
-}
-
-export function getDifficultyForWeek(week: number) {
-  if (week >= 1 && week <= 3) return DIFFICULTY_CURVE.WEEKS['1-3'];
-  if (week >= 4 && week <= 8) return DIFFICULTY_CURVE.WEEKS['4-8'];
-  if (week >= 9 && week <= 15) return DIFFICULTY_CURVE.WEEKS['9-15'];
-  return DIFFICULTY_CURVE.WEEKS['16-20'];
-}
-
-export function getSpawnIntervalForWeek(week: number): number {
-  const difficulty = getDifficultyForWeek(week);
-  return GAME_TIMING.CUSTOMER_SPAWN_INTERVAL_SECONDS * difficulty.spawnIntervalMultiplier;
-}
-
-export function getPatienceForWeek(week: number): number {
-  const difficulty = getDifficultyForWeek(week);
-  return GAME_TIMING.DEFAULT_PATIENCE_SECONDS * difficulty.patienceMultiplier;
-}
-
-export function getWeeklyExpensesForWeek(week: number): number {
-  const difficulty = getDifficultyForWeek(week);
-  const baseExpenses =
-    WEEKLY_EXPENSES.rent + WEEKLY_EXPENSES.utilities + WEEKLY_EXPENSES.supplies;
-  return baseExpenses * difficulty.expenseMultiplier;
 }
 
 export function calculateWeeklyRevenuePotential(): {
