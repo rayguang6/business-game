@@ -117,6 +117,7 @@ export function UpgradesTab() {
             const owned = purchased.has(upgrade.id);
             const canAfford = canAffordUpgrade(upgrade.cost);
             const effects = upgrade.effects.map(formatEffect);
+            const buttonDisabled = owned || !canAfford;
             return (
               <div
                 key={upgrade.id}
@@ -147,8 +148,10 @@ export function UpgradesTab() {
                 <div className="mt-4 flex justify-end">
                   <GameButton
                     color={owned ? 'gold' : canAfford ? 'blue' : 'gold'}
+                    className="w-full sm:w-auto"
+                    disabled={buttonDisabled}
                     onClick={() => {
-                      if (!owned && canAfford) {
+                      if (!buttonDisabled) {
                         handlePurchase(upgrade.id);
                       }
                     }}
