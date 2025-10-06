@@ -77,3 +77,22 @@ body {
   --text-stroke: #fff;
 }
 
+/* Metric Feedback Animations */
+@keyframes float-up {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(-10px) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(-20px) scale(0.9);
+  }
+}
+
+.duration-1500 {
+  transition-duration: 1500ms;
+}
