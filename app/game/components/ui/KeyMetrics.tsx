@@ -6,7 +6,7 @@ import { useMetricChanges } from '@/hooks/useMetricChanges';
 import { MetricFeedback, FeedbackItem } from './MetricFeedback';
 
 export function KeyMetrics() {
-  const { metrics, lastWeek, weeklyExpenses } = useFinanceData();
+  const { metrics, weeklyRevenue, weeklyExpenses } = useFinanceData();
   const changes = useMetricChanges();
   const [feedbackByMetric, setFeedbackByMetric] = useState<Record<string, FeedbackItem[]>>({
     cash: [],
@@ -88,7 +88,7 @@ export function KeyMetrics() {
       key: 'revenue',
       icon: '💎',
       image: '/images/icons/home.png',
-      value: (lastWeek ? lastWeek.revenue : 0).toLocaleString(),
+      value: weeklyRevenue.toLocaleString(),
       label: 'Revenue',
       color: 'text-blue-400',
       feedback: feedbackByMetric.revenue,

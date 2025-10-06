@@ -1,14 +1,17 @@
 import { StateCreator } from 'zustand';
-import { WeeklyHistoryEntry } from '../types';
+import { WeeklyHistoryEntry, OneTimeCost } from '../types';
 import { GameState } from '../types';
 
 export interface WeeklySlice {
   weeklyRevenue: number;
   weeklyExpenses: number;
+  weeklyOneTimeCosts: number;
+  weeklyOneTimeCostDetails: OneTimeCost[];
   weeklyHistory: WeeklyHistoryEntry[];
   
   updateWeeklyRevenue: (amount: number) => void;
   updateWeeklyExpenses: (amount: number) => void;
+  addOneTimeCost: (cost: OneTimeCost) => void;
   addWeeklyHistoryEntry: (entry: WeeklyHistoryEntry) => void;
   resetWeeklyTracking: () => void;
 }
@@ -16,6 +19,8 @@ export interface WeeklySlice {
 export const createWeeklySlice: StateCreator<GameState, [], [], WeeklySlice> = (set) => ({
   weeklyRevenue: 0,
   weeklyExpenses: 0,
+  weeklyOneTimeCosts: 0,
+  weeklyOneTimeCostDetails: [],
   weeklyHistory: [],
   
   updateWeeklyRevenue: (amount: number) => {
@@ -30,6 +35,13 @@ export const createWeeklySlice: StateCreator<GameState, [], [], WeeklySlice> = (
     }));
   },
   
+  addOneTimeCost: (cost: OneTimeCost) => {
+    set((state) => ({
+      weeklyOneTimeCosts: state.weeklyOneTimeCosts + cost.amount,
+      weeklyOneTimeCostDetails: [...state.weeklyOneTimeCostDetails, cost]
+    }));
+  },
+  
   addWeeklyHistoryEntry: (entry: WeeklyHistoryEntry) => {
     set((state) => ({
       weeklyHistory: [...state.weeklyHistory, entry]
@@ -40,6 +52,8 @@ export const createWeeklySlice: StateCreator<GameState, [], [], WeeklySlice> = (
     set({
       weeklyRevenue: 0,
       weeklyExpenses: 0,
+      weeklyOneTimeCosts: 0,
+      weeklyOneTimeCostDetails: [],
       weeklyHistory: []
     });
   },

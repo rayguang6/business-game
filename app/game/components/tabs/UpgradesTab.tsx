@@ -60,11 +60,10 @@ const formatEffect = (effect: UpgradeEffect): string => {
 };
 
 export function UpgradesTab() {
-  const { upgrades, canAffordUpgrade, purchaseUpgrade } = useGameStore();
+  const { upgrades, canAffordUpgrade, getUpgradeLevel, canUpgradeMore, purchaseUpgrade } = useGameStore();
 
   const catalog = useMemo(() => getUpgradeCatalog(), []);
   const summary = useMemo(() => getUpgradeSummary(upgrades), [upgrades]);
-  const purchased = useMemo(() => new Set(upgrades), [upgrades]);
 
   const handlePurchase = (upgradeId: string) => {
     const result = purchaseUpgrade(upgradeId);
@@ -76,8 +75,8 @@ export function UpgradesTab() {
   };
 
   const metricsOverview = (Object.keys(metricLabels) as MetricKey[]).map((metric) => {
-    const baseValue = summary.baseMetrics[metric];
-    const currentValue = summary.currentMetrics[metric];
+    const baseValue = summary.baseMetrics[metric as keyof typeof summary.baseMetrics];
+    const currentValue = summary.currentMetrics[metric as keyof typeof summary.currentMetrics];
     const hasChanged = Math.abs(currentValue - baseValue) > 0.001;
     return (
       <div key={metric} className="bg-gray-800 rounded-lg p-3 border border-gray-700">
@@ -114,32 +113,48 @@ export function UpgradesTab() {
         <h4 className="text-md font-semibold text-white mb-3">Available Upgrades</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {catalog.map((upgrade) => {
-            const owned = purchased.has(upgrade.id);
+            const currentLevel = getUpgradeLevel(upgrade.id);
+            const canBuyMore = canUpgradeMore(upgrade.id);
             const canAfford = canAffordUpgrade(upgrade.cost);
+            const isMaxed = currentLevel >= upgrade.maxLevel;
             const effects = upgrade.effects.map(formatEffect);
             const buttonDisabled = owned || !canAfford;
+            const buttonDisabled = isMaxed || !canAfford;
+            
             return (
               <div
                 key={upgrade.id}
                 className={`bg-gray-800 rounded-xl p-4 border transition ${
-                  owned ? 'border-green-500/60' : 'border-gray-700 hover:border-indigo-500/60'
+                  currentLevel > 0 ? 'border-green-500/60' : 'border-gray-700 hover:border-indigo-500/60'
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <div className="text-3xl" aria-hidden>{upgrade.icon}</div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <h5 className="text-white font-bold text-base">{upgrade.name}</h5>
-                      <span className={`text-sm font-semibold ${owned ? 'text-green-400' : 'text-amber-300'}`}>
-                        {owned ? 'Purchased' : `$${upgrade.cost.toLocaleString()}`}
+                      <div className="flex items-center gap-2">
+                        <h5 className="text-white font-bold text-base">{upgrade.name}</h5>
+                        {upgrade.maxLevel > 1 && (
+                          <span className="text-xs text-gray-400">
+                            Lvl {currentLevel}/{upgrade.maxLevel}
+                          </span>
+                        )}
+                      </div>
+                      <span className={`text-sm font-semibold ${isMaxed ? 'text-green-400' : 'text-amber-300'}`}>
+                        {isMaxed ? 'Max' : `$${upgrade.cost.toLocaleString()}`}
                       </span>
                     </div>
                     <p className="text-gray-300 text-sm mt-1 mb-3">{upgrade.description}</p>
                     <ul className="text-xs text-gray-200 space-y-1">
-                      {effects.map((effect) => (
-                        <li key={effect} className="flex items-center gap-2">
+                      {effects.map((effect, idx) => (
+                        <li key={idx} className="flex items-center gap-2">
                           <span className="text-indigo-300">•</span>
                           <span>{effect}</span>
+                          {currentLevel > 0 && upgrade.maxLevel > 1 && (
+                            <span className="text-green-400 ml-1">
+                              (×{currentLevel})
+                            </span>
+                          )}
                         </li>
                       ))}
                     </ul>
@@ -148,6 +163,7 @@ export function UpgradesTab() {
                 <div className="mt-4 flex justify-end">
                   <GameButton
                     color={owned ? 'gold' : canAfford ? 'blue' : 'gold'}
+                    color={isMaxed ? 'gold' : canAfford ? 'blue' : 'gold'}
                     className="w-full sm:w-auto"
                     disabled={buttonDisabled}
                     onClick={() => {
@@ -156,7 +172,7 @@ export function UpgradesTab() {
                       }
                     }}
                   >
-                    {owned ? 'Purchased' : canAfford ? 'Buy Upgrade' : 'Need Cash'}
+                    {isMaxed ? 'Max Level' : canAfford ? (currentLevel > 0 ? 'Upgrade' : 'Buy') : 'Need Cash'}
                   </GameButton>
                 </div>
               </div>
