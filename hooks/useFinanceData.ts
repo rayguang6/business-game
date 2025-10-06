@@ -8,7 +8,7 @@ import { buildWeeklyExpenseBreakdown } from '@/lib/features/economy';
  * Used by components that need metrics and weekly history data.
  */
 export const useFinanceData = () => {
-  const { metrics, weeklyHistory, weeklyExpenses, weeklyOneTimeCosts, upgrades } = useGameStore();
+  const { metrics, weeklyHistory, weeklyExpenses, weeklyOneTimeCosts, weeklyRevenue, upgrades } = useGameStore();
 
   const expenseBreakdown = useMemo(
     () => buildWeeklyExpenseBreakdown(upgrades, weeklyOneTimeCosts),
@@ -18,6 +18,7 @@ export const useFinanceData = () => {
   return {
     metrics,
     weeklyHistory,
+    weeklyRevenue, // Current week's accumulating revenue
     weeklyExpenses, // Current weekly expenses (base + upgrade-driven)
     weeklyExpenseBreakdown: expenseBreakdown,
     baseWeeklyExpenses: BUSINESS_METRICS.weeklyExpenses,

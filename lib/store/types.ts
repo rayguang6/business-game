@@ -13,12 +13,20 @@ export interface Metrics {
   reputation: number;
 }
 
-export type Upgrades = UpgradeId[];
+// Map of upgrade ID to current level
+export type Upgrades = Record<UpgradeId, number>;
+
+export interface OneTimeCost {
+  label: string;
+  amount: number;
+  category: 'upgrade' | 'repair' | 'event';
+}
 
 export interface WeeklyHistoryEntry {
   week: number;
   revenue: number;
   expenses: number;
+  oneTimeCosts: OneTimeCost[];
   profit: number;
   reputation: number;
   reputationChange: number;
@@ -42,7 +50,8 @@ export interface GameState {
   // Weekly Tracking
   weeklyRevenue: number;
   weeklyExpenses: number;
-  weeklyOneTimeCosts: number; // One-time costs (events, marketing campaigns, etc.)
+  weeklyOneTimeCosts: number; // Total one-time costs amount
+  weeklyOneTimeCostDetails: OneTimeCost[]; // Detailed list of one-time costs
   weeklyHistory: WeeklyHistoryEntry[];
   weeklyExpenseAdjustments: number;
 
