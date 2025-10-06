@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { MOVEMENT_CONFIG } from '@/lib/game/config';
 
 // 32x32px tile system configuration
 const TILE_SIZE = 32;
@@ -29,6 +30,31 @@ export function Character2D({
   isCelebrating = false
 }: Character2DProps) {
   const [currentFrame, setCurrentFrame] = useState(frame);
+
+  const {
+    customerTilesPerTick,
+    animationReferenceTilesPerTick,
+    walkFrameDurationMs,
+    minWalkFrameDurationMs,
+    maxWalkFrameDurationMs,
+    celebrationFrameDurationMs,
+  } = MOVEMENT_CONFIG;
+
+  const animationSpeedRatio = animationReferenceTilesPerTick > 0
+    ? customerTilesPerTick / animationReferenceTilesPerTick
+    : 1;
+
+  const rawWalkDuration = animationSpeedRatio > 0
+    ? walkFrameDurationMs / animationSpeedRatio
+    : walkFrameDurationMs;
+
+  const walkAnimationInterval = Math.min(
+    maxWalkFrameDurationMs,
+    Math.max(
+      minWalkFrameDurationMs,
+      Math.round(Number.isFinite(rawWalkDuration) ? rawWalkDuration : walkFrameDurationMs),
+    ),
+  );
 
   // Calculate position in pixels (32x32 grid system, supports floating point)
   const pixelX = x * TILE_SIZE;
@@ -63,7 +89,7 @@ export function Character2D({
     if (isCelebrating) {
       const interval = setInterval(() => {
         setCurrentFrame(prev => (prev + 1) % 4); // Cycle through 4 frames for celebration
-      }, 200); // 200ms per frame
+      }, celebrationFrameDurationMs);
       return () => clearInterval(interval);
     }
 
@@ -74,10 +100,10 @@ export function Character2D({
 
     const interval = setInterval(() => {
       setCurrentFrame(prev => (prev + 1) % 3); // Cycle through 0, 1, 2
-    }, 200); // 200ms per frame for smooth walking
+    }, walkAnimationInterval);
 
     return () => clearInterval(interval);
-  }, [isWalking, isCelebrating]);
+  }, [isWalking, isCelebrating, walkAnimationInterval, celebrationFrameDurationMs]);
 
   return (
     <div
