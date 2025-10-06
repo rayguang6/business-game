@@ -3,8 +3,7 @@
 import React, { useMemo } from 'react';
 import GameButton from '@/app/components/ui/GameButton';
 import { useGameStore } from '@/lib/store/gameStore';
-import { getUpgradeCatalog } from '@/lib/game/config';
-import { getUpgradeSummary } from '@/lib/features/upgrades';
+import { getUpgradeSummary, getUpgradeCatalog } from '@/lib/features/upgrades';
 import type { UpgradeEffect } from '@/lib/game/config';
 
 const metricLabels: Record<string, string> = {
