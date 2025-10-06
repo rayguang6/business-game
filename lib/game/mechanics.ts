@@ -17,6 +17,7 @@ import {
 } from '@/lib/features/economy';
 import { shouldSpawnCustomerWithUpgrades, getUpgradeEffects, UpgradeEffects } from '@/lib/features/upgrades';
 import { getWaitingPositionByIndex, getServiceRoomPosition } from '@/lib/game/positioning';
+import { findPath } from '@/lib/game/pathfinding';
 
 interface TickSnapshot {
   gameTick: number;
@@ -136,11 +137,18 @@ function processCustomersForTick({
 
   // Find already occupied waiting positions (including both current and target positions)
   const occupiedWaitingPositions = customers
-    .filter(c => 
-      (c.status === CustomerStatus.Waiting || c.status === CustomerStatus.WalkingToChair) &&
-      (c.targetX !== undefined && c.targetY !== undefined)
-    )
-    .map(c => ({ x: c.targetX!, y: c.targetY! }));
+    .filter(c => c.status === CustomerStatus.Waiting || c.status === CustomerStatus.WalkingToChair)
+    .flatMap((c) => {
+      if (c.status === CustomerStatus.Waiting) {
+        return [{ x: Math.round(c.x), y: Math.round(c.y) }];
+      }
+
+      if (c.targetX !== undefined && c.targetY !== undefined) {
+        return [{ x: c.targetX, y: c.targetY }];
+      }
+
+      return [];
+    });
 
   customers.forEach((customer) => {
     const updatedCustomer = tickCustomer(customer);
@@ -157,6 +165,11 @@ function processCustomersForTick({
           if (!isOccupied) {
             updatedCustomer.targetX = waitingPosition.x;
             updatedCustomer.targetY = waitingPosition.y;
+            const pathToChair = findPath(
+              { x: Math.round(updatedCustomer.x), y: Math.round(updatedCustomer.y) },
+              waitingPosition
+            );
+            updatedCustomer.path = pathToChair.length > 0 ? pathToChair : undefined;
             // Mark as occupied for next customers
             occupiedWaitingPositions.push({ x: waitingPosition.x, y: waitingPosition.y });
             break;
@@ -174,6 +187,11 @@ function processCustomersForTick({
       if (servicePosition) {
         customerWithService.targetX = servicePosition.x;
         customerWithService.targetY = servicePosition.y;
+        const pathToRoom = findPath(
+          { x: Math.round(customerWithService.x), y: Math.round(customerWithService.y) },
+          servicePosition
+        );
+        customerWithService.path = pathToRoom.length > 0 ? pathToRoom : undefined;
       }
       
       updatedCustomers.push(customerWithService);
