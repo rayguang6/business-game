@@ -1,14 +1,14 @@
 import { StateCreator } from 'zustand';
 import { Metrics } from '../types';
 import { GameState } from '../types';
-import { INITIAL_CASH, STARTING_REPUTATION } from '@/lib/game/config';
+import { BUSINESS_METRICS } from '@/lib/game/config';
 
 // Shared initial metrics state - single source of truth
 export const getInitialMetrics = (): Metrics => ({
-  cash: INITIAL_CASH,
+  cash: BUSINESS_METRICS.startingCash,
   totalRevenue: 0,
   totalExpenses: 0,
-  reputation: STARTING_REPUTATION,
+  reputation: BUSINESS_METRICS.startingReputation,
 });
 
 export interface MetricsSlice {

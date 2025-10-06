@@ -3,21 +3,18 @@
  * Handles all economy-related config and mechanics
  */
 
-import {
-  INITIAL_CASH,
-  STARTING_REPUTATION,
-  REPUTATION_GAIN_PER_HAPPY_CUSTOMER,
-  WEEKLY_EXPENSES,
-  BASE_UPGRADE_METRICS,
-} from '@/lib/game/config';
+import { BASE_UPGRADE_METRICS, BUSINESS_METRICS, getUpgradeById, UpgradeDefinition } from '@/lib/game/config';
 import { ActiveUpgradeIds, calculateActiveUpgradeMetrics } from './upgrades';
 
-// Configuration (now using centralized config)
-export const INITIAL_MONEY = INITIAL_CASH;
-export const INITIAL_SCORE = STARTING_REPUTATION;
-export const SCORE_PER_CUSTOMER = REPUTATION_GAIN_PER_HAPPY_CUSTOMER;
+const SCORE_PER_CUSTOMER = BUSINESS_METRICS.reputationGainPerHappyCustomer;
+const BASE_WEEKLY_EXPENSES = BUSINESS_METRICS.weeklyExpenses;
 
-export const BASE_EXPENSES = WEEKLY_EXPENSES;
+export interface ExpenseBreakdownItem {
+  label: string;
+  amount: number;
+  category: 'base' | 'upgrade' | 'event';
+  sourceId?: string;
+}
 
 // Mechanics
 /**
@@ -51,10 +48,64 @@ export function processServiceCompletion(
 }
 
 /**
- * Calculates weekly base expenses using loop (scalable)
+ * Returns the baseline weekly operating expenses
  */
 export function getWeeklyBaseExpenses(): number {
-  return Object.values(BASE_EXPENSES).reduce((total, expense) => total + expense, 0);
+  return BASE_WEEKLY_EXPENSES;
+}
+
+function calculateUpgradeExpenseFromDefinition(upgrade: UpgradeDefinition): number {
+  return upgrade.effects
+    .filter((effect) => effect.metric === 'weeklyExpenses')
+    .reduce((total, effect) => {
+      if (effect.type === 'add') {
+        return total + effect.value;
+      }
+
+      if (effect.type === 'percent') {
+        return total + BASE_WEEKLY_EXPENSES * effect.value;
+      }
+
+      return total;
+    }, 0);
+}
+
+export function buildWeeklyExpenseBreakdown(
+  upgrades: ActiveUpgradeIds,
+  weeklyOneTimeCosts: number = 0,
+): ExpenseBreakdownItem[] {
+  const breakdown: ExpenseBreakdownItem[] = [
+    {
+      label: 'Base operations',
+      amount: BASE_WEEKLY_EXPENSES,
+      category: 'base',
+    },
+  ];
+
+  upgrades
+    .map((upgradeId) => getUpgradeById(upgradeId))
+    .filter((upgrade): upgrade is UpgradeDefinition => Boolean(upgrade))
+    .forEach((upgrade) => {
+      const additionalExpenses = calculateUpgradeExpenseFromDefinition(upgrade);
+      if (additionalExpenses > 0) {
+        breakdown.push({
+          label: upgrade.name,
+          amount: additionalExpenses,
+          category: 'upgrade',
+          sourceId: upgrade.id,
+        });
+      }
+    });
+
+  if (weeklyOneTimeCosts > 0) {
+    breakdown.push({
+      label: 'One-time costs',
+      amount: weeklyOneTimeCosts,
+      category: 'event',
+    });
+  }
+
+  return breakdown;
 }
 
 /**
