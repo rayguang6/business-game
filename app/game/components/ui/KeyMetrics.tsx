@@ -1,39 +1,115 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFinanceData } from '@/hooks/useFinanceData';
+import { useMetricChanges } from '@/hooks/useMetricChanges';
+import { MetricFeedback, FeedbackItem } from './MetricFeedback';
 
 export function KeyMetrics() {
   const { metrics, lastWeek, weeklyExpenses } = useFinanceData();
+  const changes = useMetricChanges();
+  const [feedbackByMetric, setFeedbackByMetric] = useState<Record<string, FeedbackItem[]>>({
+    cash: [],
+    revenue: [],
+    reputation: [],
+    expenses: [],
+  });
+
+  useEffect(() => {
+    // Only add feedback if there are actual changes
+    if (Object.keys(changes).length === 0) return;
+
+    setFeedbackByMetric((prev) => {
+      const newFeedback: Record<string, FeedbackItem[]> = {
+        cash: [...prev.cash],
+        revenue: [...prev.revenue],
+        reputation: [...prev.reputation],
+        expenses: [...prev.expenses],
+      };
+
+      // Add cash change feedback
+      if (changes.cash !== undefined && changes.cash !== 0) {
+        newFeedback.cash.push({
+          id: `cash-${Date.now()}`,
+          value: changes.cash,
+          color: changes.cash > 0 ? 'green' : 'red',
+        });
+      }
+
+      // Add revenue change feedback
+      if (changes.revenue !== undefined && changes.revenue !== 0) {
+        newFeedback.revenue.push({
+          id: `revenue-${Date.now()}`,
+          value: changes.revenue,
+          color: 'blue',
+        });
+      }
+
+      // Add reputation change feedback
+      if (changes.reputation !== undefined && changes.reputation !== 0) {
+        newFeedback.reputation.push({
+          id: `reputation-${Date.now()}`,
+          value: changes.reputation,
+          color: changes.reputation > 0 ? 'yellow' : 'red',
+        });
+      }
+
+      // Add expense change feedback
+      if (changes.expenses !== undefined && changes.expenses !== 0) {
+        newFeedback.expenses.push({
+          id: `expenses-${Date.now()}`,
+          value: changes.expenses,
+          color: 'red',
+        });
+      }
+
+      return newFeedback;
+    });
+  }, [changes]);
+
+  const handleFeedbackComplete = (metricKey: string, id: string) => {
+    setFeedbackByMetric((prev) => ({
+      ...prev,
+      [metricKey]: prev[metricKey].filter((item) => item.id !== id),
+    }));
+  };
 
   const metricsData = [
     {
+      key: 'cash',
       icon: '💎',
       image: '/images/icons/finance.png',
       value: metrics.cash.toLocaleString(),
       label: 'Cash',
-      color: 'text-green-400'
+      color: 'text-green-400',
+      feedback: feedbackByMetric.cash,
     },
     {
+      key: 'revenue',
       icon: '💎',
       image: '/images/icons/home.png',
       value: (lastWeek ? lastWeek.revenue : 0).toLocaleString(),
       label: 'Revenue',
-      color: 'text-blue-400'
+      color: 'text-blue-400',
+      feedback: feedbackByMetric.revenue,
     },
     {
+      key: 'reputation',
       icon: '💎',
       image: '/images/icons/marketing.png',
       value: metrics.reputation.toLocaleString(),
       label: 'Reputation',
-      color: 'text-yellow-400'
+      color: 'text-yellow-400',
+      feedback: feedbackByMetric.reputation,
     },
     {
+      key: 'expenses',
       icon: '💎',
       image: '/images/icons/staff.png',
       value: weeklyExpenses.toLocaleString(),
       label: 'Weekly Expenses',
-      color: 'text-red-400'
+      color: 'text-red-400',
+      feedback: feedbackByMetric.expenses,
     }
   ];
 
@@ -62,6 +138,12 @@ export function KeyMetrics() {
               {metric.value}
             </span>
           </div>
+
+          {/* Feedback animations */}
+          <MetricFeedback
+            feedback={metric.feedback}
+            onComplete={(id) => handleFeedbackComplete(metric.key, id)}
+          />
         </div>
       ))}
     </div>
