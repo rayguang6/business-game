@@ -118,6 +118,7 @@ export function UpgradesTab() {
             const canAfford = canAffordUpgrade(upgrade.cost);
             const isMaxed = currentLevel >= upgrade.maxLevel;
             const effects = upgrade.effects.map(formatEffect);
+            const buttonDisabled = owned || !canAfford;
             const buttonDisabled = isMaxed || !canAfford;
             
             return (
@@ -161,6 +162,7 @@ export function UpgradesTab() {
                 </div>
                 <div className="mt-4 flex justify-end">
                   <GameButton
+                    color={owned ? 'gold' : canAfford ? 'blue' : 'gold'}
                     color={isMaxed ? 'gold' : canAfford ? 'blue' : 'gold'}
                     className="w-full sm:w-auto"
                     disabled={buttonDisabled}
