@@ -3,16 +3,23 @@
  * Handles all economy-related config and mechanics
  */
 
-import { ECONOMY_CONFIG, getUpgradesForIndustry, UpgradeKey } from '@/lib/config/gameConfig';
+import {
+  INITIAL_CASH,
+  STARTING_REPUTATION,
+  REPUTATION_GAIN_PER_HAPPY_CUSTOMER,
+  WEEKLY_EXPENSES,
+  getUpgradesForIndustry,
+  UpgradeKey
+} from '@/lib/game/config';
 import { Upgrades } from '@/lib/store/types';
 import { getEffectiveReputationMultiplier } from './upgrades';
 
 // Configuration (now using centralized config)
-export const INITIAL_MONEY = ECONOMY_CONFIG.INITIAL_MONEY;
-export const INITIAL_SCORE = ECONOMY_CONFIG.INITIAL_REPUTATION;
-export const SCORE_PER_CUSTOMER = ECONOMY_CONFIG.REPUTATION_GAIN_PER_HAPPY_CUSTOMER;
+export const INITIAL_MONEY = INITIAL_CASH;
+export const INITIAL_SCORE = STARTING_REPUTATION;
+export const SCORE_PER_CUSTOMER = REPUTATION_GAIN_PER_HAPPY_CUSTOMER;
 
-export const BASE_EXPENSES = ECONOMY_CONFIG.WEEKLY_BASE_EXPENSES;
+export const BASE_EXPENSES = WEEKLY_EXPENSES;
 
 // Mechanics
 /**

@@ -3,7 +3,7 @@
 import React from 'react';
 import GameButton from '@/app/components/ui/GameButton';
 import { useGameStore } from '@/lib/store/gameStore';
-import { getUpgradesForIndustry } from '@/lib/config/gameConfig';
+import { getUpgradesForIndustry } from '@/lib/game/config';
 
 export function UpgradesTab() {
   const { 

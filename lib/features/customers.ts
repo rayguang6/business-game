@@ -4,8 +4,7 @@
  */
 
 import { Service } from './services';
-import { secondsToTicks } from '@/lib/core/constants';
-import { GAME_TIMING, CUSTOMER_CONFIG } from '@/lib/config/gameConfig';
+import { CUSTOMER_CONFIG, GAME_TIMING, secondsToTicks } from '@/lib/game/config';
 
 // Types
 export enum CustomerStatus {

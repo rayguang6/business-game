@@ -4,7 +4,7 @@
  */
 
 import { Service } from './services';
-import { SERVICE_CONFIG } from '@/lib/config/gameConfig';
+import { SERVICE_CONFIG } from '@/lib/game/config';
 
 // Types
 export interface Industry {
