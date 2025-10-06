@@ -1,7 +1,7 @@
 import { StateCreator } from 'zustand';
 import { Upgrades } from '../types';
 import { GameState } from '../types';
-import { getUpgradesForIndustry, DEFAULT_UPGRADE_VALUES, IndustryUpgradeConfig, UpgradeDefinition, UpgradeKey } from '@/lib/config/gameConfig';
+import { DEFAULT_UPGRADE_VALUES, IndustryUpgradeConfig, UpgradeDefinition, UpgradeKey, getUpgradesForIndustry } from '@/lib/game/config';
 
 export interface UpgradesSlice {
   upgrades: Upgrades;

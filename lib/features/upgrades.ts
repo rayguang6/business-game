@@ -7,8 +7,7 @@
  */
 
 import { Upgrades } from '@/lib/store/types';
-import { getUpgradesForIndustry } from '@/lib/config/gameConfig';
-import { CUSTOMER_SPAWN_INTERVAL } from '@/lib/core/constants';
+import { CUSTOMER_SPAWN_INTERVAL, getUpgradesForIndustry } from '@/lib/game/config';
 
 /**
  * Calculates effective customer spawn interval based on marketing upgrades

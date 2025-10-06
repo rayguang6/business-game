@@ -1,5 +1,5 @@
 import { GameState, Metrics, Upgrades, WeeklyHistoryEntry } from '@/lib/store/types';
-import { TICKS_PER_SECOND, CUSTOMER_SPAWN_INTERVAL, isNewWeek } from '@/lib/core/constants';
+import { CUSTOMER_SPAWN_INTERVAL, TICKS_PER_SECOND, isNewWeek } from '@/lib/game/config';
 import {
   Customer,
   CustomerStatus,
