@@ -1,320 +1,167 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import GameButton from '@/app/components/ui/GameButton';
 import { useGameStore } from '@/lib/store/gameStore';
+import { getUpgradeSummary, getUpgradeCatalog } from '@/lib/features/upgrades';
+import type { UpgradeEffect } from '@/lib/game/config';
 import { getUpgradesForIndustry } from '@/lib/game/config';
 
-export function UpgradesTab() {
-  const { 
-    upgrades,
-    upgradeTreatmentRooms, 
-    upgradeEquipment, 
-    upgradeStaff, 
-    upgradeMarketing,
-    getUpgradeCost, 
-    canAffordUpgrade,
-    selectedIndustry
-  } = useGameStore();
-  
-  if (!selectedIndustry) {
-    return null;
+const metricLabels: Record<string, string> = {
+  treatmentRooms: 'Treatment Rooms',
+  serviceSpeedMultiplier: 'Service Speed',
+  spawnIntervalSeconds: 'Spawn Interval',
+  reputationMultiplier: 'Reputation Gain',
+  weeklyExpenses: 'Weekly Expenses',
+};
+
+type MetricKey = keyof typeof metricLabels;
+
+const formatMetricValue = (metric: MetricKey, value: number): string => {
+  switch (metric) {
+    case 'treatmentRooms':
+      return Math.round(value).toString();
+    case 'weeklyExpenses':
+      return `$${Math.round(value).toLocaleString()}`;
+    case 'serviceSpeedMultiplier':
+      return `×${value.toFixed(2)}`;
+    case 'reputationMultiplier':
+      return `×${value.toFixed(2)}`;
+    case 'spawnIntervalSeconds':
+      return `${value.toFixed(2)}s`;
+    default:
+      return value.toString();
   }
+};
 
-  const industryConfig = getUpgradesForIndustry(selectedIndustry.id);
-  const treatmentRoomsConfig = industryConfig.treatmentRooms;
-  const equipmentConfig = industryConfig.equipment;
-  const staffConfig = industryConfig.staff;
-  const marketingConfig = industryConfig.marketing;
-
-  const formatLevelRange = (config?: { starting: number; max: number }) => {
-    if (!config || config.starting === undefined || config.max === undefined) {
-      return '';
+const formatEffect = (effect: UpgradeEffect): string => {
+  const sign = effect.value >= 0 ? '+' : '';
+  switch (effect.metric) {
+    case 'treatmentRooms':
+      return `${sign}${effect.value} treatment room${effect.value === 1 ? '' : 's'}`;
+    case 'weeklyExpenses':
+      return `${effect.value >= 0 ? '+' : '-'}$${Math.abs(effect.value)} weekly expenses`;
+    case 'serviceSpeedMultiplier': {
+      const percent = Math.round(effect.value * 100);
+      const label = percent <= 0 ? 'faster service time' : 'slower service time';
+      return `${percent > 0 ? '+' : ''}${percent}% ${label}`;
     }
-    const levels: number[] = [];
-    for (let level = config.starting; level <= config.max; level += 1) {
-      levels.push(level);
+    case 'reputationMultiplier': {
+      const percent = Math.round(effect.value * 100);
+      return `${percent >= 0 ? '+' : ''}${percent}% reputation gain`;
     }
-    return levels.join(' → ');
-  };
-
-  const formatMultiplier = (values?: number[], suffix?: string) => {
-    if (!values || values.length === 0) {
-      return '';
+    case 'spawnIntervalSeconds': {
+      const percent = Math.round(effect.value * 100);
+      const label = percent <= 0 ? 'faster customer spawns' : 'slower customer spawns';
+      return `${percent > 0 ? '+' : ''}${percent}% ${label}`;
     }
-    return values.map((value) => `${value}${suffix ?? ''}`).join(' → ');
-  };
+    default:
+      return `${sign}${effect.value}`;
+  }
+};
 
-  const treatmentRange = formatLevelRange(treatmentRoomsConfig);
-  const equipmentSpeeds = formatMultiplier(equipmentConfig?.speedMultiplier, 'x');
-  const staffQuality = formatMultiplier(staffConfig?.qualityMultiplier, 'x');
-  const marketingSpawn = formatMultiplier(marketingConfig?.spawnMultiplier, 'x');
-  
-  // Calculate current upgrade costs and states
-  const treatmentRoomsCost = getUpgradeCost('treatmentRooms');
-  const equipmentCost = getUpgradeCost('equipment');
-  const staffCost = getUpgradeCost('staff');
-  const marketingCost = getUpgradeCost('marketing');
-  
-  const canUpgradeTreatmentRooms = canAffordUpgrade(treatmentRoomsCost) && (treatmentRoomsConfig?.max === undefined || upgrades.treatmentRooms < treatmentRoomsConfig.max);
-  const canUpgradeEquipment = canAffordUpgrade(equipmentCost) && (equipmentConfig?.max === undefined || upgrades.equipment < equipmentConfig.max);
-  const canUpgradeStaff = canAffordUpgrade(staffCost) && (staffConfig?.max === undefined || upgrades.staff < staffConfig.max);
-  const canUpgradeMarketing = canAffordUpgrade(marketingCost) && (marketingConfig?.max === undefined || upgrades.marketing < marketingConfig.max);
+export function UpgradesTab() {
+  const { upgrades, canAffordUpgrade, purchaseUpgrade } = useGameStore();
 
-  const isTreatmentRoomsMaxed = treatmentRoomsConfig?.max !== undefined && upgrades.treatmentRooms >= treatmentRoomsConfig.max;
-  const isEquipmentMaxed = equipmentConfig?.max !== undefined && upgrades.equipment >= equipmentConfig.max;
-  const isStaffMaxed = staffConfig?.max !== undefined && upgrades.staff >= staffConfig.max;
-  const isMarketingMaxed = marketingConfig?.max !== undefined && upgrades.marketing >= marketingConfig.max;
-  
-  
-  const handleTreatmentRoomsUpgrade = () => {
-    const result = upgradeTreatmentRooms();
+  const catalog = useMemo(() => getUpgradeCatalog(), []);
+  const summary = useMemo(() => getUpgradeSummary(upgrades), [upgrades]);
+  const purchased = useMemo(() => new Set(upgrades), [upgrades]);
+
+  const handlePurchase = (upgradeId: string) => {
+    const result = purchaseUpgrade(upgradeId);
     if (result.success) {
       console.log('✅', result.message);
     } else {
       console.log('❌', result.message);
     }
   };
-  
-  const handleEquipmentUpgrade = () => {
-    const result = upgradeEquipment();
-    if (result.success) {
-      console.log('✅', result.message);
-    } else {
-      console.log('❌', result.message);
-    }
-  };
-  
-  const handleStaffUpgrade = () => {
-    const result = upgradeStaff();
-    if (result.success) {
-      console.log('✅', result.message);
-    } else {
-      console.log('❌', result.message);
-    }
-  };
-  
-  const handleMarketingUpgrade = () => {
-    const result = upgradeMarketing();
-    if (result.success) {
-      console.log('✅', result.message);
-    } else {
-      console.log('❌', result.message);
-    }
-  };
-  
-  return (
-    <div>
-      <h3 className="text-lg font-bold mb-3 text-white">Equipment Upgrades</h3>
-      <p className="text-gray-300 mb-6">Upgrade your equipment to improve efficiency.</p>
-      
-      <div className="space-y-4">
-        {/* Treatment Rooms */}
-        <div className={`bg-gray-800 rounded-xl p-3 border ${isTreatmentRoomsMaxed ? 'border-gray-600 opacity-60' : 'border-gray-700'}`}>
-          <div className="flex items-center justify-between gap-2">
-            {/* Left: Info and Status */}
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center border-2 border-blue-500 flex-shrink-0">
-                <span className="text-xl">{treatmentRoomsConfig?.icon ?? '🏢'}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-              <h4 className="text-white font-bold text-sm mb-1 truncate">{treatmentRoomsConfig?.name ?? 'Treatment Rooms'}</h4>
-              <p className="text-blue-300 text-xs mb-1">
-                         {isTreatmentRoomsMaxed
-                           ? `Max Level (${upgrades.treatmentRooms}/${treatmentRoomsConfig?.max ?? upgrades.treatmentRooms})`
-                           : `Level ${upgrades.treatmentRooms} → ${upgrades.treatmentRooms + 1}`
-                         }
-                </p>
-                <div className="flex flex-col gap-1 text-xs">
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-400">Current:</span>
-                    <span className="text-white font-semibold">{upgrades.treatmentRooms}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-400">Capacity:</span>
-                    <span className="text-green-400 font-semibold">{treatmentRange || 'N/A'}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-400">Weekly Cost:</span>
-                    <span className="text-red-400 font-semibold">{treatmentRoomsConfig?.weeklyExpenses ? `+$${treatmentRoomsConfig.weeklyExpenses}/unit` : 'Included'}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Right: Price and Button */}
-            <div className="flex flex-col items-end gap-2 flex-shrink-0">
-              <div className="text-right">
-                       <div className={`text-lg font-bold ${isTreatmentRoomsMaxed ? 'text-gray-500' : 'text-yellow-400'}`}>
-                         {isTreatmentRoomsMaxed ? 'MAXED' : `$${treatmentRoomsCost.toLocaleString()}`}
-                       </div>
-                <div className="text-gray-400 text-xs">One-time</div>
-              </div>
-              <div className="scale-75">
-                <GameButton 
-                  color={isTreatmentRoomsMaxed ? "gold" : "blue"} 
-                  onClick={isTreatmentRoomsMaxed ? () => console.log('Already maxed') : canUpgradeTreatmentRooms ? handleTreatmentRoomsUpgrade : () => console.log('Not enough cash')}
-                >
-                  {isTreatmentRoomsMaxed ? 'Maxed' : canUpgradeTreatmentRooms ? 'Upgrade' : 'Need Cash'}
-                </GameButton>
-              </div>
-            </div>
-          </div>
+
+  const metricsOverview = (Object.keys(metricLabels) as MetricKey[]).map((metric) => {
+    const baseValue = summary.baseMetrics[metric];
+    const currentValue = summary.currentMetrics[metric];
+    const hasChanged = Math.abs(currentValue - baseValue) > 0.001;
+    return (
+      <div key={metric} className="bg-gray-800 rounded-lg p-3 border border-gray-700">
+        <div className="flex items-center justify-between text-xs text-gray-400">
+          <span>{metricLabels[metric]}</span>
+          {hasChanged && (
+            <span className="text-amber-300">Updated</span>
+          )}
         </div>
-        
-        {/* Modern Equipment */}
-        <div className={`bg-gray-800 rounded-xl p-3 border ${isEquipmentMaxed ? 'border-gray-600 opacity-60' : 'border-gray-700'}`}>
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center border-2 border-purple-500 flex-shrink-0">
-              <span className="text-xl">{equipmentConfig?.icon ?? '⚙️'}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-              <h4 className="text-white font-bold text-sm mb-1 truncate">{equipmentConfig?.name ?? 'Equipment'}</h4>
-              <p className="text-purple-300 text-xs mb-1">
-                  {isEquipmentMaxed
-                    ? `Max Level (${upgrades.equipment}/${equipmentConfig?.max ?? upgrades.equipment})`
-                    : `Level ${upgrades.equipment} → ${upgrades.equipment + 1}`
-                  }
-                </p>
-                <div className="flex flex-col gap-1 text-xs">
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-400">Current:</span>
-                    <span className="text-white font-semibold">Level {upgrades.equipment}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-400">Speed:</span>
-                    <span className="text-green-400 font-semibold">{equipmentSpeeds ? `${equipmentSpeeds} Service Time` : 'N/A'}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-400">Weekly Cost:</span>
-                    <span className="text-red-400 font-semibold">{equipmentConfig?.weeklyExpenses ? `+$${equipmentConfig.weeklyExpenses}/level` : 'Included'}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-end gap-2 flex-shrink-0">
-              <div className="text-right">
-                <div className={`text-lg font-bold ${isEquipmentMaxed ? 'text-gray-500' : 'text-yellow-400'}`}>
-                  {isEquipmentMaxed ? 'MAXED' : `$${equipmentCost.toLocaleString()}`}
-                </div>
-                <div className="text-gray-400 text-xs">One-time</div>
-              </div>
-              <div className="scale-75">
-                <GameButton 
-                  color={isEquipmentMaxed ? "gold" : "blue"} 
-                  onClick={isEquipmentMaxed ? () => console.log('Already maxed') : canUpgradeEquipment ? handleEquipmentUpgrade : () => console.log('Not enough cash')}
-                >
-                  {isEquipmentMaxed ? 'Maxed' : canUpgradeEquipment ? 'Upgrade' : 'Need Cash'}
-                </GameButton>
-              </div>
-            </div>
-          </div>
+        <div className="text-lg font-semibold text-white">
+          {formatMetricValue(metric, currentValue)}
         </div>
-
-        {/* Staff Training */}
-        <div className={`bg-gray-800 rounded-xl p-3 border ${isStaffMaxed ? 'border-gray-600 opacity-60' : 'border-gray-700'}`}>
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center border-2 border-green-500 flex-shrink-0">
-              <span className="text-xl">{staffConfig?.icon ?? '👥'}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-              <h4 className="text-white font-bold text-sm mb-1 truncate">{staffConfig?.name ?? 'Staff'}</h4>
-                <p className="text-green-300 text-xs mb-1">
-                  {isStaffMaxed
-                    ? `Max Level (${upgrades.staff}/${staffConfig?.max ?? upgrades.staff})`
-                    : `Level ${upgrades.staff} → ${upgrades.staff + 1}`
-                  }
-                </p>
-                <div className="flex flex-col gap-1 text-xs">
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-400">Current:</span>
-                    <span className="text-white font-semibold">Level {upgrades.staff}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-400">Reputation:</span>
-                    <span className="text-green-400 font-semibold">{staffQuality ? `${staffQuality} Reputation Gain` : 'N/A'}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-400">Weekly Cost:</span>
-                    <span className="text-red-400 font-semibold">{staffConfig?.weeklyExpenses ? `+$${staffConfig.weeklyExpenses}/level` : 'Included'}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-end gap-2 flex-shrink-0">
-              <div className="text-right">
-                <div className={`text-lg font-bold ${isStaffMaxed ? 'text-gray-500' : 'text-yellow-400'}`}>
-                  {isStaffMaxed ? 'MAXED' : `$${staffCost.toLocaleString()}`}
-                </div>
-                <div className="text-gray-400 text-xs">One-time</div>
-              </div>
-              <div className="scale-75">
-                <GameButton 
-                  color={isStaffMaxed ? "gold" : "blue"} 
-                  onClick={isStaffMaxed ? () => console.log('Already maxed') : canUpgradeStaff ? handleStaffUpgrade : () => console.log('Not enough cash')}
-                >
-                  {isStaffMaxed ? 'Maxed' : canUpgradeStaff ? 'Upgrade' : 'Need Cash'}
-                </GameButton>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Marketing Campaign */}
-        <div className={`bg-gray-800 rounded-xl p-3 border ${isMarketingMaxed ? 'border-gray-600 opacity-60' : 'border-gray-700'}`}>
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center border-2 border-orange-500 flex-shrink-0">
-              <span className="text-xl">{marketingConfig?.icon ?? '📣'}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-white font-bold text-sm mb-1 truncate">{marketingConfig?.name ?? 'Marketing'}</h4>
-                <p className="text-orange-300 text-xs mb-1">
-                  {isMarketingMaxed
-                    ? `Max Level (${upgrades.marketing}/${marketingConfig?.max ?? upgrades.marketing})`
-                    : `Level ${upgrades.marketing} → ${upgrades.marketing + 1}`
-                  }
-                </p>
-                <div className="flex flex-col gap-1 text-xs">
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-400">Current:</span>
-                    <span className="text-white font-semibold">Level {upgrades.marketing}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-400">Spawn Rate:</span>
-                    <span className="text-green-400 font-semibold">{marketingSpawn ? `${marketingSpawn} Spawn Interval` : 'N/A'}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-400">Weekly Cost:</span>
-                    <span className="text-red-400 font-semibold">{marketingConfig?.weeklyExpenses ? `+$${marketingConfig.weeklyExpenses}/level` : 'Included'}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-end gap-2 flex-shrink-0">
-              <div className="text-right">
-                <div className={`text-lg font-bold ${isMarketingMaxed ? 'text-gray-500' : 'text-yellow-400'}`}>
-                  {isMarketingMaxed ? 'MAXED' : `$${marketingCost.toLocaleString()}`}
-                </div>
-                <div className="text-gray-400 text-xs">One-time</div>
-              </div>
-              <div className="scale-75">
-                <GameButton 
-                  color={isMarketingMaxed ? "gold" : "blue"} 
-                  onClick={isMarketingMaxed ? () => console.log('Already maxed') : canUpgradeMarketing ? handleMarketingUpgrade : () => console.log('Not enough cash')}
-                >
-                  {isMarketingMaxed ? 'Maxed' : canUpgradeMarketing ? 'Upgrade' : 'Need Cash'}
-                </GameButton>
-              </div>
-            </div>
-          </div>
+        <div className="text-xs text-gray-500">
+          Base: {formatMetricValue(metric, baseValue)}
         </div>
       </div>
+    );
+  });
+
+  return (
+    <div className="space-y-6">
+      <section>
+        <h3 className="text-lg font-bold mb-3 text-white">Upgrade Overview</h3>
+        <p className="text-gray-300 text-sm mb-4">
+          Purchase upgrades once to permanently improve your clinic. Each upgrade deducts its cost immediately and adjusts
+          weekly expenses automatically.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {metricsOverview}
+        </div>
+      </section>
+
+      <section>
+        <h4 className="text-md font-semibold text-white mb-3">Available Upgrades</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {catalog.map((upgrade) => {
+            const owned = purchased.has(upgrade.id);
+            const canAfford = canAffordUpgrade(upgrade.cost);
+            const effects = upgrade.effects.map(formatEffect);
+            return (
+              <div
+                key={upgrade.id}
+                className={`bg-gray-800 rounded-xl p-4 border transition ${
+                  owned ? 'border-green-500/60' : 'border-gray-700 hover:border-indigo-500/60'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="text-3xl" aria-hidden>{upgrade.icon}</div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <h5 className="text-white font-bold text-base">{upgrade.name}</h5>
+                      <span className={`text-sm font-semibold ${owned ? 'text-green-400' : 'text-amber-300'}`}>
+                        {owned ? 'Purchased' : `$${upgrade.cost.toLocaleString()}`}
+                      </span>
+                    </div>
+                    <p className="text-gray-300 text-sm mt-1 mb-3">{upgrade.description}</p>
+                    <ul className="text-xs text-gray-200 space-y-1">
+                      {effects.map((effect) => (
+                        <li key={effect} className="flex items-center gap-2">
+                          <span className="text-indigo-300">•</span>
+                          <span>{effect}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <GameButton
+                    color={owned ? 'gold' : canAfford ? 'blue' : 'gold'}
+                    onClick={() => {
+                      if (!owned && canAfford) {
+                        handlePurchase(upgrade.id);
+                      }
+                    }}
+                  >
+                    {owned ? 'Purchased' : canAfford ? 'Buy Upgrade' : 'Need Cash'}
+                  </GameButton>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useGameStore } from '@/lib/store/gameStore';
 import { CustomerStatus } from '@/lib/features/customers';
 import { WaitingArea } from './WaitingArea';
 import { TreatmentRoom } from './TreatmentRoom';
+import { getUpgradeEffects } from '@/lib/features/upgrades';
 import { getUpgradesForIndustry } from '@/lib/game/config';
 
 
@@ -13,8 +14,9 @@ export function GameCanvas() {
 
   if (!selectedIndustry) return null;
 
-  const industryUpgrades = getUpgradesForIndustry(selectedIndustry.id);
-  const treatmentRoomsLabel = industryUpgrades.treatmentRooms?.name ?? 'Treatment Rooms';
+  const upgradeEffects = getUpgradeEffects(upgrades);
+  const treatmentRoomsLabel = 'Treatment Rooms';
+  const treatmentRooms = upgradeEffects.treatmentRooms;
   const mapBackground = selectedIndustry.mapImage ?? '/images/maps/dental-map.png';
 
   return (
@@ -45,11 +47,11 @@ export function GameCanvas() {
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-semibold text-gray-700">{treatmentRoomsLabel}</h4>
               <div className="text-xs text-gray-500">
-                {customers.filter((c) => c.status === CustomerStatus.InService).length}/{upgrades.treatmentRooms} in service
+                {customers.filter((c) => c.status === CustomerStatus.InService).length}/{treatmentRooms} in service
               </div>
             </div>
             <div className="space-y-2">
-              {Array.from({ length: upgrades.treatmentRooms }, (_, index) => (
+              {Array.from({ length: treatmentRooms }, (_, index) => (
                 <TreatmentRoom key={index + 1} roomId={index + 1} customers={customers} />
               ))}
             </div>

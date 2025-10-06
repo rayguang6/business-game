@@ -1,4 +1,5 @@
 import { GameState, Metrics, Upgrades, WeeklyHistoryEntry } from '@/lib/store/types';
+import { TICKS_PER_SECOND, isNewWeek } from '@/lib/game/config';
 import { CUSTOMER_SPAWN_INTERVAL, TICKS_PER_SECOND, isNewWeek } from '@/lib/game/config';
 import {
   Customer,
@@ -15,11 +16,7 @@ import {
   getWeeklyBaseExpenses,
   calculateUpgradeWeeklyExpenses,
 } from '@/lib/features/economy';
-import {
-  shouldSpawnCustomerWithUpgrades,
-  getEffectiveReputationMultiplier,
-  getEffectiveServiceSpeedMultiplier,
-} from '@/lib/features/upgrades';
+import { shouldSpawnCustomerWithUpgrades, getUpgradeEffects, UpgradeEffects } from '@/lib/features/upgrades';
 
 interface TickSnapshot {
   gameTick: number;
@@ -47,7 +44,6 @@ interface WeekTransitionParams {
   weeklyHistory: WeeklyHistoryEntry[];
   weeklyExpenseAdjustments: number;
   upgrades: Upgrades;
-  industryId: string;
 }
 
 interface WeekTransitionResult {
@@ -62,10 +58,9 @@ interface WeekTransitionResult {
 
 interface ProcessCustomersParams {
   customers: Customer[];
-  upgrades: Upgrades;
   metrics: Metrics;
   weeklyRevenue: number;
-  industryId: string;
+  upgradeEffects: UpgradeEffects;
 }
 
 interface ProcessCustomersResult {
@@ -83,7 +78,6 @@ function processWeekTransition({
   weeklyHistory,
   weeklyExpenseAdjustments,
   upgrades,
-  industryId,
 }: WeekTransitionParams): WeekTransitionResult {
   const weekResult = endOfWeek(metrics.cash, weeklyRevenue, weeklyExpenses, weeklyOneTimeCosts);
   const alreadyAccounted = weeklyExpenseAdjustments ?? 0;
@@ -109,7 +103,7 @@ function processWeekTransition({
   ];
 
   const baseExpenses = getWeeklyBaseExpenses();
-  const upgradeExpenses = calculateUpgradeWeeklyExpenses(upgrades, industryId);
+  const upgradeExpenses = calculateUpgradeWeeklyExpenses(upgrades);
 
   return {
     metrics: updatedMetrics,
@@ -124,16 +118,15 @@ function processWeekTransition({
 
 function processCustomersForTick({
   customers,
-  upgrades,
   metrics,
   weeklyRevenue,
-  industryId,
+  upgradeEffects,
 }: ProcessCustomersParams): ProcessCustomersResult {
-  const roomsRemaining = [...getAvailableRooms(customers, upgrades.treatmentRooms)];
+  const roomsRemaining = [...getAvailableRooms(customers, upgradeEffects.treatmentRooms)];
   const updatedCustomers: Customer[] = [];
   let metricsAccumulator: Metrics = { ...metrics };
   let revenueAccumulator = weeklyRevenue;
-  const reputationMultiplier = getEffectiveReputationMultiplier(upgrades, industryId);
+  const reputationMultiplier = upgradeEffects.reputationMultiplier;
 
   customers.forEach((customer) => {
     const updatedCustomer = tickCustomer(customer);
@@ -202,13 +195,6 @@ export function updateGameTimer(gameTime: number, gameTick: number): number {
 }
 
 /**
- * Checks if it's time to spawn a customer
- */
-export function shouldSpawnCustomer(gameTick: number): boolean {
-  return gameTick % CUSTOMER_SPAWN_INTERVAL === 0;
-}
-
-/**
  * Creates initial game state
  */
 export function createInitialGameState(): Partial<GameState> {
@@ -248,7 +234,6 @@ export function tickOnce(state: TickSnapshot): TickResult {
       weeklyHistory,
       weeklyExpenseAdjustments,
       upgrades: state.upgrades,
-      industryId,
     });
 
     metrics = transition.metrics;
@@ -260,18 +245,18 @@ export function tickOnce(state: TickSnapshot): TickResult {
     weeklyExpenseAdjustments = transition.weeklyExpenseAdjustments;
   }
 
-  if (shouldSpawnCustomerWithUpgrades(nextTick, state.upgrades, industryId)) {
-    const serviceSpeedMultiplier = getEffectiveServiceSpeedMultiplier(state.upgrades, industryId);
-    customers = [...customers, createCustomer(serviceSpeedMultiplier, industryId)];
+  const upgradeEffects = getUpgradeEffects(state.upgrades);
+
+  if (shouldSpawnCustomerWithUpgrades(nextTick, state.upgrades, upgradeEffects)) {
+    customers = [...customers, createCustomer(upgradeEffects.serviceSpeedMultiplier, industryId)];
   }
 
   const { customers: processedCustomers, metrics: processedMetrics, weeklyRevenue: processedWeeklyRevenue } =
     processCustomersForTick({
       customers,
-      upgrades: state.upgrades,
       metrics,
       weeklyRevenue,
-      industryId,
+      upgradeEffects,
     });
 
   return {
