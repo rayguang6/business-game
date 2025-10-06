@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
-import { TICK_INTERVAL_MS } from '@/lib/core/constants';
+import { TICK_INTERVAL_MS } from '@/lib/game/config';
 
 export const useGameLoop = () => {
   const { isGameStarted, tickGame } = useGameStore();
