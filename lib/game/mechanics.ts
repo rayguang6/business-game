@@ -150,8 +150,14 @@ function processCustomersForTick({
       return [];
     });
 
+  const baseDynamicWalls = occupiedWaitingPositions.map(pos => ({ x: pos.x, y: pos.y }));
+
   customers.forEach((customer) => {
     const updatedCustomer = tickCustomer(customer);
+    const currentTile = { x: Math.round(updatedCustomer.x), y: Math.round(updatedCustomer.y) };
+    const dynamicWallsForCustomer = baseDynamicWalls.filter(
+      wall => !(wall.x === currentTile.x && wall.y === currentTile.y)
+    );
 
     // Assign target waiting position when customer starts walking to chair
     if (customer.status === CustomerStatus.Spawning && updatedCustomer.status === CustomerStatus.WalkingToChair) {
@@ -167,11 +173,13 @@ function processCustomersForTick({
             updatedCustomer.targetY = waitingPosition.y;
             const pathToChair = findPath(
               { x: Math.round(updatedCustomer.x), y: Math.round(updatedCustomer.y) },
-              waitingPosition
+              waitingPosition,
+              { additionalWalls: dynamicWallsForCustomer }
             );
             updatedCustomer.path = pathToChair.length > 0 ? pathToChair : undefined;
             // Mark as occupied for next customers
             occupiedWaitingPositions.push({ x: waitingPosition.x, y: waitingPosition.y });
+            baseDynamicWalls.push({ x: waitingPosition.x, y: waitingPosition.y });
             break;
           }
         }
@@ -189,11 +197,12 @@ function processCustomersForTick({
         customerWithService.targetY = servicePosition.y;
         const pathToRoom = findPath(
           { x: Math.round(customerWithService.x), y: Math.round(customerWithService.y) },
-          servicePosition
+          servicePosition,
+          { additionalWalls: dynamicWallsForCustomer }
         );
         customerWithService.path = pathToRoom.length > 0 ? pathToRoom : undefined;
       }
-      
+
       updatedCustomers.push(customerWithService);
       return;
     }
