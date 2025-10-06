@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/store/gameStore';
 import { KeyMetrics } from './KeyMetrics';
-import { ROUND_DURATION_SECONDS } from '@/lib/core/constants';
+import { ROUND_DURATION_SECONDS } from '@/lib/game/config';
 import { useAudioControls } from '@/hooks/useAudio';
 
 interface TopBarProps {

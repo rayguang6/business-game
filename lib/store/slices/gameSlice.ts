@@ -3,7 +3,7 @@ import { calculateUpgradeWeeklyExpenses, getWeeklyBaseExpenses } from '@/lib/fea
 import { tickOnce } from '@/lib/game/mechanics';
 import { GameState } from '../types';
 import { getInitialMetrics } from './metricsSlice';
-import { getUpgradesForIndustry, DEFAULT_UPGRADE_VALUES, IndustryUpgradeConfig } from '@/lib/config/gameConfig';
+import { DEFAULT_UPGRADE_VALUES, IndustryUpgradeConfig, getUpgradesForIndustry } from '@/lib/game/config';
 
 
 const DEFAULT_INDUSTRY_ID = 'dental';

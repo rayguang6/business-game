@@ -5,7 +5,7 @@ import { useGameStore } from '@/lib/store/gameStore';
 import { CustomerStatus } from '@/lib/features/customers';
 import { WaitingArea } from './WaitingArea';
 import { TreatmentRoom } from './TreatmentRoom';
-import { getUpgradesForIndustry } from '@/lib/config/gameConfig';
+import { getUpgradesForIndustry } from '@/lib/game/config';
 
 
 export function GameCanvas() {
