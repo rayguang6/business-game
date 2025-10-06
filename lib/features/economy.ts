@@ -8,6 +8,9 @@ import {
   STARTING_REPUTATION,
   REPUTATION_GAIN_PER_HAPPY_CUSTOMER,
   WEEKLY_EXPENSES,
+  BASE_UPGRADE_METRICS,
+} from '@/lib/game/config';
+import { ActiveUpgradeIds, calculateActiveUpgradeMetrics } from './upgrades';
   getUpgradesForIndustry,
   UpgradeKey
 } from '@/lib/game/config';
@@ -62,21 +65,9 @@ export function getWeeklyBaseExpenses(): number {
 /**
  * Calculates the total weekly expenses contributed by upgrades.
  */
-export function calculateUpgradeWeeklyExpenses(
-  upgrades: Upgrades,
-  industryId: string = 'dental'
-): number {
-  const industryUpgrades = getUpgradesForIndustry(industryId);
-
-  return (Object.entries(upgrades) as Array<[UpgradeKey, number]>).reduce((total, [key, level]) => {
-    const config = industryUpgrades[key];
-
-    if (!config?.weeklyExpenses) {
-      return total;
-    }
-
-    return total + Math.max(level, 0) * config.weeklyExpenses;
-  }, 0);
+export function calculateUpgradeWeeklyExpenses(upgrades: ActiveUpgradeIds): number {
+  const { currentMetrics } = calculateActiveUpgradeMetrics(upgrades);
+  return Math.max(0, currentMetrics.weeklyExpenses - BASE_UPGRADE_METRICS.weeklyExpenses);
 }
 
 /**
@@ -123,8 +114,7 @@ export function handleWeekTransition(
   weeklyExpenses: number,
   weeklyOneTimeCosts: number,
   currentReputation: number,
-  upgrades: Upgrades,
-  industryId: string
+  upgrades: ActiveUpgradeIds,
 ): {
   currentWeek: number;
   cash: number;
@@ -140,7 +130,7 @@ export function handleWeekTransition(
     currentWeek: currentWeek + 1,
     cash,
     weeklyRevenue: 0, // Reset weekly tracking
-    weeklyExpenses: getWeeklyBaseExpenses() + calculateUpgradeWeeklyExpenses(upgrades, industryId),
+    weeklyExpenses: getWeeklyBaseExpenses() + calculateUpgradeWeeklyExpenses(upgrades),
     weeklyOneTimeCosts: 0, // Reset one-time costs
     reputation: currentReputation, // Reputation persists
     weeklyExpenseAdjustments: 0,

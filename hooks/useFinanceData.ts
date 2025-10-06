@@ -6,11 +6,10 @@ import { calculateUpgradeWeeklyExpenses, getWeeklyBaseExpenses } from '@/lib/fea
  * Used by components that need metrics and weekly history data.
  */
 export const useFinanceData = () => {
-  const { metrics, weeklyHistory, weeklyExpenses, upgrades, selectedIndustry } = useGameStore();
-  const industryId = selectedIndustry?.id ?? 'dental';
+  const { metrics, weeklyHistory, weeklyExpenses, upgrades } = useGameStore();
   const baseWeeklyExpenses = getWeeklyBaseExpenses();
   const upgradeWeeklyExpenses = Math.max(
-    calculateUpgradeWeeklyExpenses(upgrades, industryId),
+    calculateUpgradeWeeklyExpenses(upgrades),
     0
   );
   const otherWeeklyExpenses = Math.max(

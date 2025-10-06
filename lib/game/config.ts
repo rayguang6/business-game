@@ -159,6 +159,117 @@ export const SERVICE_CONFIG = {
 } as const;
 
 // -----------------------------------------------------------------------------
+// UPGRADE DEFINITIONS (SINGLE-LEVEL, DENTAL-FOCUSED)
+// -----------------------------------------------------------------------------
+
+export type UpgradeMetric =
+  | 'weeklyExpenses'
+  | 'spawnIntervalSeconds'
+  | 'serviceSpeedMultiplier'
+  | 'reputationMultiplier'
+  | 'treatmentRooms';
+
+export type UpgradeEffectType = 'add' | 'percent';
+
+export interface UpgradeEffect {
+  metric: UpgradeMetric;
+  type: UpgradeEffectType;
+  value: number;
+  source: string;
+}
+
+export interface UpgradeDefinition {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  cost: number;
+  effects: UpgradeEffect[];
+}
+
+export type UpgradeId = UpgradeDefinition['id'];
+
+export const BASE_UPGRADE_METRICS: Record<UpgradeMetric, number> = {
+  weeklyExpenses: WEEKLY_EXPENSES.rent + WEEKLY_EXPENSES.utilities + WEEKLY_EXPENSES.supplies,
+  spawnIntervalSeconds: BUSINESS_STATS.customerSpawnIntervalSeconds,
+  serviceSpeedMultiplier: 1,
+  reputationMultiplier: 1,
+  treatmentRooms: BUSINESS_STATS.treatmentRooms,
+};
+
+export const DENTAL_UPGRADES: UpgradeDefinition[] = [
+  {
+    id: 'extra_treatment_room',
+    name: 'Extra Treatment Room',
+    description: 'Add another treatment room so more patients can be helped at once.',
+    icon: '🦷',
+    cost: 1200,
+    effects: [
+      { metric: 'treatmentRooms', type: 'add', value: 1, source: 'Extra Treatment Room' },
+      { metric: 'weeklyExpenses', type: 'add', value: 150, source: 'Extra Treatment Room' },
+    ],
+  },
+  {
+    id: 'modern_equipment',
+    name: 'Modern Equipment',
+    description: 'Speed up service time with modern dental equipment.',
+    icon: '⚡',
+    cost: 900,
+    effects: [
+      { metric: 'serviceSpeedMultiplier', type: 'percent', value: -0.2, source: 'Modern Equipment' },
+      { metric: 'weeklyExpenses', type: 'add', value: 90, source: 'Modern Equipment' },
+    ],
+  },
+  {
+    id: 'staff_training',
+    name: 'Staff Training Program',
+    description: 'Improve customer experience and reputation gains with staff coaching.',
+    icon: '👩‍⚕️',
+    cost: 700,
+    effects: [
+      { metric: 'reputationMultiplier', type: 'percent', value: 0.25, source: 'Staff Training Program' },
+      { metric: 'weeklyExpenses', type: 'add', value: 80, source: 'Staff Training Program' },
+    ],
+  },
+  {
+    id: 'marketing_blitz',
+    name: 'Local Marketing Blitz',
+    description: 'Bring patients in faster with a short marketing campaign.',
+    icon: '📣',
+    cost: 600,
+    effects: [
+      { metric: 'spawnIntervalSeconds', type: 'percent', value: -0.15, source: 'Local Marketing Blitz' },
+      { metric: 'weeklyExpenses', type: 'add', value: 70, source: 'Local Marketing Blitz' },
+    ],
+  },
+  {
+    id: 'spa_waiting_area',
+    name: 'Spa Waiting Area',
+    description: 'Create a relaxing environment that keeps customers calm and patient.',
+    icon: '🛋️',
+    cost: 450,
+    effects: [
+      { metric: 'reputationMultiplier', type: 'percent', value: 0.15, source: 'Spa Waiting Area' },
+      { metric: 'weeklyExpenses', type: 'add', value: 60, source: 'Spa Waiting Area' },
+    ],
+  },
+];
+
+const UPGRADE_LOOKUP: Record<UpgradeId, UpgradeDefinition> = DENTAL_UPGRADES.reduce(
+  (lookup, upgrade) => {
+    lookup[upgrade.id] = upgrade;
+    return lookup;
+  },
+  {} as Record<UpgradeId, UpgradeDefinition>,
+);
+
+export function getUpgradeById(id: UpgradeId): UpgradeDefinition | undefined {
+  return UPGRADE_LOOKUP[id];
+}
+
+export function getAllUpgrades(): UpgradeDefinition[] {
+  return [...DENTAL_UPGRADES];
+}
 // UPGRADE CONFIG TYPES
 // -----------------------------------------------------------------------------
 
