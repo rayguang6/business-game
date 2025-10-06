@@ -29,6 +29,8 @@ export interface Customer {
   imageSrc: string; // 32x32 avatar frame (top-left if sprite)
   x: number;
   y: number;
+  targetX?: number; // Target position for walking
+  targetY?: number;
   service: Service;
   status: CustomerStatus;
   serviceTimeLeft: number; // ticks remaining for service completion
@@ -78,6 +80,59 @@ export function spawnCustomer(serviceSpeedMultiplier: number = 1, industryId: st
 }
 
 /**
+ * Movement speed (tiles per tick)
+ */
+const MOVEMENT_SPEED = 0.15;
+
+/**
+ * Moves customer towards target position (horizontal or vertical only)
+ */
+function moveTowardsTarget(customer: Customer): Customer {
+  if (customer.targetX === undefined || customer.targetY === undefined) {
+    return customer;
+  }
+
+  const dx = customer.targetX - customer.x;
+  const dy = customer.targetY - customer.y;
+
+  // Close enough to target - snap to position
+  if (Math.abs(dx) < MOVEMENT_SPEED && Math.abs(dy) < MOVEMENT_SPEED) {
+    return {
+      ...customer,
+      x: customer.targetX,
+      y: customer.targetY,
+      targetX: undefined,
+      targetY: undefined,
+    };
+  }
+
+  // Move horizontally or vertically only (not diagonal)
+  let newX = customer.x;
+  let newY = customer.y;
+
+  if (Math.abs(dx) > MOVEMENT_SPEED) {
+    // Move horizontally
+    newX = customer.x + (dx > 0 ? MOVEMENT_SPEED : -MOVEMENT_SPEED);
+  } else if (Math.abs(dy) > MOVEMENT_SPEED) {
+    // Move vertically
+    newY = customer.y + (dy > 0 ? MOVEMENT_SPEED : -MOVEMENT_SPEED);
+  }
+
+  return {
+    ...customer,
+    x: newX,
+    y: newY,
+  };
+}
+
+/**
+ * Check if customer has reached target
+ */
+function hasReachedTarget(customer: Customer): boolean {
+  return customer.targetX === undefined && customer.targetY === undefined;
+}
+
+/**
  * Updates a customer's state for one tick
  */
 export function tickCustomer(customer: Customer): Customer {
@@ -90,11 +145,18 @@ export function tickCustomer(customer: Customer): Customer {
       };
     
     case CustomerStatus.WalkingToChair:
-      // After moving animation, start waiting
-      return {
-        ...customer,
-        status: CustomerStatus.Waiting,
-      };
+      // Move towards target waiting position
+      const movedToChair = moveTowardsTarget(customer);
+      
+      // If reached target, start waiting
+      if (hasReachedTarget(movedToChair)) {
+        return {
+          ...movedToChair,
+          status: CustomerStatus.Waiting,
+        };
+      }
+      
+      return movedToChair;
     
     case CustomerStatus.Waiting:
       return {
@@ -104,11 +166,18 @@ export function tickCustomer(customer: Customer): Customer {
       };
     
     case CustomerStatus.WalkingToRoom:
-      // After moving animation, start service
-      return {
-        ...customer,
-        status: CustomerStatus.InService,
-      };
+      // Move towards target service room position
+      const movedToRoom = moveTowardsTarget(customer);
+      
+      // If reached target, start service
+      if (hasReachedTarget(movedToRoom)) {
+        return {
+          ...movedToRoom,
+          status: CustomerStatus.InService,
+        };
+      }
+      
+      return movedToRoom;
     
     case CustomerStatus.InService:
       return {

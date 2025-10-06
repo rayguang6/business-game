@@ -134,35 +134,46 @@ function processCustomersForTick({
   let revenueAccumulator = weeklyRevenue;
   const reputationMultiplier = upgradeEffects.reputationMultiplier;
 
-  // Track waiting customers to assign positions
-  let waitingCustomerIndex = 0;
+  // Find already occupied waiting positions (including both current and target positions)
+  const occupiedWaitingPositions = customers
+    .filter(c => 
+      (c.status === CustomerStatus.Waiting || c.status === CustomerStatus.WalkingToChair) &&
+      (c.targetX !== undefined && c.targetY !== undefined)
+    )
+    .map(c => ({ x: c.targetX!, y: c.targetY! }));
 
   customers.forEach((customer) => {
     const updatedCustomer = tickCustomer(customer);
 
-    // Assign waiting position when customer enters waiting state
-    if (customer.status !== CustomerStatus.Waiting && updatedCustomer.status === CustomerStatus.Waiting) {
-      const waitingPosition = getWaitingPositionByIndex(waitingCustomerIndex);
-      if (waitingPosition) {
-        updatedCustomer.x = waitingPosition.x;
-        updatedCustomer.y = waitingPosition.y;
+    // Assign target waiting position when customer starts walking to chair
+    if (customer.status === CustomerStatus.Spawning && updatedCustomer.status === CustomerStatus.WalkingToChair) {
+      // Find first unoccupied waiting position
+      for (let i = 0; i < 8; i++) { // Only 8 waiting positions
+        const waitingPosition = getWaitingPositionByIndex(i);
+        if (waitingPosition) {
+          const isOccupied = occupiedWaitingPositions.some(
+            pos => pos.x === waitingPosition.x && pos.y === waitingPosition.y
+          );
+          if (!isOccupied) {
+            updatedCustomer.targetX = waitingPosition.x;
+            updatedCustomer.targetY = waitingPosition.y;
+            // Mark as occupied for next customers
+            occupiedWaitingPositions.push({ x: waitingPosition.x, y: waitingPosition.y });
+            break;
+          }
+        }
       }
-    }
-
-    // Count current waiting position
-    if (updatedCustomer.status === CustomerStatus.Waiting) {
-      waitingCustomerIndex++;
     }
 
     if (updatedCustomer.status === CustomerStatus.Waiting && roomsRemaining.length > 0) {
       const assignedRoom = roomsRemaining.shift()!;
       const customerWithService = startService(updatedCustomer, assignedRoom);
       
-      // Assign service room position
+      // Assign target service room position
       const servicePosition = getServiceRoomPosition(assignedRoom);
       if (servicePosition) {
-        customerWithService.x = servicePosition.x;
-        customerWithService.y = servicePosition.y;
+        customerWithService.targetX = servicePosition.x;
+        customerWithService.targetY = servicePosition.y;
       }
       
       updatedCustomers.push(customerWithService);
