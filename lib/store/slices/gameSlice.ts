@@ -3,6 +3,7 @@ import { getWeeklyBaseExpenses } from '@/lib/features/economy';
 import { tickOnce } from '@/lib/game/mechanics';
 import { GameState } from '../types';
 import { getInitialMetrics } from './metricsSlice';
+import { DEFAULT_UPGRADE_VALUES, IndustryUpgradeConfig, getUpgradesForIndustry } from '@/lib/game/config';
 
 const BASE_WEEKLY_EXPENSES = getWeeklyBaseExpenses();
 

@@ -6,6 +6,7 @@ import { CustomerStatus } from '@/lib/features/customers';
 import { WaitingArea } from './WaitingArea';
 import { TreatmentRoom } from './TreatmentRoom';
 import { getUpgradeEffects } from '@/lib/features/upgrades';
+import { getUpgradesForIndustry } from '@/lib/game/config';
 
 
 export function GameCanvas() {

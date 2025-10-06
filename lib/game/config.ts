@@ -270,6 +270,172 @@ export function getUpgradeById(id: UpgradeId): UpgradeDefinition | undefined {
 export function getAllUpgrades(): UpgradeDefinition[] {
   return [...DENTAL_UPGRADES];
 }
+// UPGRADE CONFIG TYPES
+// -----------------------------------------------------------------------------
+
+export type UpgradeKey = 'treatmentRooms' | 'equipment' | 'staff' | 'marketing';
+
+export interface UpgradeDefinition {
+  name: string;
+  description: string;
+  icon: string;
+  starting: number;
+  max: number;
+  costs: number[];
+  weeklyExpenses?: number;
+  speedMultiplier?: number[];
+  qualityMultiplier?: number[];
+  spawnMultiplier?: number[];
+}
+
+export type IndustryUpgradeConfig = Partial<Record<UpgradeKey, UpgradeDefinition>>;
+
+// -----------------------------------------------------------------------------
+// INDUSTRY-SPECIFIC UPGRADE CONFIGS
+// -----------------------------------------------------------------------------
+
+export const DENTAL_UPGRADES: IndustryUpgradeConfig = {
+  treatmentRooms: {
+    name: 'Treatment Rooms',
+    description: 'More rooms for simultaneous dental procedures',
+    icon: '🦷',
+    starting: BUSINESS_STATS.treatmentRooms,
+    max: 5,
+    costs: [1000, 2500, 5000],
+    weeklyExpenses: 200,
+  },
+  equipment: {
+    name: 'Modern Equipment',
+    description: 'Faster treatment times with better equipment',
+    icon: '⚡',
+    starting: 0,
+    max: 3,
+    costs: [800, 1500, 3000],
+    weeklyExpenses: 150,
+    speedMultiplier: [0.8, 0.6, 0.5],
+  },
+  staff: {
+    name: 'Staff Training',
+    description: 'Better trained staff for improved service quality',
+    icon: '👥',
+    starting: 0,
+    max: 3,
+    costs: [500, 1200, 2500],
+    weeklyExpenses: 300,
+    qualityMultiplier: [2, 3, 4],
+  },
+  marketing: {
+    name: 'Marketing Campaign',
+    description: 'Attract more customers with better marketing',
+    icon: '📢',
+    starting: 0,
+    max: 3,
+    costs: [600, 1400, 2800],
+    weeklyExpenses: 100,
+    spawnMultiplier: [0.7, 0.5, 0.3],
+  },
+};
+
+export const RESTAURANT_UPGRADES: IndustryUpgradeConfig = {
+  treatmentRooms: {
+    name: 'Serving Stations',
+    description: 'More stations allow serving more guests at once',
+    icon: '🍽️',
+    starting: 3,
+    max: 6,
+    costs: [1200, 2600, 5200],
+    weeklyExpenses: 180,
+  },
+  equipment: {
+    name: 'Kitchen Equipment',
+    description: 'Modern appliances speed up food preparation',
+    icon: '🍳',
+    starting: 0,
+    max: 3,
+    costs: [900, 1800, 3200],
+    weeklyExpenses: 200,
+    speedMultiplier: [0.85, 0.65, 0.55],
+  },
+  staff: {
+    name: 'Staff Training',
+    description: 'Improved service quality and upselling skills',
+    icon: '👩‍🍳',
+    starting: 0,
+    max: 3,
+    costs: [600, 1400, 2800],
+    weeklyExpenses: 260,
+    qualityMultiplier: [2, 3, 4],
+  },
+  marketing: {
+    name: 'Local Marketing',
+    description: 'Attract more diners with community buzz',
+    icon: '📣',
+    starting: 0,
+    max: 3,
+    costs: [500, 1200, 2400],
+    weeklyExpenses: 120,
+    spawnMultiplier: [0.75, 0.55, 0.4],
+  },
+};
+
+export const GYM_UPGRADES: IndustryUpgradeConfig = {
+  treatmentRooms: {
+    name: 'Workout Zones',
+    description: 'Expand training zones for more members',
+    icon: '🏋️',
+    starting: 2,
+    max: 5,
+    costs: [1000, 2300, 4600],
+    weeklyExpenses: 150,
+  },
+  equipment: {
+    name: 'Gym Equipment',
+    description: 'High-end gear boosts workout efficiency',
+    icon: '💪',
+    starting: 0,
+    max: 3,
+    costs: [850, 1700, 3000],
+    weeklyExpenses: 220,
+    speedMultiplier: [0.9, 0.7, 0.55],
+  },
+  staff: {
+    name: 'Trainer Certifications',
+    description: 'Advanced coaching improves member satisfaction',
+    icon: '🧑‍🏫',
+    starting: 0,
+    max: 3,
+    costs: [550, 1300, 2600],
+    weeklyExpenses: 240,
+    qualityMultiplier: [2, 3, 4],
+  },
+  marketing: {
+    name: 'Membership Marketing',
+    description: 'Grow membership with targeted campaigns',
+    icon: '📢',
+    starting: 0,
+    max: 3,
+    costs: [450, 1100, 2200],
+    weeklyExpenses: 110,
+    spawnMultiplier: [0.8, 0.6, 0.45],
+  },
+};
+
+export function getUpgradesForIndustry(industry: string = 'dental'): IndustryUpgradeConfig {
+  switch (industry) {
+    case 'dental':
+      return DENTAL_UPGRADES;
+    case 'restaurant':
+      return RESTAURANT_UPGRADES;
+    case 'gym':
+      return GYM_UPGRADES;
+    default:
+      return DENTAL_UPGRADES;
+  }
+}
+
+export const DEFAULT_UPGRADE_VALUES = {
+  TREATMENT_ROOMS_STARTING: BUSINESS_STATS.treatmentRooms,
+} as const;
 
 // -----------------------------------------------------------------------------
 // DIFFICULTY CURVE CONFIGURATION
@@ -311,6 +477,62 @@ export const DIFFICULTY_CURVE = {
 // -----------------------------------------------------------------------------
 // UPGRADE SYSTEM CONFIGURATION
 // -----------------------------------------------------------------------------
+
+export const UPGRADE_CONFIG = {
+  INFRASTRUCTURE: {
+    waiting_chairs: {
+      name: 'Comfortable Chairs',
+      description: 'Add more waiting seats',
+      icon: '🪑',
+      baseCost: 200,
+      maxLevel: 4,
+      effect: (level: number) => CUSTOMER_CONFIG.MAX_WAITING_CHAIRS + level * 2,
+      category: 'capacity',
+    },
+    treatment_rooms: {
+      name: 'Treatment Rooms',
+      description: 'More rooms for simultaneous service',
+      icon: '🦷',
+      baseCost: 800,
+      maxLevel: 3,
+      effect: (level: number) => CUSTOMER_CONFIG.MAX_TREATMENT_ROOMS + level,
+      category: 'capacity',
+    },
+  },
+  EFFICIENCY: {
+    modern_equipment: {
+      name: 'Modern Equipment',
+      description: 'Faster treatment times',
+      icon: '⚡',
+      baseCost: 500,
+      maxLevel: 4,
+      effect: (level: number) => 1.0 - level * 0.15,
+      category: 'efficiency',
+    },
+  },
+  QUALITY: {
+    staff_training: {
+      name: 'Staff Training',
+      description: 'Better service quality',
+      icon: '🎓',
+      baseCost: 300,
+      maxLevel: 5,
+      effect: (level: number) =>
+        BASE_HAPPY_PROBABILITY + level * 0.05,
+      category: 'quality',
+    },
+    comfortable_waiting: {
+      name: 'Comfortable Waiting',
+      description: 'Customers wait longer patiently',
+      icon: '😌',
+      baseCost: 400,
+      maxLevel: 3,
+      effect: (level: number) =>
+        GAME_TIMING.DEFAULT_PATIENCE_SECONDS + level * 3,
+      category: 'comfort',
+    },
+  },
+} as const;
 
 // -----------------------------------------------------------------------------
 // HELPER UTILITIES
