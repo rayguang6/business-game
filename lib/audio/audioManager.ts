@@ -4,6 +4,7 @@
  */
 
 export type AudioTrack = 'welcome' | 'selection' | 'game' | 'none';
+export type AudioFx = 'buttonClick' | 'serviceFinished';
 
 export interface AudioState {
   currentTrack: AudioTrack;
@@ -17,13 +18,16 @@ class AudioManager {
   private currentTrack: AudioTrack = 'none';
   private isPlaying: boolean = false;
   private volume: number = 0.5; // Default volume (50%)
+  private soundEffectVolume: number = 0.8; // Default sound effect volume (80%)
   private isMuted: boolean = false;
   private isInitialized: boolean = false;
+  private soundEffectElements: Map<AudioFx, HTMLAudioElement> = new Map();
 
   constructor() {
     // Only initialize on client side
     if (typeof window !== 'undefined') {
       this.initializeAudioElements();
+      this.initializeSoundEffectElements();
     }
   }
 
@@ -66,6 +70,32 @@ class AudioManager {
     this.isInitialized = true;
   }
 
+  private initializeSoundEffectElements() {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const soundEffects: { effect: AudioFx; src: string }[] = [
+      { effect: 'buttonClick', src: '/audio/button-click.mp3' },
+      { effect: 'serviceFinished', src: '/audio/service-finished.mp3' },
+    ];
+
+    soundEffects.forEach(({ effect, src }) => {
+      try {
+        const audio = new Audio(src);
+        audio.volume = this.soundEffectVolume;
+        audio.preload = 'auto';
+
+        audio.addEventListener('error', () => {
+          console.warn(`Failed to load sound effect: ${effect} (${src})`);
+        });
+
+        this.soundEffectElements.set(effect, audio);
+      } catch (error) {
+        console.warn(`Failed to create audio element for sound effect: ${effect}`, error);
+      }
+    });
+  }
 
   /**
    * Play a specific track
@@ -109,6 +139,35 @@ class AudioManager {
     } catch (error) {
       console.warn(`Failed to play audio track: ${track}`, error);
       this.isPlaying = false;
+    }
+  }
+
+  /**
+   * Play a specific sound effect
+   */
+  async playSoundEffect(effect: AudioFx): Promise<void> {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (!this.isInitialized) {
+      this.initializeAudioElements();
+      this.initializeSoundEffectElements();
+    }
+
+    const audio = this.soundEffectElements.get(effect);
+    if (!audio) {
+      console.warn(`Sound effect not found: ${effect}`);
+      return;
+    }
+
+    try {
+      audio.currentTime = 0; // Reset to start for immediate playback
+      audio.volume = this.isMuted ? 0 : this.soundEffectVolume;
+      await audio.play();
+      console.log(`Sound effect playing: ${effect}`);
+    } catch (error) {
+      console.warn(`Failed to play sound effect: ${effect}`, error);
     }
   }
 
