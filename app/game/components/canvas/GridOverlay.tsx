@@ -39,7 +39,7 @@ export function GridOverlay({ scaleFactor, showGrid = false }: GridOverlayProps)
       {Array.from({ length: GRID_HEIGHT + 1 }, (_, i) => (
         <div
           key={`h-${i}`}
-          className="absolute bg-red-500 opacity-20"
+          className="absolute bg-red-500/10"
           style={{
             left: 0,
             top: `${i * TILE_SIZE}px`,
@@ -54,7 +54,7 @@ export function GridOverlay({ scaleFactor, showGrid = false }: GridOverlayProps)
         Array.from({ length: GRID_HEIGHT }, (_, y) => (
           <div
             key={`coord-${x}-${y}`}
-            className="absolute text-xs text-red-600 font-mono"
+            className="absolute text-xs text-red-600/10 font-mono"
             style={{
               left: `${x * TILE_SIZE + 2}px`,
               top: `${y * TILE_SIZE + 2}px`,

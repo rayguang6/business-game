@@ -51,6 +51,7 @@ export const DEFAULT_CUSTOMER_IMAGE = CUSTOMER_CONFIG.DEFAULT_IMAGE;
 
 // Mechanics
 import { getRandomService } from './services';
+import { ENTRY_POSITION } from '@/lib/game/positioning';
 
 /**
  * Creates a new customer with random properties
@@ -66,8 +67,8 @@ export function spawnCustomer(serviceSpeedMultiplier: number = 1, industryId: st
   return {
     id: Math.random().toString(36).substr(2, 9),
     imageSrc,
-    x: Math.random() * (CUSTOMER_SPAWN_AREA.x.max - CUSTOMER_SPAWN_AREA.x.min) + CUSTOMER_SPAWN_AREA.x.min,
-    y: Math.random() * (CUSTOMER_SPAWN_AREA.y.max - CUSTOMER_SPAWN_AREA.y.min) + CUSTOMER_SPAWN_AREA.y.min,
+    x: ENTRY_POSITION.x, // Spawn at entry position
+    y: ENTRY_POSITION.y,
     service: service,
     status: CustomerStatus.Spawning, // Start at door!
     serviceTimeLeft: secondsToTicks(effectiveDuration),

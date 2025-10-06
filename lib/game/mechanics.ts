@@ -16,6 +16,7 @@ import {
   calculateUpgradeWeeklyExpenses,
 } from '@/lib/features/economy';
 import { shouldSpawnCustomerWithUpgrades, getUpgradeEffects, UpgradeEffects } from '@/lib/features/upgrades';
+import { getWaitingPositionByIndex, getServiceRoomPosition } from '@/lib/game/positioning';
 
 interface TickSnapshot {
   gameTick: number;
@@ -133,12 +134,38 @@ function processCustomersForTick({
   let revenueAccumulator = weeklyRevenue;
   const reputationMultiplier = upgradeEffects.reputationMultiplier;
 
+  // Track waiting customers to assign positions
+  let waitingCustomerIndex = 0;
+
   customers.forEach((customer) => {
     const updatedCustomer = tickCustomer(customer);
 
+    // Assign waiting position when customer enters waiting state
+    if (customer.status !== CustomerStatus.Waiting && updatedCustomer.status === CustomerStatus.Waiting) {
+      const waitingPosition = getWaitingPositionByIndex(waitingCustomerIndex);
+      if (waitingPosition) {
+        updatedCustomer.x = waitingPosition.x;
+        updatedCustomer.y = waitingPosition.y;
+      }
+    }
+
+    // Count current waiting position
+    if (updatedCustomer.status === CustomerStatus.Waiting) {
+      waitingCustomerIndex++;
+    }
+
     if (updatedCustomer.status === CustomerStatus.Waiting && roomsRemaining.length > 0) {
       const assignedRoom = roomsRemaining.shift()!;
-      updatedCustomers.push(startService(updatedCustomer, assignedRoom));
+      const customerWithService = startService(updatedCustomer, assignedRoom);
+      
+      // Assign service room position
+      const servicePosition = getServiceRoomPosition(assignedRoom);
+      if (servicePosition) {
+        customerWithService.x = servicePosition.x;
+        customerWithService.y = servicePosition.y;
+      }
+      
+      updatedCustomers.push(customerWithService);
       return;
     }
 
