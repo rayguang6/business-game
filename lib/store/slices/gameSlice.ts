@@ -41,9 +41,15 @@ export interface GameSlice {
   resetAllGame: () => void;
   updateGameTimer: () => void;
   tickGame: () => void;
+  applyCashChange: (amount: number) => void;
+  applyReputationChange: (amount: number) => void;
+  applyOneTimeCost: (label: string, amount: number, category: OneTimeCostCategory) => void;
 }
 
-export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set, get) => {
+export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (
+  set,
+  get
+) => {
   return ({
     isGameStarted: false,
     isPaused: false,
@@ -88,11 +94,11 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
   
   tickGame: () => {
     const { isPaused } = get();
-    
+
     if (isPaused) {
       return;
     }
-    
+
     set((state) => {
       const updated = tickOnce({
         gameTick: state.gameTick,
@@ -104,13 +110,26 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
         weeklyExpenses: state.weeklyExpenses,
         weeklyOneTimeCosts: state.weeklyOneTimeCosts,
         weeklyOneTimeCostDetails: state.weeklyOneTimeCostDetails,
-        weeklyHistory: state.weeklyHistory,
         upgrades: state.upgrades,
+        weeklyHistory: state.weeklyHistory,
         industryId: state.selectedIndustry?.id ?? 'dental',
         weeklyExpenseAdjustments: state.weeklyExpenseAdjustments,
       });
       return { ...state, ...updated };
     });
   },
+  applyCashChange: (amount: number) => set((state) => ({
+    metrics: { ...state.metrics, cash: state.metrics.cash + amount },
+  })),
+  applyReputationChange: (amount: number) => set((state) => ({
+    metrics: { ...state.metrics, reputation: state.metrics.reputation + amount },
+  })),
+  applyOneTimeCost: (label: string, amount: number, category: OneTimeCostCategory) => set((state) => ({
+    weeklyOneTimeCosts: state.weeklyOneTimeCosts + amount,
+    weeklyOneTimeCostDetails: [
+      ...state.weeklyOneTimeCostDetails,
+      { label, amount, category },
+    ],
+  })),
 });
 };

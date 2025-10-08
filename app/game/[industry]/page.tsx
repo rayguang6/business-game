@@ -15,6 +15,8 @@ import { MarketingTab } from '@/app/game/components/tabs/MarketingTab';
 import { TabType, TAB_CONFIGS } from '@/lib/types/ui';
 import { useAudioControls } from '@/hooks/useAudio';
 import { FullscreenToggle } from '@/app/game/components/ui/FullscreenToggle';
+import EventPopup from '@/app/game/components/ui/EventPopup';
+import { useRandomEventTrigger } from '@/hooks/useRandomEventTrigger';
 
 export default function GamePage() {
   const gameStore = useGameStore();
@@ -40,6 +42,8 @@ export default function GamePage() {
       startGame();
     }
   }, [selectedIndustry, router, isGameStarted, startGame]);
+
+  useRandomEventTrigger();
 
   const openSettings = () => {
     setSettingsOpen(true);
@@ -80,6 +84,7 @@ export default function GamePage() {
         {/* Game Canvas - Full Area */}
         <div className="relative z-10 w-full h-full bg-gray-800 flex items-center justify-center">
           <GameCanvas />
+          <EventPopup />
         </div>
       </div>
 
