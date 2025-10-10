@@ -13,7 +13,7 @@
 export const BUSINESS_METRICS = {
   startingCash: 3000,
   weeklyExpenses: 800,
-  startingReputation: 0,
+  startingReputation: 5,
 } as const;
 
 export const BUSINESS_STATS = {

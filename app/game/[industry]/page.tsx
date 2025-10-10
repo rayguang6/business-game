@@ -16,6 +16,7 @@ import { TabType, TAB_CONFIGS } from '@/lib/types/ui';
 import { useAudioControls } from '@/hooks/useAudio';
 import { FullscreenToggle } from '@/app/game/components/ui/FullscreenToggle';
 import EventPopup from '@/app/game/components/ui/EventPopup';
+import GameOverPopup from '@/app/game/components/ui/GameOverPopup';
 import { useRandomEventTrigger } from '@/hooks/useRandomEventTrigger';
 
 export default function GamePage() {
@@ -85,6 +86,7 @@ export default function GamePage() {
         <div className="relative z-10 w-full h-full bg-gray-800 flex items-center justify-center">
           <GameCanvas />
           <EventPopup />
+          <GameOverPopup />
         </div>
       </div>
 

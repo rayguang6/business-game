@@ -14,6 +14,8 @@ const getInitialGameState = (keepIndustry: boolean = false) => {
     gameTime: 0,
     gameTick: 0,
     currentWeek: 1,
+    isGameOver: false,
+    gameOverReason: null,
     weeklyRevenue: 0,
     weeklyExpenses: BASE_WEEKLY_EXPENSES,
     weeklyRevenueDetails: [],
@@ -35,6 +37,8 @@ export interface GameSlice {
   gameTime: number;
   gameTick: number;
   currentWeek: number;
+  isGameOver: boolean;
+  gameOverReason: 'cash' | 'reputation' | null;
   
   startGame: () => void;
   stopGame: () => void;
@@ -47,6 +51,7 @@ export interface GameSlice {
   applyReputationChange: (amount: number) => void;
   recordEventRevenue: (amount: number, label?: string) => void;
   recordEventExpense: (amount: number, label: string) => void;
+  checkGameOver: () => void;
 }
 
 export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (
@@ -59,6 +64,8 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (
     gameTime: 0,
     gameTick: 0,
     currentWeek: 1,
+    isGameOver: false,
+    gameOverReason: null,
   
   startGame: () => {
     // Reset to initial state but keep industry selection and start the game
@@ -122,13 +129,31 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (
       });
       return { ...state, ...updated };
     });
+    
+    // Check for game over after tick updates
+    const checkGameOver = (get() as any).checkGameOver;
+    if (checkGameOver) {
+      checkGameOver();
+    }
   },
-  applyCashChange: (amount: number) => set((state) => ({
-    metrics: { ...state.metrics, cash: state.metrics.cash + amount },
-  })),
-  applyReputationChange: (amount: number) => set((state) => ({
-    metrics: { ...state.metrics, reputation: state.metrics.reputation + amount },
-  })),
+  applyCashChange: (amount: number) => {
+    set((state) => ({
+      metrics: { ...state.metrics, cash: state.metrics.cash + amount },
+    }));
+    const checkGameOver = (get() as any).checkGameOver;
+    if (checkGameOver) {
+      checkGameOver();
+    }
+  },
+  applyReputationChange: (amount: number) => {
+    set((state) => ({
+      metrics: { ...state.metrics, reputation: state.metrics.reputation + amount },
+    }));
+    const checkGameOver = (get() as any).checkGameOver;
+    if (checkGameOver) {
+      checkGameOver();
+    }
+  },
   recordEventRevenue: (amount: number, label: string = 'Event revenue') => {
     set((state) => ({
       weeklyRevenue: state.weeklyRevenue + amount,
@@ -162,6 +187,22 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (
         cash: state.metrics.cash - amount,
       },
     }));
+    const checkGameOver = (get() as any).checkGameOver;
+    if (checkGameOver) {
+      checkGameOver();
+    }
+  },
+  checkGameOver: () => {
+    const state = get();
+    if (state.isGameOver) return; // Already game over
+    
+    const { cash, reputation } = state.metrics;
+    
+    if (cash <= 0) {
+      set({ isGameOver: true, gameOverReason: 'cash', isPaused: true });
+    } else if (reputation <= 0) {
+      set({ isGameOver: true, gameOverReason: 'reputation', isPaused: true });
+    }
   },
 });
 };
