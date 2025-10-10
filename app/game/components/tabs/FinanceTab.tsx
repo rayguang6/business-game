@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useFinanceData } from '@/hooks/useFinanceData';
+import type { RevenueEntry } from '@/lib/store/types';
 
 export function FinanceTab() {
   const {
@@ -11,6 +12,8 @@ export function FinanceTab() {
     lastWeek,
     weeklyExpenses,
     weeklyExpenseBreakdown,
+    weeklyRevenue,
+    weeklyRevenueBreakdown,
   } = useFinanceData();
 
   const recurringExpenses = weeklyExpenseBreakdown.filter((entry) => entry.category !== 'event');
@@ -38,6 +41,22 @@ export function FinanceTab() {
             <div className="text-green-300 text-xs">
               {lastWeek ? `Week ${lastWeek.week}: $${lastWeek.revenue}` : 'No data yet'}
             </div>
+            <div className="text-green-300 text-xs mt-2">
+              Current weekly revenue: ${weeklyRevenue.toLocaleString()}
+            </div>
+            {weeklyRevenueBreakdown.length > 0 && (
+              <div className="text-left text-xs text-green-200 mt-3 space-y-1">
+                <div className="font-semibold text-green-100">Revenue breakdown</div>
+                <ul className="space-y-1">
+                  {weeklyRevenueBreakdown.map((entry) => (
+                    <li key={`rev-${entry.category}`} className="flex justify-between">
+                      <span>{entry.label}</span>
+                      <span>${entry.amount.toLocaleString()}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
         
@@ -136,6 +155,10 @@ export function FinanceTab() {
               // Calculate recurring vs one-time expenses
               const oneTimeCostsTotal = w.oneTimeCosts?.reduce((sum, cost) => sum + cost.amount, 0) || 0;
               const recurringExpenses = w.expenses - oneTimeCostsTotal;
+              const revenueBreakdown: RevenueEntry[] =
+                w.revenueBreakdown && w.revenueBreakdown.length > 0
+                  ? w.revenueBreakdown
+                  : [{ category: 'customer', label: 'Customer payments', amount: w.revenue }];
               
               return (
                 <div key={`week-${w.week}`} className="bg-gray-700 rounded-lg p-3">
@@ -159,15 +182,12 @@ export function FinanceTab() {
                         <span className="text-green-400">${w.revenue}</span>
                       </div>
                       <div className="pl-3 space-y-1 text-xs text-gray-400 border-l-2 border-green-700">
-                        <div className="flex justify-between">
-                          <span>Customer payments</span>
-                          <span className="text-green-300">${w.revenue}</span>
-                        </div>
-                        {/* Future: Can add more revenue sources here */}
-                        {/* <div className="flex justify-between">
-                          <span>Bonuses</span>
-                          <span className="text-green-300">$0</span>
-                        </div> */}
+                        {revenueBreakdown.map((entry, rbIndex) => (
+                          <div key={rbIndex} className="flex justify-between">
+                            <span>{entry.label}</span>
+                            <span className="text-green-300">${entry.amount.toLocaleString()}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                     

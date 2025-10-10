@@ -16,10 +16,26 @@ export interface Metrics {
 // Map of upgrade ID to current level
 export type Upgrades = Record<UpgradeId, number>;
 
+export type RevenueCategory = 'customer' | 'event' | 'other';
+
+export const REVENUE_CATEGORY_LABELS: Record<RevenueCategory, string> = {
+  customer: 'Customer payments',
+  event: 'Event payouts',
+  other: 'Other income',
+};
+
+export interface RevenueEntry {
+  amount: number;
+  category: RevenueCategory;
+  label?: string;
+  sourceId?: string;
+}
+
 export interface OneTimeCost {
   label: string;
   amount: number;
   category: 'upgrade' | 'repair' | 'event';
+  alreadyDeducted?: boolean;
 }
 
 export interface WeeklyHistoryEntry {
@@ -30,6 +46,7 @@ export interface WeeklyHistoryEntry {
   profit: number;
   reputation: number;
   reputationChange: number;
+  revenueBreakdown?: RevenueEntry[];
 }
 
 export interface GameState {
@@ -50,8 +67,10 @@ export interface GameState {
   // Weekly Tracking
   weeklyRevenue: number;
   weeklyExpenses: number;
+  weeklyRevenueDetails: RevenueEntry[];
   weeklyOneTimeCosts: number; // Total one-time costs amount
   weeklyOneTimeCostDetails: OneTimeCost[]; // Detailed list of one-time costs
+  weeklyOneTimeCostsPaid: number;
   weeklyHistory: WeeklyHistoryEntry[];
   weeklyExpenseAdjustments: number;
 

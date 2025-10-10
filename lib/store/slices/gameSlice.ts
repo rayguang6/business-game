@@ -16,8 +16,10 @@ const getInitialGameState = (keepIndustry: boolean = false) => {
     currentWeek: 1,
     weeklyRevenue: 0,
     weeklyExpenses: BASE_WEEKLY_EXPENSES,
+    weeklyRevenueDetails: [],
     weeklyOneTimeCosts: 0,
     weeklyOneTimeCostDetails: [],
+    weeklyOneTimeCostsPaid: 0,
     weeklyHistory: [],
     customers: [],
     metrics: getInitialMetrics(),
@@ -43,7 +45,8 @@ export interface GameSlice {
   tickGame: () => void;
   applyCashChange: (amount: number) => void;
   applyReputationChange: (amount: number) => void;
-  applyOneTimeCost: (label: string, amount: number, category: OneTimeCostCategory) => void;
+  recordEventRevenue: (amount: number, label?: string) => void;
+  recordEventExpense: (amount: number, label: string) => void;
 }
 
 export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (
@@ -108,8 +111,10 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (
         metrics: state.metrics,
         weeklyRevenue: state.weeklyRevenue,
         weeklyExpenses: state.weeklyExpenses,
+        weeklyRevenueDetails: state.weeklyRevenueDetails,
         weeklyOneTimeCosts: state.weeklyOneTimeCosts,
         weeklyOneTimeCostDetails: state.weeklyOneTimeCostDetails,
+        weeklyOneTimeCostsPaid: state.weeklyOneTimeCostsPaid,
         upgrades: state.upgrades,
         weeklyHistory: state.weeklyHistory,
         industryId: state.selectedIndustry?.id ?? 'dental',
@@ -124,12 +129,39 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (
   applyReputationChange: (amount: number) => set((state) => ({
     metrics: { ...state.metrics, reputation: state.metrics.reputation + amount },
   })),
-  applyOneTimeCost: (label: string, amount: number, category: OneTimeCostCategory) => set((state) => ({
-    weeklyOneTimeCosts: state.weeklyOneTimeCosts + amount,
-    weeklyOneTimeCostDetails: [
-      ...state.weeklyOneTimeCostDetails,
-      { label, amount, category },
-    ],
-  })),
+  recordEventRevenue: (amount: number, label: string = 'Event revenue') => {
+    set((state) => ({
+      weeklyRevenue: state.weeklyRevenue + amount,
+      weeklyRevenueDetails: [
+        ...state.weeklyRevenueDetails,
+        {
+          amount,
+          category: 'event' as const,
+          label,
+        },
+      ],
+      metrics: {
+        ...state.metrics,
+        cash: state.metrics.cash + amount,
+        totalRevenue: state.metrics.totalRevenue + amount,
+      },
+    }));
+  },
+  recordEventExpense: (amount: number, label: string) => {
+    const addOneTimeCost = (get() as any).addOneTimeCost;
+    if (addOneTimeCost) {
+      addOneTimeCost(
+        { label, amount, category: 'event' as const },
+        true
+      );
+    }
+
+    set((state) => ({
+      metrics: {
+        ...state.metrics,
+        cash: state.metrics.cash - amount,
+      },
+    }));
+  },
 });
 };

@@ -1,4 +1,13 @@
-import { GameState, Metrics, Upgrades, WeeklyHistoryEntry, OneTimeCost } from '@/lib/store/types';
+import {
+  GameState,
+  Metrics,
+  Upgrades,
+  WeeklyHistoryEntry,
+  OneTimeCost,
+  RevenueEntry,
+  REVENUE_CATEGORY_LABELS,
+  RevenueCategory,
+} from '@/lib/store/types';
 import { TICKS_PER_SECOND, isNewWeek, BUSINESS_STATS } from '@/lib/game/config';
 
 import {
@@ -28,8 +37,10 @@ interface TickSnapshot {
   metrics: Metrics;
   weeklyRevenue: number;
   weeklyExpenses: number;
+  weeklyRevenueDetails: RevenueEntry[];
   weeklyOneTimeCosts: number;
   weeklyOneTimeCostDetails: OneTimeCost[];
+  weeklyOneTimeCostsPaid: number;
   weeklyHistory: WeeklyHistoryEntry[];
   upgrades: Upgrades;
   industryId?: string;
@@ -43,8 +54,10 @@ interface WeekTransitionParams {
   metrics: Metrics;
   weeklyRevenue: number;
   weeklyExpenses: number;
+  weeklyRevenueDetails: RevenueEntry[];
   weeklyOneTimeCosts: number;
   weeklyOneTimeCostDetails: OneTimeCost[];
+  weeklyOneTimeCostsPaid: number;
   weeklyHistory: WeeklyHistoryEntry[];
   weeklyExpenseAdjustments: number;
   upgrades: Upgrades;
@@ -54,8 +67,10 @@ interface WeekTransitionResult {
   metrics: Metrics;
   weeklyRevenue: number;
   weeklyExpenses: number;
+  weeklyRevenueDetails: RevenueEntry[];
   weeklyOneTimeCosts: number;
   weeklyOneTimeCostDetails: OneTimeCost[];
+  weeklyOneTimeCostsPaid: number;
   weeklyHistory: WeeklyHistoryEntry[];
   currentWeek: number;
   weeklyExpenseAdjustments: number;
@@ -65,6 +80,7 @@ interface ProcessCustomersParams {
   customers: Customer[];
   metrics: Metrics;
   weeklyRevenue: number;
+  weeklyRevenueDetails: RevenueEntry[];
   upgradeEffects: UpgradeEffects;
 }
 
@@ -72,20 +88,44 @@ interface ProcessCustomersResult {
   customers: Customer[];
   metrics: Metrics;
   weeklyRevenue: number;
+  weeklyRevenueDetails: RevenueEntry[];
 }
+
+const summarizeRevenueByCategory = (entries: RevenueEntry[]): RevenueEntry[] => {
+  const totals = new Map<RevenueCategory, number>();
+
+  entries.forEach((entry) => {
+    totals.set(entry.category, (totals.get(entry.category) ?? 0) + entry.amount);
+  });
+
+  return Array.from(totals.entries()).map(([category, amount]) => ({
+    category,
+    amount,
+    label: REVENUE_CATEGORY_LABELS[category],
+  }));
+};
 
 function processWeekTransition({
   currentWeek,
   metrics,
   weeklyRevenue,
   weeklyExpenses,
+  weeklyRevenueDetails,
   weeklyOneTimeCosts,
   weeklyOneTimeCostDetails,
+  weeklyOneTimeCostsPaid,
   weeklyHistory,
   weeklyExpenseAdjustments,
   upgrades,
 }: WeekTransitionParams): WeekTransitionResult {
-  const weekResult = endOfWeek(metrics.cash, weeklyRevenue, weeklyExpenses, weeklyOneTimeCosts);
+  const weekResult = endOfWeek(
+    metrics.cash,
+    weeklyRevenue,
+    weeklyExpenses,
+    weeklyOneTimeCosts,
+    weeklyOneTimeCostsPaid,
+  );
+  const revenueBreakdown = summarizeRevenueByCategory(weeklyRevenueDetails);
   const alreadyAccounted = weeklyExpenseAdjustments ?? 0;
   const netExpensesForMetrics = Math.max(0, weekResult.totalExpenses - alreadyAccounted);
 
@@ -103,6 +143,7 @@ function processWeekTransition({
       revenue: weeklyRevenue,
       expenses: weekResult.totalExpenses,
       oneTimeCosts: weeklyOneTimeCostDetails,
+      revenueBreakdown,
       profit: weekResult.profit,
       reputation: updatedMetrics.reputation,
       reputationChange: updatedMetrics.reputation - previousReputation,
@@ -116,8 +157,10 @@ function processWeekTransition({
     metrics: updatedMetrics,
     weeklyRevenue: 0,
     weeklyExpenses: baseExpenses + upgradeExpenses,
+    weeklyRevenueDetails: [],
     weeklyOneTimeCosts: 0,
     weeklyOneTimeCostDetails: [],
+    weeklyOneTimeCostsPaid: 0,
     weeklyHistory: updatedHistory,
     currentWeek: currentWeek + 1,
     weeklyExpenseAdjustments: 0,
@@ -128,12 +171,14 @@ function processCustomersForTick({
   customers,
   metrics,
   weeklyRevenue,
+  weeklyRevenueDetails,
   upgradeEffects,
 }: ProcessCustomersParams): ProcessCustomersResult {
   const roomsRemaining = [...getAvailableRooms(customers, upgradeEffects.treatmentRooms)];
   const updatedCustomers: Customer[] = [];
   let metricsAccumulator: Metrics = { ...metrics };
   let revenueAccumulator = weeklyRevenue;
+  let revenueDetails = [...weeklyRevenueDetails];
   const reputationMultiplier = upgradeEffects.reputationMultiplier;
 
   // Find already occupied waiting positions (including both current and target positions)
@@ -227,6 +272,11 @@ function processCustomersForTick({
         totalRevenue: metricsAccumulator.totalRevenue + servicePrice,
       };
       revenueAccumulator += servicePrice;
+      revenueDetails.push({
+        amount: servicePrice,
+        category: 'customer',
+        label: updatedCustomer.service?.name ?? 'Dental service',
+      });
       // Play sound effect for service finished
       audioManager.playSoundEffect('serviceFinished');
       // Customer leaves happy - remove from game (don't push to updatedCustomers)
@@ -262,6 +312,7 @@ function processCustomersForTick({
     customers: updatedCustomers,
     metrics: metricsAccumulator,
     weeklyRevenue: revenueAccumulator,
+    weeklyRevenueDetails: revenueDetails,
   };
 }
 
@@ -300,8 +351,10 @@ export function tickOnce(state: TickSnapshot): TickResult {
   let metrics = { ...state.metrics };
   let weeklyRevenue = state.weeklyRevenue;
   let weeklyExpenses = state.weeklyExpenses;
+  let weeklyRevenueDetails = [...state.weeklyRevenueDetails];
   let weeklyOneTimeCosts = state.weeklyOneTimeCosts;
   let weeklyOneTimeCostDetails = [...state.weeklyOneTimeCostDetails];
+  let weeklyOneTimeCostsPaid = state.weeklyOneTimeCostsPaid ?? 0;
   let weeklyHistory = [...state.weeklyHistory];
   let currentWeek = state.currentWeek;
   let weeklyExpenseAdjustments = state.weeklyExpenseAdjustments ?? 0;
@@ -312,8 +365,10 @@ export function tickOnce(state: TickSnapshot): TickResult {
       metrics,
       weeklyRevenue,
       weeklyExpenses,
+      weeklyRevenueDetails,
       weeklyOneTimeCosts,
       weeklyOneTimeCostDetails,
+      weeklyOneTimeCostsPaid,
       weeklyHistory,
       weeklyExpenseAdjustments,
       upgrades: state.upgrades,
@@ -322,8 +377,10 @@ export function tickOnce(state: TickSnapshot): TickResult {
     metrics = transition.metrics;
     weeklyRevenue = transition.weeklyRevenue;
     weeklyExpenses = transition.weeklyExpenses;
+    weeklyRevenueDetails = transition.weeklyRevenueDetails;
     weeklyOneTimeCosts = transition.weeklyOneTimeCosts;
     weeklyOneTimeCostDetails = transition.weeklyOneTimeCostDetails;
+    weeklyOneTimeCostsPaid = transition.weeklyOneTimeCostsPaid;
     weeklyHistory = transition.weeklyHistory;
     currentWeek = transition.currentWeek;
     weeklyExpenseAdjustments = transition.weeklyExpenseAdjustments;
@@ -335,13 +392,19 @@ export function tickOnce(state: TickSnapshot): TickResult {
     customers = [...customers, createCustomer(upgradeEffects.serviceSpeedMultiplier, industryId)];
   }
 
-  const { customers: processedCustomers, metrics: processedMetrics, weeklyRevenue: processedWeeklyRevenue } =
-    processCustomersForTick({
-      customers,
-      metrics,
-      weeklyRevenue,
-      upgradeEffects,
-    });
+  const {
+    customers: processedCustomers,
+    metrics: processedMetrics,
+    weeklyRevenue: processedWeeklyRevenue,
+    weeklyRevenueDetails: processedRevenueDetails,
+  } = processCustomersForTick({
+    customers,
+    metrics,
+    weeklyRevenue,
+    weeklyRevenueDetails,
+    upgradeEffects,
+  });
+  weeklyRevenueDetails = processedRevenueDetails;
 
   return {
     gameTick: nextTick,
@@ -351,8 +414,10 @@ export function tickOnce(state: TickSnapshot): TickResult {
     metrics: processedMetrics,
     weeklyRevenue: processedWeeklyRevenue,
     weeklyExpenses,
+    weeklyRevenueDetails,
     weeklyOneTimeCosts,
     weeklyOneTimeCostDetails,
+    weeklyOneTimeCostsPaid,
     weeklyHistory,
     upgrades: state.upgrades,
     weeklyExpenseAdjustments,

@@ -173,7 +173,8 @@ totalProfit = metrics.totalRevenue - metrics.totalExpenses
      currentCash,
      weeklyRevenue,      // Revenue earned this week
      weeklyExpenses,     // Recurring expenses
-     weeklyOneTimeCosts  // One-time costs this week
+     weeklyOneTimeCosts, // One-time costs this week
+     weeklyOneTimeCostsPaid // Portion already deducted during the week
    )
    ```
 
@@ -185,7 +186,7 @@ totalProfit = metrics.totalRevenue - metrics.totalExpenses
 
 3. **Deduct expenses from cash:**
    ```typescript
-   metrics.cash -= (weeklyExpenses + weeklyOneTimeCosts)
+   metrics.cash -= (weeklyExpenses + weeklyOneTimeCosts - weeklyOneTimeCostsPaid)
    ```
 
 4. **Save to history:**
@@ -273,4 +274,3 @@ Current Cash: $1,160 ($3,000 + $750 - $1,690)
 ```
 
 ✅ **All math checks out!**
-

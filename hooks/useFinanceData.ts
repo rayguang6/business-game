@@ -2,18 +2,41 @@ import { useMemo } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
 import { BUSINESS_METRICS } from '@/lib/game/config';
 import { buildWeeklyExpenseBreakdown } from '@/lib/features/economy';
+import { REVENUE_CATEGORY_LABELS, RevenueCategory } from '@/lib/store/types';
 
 /**
  * Custom hook for accessing finance-related data from the game store.
  * Used by components that need metrics and weekly history data.
  */
 export const useFinanceData = () => {
-  const { metrics, weeklyHistory, weeklyExpenses, weeklyOneTimeCosts, weeklyRevenue, upgrades } = useGameStore();
+  const {
+    metrics,
+    weeklyHistory,
+    weeklyExpenses,
+    weeklyOneTimeCosts,
+    weeklyRevenue,
+    weeklyRevenueDetails,
+    upgrades,
+  } = useGameStore();
 
   const expenseBreakdown = useMemo(
     () => buildWeeklyExpenseBreakdown(upgrades, weeklyOneTimeCosts),
     [upgrades, weeklyOneTimeCosts],
   );
+
+  const revenueBreakdown = useMemo(() => {
+    const totals = new Map<RevenueCategory, number>();
+
+    weeklyRevenueDetails.forEach((entry) => {
+      totals.set(entry.category, (totals.get(entry.category) ?? 0) + entry.amount);
+    });
+
+    return Array.from(totals.entries()).map(([category, amount]) => ({
+      category,
+      amount,
+      label: REVENUE_CATEGORY_LABELS[category],
+    }));
+  }, [weeklyRevenueDetails]);
 
   return {
     metrics,
@@ -21,6 +44,7 @@ export const useFinanceData = () => {
     weeklyRevenue, // Current week's accumulating revenue
     weeklyExpenses, // Current weekly expenses (base + upgrade-driven)
     weeklyExpenseBreakdown: expenseBreakdown,
+    weeklyRevenueBreakdown: revenueBreakdown,
     baseWeeklyExpenses: BUSINESS_METRICS.weeklyExpenses,
     weeklyOneTimeCosts,
     // Helper: Get the most recent week's data

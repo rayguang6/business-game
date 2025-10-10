@@ -20,6 +20,5 @@ export interface GameEvent {
   title: string;
   category: EventCategory;
   summary: string;
-  narrative: string;
   choices: GameEventChoice[];
 }

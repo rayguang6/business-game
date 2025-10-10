@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useGameStore } from "../../../../lib/store/gameStore";
 import { GameEvent, GameEventChoice } from "../../../../lib/types/gameEvents";
-import { OneTimeCostCategory } from "../../../../lib/types/gameEvents";
 
 const getEffectIcon = (type: string) => {
   switch (type) {
@@ -41,22 +40,27 @@ const EventPopup: React.FC = () => {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const processChoice = (event: GameEvent, choice: GameEventChoice) => {
-    const { applyCashChange, applyReputationChange, applyOneTimeCost } = useGameStore.getState();
+    const {
+      applyReputationChange,
+      recordEventRevenue,
+      recordEventExpense,
+    } = useGameStore.getState();
 
     console.log(`Event: ${event.title}, Choice made: ${choice.label}`);
     choice.effects.forEach((effect) => {
       switch (effect.type) {
         case "cash":
-          applyCashChange(effect.amount);
-          console.log(`  Applying Cash Change: ${effect.amount}`);
+          if (effect.amount >= 0) {
+            recordEventRevenue(effect.amount, effect.label ?? `${event.title} payout`);
+            console.log(`  Recording Event Revenue: ${effect.amount}`);
+          } else {
+            recordEventExpense(Math.abs(effect.amount), effect.label ?? `${event.title} cost`);
+            console.log(`  Recording Event Expense: ${effect.amount}`);
+          }
           break;
         case "reputation":
           applyReputationChange(effect.amount);
           console.log(`  Applying Reputation Change: ${effect.amount}`);
-          break;
-        case "oneTimeCost":
-          applyOneTimeCost(effect.label, effect.amount, effect.category as OneTimeCostCategory);
-          console.log(`  Applying One-Time Cost: ${effect.amount} (${effect.label})`);
           break;
       }
     });
@@ -126,12 +130,7 @@ const EventPopup: React.FC = () => {
           <span className={`text-3xl mr-3 ${eventTypeColorClass.split(' ')[1]}`}>{eventIcon}</span>
           <h2 className={`text-3xl font-bold ${eventTitleColor} text-center`}>{currentEvent.title}</h2>
         </div>
-        <p className="text-gray-700 text-center mb-6 text-sm md:text-base">{currentEvent.narrative}</p>
-
-        <div className="bg-gray-100 p-4 rounded-md mb-6 border border-gray-200">
-          <p className="text-gray-800 font-semibold mb-2">Summary:</p>
-          <p className="text-gray-600 text-sm italic">{currentEvent.summary}</p>
-        </div>
+        <p className="text-gray-700 text-center mb-6 text-sm md:text-base">{currentEvent.summary}</p>
 
         <div className="space-y-4">
           {currentEvent.choices.map((choice) => (
