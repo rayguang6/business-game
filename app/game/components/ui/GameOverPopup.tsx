@@ -5,6 +5,7 @@ import { useGameStore } from "../../../../lib/store/gameStore";
 const GameOverPopup: React.FC = () => {
   const isGameOver = useGameStore((state) => state.isGameOver);
   const gameOverReason = useGameStore((state) => state.gameOverReason);
+  const resetAllGame = useGameStore((state) => state.resetAllGame);
   const router = useRouter();
 
   if (!isGameOver) return null;
@@ -15,7 +16,8 @@ const GameOverPopup: React.FC = () => {
   };
 
   const handleGoHome = () => {
-    // Navigate to home page
+    // Reset all game state and navigate home (same as quit game)
+    resetAllGame();
     router.push('/');
   };
 
