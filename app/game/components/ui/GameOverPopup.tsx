@@ -10,13 +10,8 @@ const GameOverPopup: React.FC = () => {
 
   if (!isGameOver) return null;
 
-  const handleRestart = () => {
-    // Simple restart - reload the page
-    window.location.reload();
-  };
-
   const handleGoHome = () => {
-    // Reset all game state and navigate home (same as quit game)
+    // Reset all game state and navigate home
     resetAllGame();
     router.push('/');
   };
@@ -55,20 +50,12 @@ const GameOverPopup: React.FC = () => {
           <h2 className="text-3xl font-bold text-red-600 mb-4">{title}</h2>
           <p className="text-gray-700 mb-8 text-lg">{message}</p>
 
-          <div className="space-y-3">
-            <button
-              onClick={handleRestart}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 text-lg"
-            >
-              🔄 Try Again
-            </button>
-            <button
-              onClick={handleGoHome}
-              className="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 text-lg"
-            >
-              🏠 Back to Home
-            </button>
-          </div>
+          <button
+            onClick={handleGoHome}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 text-lg"
+          >
+            🏠 Back to Home
+          </button>
         </div>
       </div>
     </div>
