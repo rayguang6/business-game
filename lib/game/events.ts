@@ -66,7 +66,7 @@ export const sampleEvents: GameEvent[] = [
         description: 'You take the hit but maintain integrity.',
         effects: [
           { type: 'cash', amount: -200 },
-          { type: 'reputation', amount: 4 },
+          { type: 'reputation', amount: 2 },
         ],
         isDefault: true,
       },
@@ -75,8 +75,8 @@ export const sampleEvents: GameEvent[] = [
         label: 'Cut Corners',
         description: 'Try to hide issues and hope they don’t notice.',
         effects: [
-          { type: 'cash', amount: 100 },
-          { type: 'reputation', amount: -5 },
+          { type: 'cash', amount: -50 },
+          { type: 'reputation', amount: -4 },
         ],
       },
     ],
@@ -121,6 +121,7 @@ export const sampleEvents: GameEvent[] = [
           { type: 'cash', amount: 400 },
           { type: 'reputation', amount: 6 },
         ],
+        isDefault: true,
       },
     ], // single choice event
   },
@@ -163,9 +164,10 @@ export const sampleEvents: GameEvent[] = [
         label: 'Enjoy the Boost',
         description: 'Customers flood in for the next few days.',
         effects: [
-          { type: 'cash', amount: 1200 },
-          { type: 'reputation', amount: 8 },
+          { type: 'cash', amount: 100 },
+          { type: 'reputation', amount: 1 },
         ],
+        isDefault: true,
       },
     ], // single choice, pure positive
   },
