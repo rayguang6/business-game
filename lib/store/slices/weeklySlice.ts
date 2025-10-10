@@ -1,17 +1,20 @@
 import { StateCreator } from 'zustand';
-import { WeeklyHistoryEntry, OneTimeCost } from '../types';
+import { WeeklyHistoryEntry, OneTimeCost, RevenueEntry } from '../types';
 import { GameState } from '../types';
 
 export interface WeeklySlice {
   weeklyRevenue: number;
   weeklyExpenses: number;
+  weeklyRevenueDetails: RevenueEntry[];
   weeklyOneTimeCosts: number;
   weeklyOneTimeCostDetails: OneTimeCost[];
+  weeklyOneTimeCostsPaid: number;
   weeklyHistory: WeeklyHistoryEntry[];
   
   updateWeeklyRevenue: (amount: number) => void;
   updateWeeklyExpenses: (amount: number) => void;
-  addOneTimeCost: (cost: OneTimeCost) => void;
+  addOneTimeCost: (cost: OneTimeCost, alreadyDeducted?: boolean) => void;
+  addRevenueEntry: (entry: RevenueEntry) => void;
   addWeeklyHistoryEntry: (entry: WeeklyHistoryEntry) => void;
   resetWeeklyTracking: () => void;
 }
@@ -19,8 +22,10 @@ export interface WeeklySlice {
 export const createWeeklySlice: StateCreator<GameState, [], [], WeeklySlice> = (set) => ({
   weeklyRevenue: 0,
   weeklyExpenses: 0,
+  weeklyRevenueDetails: [],
   weeklyOneTimeCosts: 0,
   weeklyOneTimeCostDetails: [],
+  weeklyOneTimeCostsPaid: 0,
   weeklyHistory: [],
   
   updateWeeklyRevenue: (amount: number) => {
@@ -35,10 +40,25 @@ export const createWeeklySlice: StateCreator<GameState, [], [], WeeklySlice> = (
     }));
   },
   
-  addOneTimeCost: (cost: OneTimeCost) => {
+  addOneTimeCost: (cost: OneTimeCost, alreadyDeducted: boolean = false) => {
     set((state) => ({
       weeklyOneTimeCosts: state.weeklyOneTimeCosts + cost.amount,
-      weeklyOneTimeCostDetails: [...state.weeklyOneTimeCostDetails, cost]
+      weeklyOneTimeCostDetails: [
+        ...state.weeklyOneTimeCostDetails,
+        { ...cost, alreadyDeducted },
+      ],
+      weeklyOneTimeCostsPaid: alreadyDeducted
+        ? state.weeklyOneTimeCostsPaid + cost.amount
+        : state.weeklyOneTimeCostsPaid,
+    }));
+  },
+  
+  addRevenueEntry: (entry: RevenueEntry) => {
+    set((state) => ({
+      weeklyRevenueDetails: [
+        ...state.weeklyRevenueDetails,
+        entry,
+      ],
     }));
   },
   
@@ -52,8 +72,10 @@ export const createWeeklySlice: StateCreator<GameState, [], [], WeeklySlice> = (
     set({
       weeklyRevenue: 0,
       weeklyExpenses: 0,
+      weeklyRevenueDetails: [],
       weeklyOneTimeCosts: 0,
       weeklyOneTimeCostDetails: [],
+      weeklyOneTimeCostsPaid: 0,
       weeklyHistory: []
     });
   },

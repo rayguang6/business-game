@@ -128,14 +128,16 @@ export function endOfWeek(
   currentCash: number,
   weeklyRevenue: number,
   weeklyExpenses: number = 0,
-  weeklyOneTimeCosts: number = 0
+  weeklyOneTimeCosts: number = 0,
+  weeklyOneTimeCostsPaid: number = 0,
 ): { cash: number; profit: number; totalExpenses: number; baseExpenses: number; additionalExpenses: number; oneTimeCosts: number } {
   // weeklyExpenses already contains base expenses, so don't add them again
   // Total expenses = weeklyExpenses (which includes base) + one-time costs
   const totalExpenses = weeklyExpenses + weeklyOneTimeCosts;
+  const payableOneTimeCosts = Math.max(0, weeklyOneTimeCosts - weeklyOneTimeCostsPaid);
   
   // Only deduct expenses (cash was already updated during the week)
-  const newCash = currentCash - totalExpenses;
+  const newCash = currentCash - (weeklyExpenses + payableOneTimeCosts);
   
   // Calculate profit for reporting (revenue - expenses)
   const profit = weeklyRevenue - totalExpenses;
@@ -163,6 +165,7 @@ export function handleWeekTransition(
   weeklyRevenue: number,
   weeklyExpenses: number,
   weeklyOneTimeCosts: number,
+  weeklyOneTimeCostsPaid: number,
   currentReputation: number,
   upgrades: Upgrades,
 ): {
@@ -174,7 +177,7 @@ export function handleWeekTransition(
   reputation: number;
   weeklyExpenseAdjustments: number;
 } {
-  const { cash } = endOfWeek(currentCash, weeklyRevenue, weeklyExpenses, weeklyOneTimeCosts);
+  const { cash } = endOfWeek(currentCash, weeklyRevenue, weeklyExpenses, weeklyOneTimeCosts, weeklyOneTimeCostsPaid);
 
   return {
     currentWeek: currentWeek + 1,

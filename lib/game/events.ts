@@ -6,110 +6,167 @@ export const sampleEvents: GameEvent[] = [
     title: 'Influencer Shoutout',
     category: 'opportunity',
     summary: 'A local influencer wants to feature your business.',
-    narrative:
-      'A micro-influencer with a loyal local following stopped by and loved the vibe. They offer to post about you tonight if you cover a VIP experience for their crew.',
     choices: [
       {
-        id: 'host',
-        label: 'Host VIP Night',
-        description: 'Cover the costs and ride the hype wave.',
+        id: 'accept',
+        label: 'Accept Shoutout',
+        description: 'You agree to the collaboration and gain exposure.',
         effects: [
-          { type: 'oneTimeCost', amount: 300, label: 'Influencer VIP Night', category: 'event' },
-          { type: 'reputation', amount: 6 },
+          { type: 'cash', amount: 300 }, // sales increase
+          { type: 'reputation', amount: 5 },
         ],
       },
       {
-        id: 'pass',
-        label: 'Pass on Offer',
-        description: 'Play it safe and keep the week predictable.',
+        id: 'ignore',
+        label: 'Ignore Offer',
+        description: 'You stay low-key and keep business as usual.',
         effects: [],
         isDefault: true,
       },
     ],
   },
+
   {
     id: 'equipment-malfunction',
     title: 'Equipment Malfunction',
     category: 'risk',
-    summary: 'One of your critical machines is starting to fail.',
-    narrative:
-      'A warning light is flashing on your most-used equipment. You can keep using it for now, but the technician warns it could fail mid-week without attention.',
+    summary: 'One of your key machines breaks down mid-day.',
     choices: [
       {
         id: 'repair',
-        label: 'Schedule Repair',
-        description: 'Pay for maintenance now and keep customers happy.',
+        label: 'Repair Immediately',
+        description: 'Fix it quickly to avoid upsetting customers.',
         effects: [
-          { type: 'oneTimeCost', amount: 500, label: 'Emergency Equipment Repair', category: 'repair' },
+          { type: 'cash', amount: -300 },
           { type: 'reputation', amount: 2 },
         ],
       },
       {
-        id: 'run-it',
-        label: 'Risk It',
-        description: 'Hope for the best and save cash this week.',
+        id: 'delay',
+        label: 'Delay Repairs',
+        description: 'Save money now, but risk unhappy customers.',
         effects: [
-          { type: 'cash', amount: -200, label: 'Lost productivity' },
+          { type: 'cash', amount: -100 },
           { type: 'reputation', amount: -4 },
         ],
         isDefault: true,
       },
     ],
   },
+
   {
     id: 'unexpected-inspection',
     title: 'Unexpected Inspection',
     category: 'risk',
-    summary: 'A health inspector shows up unannounced.',
-    narrative:
-      'The health inspector is here! You can either try to bribe them to overlook minor issues or deal with potential fines.',
+    summary: 'A health inspector shows up without warning.',
     choices: [
       {
-        id: 'bribe',
-        label: 'Bribe Inspector',
-        description: 'A small payment to make problems disappear.',
+        id: 'comply',
+        label: 'Comply Honestly',
+        description: 'You take the hit but maintain integrity.',
         effects: [
-          { type: 'cash', amount: -200, label: 'Bribe' },
-          { type: 'reputation', amount: -1 },
+          { type: 'cash', amount: -200 },
+          { type: 'reputation', amount: 4 },
+        ],
+        isDefault: true,
+      },
+      {
+        id: 'cut-corners',
+        label: 'Cut Corners',
+        description: 'Try to hide issues and hope they don’t notice.',
+        effects: [
+          { type: 'cash', amount: 100 },
+          { type: 'reputation', amount: -5 },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'local-festival',
+    title: 'Local Festival',
+    category: 'opportunity',
+    summary: 'A big festival nearby brings more people to your area.',
+    choices: [
+      {
+        id: 'take-advantage',
+        label: 'Join the Festival',
+        description: 'Offer promotions and attract festival-goers.',
+        effects: [
+          { type: 'cash', amount: 800 },
+          { type: 'reputation', amount: 3 },
         ],
       },
       {
-        id: 'comply',
-        label: 'Comply Fully',
-        description: 'Face the fines, but maintain integrity.',
+        id: 'ignore',
+        label: 'Ignore Festival',
+        description: 'Stay focused on regular customers.',
+        effects: [],
+        isDefault: true,
+      },
+    ],
+  },
+
+  {
+    id: 'celebrity-visit',
+    title: 'Celebrity Visit',
+    category: 'opportunity',
+    summary: 'A local celebrity drops by unexpectedly!',
+    choices: [
+      {
+        id: 'welcome',
+        label: 'Welcome Warmly',
+        description: 'Provide great service — word spreads fast.',
         effects: [
-          { type: 'cash', amount: -500, label: 'Inspection Fine' },
-          { type: 'reputation', amount: 3 },
+          { type: 'cash', amount: 400 },
+          { type: 'reputation', amount: 6 },
+        ],
+      },
+    ], // single choice event
+  },
+
+  {
+    id: 'negative-review',
+    title: 'Negative Review',
+    category: 'risk',
+    summary: 'A dissatisfied customer posts a bad review online.',
+    choices: [
+      {
+        id: 'respond-politely',
+        label: 'Respond Politely',
+        description: 'Apologize and offer compensation.',
+        effects: [
+          { type: 'cash', amount: -100 },
+          { type: 'reputation', amount: 2 },
+        ],
+      },
+      {
+        id: 'ignore',
+        label: 'Ignore Review',
+        description: 'Do nothing and let it fade over time.',
+        effects: [
+          { type: 'reputation', amount: -3 },
         ],
         isDefault: true,
       },
     ],
   },
+
   {
-    id: 'local-festival',
-    title: 'Local Festival',
+    id: 'viral-video',
+    title: 'Viral Video!',
     category: 'opportunity',
-    summary: 'A large local festival is happening nearby.',
-    narrative:
-      'A huge local festival is setting up just a few blocks away. This is a chance for massive foot traffic, but you will need to invest to handle the rush.',
+    summary: 'A customer’s video of your service goes viral online!',
     choices: [
       {
-        id: 'staff-up',
-        label: 'Hire Temporary Staff',
-        description: 'Increase capacity to handle the surge in customers.',
+        id: 'enjoy-boost',
+        label: 'Enjoy the Boost',
+        description: 'Customers flood in for the next few days.',
         effects: [
-          { type: 'oneTimeCost', amount: 400, label: 'Temporary Staff' },
-          { type: 'cash', amount: 1000, label: 'Festival Revenue' },
-          { type: 'reputation', amount: 5 },
+          { type: 'cash', amount: 1200 },
+          { type: 'reputation', amount: 8 },
         ],
       },
-      {
-        id: 'normal-operations',
-        label: 'Normal Operations',
-        description: 'Avoid the extra cost, but miss out on potential gains.',
-        effects: [],
-        isDefault: true,
-      },
-    ],
+    ], // single choice, pure positive
   },
 ];
