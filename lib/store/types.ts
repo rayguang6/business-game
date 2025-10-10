@@ -57,6 +57,8 @@ export interface GameState {
   gameTime: number;
   gameTick: number;
   currentWeek: number;
+  isGameOver: boolean;
+  gameOverReason: 'cash' | 'reputation' | null;
   
   // Business Metrics
   metrics: Metrics;

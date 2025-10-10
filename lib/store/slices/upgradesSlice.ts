@@ -85,13 +85,18 @@ export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice>
         upgrades: nextUpgrades,
         metrics: {
           ...state.metrics,
-          cash: state.metrics.cash - upgrade.cost,
           totalExpenses: state.metrics.totalExpenses + Math.max(0, weeklyExpenseDelta),
         },
         weeklyExpenses: BASE_WEEKLY_EXPENSES + newUpgradeExpenses,
         weeklyExpenseAdjustments: state.weeklyExpenseAdjustments + Math.max(0, weeklyExpenseDelta),
       };
     });
+
+    // Deduct cash after the upgrade is processed (this will trigger game over check)
+    const applyCashChange = (get() as any).applyCashChange;
+    if (applyCashChange) {
+      applyCashChange(-upgrade.cost);
+    }
 
     const levelText = upgrade.maxLevel > 1 ? ` Level ${newLevel}` : '';
     return { success: true, message: `${upgrade.name}${levelText} unlocked! Cost: $${upgrade.cost}` };
