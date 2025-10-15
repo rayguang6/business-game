@@ -1,5 +1,6 @@
 import { GameEvent } from "../types/gameEvents";
 
+//TODO: Why this is not in Config
 export const sampleEvents: GameEvent[] = [
   {
     id: 'influencer-shoutout',

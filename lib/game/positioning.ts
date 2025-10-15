@@ -9,6 +9,7 @@ export interface GridPosition {
 }
 
 // Waiting area positions (8 spots total)
+//TODO: Extract To Config
 export const WAITING_POSITIONS: GridPosition[] = [
   { x: 1, y: 1 },
   { x: 1, y: 2 },
@@ -21,6 +22,7 @@ export const WAITING_POSITIONS: GridPosition[] = [
 ];
 
 // Service room positions (5 spots total)
+//TODO: Extract To Config
 export const SERVICE_ROOM_POSITIONS: GridPosition[] = [
   { x: 5, y: 2 },
   { x: 6, y: 2 },
@@ -29,6 +31,7 @@ export const SERVICE_ROOM_POSITIONS: GridPosition[] = [
   { x: 9, y: 2 },
 ];
 
+//TODO: Extract To Config
 // Entry spawn position (where customers first appear)
 export const ENTRY_POSITION: GridPosition = { x: 4, y: 9 };
 

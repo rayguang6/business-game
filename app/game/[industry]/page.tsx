@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useGameStore } from '@/lib/store/gameStore';
 import { useGameLoop } from '@/hooks/useGameLoop';
 import { useAudio } from '@/hooks/useAudio';
@@ -20,33 +20,42 @@ import GameOverPopup from '@/app/game/components/ui/GameOverPopup';
 import { useRandomEventTrigger } from '@/hooks/useRandomEventTrigger';
 
 export default function GamePage() {
-  const gameStore = useGameStore();
-  const { selectedIndustry, isGameStarted, startGame, isPaused, unpauseGame, resetAllGame } = gameStore;
+  const selectedIndustry = useGameStore((state) => state.selectedIndustry);
+  const isGameStarted = useGameStore((state) => state.isGameStarted);
+  const startGame = useGameStore((state) => state.startGame);
+  const pauseGame = useGameStore((state) => state.pauseGame);
+  const unpauseGame = useGameStore((state) => state.unpauseGame);
+  const resetAllGame = useGameStore((state) => state.resetAllGame);
   const router = useRouter();
+  const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { audioState, setVolume, toggleMute } = useAudioControls();
   
+
   // Play game music when component mounts
   useAudio('game', true);
-  
-  // Progress logic moved into GameCanvas component
-  
-  // Initialize game loop
-  useGameLoop();
 
+  // Guard to check if industry exists; otherwise redirect. If game is selected but not started, kick it off.
   useEffect(() => {
     if (!selectedIndustry) {
-      router.push('/');
+      if (pathname !== '/') {
+        router.push('/');
+      }
     } else if (!isGameStarted) {
       // Auto-start the game when page loads
       startGame();
     }
-  }, [selectedIndustry, router, isGameStarted, startGame]);
+  }, [selectedIndustry, isGameStarted, startGame, pathname, router]);
 
+  // Initialize game loop
+  useGameLoop();
+
+  // Trigger random events for the active game; this is the only component that should call it.
   useRandomEventTrigger();
 
   const openSettings = () => {
+    pauseGame();
     setSettingsOpen(true);
   };
 
@@ -59,11 +68,14 @@ export default function GamePage() {
     // Reset all game state and navigate home
     resetAllGame();
     setSettingsOpen(false);
-    router.push('/');
   };
 
   if (!selectedIndustry) {
     return null; // Return null while redirecting
+  }
+
+  if (!audioState) {
+    return null;
   }
 
   return (
@@ -78,7 +90,8 @@ export default function GamePage() {
           <TopBar onSettingsOpen={openSettings} />
         </div>
 
-        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-30">
+        <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 z-30">
+          {/* Fullscreen toggle anchored bottom-left to stay out of TopBar's way */}
           <FullscreenToggle targetId="game-shell" />
         </div>
         

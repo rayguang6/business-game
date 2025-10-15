@@ -7,7 +7,7 @@ import { BUSINESS_METRICS } from '@/lib/game/config';
 export const getInitialMetrics = (): Metrics => ({
   cash: BUSINESS_METRICS.startingCash,
   totalRevenue: 0,
-  totalExpenses: 0,
+  totalExpenses: 0, //TODO: Should this  from config also?
   reputation: BUSINESS_METRICS.startingReputation,
 });
 
@@ -17,7 +17,6 @@ export interface MetricsSlice {
   updateMetrics: (updates: Partial<Metrics>) => void;
   updateWeeklyRevenue: (amount: number) => void;
   updateWeeklyExpenses: (amount: number) => void;
-  addOneTimeCost: (amount: number) => void;
 }
 
 export const createMetricsSlice: StateCreator<GameState, [], [], MetricsSlice> = (set) => ({
@@ -47,10 +46,4 @@ export const createMetricsSlice: StateCreator<GameState, [], [], MetricsSlice> =
     }));
   },
   
-  addOneTimeCost: (amount: number) => {
-    set((state) => ({
-      weeklyOneTimeCosts: state.weeklyOneTimeCosts + amount,
-      // Note: One-time costs are only deducted at end of week, not immediately
-    }));
-  },
 });

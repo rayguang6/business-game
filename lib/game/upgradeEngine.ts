@@ -1,5 +1,8 @@
 import { BASE_UPGRADE_METRICS, UpgradeDefinition, UpgradeEffect, UpgradeMetric } from './config';
 
+//TODO: This file is hardcoded the upgrades, if new upgrades added, we need to add them all manually
+
+
 export interface MetricModifiers {
   add: number;
   percent: number;
