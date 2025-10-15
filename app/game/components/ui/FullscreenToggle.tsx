@@ -118,15 +118,12 @@ export function FullscreenToggle({ targetId }: FullscreenToggleProps) {
     <button
       type="button"
       onClick={toggleFullscreen}
-      className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/55 px-3 py-1.5 text-[11px] font-semibold text-white shadow-lg backdrop-blur-sm transition hover:bg-black/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+      className="cursor-pointer hover:bg-black/20 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/55 px-3 py-1.5 text-[11px] font-semibold text-white shadow-lg backdrop-blur-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
       aria-pressed={isFullscreen}
-      aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-      title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
     >
       <span className="text-base leading-none" aria-hidden="true">
         {isFullscreen ? "⤡" : "⤢"}
       </span>
-      <span className="hidden sm:inline">{isFullscreen ? "Exit Fullscreen" : "Fullscreen"}</span>
     </button>
   );
 }

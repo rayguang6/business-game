@@ -18,11 +18,13 @@ export const useRandomEventTrigger = () => {
 
     const timeSinceLastCheck = gameTime - lastCheckTimeRef.current;
 
-    if (timeSinceLastCheck >= 10 && currentEvent === null) { // Changed from 5 to 10 seconds
+    //TODO: change the value, and also extract to config
+    if (timeSinceLastCheck >= 15 && currentEvent === null) { // Changed from 10 to 15 seconds
       lastCheckTimeRef.current = gameTime;
 
+      //TODO: change the value, and also extract to config
       if (Math.random() < 0.99) { // 99% chance
-        const events = sampleEvents;
+        const events = sampleEvents; // Get Events from Industry
         if (events.length > 0) {
           const randomIndex = Math.floor(Math.random() * events.length);
           setCurrentEvent(events[randomIndex]);

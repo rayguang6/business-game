@@ -21,16 +21,16 @@ export const BUSINESS_STATS = {
   weekDurationSeconds: 30,
   customerSpawnIntervalSeconds: 3,
   customerPatienceSeconds: 10,
-  leavingAngryDurationTicks: 10,
-  customerSpawnArea: {
+  leavingAngryDurationTicks: 10, // !WHAT IS THIS
+  customerSpawnArea: { //!COULD REPLACE
     x: { min: 0, max: 2 }, // Grid coordinates (0-9 for 10x10 grid)
     y: { min: 7, max: 9 }, // Bottom area for waiting
   },
-  waitingChairs: 4,
+  waitingChairs: 4, //NOT USED
   treatmentRooms: 2,
   reputationGainPerHappyCustomer: 1,
   reputationLossPerAngryCustomer: 1,
-  baseHappyProbability: 0.7,
+  baseHappyProbability: 0.7, // Probability of Getting Reputation after finish service
 } as const;
 
 // -----------------------------------------------------------------------------
@@ -54,6 +54,7 @@ export const MAP_CONFIG: MapConfig = {
   // Walls are defined using zero-based grid coordinates within the map bounds.
   // Negative coordinates are not allowed – keep values between 0 and width/height - 1.
   walls: [
+    { x: 3, y: 0 },
     { x: 3, y: 1 },
     { x: 3, y: 2 },
     { x: 3, y: 3 },
@@ -77,7 +78,7 @@ export const MOVEMENT_CONFIG = {
 // -----------------------------------------------------------------------------
 // CORE GAME TIMING (derived from BUSINESS_STATS)
 // -----------------------------------------------------------------------------
-
+//TODO: Should Remove?
 export const TICKS_PER_SECOND = BUSINESS_STATS.ticksPerSecond;
 export const TICK_INTERVAL_MS = Math.round((1 / BUSINESS_STATS.ticksPerSecond) * 1000);
 export const ROUND_DURATION_SECONDS = BUSINESS_STATS.weekDurationSeconds;
@@ -88,8 +89,8 @@ export const ROUND_DURATION_SECONDS = BUSINESS_STATS.weekDurationSeconds;
 
 export const CUSTOMER_CONFIG = {
   SPAWN_AREA: BUSINESS_STATS.customerSpawnArea,
-  MAX_WAITING_CHAIRS: BUSINESS_STATS.waitingChairs,
-  MAX_TREATMENT_ROOMS: BUSINESS_STATS.treatmentRooms,
+  MAX_WAITING_CHAIRS: BUSINESS_STATS.waitingChairs, //redundant
+  MAX_TREATMENT_ROOMS: BUSINESS_STATS.treatmentRooms, //redundant from business stats
   IMAGES: [
     '/images/customer/customer1.png',
     '/images/customer/customer2.png',
@@ -176,6 +177,7 @@ export const SERVICE_CONFIG = {
 // UPGRADE DEFINITIONS (SINGLE-LEVEL, DENTAL-FOCUSED)
 // -----------------------------------------------------------------------------
 
+//TODO: turn into enum
 export type UpgradeMetric =
   | 'weeklyExpenses'
   | 'spawnIntervalSeconds'
@@ -183,7 +185,7 @@ export type UpgradeMetric =
   | 'reputationMultiplier'
   | 'treatmentRooms';
 
-export type UpgradeEffectType = 'add' | 'percent';
+export type UpgradeEffectType = 'add' | 'percent'; //TODO: turn into enum
 
 export interface UpgradeEffect {
   metric: UpgradeMetric;
@@ -275,6 +277,7 @@ export const DENTAL_UPGRADES: UpgradeDefinition[] = [
   },
 ];
 
+//TOOD: WHY THESE Helper functions are inside here, not 'features' folder
 const UPGRADE_LOOKUP: Record<UpgradeId, UpgradeDefinition> = DENTAL_UPGRADES.reduce(
   (lookup, upgrade) => {
     lookup[upgrade.id] = upgrade;

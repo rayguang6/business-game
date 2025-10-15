@@ -29,6 +29,7 @@ export const GYM_SERVICES: Service[] = [...SERVICE_CONFIG.GYM_SERVICES];
 export const GYM_SERVICE_IDS = GYM_SERVICES.map(service => service.id);
 
 // Industry Definitions
+//TODO: Extract to Config, and later Database
 export const DentalIndustry: Industry = {
   id: 'dental',
   name: 'Dental Clinic',
