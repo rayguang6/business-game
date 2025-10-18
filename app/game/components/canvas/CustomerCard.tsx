@@ -9,6 +9,7 @@ import {
 } from '@/lib/game/config';
 import type { IndustryId } from '@/lib/game/types';
 import { useGameStore } from '@/lib/store/gameStore';
+import Image from 'next/image';
 
 interface CustomerCardProps {
   customer: Customer;
@@ -68,14 +69,14 @@ export function CustomerCard({ customer, showPatience = false, showServiceProgre
               borderRadius: `${4 * scaleFactor}px`
             }}
           >
-            <img 
+            <Image 
               src={customer.imageSrc} 
               alt="avatar" 
+              width={20 * scaleFactor}
+              height={20 * scaleFactor}
               style={{ 
                 objectFit: 'none', 
                 objectPosition: '0 0',
-                width: `${20 * scaleFactor}px`,
-                height: `${20 * scaleFactor}px`
               }} 
             />
           </div>

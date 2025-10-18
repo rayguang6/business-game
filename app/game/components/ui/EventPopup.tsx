@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useGameStore } from "../../../../lib/store/gameStore";
-import { GameEvent, GameEventChoice } from "../../../../lib/types/gameEvents";
+import { GameEvent, GameEventChoice, GameEventEffect } from "../../../../lib/types/gameEvents";
 
 const getEffectIcon = (type: string) => {
   switch (type) {
@@ -22,7 +22,7 @@ const getEffectColorClass = (type: string, amount: number) => {
   return amount > 0 ? 'text-green-700' : 'text-red-600'; // Darker green for cash/cost
 };
 
-const formatEffect = (effect: any) => {
+const formatEffect = (effect: GameEventEffect) => {
   let prefix = '';
   if (effect.type === 'cash' || effect.type === 'oneTimeCost') {
     prefix = '$';
@@ -39,7 +39,7 @@ const EventPopup: React.FC = () => {
   const choiceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const processChoice = (event: GameEvent, choice: GameEventChoice) => {
+  const processChoice = React.useCallback((event: GameEvent, choice: GameEventChoice) => {
     const {
       applyReputationChange,
       recordEventRevenue,
@@ -65,7 +65,7 @@ const EventPopup: React.FC = () => {
       }
     });
     setCurrentEvent(null);
-  };
+  }, [setCurrentEvent]);
 
   useEffect(() => {
     if (currentEvent) {
@@ -105,7 +105,7 @@ const EventPopup: React.FC = () => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [currentEvent, setCurrentEvent]);
+  }, [currentEvent, setCurrentEvent, processChoice]);
 
   if (!currentEvent) return null;
 

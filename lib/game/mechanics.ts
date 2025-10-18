@@ -195,7 +195,7 @@ function processCustomersForTick({
   const updatedCustomers: Customer[] = [];
   let metricsAccumulator: Metrics = { ...metrics };
   let revenueAccumulator = weeklyRevenue;
-  let revenueDetails = [...weeklyRevenueDetails];
+  const revenueDetails = [...weeklyRevenueDetails];
   const stats = getBusinessStats(industryId);
   const reputationMultiplier = upgradeEffects.reputationMultiplier;
 
