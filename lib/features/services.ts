@@ -12,25 +12,27 @@ export interface Service {
 }
 
 // Mechanics
-import { SERVICE_CONFIG } from '@/lib/game/config';
-
-const SERVICE_LOOKUP: Record<string, Service[]> = {
-  dental: SERVICE_CONFIG.DENTAL_SERVICES.map(service => ({ ...service })),
-  restaurant: SERVICE_CONFIG.RESTAURANT_SERVICES.map(service => ({ ...service })),
-  gym: SERVICE_CONFIG.GYM_SERVICES.map(service => ({ ...service })),
-};
+import {
+  getServicesForIndustry as getIndustryServices,
+  DEFAULT_INDUSTRY_ID,
+} from '@/lib/game/config';
+import type { IndustryId } from '@/lib/game/types';
 
 /**
  * Returns the available services for a given industry
  */
-export function getServicesForIndustry(industryId: string = 'dental'): Service[] {
-  return SERVICE_LOOKUP[industryId] || SERVICE_LOOKUP['dental'];
+export function getServicesForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): Service[] {
+  const services = getIndustryServices(industryId);
+  if (!services || services.length === 0) {
+    return getIndustryServices(DEFAULT_INDUSTRY_ID).map((service) => ({ ...service }));
+  }
+  return services.map((service) => ({ ...service }));
 }
 /**
  * Gets a random service from the available services
  * Currently configured for dental industry - easy to extend for other industries
  */
-export function getRandomService(industryId: string = 'dental'): Service {
+export function getRandomService(industryId: IndustryId = DEFAULT_INDUSTRY_ID): Service {
   const services = getServicesForIndustry(industryId);
   const randomIndex = Math.floor(Math.random() * services.length);
   return services[randomIndex];
@@ -40,7 +42,7 @@ export function getRandomService(industryId: string = 'dental'): Service {
  * Gets all available services
  * Currently returns dental services - easy to extend for other industries
  */
-export function getAllServices(industryId: string = 'dental'): Service[] {
+export function getAllServices(industryId: IndustryId = DEFAULT_INDUSTRY_ID): Service[] {
   return getServicesForIndustry(industryId);
 }
 
@@ -48,7 +50,7 @@ export function getAllServices(industryId: string = 'dental'): Service[] {
  * Finds a service by ID
  * Currently searches dental services - easy to extend for other industries
  */
-export function getServiceById(id: string, industryId: string = 'dental'): Service | undefined {
+export function getServiceById(id: string, industryId: IndustryId = DEFAULT_INDUSTRY_ID): Service | undefined {
   const services = getServicesForIndustry(industryId);
   return services.find((service: Service) => service.id === id);
 }

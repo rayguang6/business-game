@@ -1,10 +1,14 @@
 import { StateCreator } from 'zustand';
 import { GameState, Upgrades } from '../types';
-import { UpgradeDefinition, UpgradeId, getAllUpgrades, getUpgradeById } from '@/lib/game/config';
+import {
+  DEFAULT_INDUSTRY_ID,
+  UpgradeDefinition,
+  UpgradeId,
+  getAllUpgrades,
+  getUpgradeById,
+} from '@/lib/game/config';
 import { calculateUpgradeWeeklyExpenses, getWeeklyBaseExpenses } from '@/lib/features/economy';
 import { getUpgradeLevel, canUpgradeMore } from '@/lib/features/upgrades';
-
-const BASE_WEEKLY_EXPENSES = getWeeklyBaseExpenses();
 
 export interface UpgradesSlice {
   upgrades: Upgrades;
@@ -30,17 +34,23 @@ export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice>
   },
 
   canUpgradeMore: (upgradeId: UpgradeId) => {
-    return canUpgradeMore(get().upgrades, upgradeId);
+    const industryId = get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
+    return canUpgradeMore(get().upgrades, upgradeId, industryId);
   },
 
   getUpgradeDefinition: (upgradeId: UpgradeId) => {
-    return getUpgradeById(upgradeId) ?? null;
+    const industryId = get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
+    return getUpgradeById(upgradeId, industryId) ?? null;
   },
 
-  getAvailableUpgrades: () => getAllUpgrades(),
+  getAvailableUpgrades: () => {
+    const industryId = get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
+    return getAllUpgrades(industryId);
+  },
 
   purchaseUpgrade: (upgradeId: UpgradeId) => {
-    const upgrade = getUpgradeById(upgradeId);
+    const industryId = get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
+    const upgrade = getUpgradeById(upgradeId, industryId);
 
     if (!upgrade) {
       return { success: false, message: 'Upgrade not found.' };
@@ -57,12 +67,12 @@ export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice>
       return { success: false, message: `Need $${upgrade.cost} to purchase ${upgrade.name}.` };
     }
 
-    const previousUpgradeExpenses = calculateUpgradeWeeklyExpenses(store.upgrades);
+    const previousUpgradeExpenses = calculateUpgradeWeeklyExpenses(store.upgrades, industryId);
     const nextUpgrades: Upgrades = {
       ...store.upgrades,
       [upgradeId]: currentLevel + 1,
     };
-    const newUpgradeExpenses = calculateUpgradeWeeklyExpenses(nextUpgrades);
+    const newUpgradeExpenses = calculateUpgradeWeeklyExpenses(nextUpgrades, industryId);
     const weeklyExpenseDelta = newUpgradeExpenses - previousUpgradeExpenses;
 
     const newLevel = currentLevel + 1;
@@ -87,7 +97,8 @@ export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice>
           ...state.metrics,
           totalExpenses: state.metrics.totalExpenses + Math.max(0, weeklyExpenseDelta),
         },
-        weeklyExpenses: BASE_WEEKLY_EXPENSES + newUpgradeExpenses,
+        weeklyExpenses:
+          getWeeklyBaseExpenses(industryId) + newUpgradeExpenses,
         weeklyExpenseAdjustments: state.weeklyExpenseAdjustments + Math.max(0, weeklyExpenseDelta),
       };
     });
@@ -103,9 +114,10 @@ export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice>
   },
 
   resetUpgrades: () => {
+    const industryId = get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
     set({
       upgrades: {},
-      weeklyExpenses: BASE_WEEKLY_EXPENSES,
+      weeklyExpenses: getWeeklyBaseExpenses(industryId),
       weeklyExpenseAdjustments: 0,
     });
   },

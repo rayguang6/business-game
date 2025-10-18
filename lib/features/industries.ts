@@ -3,8 +3,7 @@
  * Handles all industry-related types, configs, and registry
  */
 
-import { Service } from './services';
-import { SERVICE_CONFIG } from '@/lib/game/config';
+import { Service, getServicesForIndustry } from './services';
 
 // Types
 export interface Industry {
@@ -19,13 +18,13 @@ export interface Industry {
 }
 
 // Dental Services Configuration (now using centralized config)
-export const DENTAL_SERVICES: Service[] = [...SERVICE_CONFIG.DENTAL_SERVICES];
+export const DENTAL_SERVICES: Service[] = getServicesForIndustry('dental');
 export const DENTAL_SERVICE_IDS = DENTAL_SERVICES.map(service => service.id);
 
-export const RESTAURANT_SERVICES: Service[] = [...SERVICE_CONFIG.RESTAURANT_SERVICES];
+export const RESTAURANT_SERVICES: Service[] = getServicesForIndustry('restaurant');
 export const RESTAURANT_SERVICE_IDS = RESTAURANT_SERVICES.map(service => service.id);
 
-export const GYM_SERVICES: Service[] = [...SERVICE_CONFIG.GYM_SERVICES];
+export const GYM_SERVICES: Service[] = getServicesForIndustry('gym');
 export const GYM_SERVICE_IDS = GYM_SERVICES.map(service => service.id);
 
 // Industry Definitions

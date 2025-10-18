@@ -3,7 +3,13 @@
 import React from 'react';
 import { Customer, CustomerStatus } from '@/lib/features/customers';
 import { Character2D } from './Character2D';
-import { ticksToSeconds } from '@/lib/game/config';
+import {
+  DEFAULT_INDUSTRY_ID,
+  getTicksPerSecondForIndustry,
+  ticksToSeconds,
+} from '@/lib/game/config';
+import type { IndustryId } from '@/lib/game/types';
+import { useGameStore } from '@/lib/store/gameStore';
 import { Character2DProps } from './Character2D';
 
 interface SpriteCustomerProps {
@@ -12,6 +18,10 @@ interface SpriteCustomerProps {
 }
 
 export function SpriteCustomer({ customer, scaleFactor }: SpriteCustomerProps) {
+  const selectedIndustry = useGameStore((state) => state.selectedIndustry);
+  const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+  const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
+
   // Use actual position for rendering (not rounded to grid)
   const renderX = customer.x;
   const renderY = customer.y;
@@ -75,7 +85,12 @@ export function SpriteCustomer({ customer, scaleFactor }: SpriteCustomerProps) {
       return (customer.patienceLeft / customer.maxPatience) * 100;
     }
     if (customer.status === CustomerStatus.InService) {
-      return ((customer.service.duration * 10 - customer.serviceTimeLeft) / (customer.service.duration * 10)) * 100;
+      const totalServiceTicks = customer.service.duration * ticksPerSecond;
+      if (totalServiceTicks <= 0) {
+        return 0;
+      }
+      const elapsedTicks = totalServiceTicks - customer.serviceTimeLeft;
+      return Math.max(0, Math.min(100, (elapsedTicks / totalServiceTicks) * 100));
     }
     return 0;
   };
@@ -83,10 +98,10 @@ export function SpriteCustomer({ customer, scaleFactor }: SpriteCustomerProps) {
   // Get time display
   const getTimeDisplay = () => {
     if (customer.status === CustomerStatus.Waiting) {
-      return `${ticksToSeconds(customer.patienceLeft)}s`;
+      return `${ticksToSeconds(customer.patienceLeft, industryId)}s`;
     }
     if (customer.status === CustomerStatus.InService) {
-      return `${ticksToSeconds(customer.serviceTimeLeft)}s`;
+      return `${ticksToSeconds(customer.serviceTimeLeft, industryId)}s`;
     }
     return '';
   };
@@ -221,4 +236,3 @@ export function SpriteCustomer({ customer, scaleFactor }: SpriteCustomerProps) {
     </div>
   );
 }
-

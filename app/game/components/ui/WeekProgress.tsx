@@ -2,10 +2,17 @@
 
 import React from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
-import { ROUND_DURATION_SECONDS } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getRoundDurationSecondsForIndustry } from '@/lib/game/config';
+import type { IndustryId } from '@/lib/game/types';
 
 export function WeekProgress() {
-  const { gameTime, currentWeek } = useGameStore();
+  const { gameTime, currentWeek, selectedIndustry } = useGameStore();
+  const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+  const roundDurationSeconds = getRoundDurationSecondsForIndustry(industryId);
+  const timeIntoWeek =
+    roundDurationSeconds > 0 ? Math.floor(gameTime % roundDurationSeconds) : 0;
+  const progress =
+    roundDurationSeconds > 0 ? (timeIntoWeek / roundDurationSeconds) * 100 : 0;
 
   return (
     <div className="bg-white rounded-lg p-4 mb-6 shadow-lg">
@@ -15,15 +22,13 @@ export function WeekProgress() {
         <div className="w-full bg-gray-200 rounded-full h-3">
           <div
             className="bg-indigo-500 h-3 rounded-full transition-all duration-300"
-            style={{ width: `${((gameTime % ROUND_DURATION_SECONDS) / ROUND_DURATION_SECONDS) * 100}%` }}
+            style={{ width: `${progress}%` }}
           />
         </div>
         <div className="text-xs text-gray-500 mt-2">
-          {Math.floor(gameTime % ROUND_DURATION_SECONDS)}s / {ROUND_DURATION_SECONDS}s (Week {currentWeek})
+          {timeIntoWeek}s / {roundDurationSeconds}s (Week {currentWeek})
         </div>
       </div>
     </div>
   );
 }
-
-

@@ -9,6 +9,8 @@ import { Character2D } from './Character2D';
 import { SpriteCustomer } from './SpriteCustomer';
 import { GridOverlay } from './GridOverlay';
 import { getUpgradeEffects } from '@/lib/features/upgrades';
+import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
+import type { IndustryId } from '@/lib/game/types';
 
 // Canvas scaling configuration
 const CANVAS_CONFIG = {
@@ -30,7 +32,8 @@ export function GameCanvas() {
 
   if (!selectedIndustry) return null;
 
-  const upgradeEffects = getUpgradeEffects(upgrades);
+  const industryId = (selectedIndustry.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+  const upgradeEffects = getUpgradeEffects(upgrades, industryId);
   const treatmentRoomsLabel = 'Treatment Rooms';
   const treatmentRooms = upgradeEffects.treatmentRooms;
   const mapBackground = selectedIndustry.mapImage ?? '/images/maps/dental-map.png';
@@ -172,5 +175,4 @@ export function GameCanvas() {
     </div>
   );
 }
-
 

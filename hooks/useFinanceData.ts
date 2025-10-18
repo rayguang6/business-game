@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
-import { BUSINESS_METRICS } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getBusinessMetrics } from '@/lib/game/config';
 import { buildWeeklyExpenseBreakdown } from '@/lib/features/economy';
 import { REVENUE_CATEGORY_LABELS, RevenueCategory } from '@/lib/store/types';
 
@@ -17,11 +17,14 @@ export const useFinanceData = () => {
     weeklyRevenue,
     weeklyRevenueDetails,
     upgrades,
+    selectedIndustry,
   } = useGameStore();
+  const industryId = selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
+  const businessMetrics = getBusinessMetrics(industryId);
 
   const expenseBreakdown = useMemo(
-    () => buildWeeklyExpenseBreakdown(upgrades, weeklyOneTimeCosts),
-    [upgrades, weeklyOneTimeCosts],
+    () => buildWeeklyExpenseBreakdown(upgrades, weeklyOneTimeCosts, industryId),
+    [upgrades, weeklyOneTimeCosts, industryId],
   );
 
   const revenueBreakdown = useMemo(() => {
@@ -45,7 +48,7 @@ export const useFinanceData = () => {
     weeklyExpenses, // Current weekly expenses (base + upgrade-driven)
     weeklyExpenseBreakdown: expenseBreakdown,
     weeklyRevenueBreakdown: revenueBreakdown,
-    baseWeeklyExpenses: BUSINESS_METRICS.weeklyExpenses,
+    baseWeeklyExpenses: businessMetrics.weeklyExpenses,
     weeklyOneTimeCosts,
     // Helper: Get the most recent week's data
     lastWeek: weeklyHistory.length > 0 ? weeklyHistory[weeklyHistory.length - 1] : null,

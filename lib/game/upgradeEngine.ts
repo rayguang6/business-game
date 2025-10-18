@@ -1,4 +1,4 @@
-import { BASE_UPGRADE_METRICS, UpgradeDefinition, UpgradeEffect, UpgradeMetric } from './config';
+import { UpgradeDefinition, UpgradeEffect, UpgradeMetric } from './config';
 
 //TODO: This file is hardcoded the upgrades, if new upgrades added, we need to add them all manually
 
@@ -44,7 +44,7 @@ function formatFormula(base: number, modifier: MetricModifiers): string {
 }
 
 export function calculateUpgradeMetrics(
-  baseMetrics: Record<UpgradeMetric, number> = BASE_UPGRADE_METRICS,
+  baseMetrics: Record<UpgradeMetric, number>,
   activeUpgrades: UpgradeDefinition[] = [],
 ): UpgradeMetricsResult {
   const modifiers = createEmptyModifiers();

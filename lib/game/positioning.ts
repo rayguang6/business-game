@@ -1,68 +1,69 @@
 /**
  * Customer positioning system
- * Manages hardcoded positions for waiting area and service rooms
+ * Provides industry-aware accessors for layout positions.
+ *
+ * TODO: Once all callers pass the explicit industry id,
+ * drop the default argument and require the caller to choose.
  */
 
-export interface GridPosition {
-  x: number;
-  y: number;
+import { DEFAULT_INDUSTRY_ID, getLayoutConfig } from '@/lib/game/config';
+import type { GridPosition, IndustryId } from '@/lib/game/types';
+
+export function getWaitingPositions(industryId: IndustryId = DEFAULT_INDUSTRY_ID): GridPosition[] {
+  return getLayoutConfig(industryId).waitingPositions;
 }
 
-// Waiting area positions (8 spots total)
-//TODO: Extract To Config
-export const WAITING_POSITIONS: GridPosition[] = [
-  { x: 1, y: 1 },
-  { x: 1, y: 2 },
-  { x: 1, y: 3 },
-  { x: 1, y: 4 },
-  { x: 1, y: 5 },
-  { x: 1, y: 6 },
-  { x: 1, y: 7 },
-  { x: 1, y: 8 },
-];
+export function getServiceRoomPositions(industryId: IndustryId = DEFAULT_INDUSTRY_ID): GridPosition[] {
+  return getLayoutConfig(industryId).serviceRoomPositions;
+}
 
-// Service room positions (5 spots total)
-//TODO: Extract To Config
-export const SERVICE_ROOM_POSITIONS: GridPosition[] = [
-  { x: 5, y: 2 },
-  { x: 6, y: 2 },
-  { x: 7, y: 2 },
-  { x: 8, y: 2 },
-  { x: 9, y: 2 },
-];
-
-//TODO: Extract To Config
-// Entry spawn position (where customers first appear)
-export const ENTRY_POSITION: GridPosition = { x: 4, y: 9 };
+export function getEntryPosition(industryId: IndustryId = DEFAULT_INDUSTRY_ID): GridPosition {
+  return getLayoutConfig(industryId).entryPosition;
+}
 
 /**
- * Get an available waiting position based on current customers
+ * Get an available waiting position based on current customers.
+ * Falls back to the default industry layout if the requested id is unknown.
  */
-export function getAvailableWaitingPosition(occupiedPositions: GridPosition[]): GridPosition | null {
-  for (const position of WAITING_POSITIONS) {
+export function getAvailableWaitingPosition(
+  occupiedPositions: GridPosition[],
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+): GridPosition | null {
+  const waitingPositions = getWaitingPositions(industryId);
+  for (const position of waitingPositions) {
     const isOccupied = occupiedPositions.some(
-      (occupied) => occupied.x === position.x && occupied.y === position.y
+      (occupied) => occupied.x === position.x && occupied.y === position.y,
     );
     if (!isOccupied) {
       return position;
     }
   }
-  return null; // All waiting positions are occupied
+  return null;
 }
 
 /**
- * Get service room position based on room ID (1-based)
+ * Get service room position based on room ID (1-based).
  */
-export function getServiceRoomPosition(roomId: number): GridPosition | null {
-  // roomId is 1-based, array is 0-based
-  const position = SERVICE_ROOM_POSITIONS[roomId - 1];
-  return position || null;
+export function getServiceRoomPosition(
+  roomId: number,
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+): GridPosition | null {
+  const positions = getServiceRoomPositions(industryId);
+  return positions[roomId - 1] ?? null;
 }
 
 /**
- * Get waiting position based on index (for assigning to customers in order)
+ * Get waiting position based on index (for assigning to customers in order).
  */
-export function getWaitingPositionByIndex(index: number): GridPosition | null {
-  return WAITING_POSITIONS[index] || null;
+export function getWaitingPositionByIndex(
+  index: number,
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+): GridPosition | null {
+  const positions = getWaitingPositions(industryId);
+  return positions[index] ?? null;
 }
 
+// Backwards-compatible constants for existing callers.
+export const WAITING_POSITIONS = getWaitingPositions();
+export const SERVICE_ROOM_POSITIONS = getServiceRoomPositions();
+export const ENTRY_POSITION = getEntryPosition();

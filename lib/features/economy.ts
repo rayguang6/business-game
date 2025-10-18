@@ -3,12 +3,17 @@
  * Handles all economy-related config and mechanics
  */
 
-import { BASE_UPGRADE_METRICS, BUSINESS_METRICS, BUSINESS_STATS, getUpgradeById, UpgradeDefinition } from '@/lib/game/config';
+import {
+  DEFAULT_INDUSTRY_ID,
+  getBusinessMetrics,
+  getBusinessStats,
+  getBaseUpgradeMetricsForIndustry,
+  getUpgradeById,
+  UpgradeDefinition,
+} from '@/lib/game/config';
+import type { IndustryId, UpgradeId } from '@/lib/game/types';
 import { calculateActiveUpgradeMetrics, getUpgradeLevel } from './upgrades';
 import { Upgrades } from '@/lib/store/types';
-
-const SCORE_PER_CUSTOMER = BUSINESS_STATS.reputationGainPerHappyCustomer;
-const BASE_WEEKLY_EXPENSES = BUSINESS_METRICS.weeklyExpenses;
 
 export interface ExpenseBreakdownItem {
   label: string;
@@ -28,8 +33,13 @@ export function addServiceRevenue(currentMoney: number, servicePrice: number): n
 /**
  * Adds score from a completed service
  */
-export function addServiceScore(currentScore: number, reputationMultiplier: number = 1): number {
-  const reputationGain = Math.floor(SCORE_PER_CUSTOMER * reputationMultiplier);
+export function addServiceScore(
+  currentScore: number,
+  reputationMultiplier: number = 1,
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+): number {
+  const scorePerCustomer = getBusinessStats(industryId).reputationGainPerHappyCustomer;
+  const reputationGain = Math.floor(scorePerCustomer * reputationMultiplier);
   return currentScore + reputationGain;
 }
 
@@ -40,22 +50,27 @@ export function processServiceCompletion(
   currentCash: number, 
   currentReputation: number, 
   servicePrice: number,
-  reputationMultiplier: number = 1
+  reputationMultiplier: number = 1,
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
 ): { cash: number; reputation: number } {
   return {
     cash: addServiceRevenue(currentCash, servicePrice), 
-    reputation: addServiceScore(currentReputation, reputationMultiplier)
+    reputation: addServiceScore(currentReputation, reputationMultiplier, industryId)
   };
 }
 
 /**
  * Returns the baseline weekly operating expenses
  */
-export function getWeeklyBaseExpenses(): number {
-  return BASE_WEEKLY_EXPENSES;
+export function getWeeklyBaseExpenses(industryId: IndustryId = DEFAULT_INDUSTRY_ID): number {
+  return getBusinessMetrics(industryId).weeklyExpenses;
 }
 
-function calculateUpgradeExpenseFromDefinition(upgrade: UpgradeDefinition): number {
+function calculateUpgradeExpenseFromDefinition(
+  upgrade: UpgradeDefinition,
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+): number {
+  const baseWeeklyExpenses = getWeeklyBaseExpenses(industryId);
   return upgrade.effects
     .filter((effect) => effect.metric === 'weeklyExpenses')
     .reduce((total, effect) => {
@@ -64,7 +79,7 @@ function calculateUpgradeExpenseFromDefinition(upgrade: UpgradeDefinition): numb
       }
 
       if (effect.type === 'percent') {
-        return total + BASE_WEEKLY_EXPENSES * effect.value;
+        return total + baseWeeklyExpenses * effect.value;
       }
 
       return total;
@@ -74,11 +89,12 @@ function calculateUpgradeExpenseFromDefinition(upgrade: UpgradeDefinition): numb
 export function buildWeeklyExpenseBreakdown(
   upgrades: Upgrades,
   weeklyOneTimeCosts: number = 0,
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
 ): ExpenseBreakdownItem[] {
   const breakdown: ExpenseBreakdownItem[] = [
     {
       label: 'Base operations',
-      amount: BASE_WEEKLY_EXPENSES,
+      amount: getWeeklyBaseExpenses(industryId),
       category: 'base',
     },
   ];
@@ -86,10 +102,10 @@ export function buildWeeklyExpenseBreakdown(
   Object.entries(upgrades)
     .filter(([_, level]) => level > 0)
     .forEach(([upgradeId, level]) => {
-      const upgrade = getUpgradeById(upgradeId as any);
+      const upgrade = getUpgradeById(upgradeId as UpgradeId, industryId);
       if (!upgrade) return;
       
-      const additionalExpenses = calculateUpgradeExpenseFromDefinition(upgrade) * level;
+      const additionalExpenses = calculateUpgradeExpenseFromDefinition(upgrade, industryId) * level;
       if (additionalExpenses > 0) {
         const label = level > 1 ? `${upgrade.name} (Lvl ${level})` : upgrade.name;
         breakdown.push({
@@ -115,9 +131,13 @@ export function buildWeeklyExpenseBreakdown(
 /**
  * Calculates the total weekly expenses contributed by upgrades.
  */
-export function calculateUpgradeWeeklyExpenses(upgrades: Upgrades): number {
-  const { currentMetrics } = calculateActiveUpgradeMetrics(upgrades);
-  return Math.max(0, currentMetrics.weeklyExpenses - BASE_UPGRADE_METRICS.weeklyExpenses);
+export function calculateUpgradeWeeklyExpenses(
+  upgrades: Upgrades,
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+): number {
+  const { currentMetrics } = calculateActiveUpgradeMetrics(upgrades, industryId);
+  const baseMetrics = getBaseUpgradeMetricsForIndustry(industryId);
+  return Math.max(0, currentMetrics.weeklyExpenses - baseMetrics.weeklyExpenses);
 }
 
 /**
@@ -130,6 +150,7 @@ export function endOfWeek(
   weeklyExpenses: number = 0,
   weeklyOneTimeCosts: number = 0,
   weeklyOneTimeCostsPaid: number = 0,
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
 ): { cash: number; profit: number; totalExpenses: number; baseExpenses: number; additionalExpenses: number; oneTimeCosts: number } {
   // weeklyExpenses already contains base expenses, so don't add them again
   // Total expenses = weeklyExpenses (which includes base) + one-time costs
@@ -143,7 +164,7 @@ export function endOfWeek(
   const profit = weeklyRevenue - totalExpenses;
   
   // For reporting, separate base from additional expenses
-  const baseExpenses = getWeeklyBaseExpenses();
+  const baseExpenses = getWeeklyBaseExpenses(industryId);
   const additionalExpenses = Math.max(weeklyExpenses - baseExpenses, 0);
   
   return {
@@ -168,6 +189,7 @@ export function handleWeekTransition(
   weeklyOneTimeCostsPaid: number,
   currentReputation: number,
   upgrades: Upgrades,
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
 ): {
   currentWeek: number;
   cash: number;
@@ -177,13 +199,22 @@ export function handleWeekTransition(
   reputation: number;
   weeklyExpenseAdjustments: number;
 } {
-  const { cash } = endOfWeek(currentCash, weeklyRevenue, weeklyExpenses, weeklyOneTimeCosts, weeklyOneTimeCostsPaid);
+  const { cash } = endOfWeek(
+    currentCash,
+    weeklyRevenue,
+    weeklyExpenses,
+    weeklyOneTimeCosts,
+    weeklyOneTimeCostsPaid,
+    industryId,
+  );
 
   return {
     currentWeek: currentWeek + 1,
     cash,
     weeklyRevenue: 0, // Reset weekly tracking
-    weeklyExpenses: getWeeklyBaseExpenses() + calculateUpgradeWeeklyExpenses(upgrades),
+    weeklyExpenses:
+      getWeeklyBaseExpenses(industryId) +
+      calculateUpgradeWeeklyExpenses(upgrades, industryId),
     weeklyOneTimeCosts: 0, // Reset one-time costs
     reputation: currentReputation, // Reputation persists
     weeklyExpenseAdjustments: 0,

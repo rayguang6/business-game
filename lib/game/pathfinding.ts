@@ -1,10 +1,12 @@
 import type { GridPosition } from './positioning';
-import { MAP_CONFIG, type MapConfig } from './config';
+import { getMapConfigForIndustry, type MapConfig } from './config';
+
 
 interface FindPathOptions {
   mapConfig?: MapConfig;
   additionalWalls?: GridPosition[];
   allowGoalOccupied?: boolean;
+  industryId?: string; // Add industryId to options
 }
 
 const DIRECTIONS: GridPosition[] = [
@@ -47,7 +49,7 @@ export function findPath(
     return [];
   }
 
-  const config = options.mapConfig ?? MAP_CONFIG;
+  const config = options.mapConfig ?? getMapConfigForIndustry(options.industryId);
   const allowGoalOccupied = options.allowGoalOccupied ?? true;
   const additionalWalls = options.additionalWalls ?? [];
   const walls = createWallSet(config, additionalWalls);

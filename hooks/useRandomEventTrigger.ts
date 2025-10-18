@@ -1,11 +1,12 @@
 import { useEffect, useRef } from "react";
 import { useGameStore } from "../lib/store/gameStore";
-import { sampleEvents } from "../lib/game/events";
+import { DEFAULT_INDUSTRY_ID, getEventsForIndustry } from "../lib/game/config";
 
 export const useRandomEventTrigger = () => {
   const gameTime = useGameStore((state) => state.gameTime);
   const currentEvent = useGameStore((state) => state.currentEvent);
   const setCurrentEvent = useGameStore((state) => state.setCurrentEvent);
+  const selectedIndustry = useGameStore((state) => state.selectedIndustry);
 
   const lastCheckTimeRef = useRef(0);
 
@@ -24,12 +25,12 @@ export const useRandomEventTrigger = () => {
 
       //TODO: change the value, and also extract to config
       if (Math.random() < 0.99) { // 99% chance
-        const events = sampleEvents; // Get Events from Industry
+        const events = getEventsForIndustry(selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID);
         if (events.length > 0) {
           const randomIndex = Math.floor(Math.random() * events.length);
           setCurrentEvent(events[randomIndex]);
         }
       }
     }
-  }, [gameTime, currentEvent, setCurrentEvent]);
+  }, [gameTime, currentEvent, selectedIndustry, setCurrentEvent]);
 };

@@ -4,7 +4,9 @@ import React, { useMemo } from 'react';
 import GameButton from '@/app/components/ui/GameButton';
 import { useGameStore } from '@/lib/store/gameStore';
 import { getUpgradeSummary, getUpgradeCatalog } from '@/lib/features/upgrades';
+import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { UpgradeEffect } from '@/lib/game/config';
+import type { IndustryId } from '@/lib/game/types';
 
 const metricLabels: Record<string, string> = {
   treatmentRooms: 'Treatment Rooms',
@@ -60,10 +62,18 @@ const formatEffect = (effect: UpgradeEffect): string => {
 };
 
 export function UpgradesTab() {
-  const { upgrades, canAffordUpgrade, getUpgradeLevel, canUpgradeMore, purchaseUpgrade } = useGameStore();
+  const {
+    upgrades,
+    canAffordUpgrade,
+    getUpgradeLevel,
+    canUpgradeMore,
+    purchaseUpgrade,
+    selectedIndustry,
+  } = useGameStore();
+  const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
 
-  const catalog = useMemo(() => getUpgradeCatalog(), []);
-  const summary = useMemo(() => getUpgradeSummary(upgrades), [upgrades]);
+  const catalog = useMemo(() => getUpgradeCatalog(industryId), [industryId]);
+  const summary = useMemo(() => getUpgradeSummary(upgrades, industryId), [upgrades, industryId]);
 
   const handlePurchase = (upgradeId: string) => {
     const result = purchaseUpgrade(upgradeId);

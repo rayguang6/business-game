@@ -2,8 +2,13 @@
 
 import React, { useMemo } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
-import { BUSINESS_STATS, BASE_UPGRADE_METRICS } from '@/lib/game/config';
+import {
+  DEFAULT_INDUSTRY_ID,
+  getBusinessStats,
+  getBaseUpgradeMetricsForIndustry,
+} from '@/lib/game/config';
 import { getUpgradeEffects } from '@/lib/features/upgrades';
+import type { IndustryId } from '@/lib/game/types';
 
 interface StatItem {
   label: string;
@@ -15,16 +20,21 @@ interface StatItem {
 }
 
 export function HomeTab() {
-  const { upgrades, weeklyExpenses } = useGameStore();
-  
-  const upgradeEffects = useMemo(() => getUpgradeEffects(upgrades), [upgrades]);
+  const { upgrades, weeklyExpenses, selectedIndustry } = useGameStore();
+  const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+  const businessStats = getBusinessStats(industryId);
+  const baseUpgradeMetrics = getBaseUpgradeMetricsForIndustry(industryId);
+  const upgradeEffects = useMemo(
+    () => getUpgradeEffects(upgrades, industryId),
+    [upgrades, industryId],
+  );
   
   const stats: StatItem[] = [
     // Operation Stats
     {
       label: 'Treatment Rooms',
       value: upgradeEffects.treatmentRooms,
-      baseValue: BASE_UPGRADE_METRICS.treatmentRooms,
+      baseValue: baseUpgradeMetrics.treatmentRooms,
       icon: '🏥',
       category: 'operation',
       description: 'How many customers can be served at once',
@@ -40,7 +50,7 @@ export function HomeTab() {
     {
       label: 'Weekly Expenses',
       value: `$${weeklyExpenses}`,
-      baseValue: `$${BASE_UPGRADE_METRICS.weeklyExpenses}`,
+      baseValue: `$${baseUpgradeMetrics.weeklyExpenses}`,
       icon: '💸',
       category: 'economics',
       description: 'Recurring costs deducted at week end',
@@ -50,14 +60,14 @@ export function HomeTab() {
     {
       label: 'Customer Spawn Interval',
       value: `${upgradeEffects.spawnIntervalSeconds.toFixed(1)}s`,
-      baseValue: `${BASE_UPGRADE_METRICS.spawnIntervalSeconds.toFixed(1)}s`,
+      baseValue: `${baseUpgradeMetrics.spawnIntervalSeconds.toFixed(1)}s`,
       icon: '🚶',
       category: 'customer',
       description: 'Time between new customers arriving',
     },
     {
       label: 'Customer Patience',
-      value: `${BUSINESS_STATS.customerPatienceSeconds}s`,
+      value: `${businessStats.customerPatienceSeconds}s`,
       icon: '⏳',
       category: 'customer',
       description: 'How long customers wait before leaving angry',
@@ -72,7 +82,7 @@ export function HomeTab() {
     },
     {
       label: 'Happy Probability',
-      value: `${(BUSINESS_STATS.baseHappyProbability * 100).toFixed(0)}%`,
+      value: `${(businessStats.baseHappyProbability * 100).toFixed(0)}%`,
       icon: '😊',
       category: 'customer',
       description: 'Chance customer gives reputation after service',
@@ -81,21 +91,21 @@ export function HomeTab() {
     // Economics Stats
     {
       label: 'Week Duration',
-      value: `${BUSINESS_STATS.weekDurationSeconds}s`,
+      value: `${businessStats.weekDurationSeconds}s`,
       icon: '📅',
       category: 'economics',
       description: 'How long each week lasts',
     },
     {
       label: 'Reputation per Happy Customer',
-      value: BUSINESS_STATS.reputationGainPerHappyCustomer,
+      value: businessStats.reputationGainPerHappyCustomer,
       icon: '💎',
       category: 'economics',
       description: 'Base reputation gain (before multiplier)',
     },
     {
       label: 'Reputation per Angry Customer',
-      value: `-${BUSINESS_STATS.reputationLossPerAngryCustomer}`,
+      value: `-${businessStats.reputationLossPerAngryCustomer}`,
       icon: '😡',
       category: 'economics',
       description: 'Reputation lost when customer leaves angry',
