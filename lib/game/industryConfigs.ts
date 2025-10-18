@@ -179,6 +179,33 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
 
 const DENTAL_EVENTS: GameEvent[] = [...sampleEvents];
 
+const RESTAURANT_UPGRADES: UpgradeDefinition[] = [
+  {
+    id: 'restaurant_extra_table',
+    name: 'Expanded Seating',
+    description: 'Add a few extra tables to welcome more guests during peak hours.',
+    icon: '🪑',
+    cost: 800,
+    maxLevel: 2,
+    effects: [
+      { metric: 'treatmentRooms', type: 'add', value: 1, source: 'Expanded Seating' },
+      { metric: 'weeklyExpenses', type: 'add', value: 90, source: 'Expanded Seating' },
+    ],
+  },
+  {
+    id: 'restaurant_kitchen_upgrade',
+    name: 'Kitchen Line Upgrade',
+    description: 'Streamline the kitchen line to serve dishes a bit faster.',
+    icon: '👨‍🍳',
+    cost: 950,
+    maxLevel: 2,
+    effects: [
+      { metric: 'serviceSpeedMultiplier', type: 'percent', value: -0.15, source: 'Kitchen Line Upgrade' },
+      { metric: 'weeklyExpenses', type: 'add', value: 110, source: 'Kitchen Line Upgrade' },
+    ],
+  },
+];
+
 const RESTAURANT_EVENTS: GameEvent[] = [
   {
     id: 'restaurant-food-critic',
@@ -255,6 +282,33 @@ const RESTAURANT_EVENTS: GameEvent[] = [
         effects: [],
         isDefault: true,
       },
+    ],
+  },
+];
+
+const GYM_UPGRADES: UpgradeDefinition[] = [
+  {
+    id: 'gym_new_equipment',
+    name: 'New Training Equipment',
+    description: 'Invest in a new set of training gear to reduce customer wait times.',
+    icon: '🏋️',
+    cost: 850,
+    maxLevel: 2,
+    effects: [
+      { metric: 'serviceSpeedMultiplier', type: 'percent', value: -0.1, source: 'New Training Equipment' },
+      { metric: 'weeklyExpenses', type: 'add', value: 95, source: 'New Training Equipment' },
+    ],
+  },
+  {
+    id: 'gym_recovery_lounge',
+    name: 'Recovery Lounge',
+    description: 'Create a recovery lounge that keeps members happier for longer.',
+    icon: '🧘',
+    cost: 600,
+    maxLevel: 1,
+    effects: [
+      { metric: 'reputationMultiplier', type: 'percent', value: 0.2, source: 'Recovery Lounge' },
+      { metric: 'weeklyExpenses', type: 'add', value: 70, source: 'Recovery Lounge' },
     ],
   },
 ];
@@ -358,14 +412,14 @@ const INDUSTRY_SIMULATION_CONFIGS: Record<IndustryId, IndustrySimulationConfig> 
     id: 'restaurant',
     ...SHARED_BASE,
     services: RESTAURANT_SERVICES,
-    upgrades: DENTAL_UPGRADES, // placeholder
+    upgrades: RESTAURANT_UPGRADES,
     events: RESTAURANT_EVENTS,
   },
   gym: {
     id: 'gym',
     ...SHARED_BASE,
     services: GYM_SERVICES,
-    upgrades: DENTAL_UPGRADES, // placeholder
+    upgrades: GYM_UPGRADES,
     events: GYM_EVENTS,
   },
 };

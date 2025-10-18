@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/store/gameStore';
 import { KeyMetrics } from './KeyMetrics';
-import { ROUND_DURATION_SECONDS } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getRoundDurationSecondsForIndustry } from '@/lib/game/config';
+import type { IndustryId } from '@/lib/game/types';
 import { useAudioControls } from '@/hooks/useAudio';
 
 interface TopBarProps {
@@ -17,7 +18,9 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
 
   if (!selectedIndustry) return null;
 
-  const progressPct = ((gameTime % ROUND_DURATION_SECONDS) / ROUND_DURATION_SECONDS) * 100;
+  const industryId = (selectedIndustry.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+  const roundDurationSeconds = getRoundDurationSecondsForIndustry(industryId);
+  const progressPct = ((gameTime % roundDurationSeconds) / roundDurationSeconds) * 100;
 
   const openSettings = () => {
     pauseGame();
@@ -67,7 +70,9 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
-              <div className="text-stroke text-stroke-thin text-white text-[8px] md:text-[10px] leading-none font-bold flex-shrink-0">{ROUND_DURATION_SECONDS-Math.floor(gameTime % ROUND_DURATION_SECONDS)}s</div>
+              <div className="text-stroke text-stroke-thin text-white text-[8px] md:text-[10px] leading-none font-bold flex-shrink-0">
+                {roundDurationSeconds - Math.floor(gameTime % roundDurationSeconds)}s
+              </div>
             </div>
           </div>
         </div>
@@ -80,5 +85,4 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
     </>
   );
 }
-
 

@@ -8,7 +8,12 @@ import {
   REVENUE_CATEGORY_LABELS,
   RevenueCategory,
 } from '@/lib/store/types';
-import { TICKS_PER_SECOND, isNewWeek, getBusinessStats } from '@/lib/game/config';
+import {
+  DEFAULT_INDUSTRY_ID,
+  getBusinessStats,
+  getTicksPerSecondForIndustry,
+  isNewWeek,
+} from '@/lib/game/config';
 
 import {
   Customer,
@@ -235,7 +240,7 @@ function processCustomersForTick({
             const pathToChair = findPath(
               { x: Math.round(updatedCustomer.x), y: Math.round(updatedCustomer.y) },
               waitingPosition,
-              { additionalWalls: dynamicWallsForCustomer }
+              { additionalWalls: dynamicWallsForCustomer, industryId }
             );
             updatedCustomer.path = pathToChair.length > 0 ? pathToChair : undefined;
             // Mark as occupied for next customers
@@ -260,7 +265,7 @@ function processCustomersForTick({
         const pathToRoom = findPath(
           { x: Math.round(customerWithService.x), y: Math.round(customerWithService.y) },
           servicePosition,
-          { additionalWalls: dynamicWallsForCustomer }
+          { additionalWalls: dynamicWallsForCustomer, industryId }
         );
         customerWithService.path = pathToRoom.length > 0 ? pathToRoom : undefined;
       }
@@ -338,8 +343,17 @@ function processCustomersForTick({
 /**
  * Updates game timer based on ticks
  */
-export function updateGameTimer(gameTime: number, gameTick: number): number {
-  if (gameTick % TICKS_PER_SECOND === 0) {
+export function updateGameTimer(
+  gameTime: number,
+  gameTick: number,
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+): number {
+  const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
+  const ticksPerSecondRounded = Math.max(1, Math.round(ticksPerSecond));
+  if (ticksPerSecond <= 0) {
+    return gameTime;
+  }
+  if (gameTick % ticksPerSecondRounded === 0) {
     return gameTime + 1;
   }
   return gameTime;
@@ -362,11 +376,11 @@ export function createInitialGameState(): Partial<GameState> {
  * (produce next tick given current snapshot.)
  */
 export function tickOnce(state: TickSnapshot): TickResult {
-  const industryId = state.industryId ?? 'dental';
+  const industryId = (state.industryId ?? DEFAULT_INDUSTRY_ID) as IndustryId;
 
-  //adds 1 to gameTime every 10 ticks (because TICKS_PER_SECOND = 10)
+  // Adds 1 to gameTime each time the configured tick cadence has elapsed.
   const nextTick = state.gameTick + 1;
-  const nextGameTime = updateGameTimer(state.gameTime, nextTick);
+  const nextGameTime = updateGameTimer(state.gameTime, nextTick, industryId);
 
   //To keep it pure, the function copies arrays and objects (customers, metrics, weeklyRevenueDetails, etc.) before changing them.
   let customers = [...state.customers];
@@ -388,7 +402,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
   // Adds a WeeklyHistoryEntry.
   // Resets the weekly accumulators and recomputes weekly expenses (base + upgrade).
   // Resets weeklyExpenseAdjustments (since upgrade deltas are now baked in).
-  if (isNewWeek(nextGameTime, state.gameTime)) {
+  if (isNewWeek(nextGameTime, state.gameTime, industryId)) {
     const transition = processWeekTransition({
       currentWeek,
       metrics,

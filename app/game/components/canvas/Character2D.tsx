@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MOVEMENT_CONFIG } from '@/lib/game/config';
+import { getMovementConfigForIndustry } from '@/lib/game/config';
+import { useGameStore } from '@/lib/store/gameStore';
 
 // 32x32px tile system configuration
 const TILE_SIZE = 32;
@@ -30,7 +31,7 @@ export function Character2D({
   isCelebrating = false
 }: Character2DProps) {
   const [currentFrame, setCurrentFrame] = useState(frame);
-
+  const selectedIndustryId = useGameStore((state) => state.selectedIndustry?.id);
   const {
     customerTilesPerTick,
     animationReferenceTilesPerTick,
@@ -38,7 +39,7 @@ export function Character2D({
     minWalkFrameDurationMs,
     maxWalkFrameDurationMs,
     celebrationFrameDurationMs,
-  } = MOVEMENT_CONFIG;
+  } = getMovementConfigForIndustry(selectedIndustryId);
 
   const animationSpeedRatio = animationReferenceTilesPerTick > 0
     ? customerTilesPerTick / animationReferenceTilesPerTick

@@ -4,7 +4,16 @@
  */
 
 import { Service } from './services';
-import { CUSTOMER_CONFIG, BUSINESS_STATS, MOVEMENT_CONFIG, secondsToTicks } from '@/lib/game/config';
+import {
+  DEFAULT_INDUSTRY_ID,
+  getBusinessStats,
+  getCustomerImagesForIndustry,
+  getDefaultCustomerImageForIndustry,
+  getLayoutConfig,
+  getMovementConfigForIndustry,
+  secondsToTicks,
+} from '@/lib/game/config';
+import type { IndustryId, GridPosition } from '@/lib/game/types';
 
 // Types
 export enum CustomerStatus {
@@ -45,25 +54,23 @@ export interface Customer {
 // Configuration (now using centralized config)
 export const CUSTOMER_EMOJIS = ['😊', '😄', '😃', '🙂', '😌', '😋', '🤔', '😎'];
 
-// Re-export from centralized config
-export const CUSTOMER_SPAWN_AREA = CUSTOMER_CONFIG.SPAWN_AREA;
-export const MAX_CUSTOMER_CAPACITY = CUSTOMER_CONFIG.MAX_TREATMENT_ROOMS;
-export const DEFAULT_PATIENCE_SECONDS = BUSINESS_STATS.customerPatienceSeconds;
-export const LEAVING_ANGRY_DURATION_TICKS = BUSINESS_STATS.leavingAngryDurationTicks;
-export const CUSTOMER_IMAGES = CUSTOMER_CONFIG.IMAGES;
-export const DEFAULT_CUSTOMER_IMAGE = CUSTOMER_CONFIG.DEFAULT_IMAGE;
-
 // Mechanics
 import { getRandomService } from './services';
-import { ENTRY_POSITION, type GridPosition } from '@/lib/game/positioning';
 
 /**
  * Creates a new customer with random properties
  */
-export function spawnCustomer(serviceSpeedMultiplier: number = 1, industryId: string = 'dental'): Customer {
+export function spawnCustomer(
+  serviceSpeedMultiplier: number = 1,
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+): Customer {
   const service = getRandomService(industryId);
-  const imageSrc = CUSTOMER_IMAGES[Math.floor(Math.random() * CUSTOMER_IMAGES.length)] || DEFAULT_CUSTOMER_IMAGE;
-  const patience = secondsToTicks(DEFAULT_PATIENCE_SECONDS);
+  const industryImages = getCustomerImagesForIndustry(industryId);
+  const defaultImage = getDefaultCustomerImageForIndustry(industryId);
+  const imageSrc = industryImages[Math.floor(Math.random() * industryImages.length)] || defaultImage;
+  const stats = getBusinessStats(industryId);
+  const layout = getLayoutConfig(industryId);
+  const patience = secondsToTicks(stats.customerPatienceSeconds, industryId);
   
   // Apply equipment upgrades to service duration
   const effectiveDuration = service.duration * serviceSpeedMultiplier;
@@ -71,12 +78,12 @@ export function spawnCustomer(serviceSpeedMultiplier: number = 1, industryId: st
   return {
     id: Math.random().toString(36).substr(2, 9),
     imageSrc,
-    x: ENTRY_POSITION.x, // Spawn at entry position
-    y: ENTRY_POSITION.y,
+    x: layout.entryPosition.x, // Spawn at entry position
+    y: layout.entryPosition.y,
     facingDirection: 'down',
     service: service,
     status: CustomerStatus.Spawning, // Start at door!
-    serviceTimeLeft: secondsToTicks(effectiveDuration),
+    serviceTimeLeft: secondsToTicks(effectiveDuration, industryId),
     patienceLeft: patience,
     maxPatience: patience,
   };
@@ -85,7 +92,7 @@ export function spawnCustomer(serviceSpeedMultiplier: number = 1, industryId: st
 /**
  * Movement speed (tiles per tick)
  */
-const MOVEMENT_SPEED = Math.max(0.01, MOVEMENT_CONFIG.customerTilesPerTick);
+const MOVEMENT_SPEED = Math.max(0.01, getMovementConfigForIndustry(DEFAULT_INDUSTRY_ID).customerTilesPerTick);
 
 /**
  * Moves customer towards target position following an optional path.
@@ -248,12 +255,12 @@ export function startService(customer: Customer, roomId: number): Customer {
 /**
  * Gets available service slots (rooms)
  */
-export function getAvailableSlots(customers: Customer[], maxRooms?: number): number[] {
+export function getAvailableSlots(customers: Customer[], maxRooms?: number, industryId: IndustryId = DEFAULT_INDUSTRY_ID): number[] {
   const occupiedRooms = customers
     .filter(c => (c.status === CustomerStatus.InService || c.status === CustomerStatus.WalkingToRoom) && c.roomId)
     .map(c => c.roomId!);
   
-  const roomCount = maxRooms || MAX_CUSTOMER_CAPACITY;
+  const roomCount = maxRooms || getBusinessStats(industryId).treatmentRooms;
   return Array.from({ length: roomCount }, (_, i) => i + 1)
     .filter(roomId => !occupiedRooms.includes(roomId));
 }
@@ -261,6 +268,6 @@ export function getAvailableSlots(customers: Customer[], maxRooms?: number): num
 /**
  * Gets available rooms (alias for getAvailableSlots)
  */
-export function getAvailableRooms(customers: Customer[], maxRooms?: number): number[] {
-  return getAvailableSlots(customers, maxRooms);
+export function getAvailableRooms(customers: Customer[], maxRooms?: number, industryId: IndustryId = DEFAULT_INDUSTRY_ID): number[] {
+  return getAvailableSlots(customers, maxRooms, industryId);
 }

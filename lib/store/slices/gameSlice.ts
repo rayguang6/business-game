@@ -3,11 +3,14 @@ import { getWeeklyBaseExpenses } from '@/lib/features/economy';
 import { tickOnce } from '@/lib/game/mechanics';
 import { GameState } from '../types';
 import { getInitialMetrics } from './metricsSlice';
-
-const BASE_WEEKLY_EXPENSES = getWeeklyBaseExpenses();
+import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 
 // Shared initial game state - DRY principle
-const getInitialGameState = (keepIndustry: boolean = false) => {
+const getInitialGameState = (
+  industryId: string = DEFAULT_INDUSTRY_ID,
+  keepIndustry: boolean = false,
+) => {
+  const baseWeeklyExpenses = getWeeklyBaseExpenses(industryId);
   return {
     isGameStarted: false,
     isPaused: false,
@@ -17,14 +20,14 @@ const getInitialGameState = (keepIndustry: boolean = false) => {
     isGameOver: false,
     gameOverReason: null,
     weeklyRevenue: 0,
-    weeklyExpenses: BASE_WEEKLY_EXPENSES,
+    weeklyExpenses: baseWeeklyExpenses,
     weeklyRevenueDetails: [],
     weeklyOneTimeCosts: 0,
     weeklyOneTimeCostDetails: [],
     weeklyOneTimeCostsPaid: 0,
     weeklyHistory: [],
     customers: [],
-    metrics: getInitialMetrics(),
+    metrics: getInitialMetrics(industryId),
     upgrades: {},
     weeklyExpenseAdjustments: 0,
     ...(keepIndustry ? {} : { selectedIndustry: null }),
@@ -52,10 +55,7 @@ export interface GameSlice {
   checkGameOver: () => void;
 }
 
-export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (
-  set,
-  get
-) => {
+export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set, get) => {
   return ({
     isGameStarted: false,
     isPaused: false,
@@ -67,10 +67,12 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (
   
   startGame: () => {
     // Reset to initial state but keep industry selection and start the game
+    const industryId = get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
+    const baseWeeklyExpenses = getWeeklyBaseExpenses(industryId);
     set({
-      ...getInitialGameState(true), // keepIndustry = true
+      ...getInitialGameState(industryId, true), // keepIndustry = true
       isGameStarted: true, // Override to start the game
-      weeklyExpenses: BASE_WEEKLY_EXPENSES,
+      weeklyExpenses: baseWeeklyExpenses,
       weeklyExpenseAdjustments: 0,
     });
   },
@@ -86,8 +88,8 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (
   resetAllGame: () => {
     // Reset everything to initial state including industry selection
     set({
-      ...getInitialGameState(false), // keepIndustry = false
-      weeklyExpenses: BASE_WEEKLY_EXPENSES,
+      ...getInitialGameState(DEFAULT_INDUSTRY_ID, false), // keepIndustry = false
+      weeklyExpenses: getWeeklyBaseExpenses(DEFAULT_INDUSTRY_ID),
       weeklyExpenseAdjustments: 0,
     });
   },
@@ -114,7 +116,7 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (
         weeklyOneTimeCostsPaid: state.weeklyOneTimeCostsPaid,
         upgrades: state.upgrades,
         weeklyHistory: state.weeklyHistory,
-        industryId: state.selectedIndustry?.id ?? 'dental',
+        industryId: state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID,
         weeklyExpenseAdjustments: state.weeklyExpenseAdjustments,
       });
       return { ...state, ...updated };

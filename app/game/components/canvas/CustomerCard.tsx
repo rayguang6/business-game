@@ -2,8 +2,13 @@
 
 import React from 'react';
 import { Customer, CustomerStatus } from '@/lib/features/customers';
-import { TICKS_PER_SECOND, ticksToSeconds } from '@/lib/game/config';
-import { DEFAULT_PATIENCE_SECONDS } from '@/lib/features/customers';
+import {
+  DEFAULT_INDUSTRY_ID,
+  getTicksPerSecondForIndustry,
+  ticksToSeconds,
+} from '@/lib/game/config';
+import type { IndustryId } from '@/lib/game/types';
+import { useGameStore } from '@/lib/store/gameStore';
 
 interface CustomerCardProps {
   customer: Customer;
@@ -13,8 +18,12 @@ interface CustomerCardProps {
 }
 
 export function CustomerCard({ customer, showPatience = false, showServiceProgress = false, scaleFactor }: CustomerCardProps) {
+  const selectedIndustry = useGameStore((state) => state.selectedIndustry);
+  const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+  const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
+
   const getServiceProgress = (customer: Customer) => {
-    const totalTicks = customer.service.duration * TICKS_PER_SECOND;
+    const totalTicks = customer.service.duration * ticksPerSecond;
     const elapsedTicks = totalTicks - customer.serviceTimeLeft;
     const progress = Math.max(0, Math.min(100, (elapsedTicks / totalTicks) * 100));
     return progress;
@@ -154,7 +163,7 @@ export function CustomerCard({ customer, showPatience = false, showServiceProgre
                     className="text-gray-600"
                     style={{ fontSize: `${10 * scaleFactor}px` }}
                   >
-                    {Math.ceil(ticksToSeconds(customer.patienceLeft))}s
+                    {Math.ceil(ticksToSeconds(customer.patienceLeft, industryId))}s
                   </span>
                 </div>
               );
@@ -198,7 +207,7 @@ export function CustomerCard({ customer, showPatience = false, showServiceProgre
                 className="text-blue-600 font-medium"
                 style={{ fontSize: `${10 * scaleFactor}px` }}
               >
-                {Math.ceil(ticksToSeconds(customer.serviceTimeLeft))}s
+                {Math.ceil(ticksToSeconds(customer.serviceTimeLeft, industryId))}s
               </span>
             </div>
           </div>

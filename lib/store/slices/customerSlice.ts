@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand';
 import { Customer, spawnCustomer as createCustomer, startService } from '@/lib/features/customers';
 import { GameState } from '../types';
+import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 
 export interface CustomerSlice {
   customers: Customer[];
@@ -16,7 +17,7 @@ export const createCustomerSlice: StateCreator<GameState, [], [], CustomerSlice>
   customers: [],
   
   spawnCustomer: () => {
-    const industryId = get().selectedIndustry?.id ?? 'dental';
+    const industryId = get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
     return createCustomer(1, industryId);
   },
   
