@@ -3,7 +3,8 @@ import { useGameStore } from '@/lib/store/gameStore';
 import { TICK_INTERVAL_MS } from '@/lib/game/config';
 
 export const useGameLoop = () => {
-  const { isGameStarted, tickGame } = useGameStore();
+  const isGameStarted = useGameStore((state) => state.isGameStarted);
+  const tickGame = useGameStore((state) => state.tickGame);
   const loopRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {

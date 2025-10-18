@@ -12,8 +12,8 @@
 
 export const BUSINESS_METRICS = {
   startingCash: 3000,
-  weeklyExpenses: 800,
   startingReputation: 5,
+  weeklyExpenses: 800, // this is cash burned per round, not the total expenses
 } as const;
 
 export const BUSINESS_STATS = {
