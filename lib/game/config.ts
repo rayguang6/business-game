@@ -1,3 +1,36 @@
+import { getIndustrySimulationConfig, getAllSimulationConfigs } from './industryConfigs';
+import type {
+  BusinessMetrics,
+  BusinessStats,
+  MapConfig,
+  MapWall,
+  MovementConfig,
+  UpgradeDefinition,
+  UpgradeEffect,
+  UpgradeEffectType,
+  UpgradeMetric,
+  UpgradeId,
+  IndustrySimulationConfig,
+  IndustryId,
+  BaseUpgradeMetrics,
+} from './types';
+
+export type {
+  BusinessMetrics,
+  BusinessStats,
+  MapConfig,
+  MapWall,
+  MovementConfig,
+  UpgradeDefinition,
+  UpgradeEffect,
+  UpgradeEffectType,
+  UpgradeMetric,
+  UpgradeId,
+  IndustrySimulationConfig,
+  IndustryId,
+  BaseUpgradeMetrics,
+} from './types';
+
 /**
  * Centralized game configuration
  * ------------------------------
@@ -37,17 +70,6 @@ export const BUSINESS_STATS = {
 // MAP CONFIGURATION
 // -----------------------------------------------------------------------------
 
-export interface MapWall {
-  x: number;
-  y: number;
-}
-
-export interface MapConfig {
-  width: number;
-  height: number;
-  walls: MapWall[];
-}
-
 export const MAP_CONFIG: MapConfig = {
   width: 10,
   height: 10,
@@ -66,7 +88,7 @@ export const MAP_CONFIG: MapConfig = {
 // MOVEMENT & ANIMATION CONFIGURATION
 // -----------------------------------------------------------------------------
 
-export const MOVEMENT_CONFIG = {
+export const MOVEMENT_CONFIG: MovementConfig = {
   customerTilesPerTick: 0.15,
   animationReferenceTilesPerTick: 0.15,
   walkFrameDurationMs: 200,
@@ -178,34 +200,6 @@ export const SERVICE_CONFIG = {
 // -----------------------------------------------------------------------------
 
 //TODO: turn into enum
-export type UpgradeMetric =
-  | 'weeklyExpenses'
-  | 'spawnIntervalSeconds'
-  | 'serviceSpeedMultiplier'
-  | 'reputationMultiplier'
-  | 'treatmentRooms';
-
-export type UpgradeEffectType = 'add' | 'percent'; //TODO: turn into enum
-
-export interface UpgradeEffect {
-  metric: UpgradeMetric;
-  type: UpgradeEffectType;
-  value: number;
-  source: string;
-}
-
-export interface UpgradeDefinition {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  cost: number; // Cost per level (flat rate)
-  maxLevel: number; // Maximum level (1 = single purchase, 2+ = multi-level)
-  effects: UpgradeEffect[]; // Effects per level (multiplied by level)
-}
-
-export type UpgradeId = UpgradeDefinition['id'];
-
 export const BASE_UPGRADE_METRICS: Record<UpgradeMetric, number> = {
   weeklyExpenses: BUSINESS_METRICS.weeklyExpenses,
   spawnIntervalSeconds: BUSINESS_STATS.customerSpawnIntervalSeconds,
@@ -286,20 +280,35 @@ const UPGRADE_LOOKUP: Record<UpgradeId, UpgradeDefinition> = DENTAL_UPGRADES.red
   {} as Record<UpgradeId, UpgradeDefinition>,
 );
 
-export function getUpgradeById(id: UpgradeId): UpgradeDefinition | undefined {
-  return UPGRADE_LOOKUP[id];
+export function getUpgradeById(
+  id: UpgradeId,
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+): UpgradeDefinition | undefined {
+  if (industryId === DEFAULT_INDUSTRY_ID) {
+    return UPGRADE_LOOKUP[id];
+  }
+  return getSimulationConfig(industryId).upgrades.find((upgrade) => upgrade.id === id);
 }
 
-export function getAllUpgrades(): UpgradeDefinition[] {
-  return [...DENTAL_UPGRADES];
+export function getAllUpgrades(industryId: IndustryId = DEFAULT_INDUSTRY_ID): UpgradeDefinition[] {
+  if (industryId === DEFAULT_INDUSTRY_ID) {
+    return [...DENTAL_UPGRADES];
+  }
+  return [...getSimulationConfig(industryId).upgrades];
 }
 
-export function secondsToTicks(seconds: number): number {
-  return Math.round(seconds * TICKS_PER_SECOND);
+export function secondsToTicks(
+  seconds: number,
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+): number {
+  return Math.round(seconds * getTicksPerSecondForIndustry(industryId));
 }
 
-export function ticksToSeconds(ticks: number): number {
-  return ticks / TICKS_PER_SECOND;
+export function ticksToSeconds(
+  ticks: number,
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+): number {
+  return ticks / getTicksPerSecondForIndustry(industryId);
 }
 
 export function getCurrentWeek(gameTimeSeconds: number): number {
@@ -337,4 +346,92 @@ export function calculateWeeklyRevenuePotential(): {
     potentialRevenue,
     realisticTarget,
   };
+}
+
+// -----------------------------------------------------------------------------
+// Multi-industry helpers (transitional)
+// Default industry stays dental until all features read from these helpers.
+// TODO: once every subsystem consumes these APIs, fold them into the primary
+// exports above and remove the legacy constants.
+// -----------------------------------------------------------------------------
+
+export const DEFAULT_INDUSTRY_ID: IndustryId = 'dental';
+
+export function getSimulationConfig(
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+): IndustrySimulationConfig {
+  return getIndustrySimulationConfig(industryId);
+}
+
+export function getBusinessMetrics(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
+  return getSimulationConfig(industryId).businessMetrics;
+}
+
+export function getBusinessStats(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
+  return getSimulationConfig(industryId).businessStats;
+}
+
+export function getMapConfigForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
+  return getSimulationConfig(industryId).map;
+}
+
+export function getMovementConfigForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
+  return getSimulationConfig(industryId).movement;
+}
+
+export function getLayoutConfig(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
+  return getSimulationConfig(industryId).layout;
+}
+
+export function getServicesForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
+  return getSimulationConfig(industryId).services;
+}
+
+export function getUpgradesForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
+  return getSimulationConfig(industryId).upgrades;
+}
+
+export function getEventsForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
+  return getSimulationConfig(industryId).events;
+}
+
+export function getCustomerImagesForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
+  return getSimulationConfig(industryId).customerImages;
+}
+
+export function getDefaultCustomerImageForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
+  return getSimulationConfig(industryId).defaultCustomerImage;
+}
+
+export function getTickIntervalMsForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): number {
+  const stats = getBusinessStats(industryId);
+  return Math.round((1 / stats.ticksPerSecond) * 1000);
+}
+
+export function getBaseUpgradeMetricsForIndustry(
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+): BaseUpgradeMetrics {
+  const stats = getBusinessStats(industryId);
+  const metrics = getBusinessMetrics(industryId);
+  return {
+    weeklyExpenses: metrics.weeklyExpenses,
+    spawnIntervalSeconds: stats.customerSpawnIntervalSeconds,
+    serviceSpeedMultiplier: 1,
+    reputationMultiplier: 1,
+    treatmentRooms: stats.treatmentRooms,
+  };
+}
+
+export function getTicksPerSecondForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): number {
+  return getBusinessStats(industryId).ticksPerSecond;
+}
+
+export function getRoundDurationSecondsForIndustry(
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+): number {
+  return getBusinessStats(industryId).weekDurationSeconds;
+}
+
+export function getAllSimulationConfigsList(): IndustrySimulationConfig[] {
+  return getAllSimulationConfigs();
 }

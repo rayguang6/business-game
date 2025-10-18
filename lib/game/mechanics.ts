@@ -8,12 +8,11 @@ import {
   REVENUE_CATEGORY_LABELS,
   RevenueCategory,
 } from '@/lib/store/types';
-import { TICKS_PER_SECOND, isNewWeek, BUSINESS_STATS } from '@/lib/game/config';
+import { TICKS_PER_SECOND, isNewWeek, getBusinessStats } from '@/lib/game/config';
 
 import {
   Customer,
   CustomerStatus,
-  LEAVING_ANGRY_DURATION_TICKS,
   spawnCustomer as createCustomer,
   tickCustomer,
   startService,
@@ -25,7 +24,8 @@ import {
   calculateUpgradeWeeklyExpenses,
 } from '@/lib/features/economy';
 import { shouldSpawnCustomerWithUpgrades, getUpgradeEffects, UpgradeEffects } from '@/lib/features/upgrades';
-import { getWaitingPositionByIndex, getServiceRoomPosition } from '@/lib/game/positioning';
+import { getWaitingPositions, getServiceRoomPosition } from '@/lib/game/positioning';
+import type { IndustryId } from '@/lib/game/types';
 import { findPath } from '@/lib/game/pathfinding';
 import { audioManager, AudioFx } from '@/lib/audio/audioManager';
 
@@ -61,6 +61,7 @@ interface WeekTransitionParams {
   weeklyHistory: WeeklyHistoryEntry[];
   weeklyExpenseAdjustments: number;
   upgrades: Upgrades;
+  industryId: IndustryId;
 }
 
 interface WeekTransitionResult {
@@ -82,6 +83,7 @@ interface ProcessCustomersParams {
   weeklyRevenue: number;
   weeklyRevenueDetails: RevenueEntry[];
   upgradeEffects: UpgradeEffects;
+  industryId: IndustryId;
 }
 
 interface ProcessCustomersResult {
@@ -124,6 +126,7 @@ function processWeekTransition({
   weeklyHistory,
   weeklyExpenseAdjustments,
   upgrades,
+  industryId,
 }: WeekTransitionParams): WeekTransitionResult {
   const weekResult = endOfWeek(
     metrics.cash,
@@ -131,6 +134,7 @@ function processWeekTransition({
     weeklyExpenses,
     weeklyOneTimeCosts,
     weeklyOneTimeCostsPaid,
+    industryId,
   );
   const revenueBreakdown = summarizeRevenueByCategory(weeklyRevenueDetails);
   const alreadyAccounted = weeklyExpenseAdjustments ?? 0;
@@ -157,8 +161,8 @@ function processWeekTransition({
     },
   ];
 
-  const baseExpenses = getWeeklyBaseExpenses();
-  const upgradeExpenses = calculateUpgradeWeeklyExpenses(upgrades);
+  const baseExpenses = getWeeklyBaseExpenses(industryId);
+  const upgradeExpenses = calculateUpgradeWeeklyExpenses(upgrades, industryId);
 
   return {
     metrics: updatedMetrics,
@@ -180,12 +184,14 @@ function processCustomersForTick({
   weeklyRevenue,
   weeklyRevenueDetails,
   upgradeEffects,
+  industryId,
 }: ProcessCustomersParams): ProcessCustomersResult {
   const roomsRemaining = [...getAvailableRooms(customers, upgradeEffects.treatmentRooms)];
   const updatedCustomers: Customer[] = [];
   let metricsAccumulator: Metrics = { ...metrics };
   let revenueAccumulator = weeklyRevenue;
   let revenueDetails = [...weeklyRevenueDetails];
+  const stats = getBusinessStats(industryId);
   const reputationMultiplier = upgradeEffects.reputationMultiplier;
 
   // Find already occupied waiting positions (including both current and target positions)
@@ -216,8 +222,9 @@ function processCustomersForTick({
     // Assign target waiting position when customer starts walking to chair
     if (customer.status === CustomerStatus.Spawning && updatedCustomer.status === CustomerStatus.WalkingToChair) {
       // Find first unoccupied waiting position
-      for (let i = 0; i < 8; i++) { // Only 8 waiting positions
-        const waitingPosition = getWaitingPositionByIndex(i);
+      const waitingPositions = getWaitingPositions(industryId);
+      for (let i = 0; i < waitingPositions.length; i++) {
+        const waitingPosition = waitingPositions[i];
         if (waitingPosition) {
           const isOccupied = occupiedWaitingPositions.some(
             pos => pos.x === waitingPosition.x && pos.y === waitingPosition.y
@@ -246,7 +253,7 @@ function processCustomersForTick({
       const customerWithService = startService(updatedCustomer, assignedRoom);
       
       // Assign target service room position
-      const servicePosition = getServiceRoomPosition(assignedRoom);
+      const servicePosition = getServiceRoomPosition(assignedRoom, industryId);
       if (servicePosition) {
         customerWithService.targetX = servicePosition.x;
         customerWithService.targetY = servicePosition.y;
@@ -270,9 +277,9 @@ function processCustomersForTick({
       const newCash = metricsAccumulator.cash + servicePrice;
       
       // Check if customer is happy based on probability
-      const isHappy = Math.random() < BUSINESS_STATS.baseHappyProbability;
+      const isHappy = Math.random() < stats.baseHappyProbability;
       const reputationGain = isHappy 
-        ? Math.floor(BUSINESS_STATS.reputationGainPerHappyCustomer * reputationMultiplier)
+        ? Math.floor(stats.reputationGainPerHappyCustomer * reputationMultiplier)
         : 0;
 
       metricsAccumulator = {
@@ -296,7 +303,7 @@ function processCustomersForTick({
     // If customer is leaving angry, deduct reputation and keep in game for exit animation
     if (customer.status !== CustomerStatus.LeavingAngry && updatedCustomer.status === CustomerStatus.LeavingAngry) {
       // Customer just became angry - deduct reputation and keep in game for exit animation
-      const reputationLoss = BUSINESS_STATS.reputationLossPerAngryCustomer;
+      const reputationLoss = stats.reputationLossPerAngryCustomer;
       metricsAccumulator = {
         ...metricsAccumulator,
         reputation: Math.max(0, metricsAccumulator.reputation - reputationLoss),
@@ -308,7 +315,7 @@ function processCustomersForTick({
     // If customer is leaving angry, keep in game for exit animation
     if (customer.status === CustomerStatus.LeavingAngry) {
       const leavingTicks = (customer.leavingTicks ?? 0) + 1;
-      if (leavingTicks >= LEAVING_ANGRY_DURATION_TICKS) {
+      if (leavingTicks >= stats.leavingAngryDurationTicks) {
         // Exit animation complete - remove from game
         return;
       }
@@ -394,6 +401,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
       weeklyHistory,
       weeklyExpenseAdjustments,
       upgrades: state.upgrades,
+      industryId,
     });
 
     metrics = transition.metrics;
@@ -410,10 +418,10 @@ export function tickOnce(state: TickSnapshot): TickResult {
 
 
   //Get the upgrade effects for the current upgrades.
-  const upgradeEffects = getUpgradeEffects(state.upgrades);
+  const upgradeEffects = getUpgradeEffects(state.upgrades, industryId);
 
   //If the customer should spawn with the upgrades, create a new customer.
-  if (shouldSpawnCustomerWithUpgrades(nextTick, state.upgrades, upgradeEffects)) {
+  if (shouldSpawnCustomerWithUpgrades(nextTick, state.upgrades, industryId, upgradeEffects)) {
     customers = [...customers, createCustomer(upgradeEffects.serviceSpeedMultiplier, industryId)];
   }
 
@@ -429,6 +437,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
     weeklyRevenue,
     weeklyRevenueDetails,
     upgradeEffects,
+    industryId,
   });
 
   weeklyRevenueDetails = processedRevenueDetails;
