@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useFinanceData } from '@/hooks/useFinanceData';
 import { useMetricChanges } from '@/hooks/useMetricChanges';
 import { MetricFeedback, FeedbackItem } from './MetricFeedback';
+import Image from 'next/image';
 
 export function KeyMetrics() {
   const { metrics, weeklyRevenue, weeklyExpenses } = useFinanceData();
@@ -120,9 +121,11 @@ export function KeyMetrics() {
           {/* Icon positioned outside from the left */}
           <div className="absolute -left-2 md:-left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 md:w-6 md:h-6 rounded-full flex items-center justify-center z-10 overflow-hidden">
             {metric.image ? (
-              <img 
+              <Image 
                 src={metric.image} 
                 alt={metric.label}
+                width={24} // Assuming a default size that scales, or adjust based on actual design
+                height={24} // Assuming a default size that scales, or adjust based on actual design
                 className="w-full h-full object-cover"
               />
             ) : (

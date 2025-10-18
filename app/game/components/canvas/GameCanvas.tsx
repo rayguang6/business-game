@@ -30,14 +30,6 @@ export function GameCanvas() {
   const [canvasSize, setCanvasSize] = useState(350);
   const [scaleFactor, setScaleFactor] = useState(1);
 
-  if (!selectedIndustry) return null;
-
-  const industryId = (selectedIndustry.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-  const upgradeEffects = getUpgradeEffects(upgrades, industryId);
-  const treatmentRoomsLabel = 'Treatment Rooms';
-  const treatmentRooms = upgradeEffects.treatmentRooms;
-  const mapBackground = selectedIndustry.mapImage ?? '/images/maps/dental-map.png';
-
   // Calculate responsive canvas size
   useEffect(() => {
     const updateCanvasSize = () => {
@@ -57,6 +49,14 @@ export function GameCanvas() {
     window.addEventListener('resize', updateCanvasSize);
     return () => window.removeEventListener('resize', updateCanvasSize);
   }, []);
+
+  if (!selectedIndustry) return null;
+
+  const industryId = (selectedIndustry.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+  const upgradeEffects = getUpgradeEffects(upgrades, industryId);
+  const treatmentRoomsLabel = 'Treatment Rooms';
+  const treatmentRooms = upgradeEffects.treatmentRooms;
+  const mapBackground = selectedIndustry.mapImage ?? '/images/maps/dental-map.png';
 
   // Canvas coordinate system (for future 2D animations)
   const canvasCoordinates = {

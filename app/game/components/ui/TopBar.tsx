@@ -8,6 +8,7 @@ import { KeyMetrics } from './KeyMetrics';
 import { DEFAULT_INDUSTRY_ID, getRoundDurationSecondsForIndustry } from '@/lib/game/config';
 import type { IndustryId } from '@/lib/game/types';
 import { useAudioControls } from '@/hooks/useAudio';
+import Image from 'next/image';
 
 interface TopBarProps {
   onSettingsOpen: () => void;
@@ -41,9 +42,11 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
           >
             <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
               {selectedIndustry.image ? (
-                <img 
+                <Image 
                   src={selectedIndustry.image} 
                   alt={selectedIndustry.name}
+                  width={64} // Set a reasonable default that will scale with the parent
+                  height={64} // Set a reasonable default that will scale with the parent
                   className="w-full h-full object-cover"
                 />
               ) : (

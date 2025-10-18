@@ -4,10 +4,12 @@ import { tickOnce } from '@/lib/game/mechanics';
 import { GameState } from '../types';
 import { getInitialMetrics } from './metricsSlice';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
+import { GameStore } from '../gameStore';
+import type { IndustryId } from '@/lib/game/types';
 
 // Shared initial game state - DRY principle
 const getInitialGameState = (
-  industryId: string = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
   keepIndustry: boolean = false,
 ) => {
   const baseWeeklyExpenses = getWeeklyBaseExpenses(industryId);
@@ -55,7 +57,7 @@ export interface GameSlice {
   checkGameOver: () => void;
 }
 
-export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set, get) => {
+export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set, get) => {
   return ({
     isGameStarted: false,
     isPaused: false,
@@ -67,7 +69,7 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
   
   startGame: () => {
     // Reset to initial state but keep industry selection and start the game
-    const industryId = get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
+    const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
     const baseWeeklyExpenses = getWeeklyBaseExpenses(industryId);
     set({
       ...getInitialGameState(industryId, true), // keepIndustry = true
@@ -88,8 +90,8 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
   resetAllGame: () => {
     // Reset everything to initial state including industry selection
     set({
-      ...getInitialGameState(DEFAULT_INDUSTRY_ID, false), // keepIndustry = false
-      weeklyExpenses: getWeeklyBaseExpenses(DEFAULT_INDUSTRY_ID),
+      ...getInitialGameState(DEFAULT_INDUSTRY_ID as IndustryId, false), // keepIndustry = false
+      weeklyExpenses: getWeeklyBaseExpenses(DEFAULT_INDUSTRY_ID as IndustryId),
       weeklyExpenseAdjustments: 0,
     });
   },
@@ -123,7 +125,7 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
     });
     
     // Check for game over after tick updates
-    const checkGameOver = (get() as any).checkGameOver;
+    const { checkGameOver } = get();
     if (checkGameOver) {
       checkGameOver();
     }
@@ -134,7 +136,7 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
     set((state) => ({
       metrics: { ...state.metrics, cash: state.metrics.cash + amount },
     }));
-    const checkGameOver = (get() as any).checkGameOver;
+    const { checkGameOver } = get();
     if (checkGameOver) {
       checkGameOver();
     }
@@ -143,7 +145,7 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
     set((state) => ({
       metrics: { ...state.metrics, reputation: state.metrics.reputation + amount },
     }));
-    const checkGameOver = (get() as any).checkGameOver;
+    const { checkGameOver } = get();
     if (checkGameOver) {
       checkGameOver();
     }
@@ -171,7 +173,7 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
 
   // registers a one-time cost via weeklySlice.addOneTimeCost (with alreadyDeducted=true to note it’s immediate) and then subtracts cash.
   recordEventExpense: (amount: number, label: string) => {
-    const addOneTimeCost = (get() as any).addOneTimeCost;
+    const { addOneTimeCost } = get();
     if (addOneTimeCost) {
       addOneTimeCost(
         { label, amount, category: 'event' as const },
@@ -185,7 +187,7 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set,
         cash: state.metrics.cash - amount,
       },
     }));
-    const checkGameOver = (get() as any).checkGameOver;
+    const { checkGameOver } = get();
     if (checkGameOver) {
       checkGameOver();
     }

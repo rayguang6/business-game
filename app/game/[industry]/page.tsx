@@ -18,6 +18,7 @@ import { FullscreenToggle } from '@/app/game/components/ui/FullscreenToggle';
 import EventPopup from '@/app/game/components/ui/EventPopup';
 import GameOverPopup from '@/app/game/components/ui/GameOverPopup';
 import { useRandomEventTrigger } from '@/hooks/useRandomEventTrigger';
+import Image from 'next/image';
 
 export default function GamePage() {
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
@@ -133,7 +134,7 @@ export default function GamePage() {
                       ? 'bg-gray-100/50 rounded-full' 
                       : ''
                 }`}>
-                  <img 
+                  <Image 
                     src={tab.icon} 
                     alt={tab.label}
                     width={tab.isHome ? 48 : 32}

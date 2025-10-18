@@ -10,6 +10,7 @@ export interface WeeklySlice {
   weeklyOneTimeCostDetails: OneTimeCost[];
   weeklyOneTimeCostsPaid: number;
   weeklyHistory: WeeklyHistoryEntry[];
+  weeklyExpenseAdjustments: number;
   
   updateWeeklyRevenue: (amount: number) => void;
   updateWeeklyExpenses: (amount: number) => void;
@@ -27,6 +28,7 @@ export const createWeeklySlice: StateCreator<GameState, [], [], WeeklySlice> = (
   weeklyOneTimeCostDetails: [],
   weeklyOneTimeCostsPaid: 0,
   weeklyHistory: [],
+  weeklyExpenseAdjustments: 0,
   
   updateWeeklyRevenue: (amount: number) => {
     set((state) => ({
@@ -76,7 +78,8 @@ export const createWeeklySlice: StateCreator<GameState, [], [], WeeklySlice> = (
       weeklyOneTimeCosts: 0,
       weeklyOneTimeCostDetails: [],
       weeklyOneTimeCostsPaid: 0,
-      weeklyHistory: []
+      weeklyHistory: [],
+      weeklyExpenseAdjustments: 0
     });
   },
 });
