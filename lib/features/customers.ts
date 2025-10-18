@@ -191,6 +191,7 @@ export function tickCustomer(customer: Customer): Customer {
       return movedToChair;
 
     case CustomerStatus.Waiting:
+      // If patience runs out, customer leaves angrily. Else it remains the 'waiting' status
       const nextStatus = customer.patienceLeft <= 1 ? CustomerStatus.LeavingAngry : CustomerStatus.Waiting;
 
       return {

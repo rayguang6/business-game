@@ -41,11 +41,9 @@ export interface GameSlice {
   gameOverReason: 'cash' | 'reputation' | null;
   
   startGame: () => void;
-  stopGame: () => void;
   pauseGame: () => void;
   unpauseGame: () => void;
   resetAllGame: () => void;
-  updateGameTimer: () => void;
   tickGame: () => void;
   applyCashChange: (amount: number) => void;
   applyReputationChange: (amount: number) => void;
@@ -77,10 +75,6 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (
     });
   },
   
-  stopGame: () => {
-    set({ isGameStarted: false, isPaused: false });
-  },
-  
   pauseGame: () => {
     set({ isPaused: true });
   },
@@ -96,10 +90,6 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (
       weeklyExpenses: BASE_WEEKLY_EXPENSES,
       weeklyExpenseAdjustments: 0,
     });
-  },
-  
-  updateGameTimer: () => {
-    set((state) => ({ gameTime: state.gameTime + 1 }));
   },
   
   tickGame: () => {
@@ -136,6 +126,8 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (
       checkGameOver();
     }
   },
+
+  //adjust cash or reputation immediately and run checkGameOver afterward.
   applyCashChange: (amount: number) => {
     set((state) => ({
       metrics: { ...state.metrics, cash: state.metrics.cash + amount },
@@ -154,6 +146,8 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (
       checkGameOver();
     }
   },
+
+  //adds a revenue ledger entry, bumps weekly revenue, and updates cash/total revenue.
   recordEventRevenue: (amount: number, label: string = 'Event revenue') => {
     set((state) => ({
       weeklyRevenue: state.weeklyRevenue + amount,
@@ -172,6 +166,8 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (
       },
     }));
   },
+
+  // registers a one-time cost via weeklySlice.addOneTimeCost (with alreadyDeducted=true to note it’s immediate) and then subtracts cash.
   recordEventExpense: (amount: number, label: string) => {
     const addOneTimeCost = (get() as any).addOneTimeCost;
     if (addOneTimeCost) {
@@ -192,6 +188,7 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (
       checkGameOver();
     }
   },
+
   checkGameOver: () => {
     const state = get();
     if (state.isGameOver) return; // Already game over

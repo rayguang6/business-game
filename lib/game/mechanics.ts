@@ -105,6 +105,13 @@ const summarizeRevenueByCategory = (entries: RevenueEntry[]): RevenueEntry[] => 
   }));
 };
 
+// Runs endOfWeek to subtract expenses from cash and calculate profit.
+// Summarizes weekly revenue by category (customer, event, other).
+// Adds a WeeklyHistoryEntry so the UI can show a week-by-week log.
+// Resets weekly accumulators (weeklyRevenue, weeklyOneTimeCosts, details arrays).
+// Recomputes weeklyExpenses for the new week: base + upgrade-driven expenses.
+// Resets weeklyExpenseAdjustments to 0 (any upgrade deltas have now been rolled forward).
+// metrics.totalExpenses goes up by the new expenses (minus any adjustments we already tracked mid-week).
 function processWeekTransition({
   currentWeek,
   metrics,
@@ -182,6 +189,7 @@ function processCustomersForTick({
   const reputationMultiplier = upgradeEffects.reputationMultiplier;
 
   // Find already occupied waiting positions (including both current and target positions)
+  // occupiedWaitingPositions: the grid locations where someone is already sitting or heading; used to avoid overlap.
   const occupiedWaitingPositions = customers
     .filter(c => c.status === CustomerStatus.Waiting || c.status === CustomerStatus.WalkingToChair)
     .flatMap((c) => {
@@ -194,7 +202,7 @@ function processCustomersForTick({
       }
 
       return [];
-    });
+  });
 
   const baseDynamicWalls = occupiedWaitingPositions.map(pos => ({ x: pos.x, y: pos.y }));
 
@@ -232,6 +240,7 @@ function processCustomersForTick({
       }
     }
 
+    // If customer is waiting and there are available rooms, assign them to a room
     if (updatedCustomer.status === CustomerStatus.Waiting && roomsRemaining.length > 0) {
       const assignedRoom = roomsRemaining.shift()!;
       const customerWithService = startService(updatedCustomer, assignedRoom);
@@ -253,6 +262,7 @@ function processCustomersForTick({
       return;
     }
 
+    // If customer is leaving happy, add revenue and reputation
     if (updatedCustomer.status === CustomerStatus.WalkingOutHappy) {
       const servicePrice = updatedCustomer.service.price;
       
@@ -283,6 +293,7 @@ function processCustomersForTick({
       return;
     }
 
+    // If customer is leaving angry, deduct reputation and keep in game for exit animation
     if (customer.status !== CustomerStatus.LeavingAngry && updatedCustomer.status === CustomerStatus.LeavingAngry) {
       // Customer just became angry - deduct reputation and keep in game for exit animation
       const reputationLoss = BUSINESS_STATS.reputationLossPerAngryCustomer;
@@ -294,6 +305,7 @@ function processCustomersForTick({
       return;
     }
 
+    // If customer is leaving angry, keep in game for exit animation
     if (customer.status === CustomerStatus.LeavingAngry) {
       const leavingTicks = (customer.leavingTicks ?? 0) + 1;
       if (leavingTicks >= LEAVING_ANGRY_DURATION_TICKS) {
@@ -339,14 +351,17 @@ export function createInitialGameState(): Partial<GameState> {
 }
 
 /**
- * Pure tick processor: given the current store state, returns updated fields.
+ * Pure tick processor: given the current store state, returns updated fields. 
+ * (produce next tick given current snapshot.)
  */
 export function tickOnce(state: TickSnapshot): TickResult {
   const industryId = state.industryId ?? 'dental';
-  const nextTick = state.gameTick + 1;
 
+  //adds 1 to gameTime every 10 ticks (because TICKS_PER_SECOND = 10)
+  const nextTick = state.gameTick + 1;
   const nextGameTime = updateGameTimer(state.gameTime, nextTick);
 
+  //To keep it pure, the function copies arrays and objects (customers, metrics, weeklyRevenueDetails, etc.) before changing them.
   let customers = [...state.customers];
   let metrics = { ...state.metrics };
   let weeklyRevenue = state.weeklyRevenue;
@@ -359,6 +374,13 @@ export function tickOnce(state: TickSnapshot): TickResult {
   let currentWeek = state.currentWeek;
   let weeklyExpenseAdjustments = state.weeklyExpenseAdjustments ?? 0;
 
+  // If gameTime crosses to the next week (isNewWeek), call processWeekTransition. That:
+  // Runs endOfWeek to subtract expenses from cash.
+  // Summarizes revenue by category.
+  
+  // Adds a WeeklyHistoryEntry.
+  // Resets the weekly accumulators and recomputes weekly expenses (base + upgrade).
+  // Resets weeklyExpenseAdjustments (since upgrade deltas are now baked in).
   if (isNewWeek(nextGameTime, state.gameTime)) {
     const transition = processWeekTransition({
       currentWeek,
@@ -386,12 +408,16 @@ export function tickOnce(state: TickSnapshot): TickResult {
     weeklyExpenseAdjustments = transition.weeklyExpenseAdjustments;
   }
 
+
+  //Get the upgrade effects for the current upgrades.
   const upgradeEffects = getUpgradeEffects(state.upgrades);
 
+  //If the customer should spawn with the upgrades, create a new customer.
   if (shouldSpawnCustomerWithUpgrades(nextTick, state.upgrades, upgradeEffects)) {
     customers = [...customers, createCustomer(upgradeEffects.serviceSpeedMultiplier, industryId)];
   }
 
+  //Process customers for the tick.
   const {
     customers: processedCustomers,
     metrics: processedMetrics,
@@ -404,6 +430,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
     weeklyRevenueDetails,
     upgradeEffects,
   });
+
   weeklyRevenueDetails = processedRevenueDetails;
 
   return {
