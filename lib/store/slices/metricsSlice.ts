@@ -9,7 +9,7 @@ export const getInitialMetrics = (industryId: IndustryId = DEFAULT_INDUSTRY_ID):
   return {
     cash: metrics.startingCash,
     totalRevenue: 0,
-    totalExpenses: 0, //TODO: Should this  from config also?
+    totalExpenses: 0, 
     reputation: metrics.startingReputation,
   };
 };

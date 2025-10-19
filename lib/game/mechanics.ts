@@ -360,18 +360,6 @@ export function updateGameTimer(
 }
 
 /**
- * Creates initial game state
- */
-export function createInitialGameState(): Partial<GameState> {
-  return {
-    isGameStarted: false,
-    isPaused: false,
-    gameTime: 0,
-    gameTick: 0,
-  };
-}
-
-/**
  * Pure tick processor: given the current store state, returns updated fields. 
  * (produce next tick given current snapshot.)
  */
