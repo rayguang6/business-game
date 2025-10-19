@@ -8,7 +8,7 @@ import {
   getTicksPerSecondForIndustry,
   ticksToSeconds,
 } from '@/lib/game/config';
-import type { IndustryId } from '@/lib/game/types';
+import { IndustryId } from '@/lib/game/types';
 import { useGameStore } from '@/lib/store/gameStore';
 import { Character2DProps } from './Character2D';
 

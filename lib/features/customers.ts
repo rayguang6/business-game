@@ -13,7 +13,7 @@ import {
   getMovementConfigForIndustry,
   secondsToTicks,
 } from '@/lib/game/config';
-import type { IndustryId, GridPosition } from '@/lib/game/types';
+import { IndustryId, GridPosition } from '@/lib/game/types';
 
 // Types
 export enum CustomerStatus {

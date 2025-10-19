@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/store/gameStore';
 import { KeyMetrics } from './KeyMetrics';
 import { DEFAULT_INDUSTRY_ID, getRoundDurationSecondsForIndustry } from '@/lib/game/config';
-import type { IndustryId } from '@/lib/game/types';
+import { IndustryId } from '@/lib/game/types';
 import { useAudioControls } from '@/hooks/useAudio';
 import Image from 'next/image';
 

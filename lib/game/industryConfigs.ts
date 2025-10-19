@@ -1,6 +1,6 @@
 import { sampleEvents } from './events';
 import type { GameEvent } from '@/lib/types/gameEvents';
-import type {
+import {
   BusinessMetrics,
   BusinessStats,
   MovementConfig,
@@ -401,22 +401,22 @@ const SHARED_BASE = {
 } as const;
 
 const INDUSTRY_SIMULATION_CONFIGS: Record<IndustryId, IndustrySimulationConfig> = {
-  dental: {
-    id: 'dental',
+  [IndustryId.Dental]: {
+    id: IndustryId.Dental,
     ...SHARED_BASE,
     services: DENTAL_SERVICES,
     upgrades: DENTAL_UPGRADES,
     events: DENTAL_EVENTS,
   },
-  restaurant: {
-    id: 'restaurant',
+  [IndustryId.Restaurant]: {
+    id: IndustryId.Restaurant,
     ...SHARED_BASE,
     services: RESTAURANT_SERVICES,
     upgrades: RESTAURANT_UPGRADES,
     events: RESTAURANT_EVENTS,
   },
-  gym: {
-    id: 'gym',
+  [IndustryId.Gym]: {
+    id: IndustryId.Gym,
     ...SHARED_BASE,
     services: GYM_SERVICES,
     upgrades: GYM_UPGRADES,
@@ -424,8 +424,8 @@ const INDUSTRY_SIMULATION_CONFIGS: Record<IndustryId, IndustrySimulationConfig> 
   },
 };
 
-export function getIndustrySimulationConfig(industryId: string): IndustrySimulationConfig {
-  return INDUSTRY_SIMULATION_CONFIGS[industryId as IndustryId] ?? INDUSTRY_SIMULATION_CONFIGS.dental;
+export function getIndustrySimulationConfig(industryId: IndustryId): IndustrySimulationConfig {
+  return INDUSTRY_SIMULATION_CONFIGS[industryId] ?? INDUSTRY_SIMULATION_CONFIGS[IndustryId.Dental];
 }
 
 export function getAllSimulationConfigs(): IndustrySimulationConfig[] {

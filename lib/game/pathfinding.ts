@@ -1,12 +1,12 @@
-import type { GridPosition } from './positioning';
 import { getMapConfigForIndustry, type MapConfig } from './config';
+import type { GridPosition, IndustryId } from './types';
 
 
 interface FindPathOptions {
   mapConfig?: MapConfig;
   additionalWalls?: GridPosition[];
   allowGoalOccupied?: boolean;
-  industryId?: string; // Add industryId to options
+  industryId?: IndustryId; // Add industryId to options
 }
 
 const DIRECTIONS: GridPosition[] = [

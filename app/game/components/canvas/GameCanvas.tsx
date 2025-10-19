@@ -10,7 +10,7 @@ import { SpriteCustomer } from './SpriteCustomer';
 import { GridOverlay } from './GridOverlay';
 import { getUpgradeEffects } from '@/lib/features/upgrades';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
-import type { IndustryId } from '@/lib/game/types';
+import { IndustryId } from '@/lib/game/types';
 
 // Canvas scaling configuration
 const CANVAS_CONFIG = {
