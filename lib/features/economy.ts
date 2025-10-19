@@ -11,7 +11,7 @@ import {
   getUpgradeById,
   UpgradeDefinition,
 } from '@/lib/game/config';
-import type { IndustryId, UpgradeId } from '@/lib/game/types';
+import { IndustryId, UpgradeId } from '@/lib/game/types';
 import { calculateActiveUpgradeMetrics, getUpgradeLevel } from './upgrades';
 import { Upgrades } from '@/lib/store/types';
 
@@ -36,7 +36,7 @@ export function addServiceRevenue(currentMoney: number, servicePrice: number): n
 export function addServiceScore(
   currentScore: number,
   reputationMultiplier: number = 1,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): number {
   const scorePerCustomer = getBusinessStats(industryId).reputationGainPerHappyCustomer;
   const reputationGain = Math.floor(scorePerCustomer * reputationMultiplier);
@@ -51,7 +51,7 @@ export function processServiceCompletion(
   currentReputation: number, 
   servicePrice: number,
   reputationMultiplier: number = 1,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): { cash: number; reputation: number } {
   return {
     cash: addServiceRevenue(currentCash, servicePrice), 
@@ -62,13 +62,13 @@ export function processServiceCompletion(
 /**
  * Returns the baseline weekly operating expenses
  */
-export function getWeeklyBaseExpenses(industryId: IndustryId = DEFAULT_INDUSTRY_ID): number {
+export function getWeeklyBaseExpenses(industryId: IndustryId): number {
   return getBusinessMetrics(industryId).weeklyExpenses;
 }
 
 function calculateUpgradeExpenseFromDefinition(
   upgrade: UpgradeDefinition,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): number {
   const baseWeeklyExpenses = getWeeklyBaseExpenses(industryId);
   return upgrade.effects
@@ -89,7 +89,7 @@ function calculateUpgradeExpenseFromDefinition(
 export function buildWeeklyExpenseBreakdown(
   upgrades: Upgrades,
   weeklyOneTimeCosts: number = 0,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): ExpenseBreakdownItem[] {
   const breakdown: ExpenseBreakdownItem[] = [
     {
@@ -133,7 +133,7 @@ export function buildWeeklyExpenseBreakdown(
  */
 export function calculateUpgradeWeeklyExpenses(
   upgrades: Upgrades,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): number {
   const { currentMetrics } = calculateActiveUpgradeMetrics(upgrades, industryId);
   const baseMetrics = getBaseUpgradeMetricsForIndustry(industryId);
@@ -150,7 +150,7 @@ export function endOfWeek(
   weeklyExpenses: number = 0,
   weeklyOneTimeCosts: number = 0,
   weeklyOneTimeCostsPaid: number = 0,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): { cash: number; profit: number; totalExpenses: number; baseExpenses: number; additionalExpenses: number; oneTimeCosts: number } {
   // weeklyExpenses already contains base expenses, so don't add them again
   // Total expenses = weeklyExpenses (which includes base) + one-time costs
@@ -189,7 +189,7 @@ export function handleWeekTransition(
   weeklyOneTimeCostsPaid: number,
   currentReputation: number,
   upgrades: Upgrades,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): {
   currentWeek: number;
   cash: number;
