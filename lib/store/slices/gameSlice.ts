@@ -5,11 +5,11 @@ import { GameState } from '../types';
 import { getInitialMetrics } from './metricsSlice';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import { GameStore } from '../gameStore';
-import type { IndustryId } from '@/lib/game/types';
+import { IndustryId } from '@/lib/game/types';
 
 // Shared initial game state - DRY principle
 const getInitialGameState = (
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
   keepIndustry: boolean = false,
 ) => {
   const baseWeeklyExpenses = getWeeklyBaseExpenses(industryId);
@@ -90,8 +90,8 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
   resetAllGame: () => {
     // Reset everything to initial state including industry selection
     set({
-      ...getInitialGameState(DEFAULT_INDUSTRY_ID as IndustryId, false), // keepIndustry = false
-      weeklyExpenses: getWeeklyBaseExpenses(DEFAULT_INDUSTRY_ID as IndustryId),
+      ...getInitialGameState(DEFAULT_INDUSTRY_ID, false), // keepIndustry = false
+      weeklyExpenses: getWeeklyBaseExpenses(DEFAULT_INDUSTRY_ID),
       weeklyExpenseAdjustments: 0,
     });
   },
@@ -118,7 +118,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
         weeklyOneTimeCostsPaid: state.weeklyOneTimeCostsPaid,
         upgrades: state.upgrades,
         weeklyHistory: state.weeklyHistory,
-        industryId: state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID,
+        industryId: (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId,
         weeklyExpenseAdjustments: state.weeklyExpenseAdjustments,
       });
       return { ...state, ...updated };

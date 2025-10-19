@@ -9,6 +9,8 @@ import {
 } from '@/lib/game/config';
 import { calculateUpgradeWeeklyExpenses, getWeeklyBaseExpenses } from '@/lib/features/economy';
 import { getUpgradeLevel, canUpgradeMore } from '@/lib/features/upgrades';
+import { GameStore } from '../gameStore';
+import type { IndustryId } from '@/lib/game/types';
 
 export interface UpgradesSlice {
   upgrades: Upgrades;
@@ -21,7 +23,7 @@ export interface UpgradesSlice {
   resetUpgrades: () => void;
 }
 
-export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice> = (set, get) => ({
+export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice> = (set, get) => ({
   upgrades: {},
 
   canAffordUpgrade: (cost: number) => {
@@ -34,22 +36,22 @@ export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice>
   },
 
   canUpgradeMore: (upgradeId: UpgradeId) => {
-    const industryId = get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
+    const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
     return canUpgradeMore(get().upgrades, upgradeId, industryId);
   },
 
   getUpgradeDefinition: (upgradeId: UpgradeId) => {
-    const industryId = get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
+    const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
     return getUpgradeById(upgradeId, industryId) ?? null;
   },
 
   getAvailableUpgrades: () => {
-    const industryId = get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
+    const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
     return getAllUpgrades(industryId);
   },
 
   purchaseUpgrade: (upgradeId: UpgradeId) => {
-    const industryId = get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
+    const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
     const upgrade = getUpgradeById(upgradeId, industryId);
 
     if (!upgrade) {
@@ -82,7 +84,7 @@ export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice>
 
     set((state) => {
       // Add upgrade purchase as a one-time cost (this will be tracked in weekly history)
-      const addOneTimeCost = (state as any).addOneTimeCost;
+      const { addOneTimeCost } = state;
       if (addOneTimeCost) {
         addOneTimeCost({
           label: upgradeLabel,
@@ -104,7 +106,7 @@ export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice>
     });
 
     // Deduct cash after the upgrade is processed (this will trigger game over check)
-    const applyCashChange = (get() as any).applyCashChange;
+    const { applyCashChange } = get();
     if (applyCashChange) {
       applyCashChange(-upgrade.cost);
     }
@@ -114,7 +116,7 @@ export const createUpgradesSlice: StateCreator<GameState, [], [], UpgradesSlice>
   },
 
   resetUpgrades: () => {
-    const industryId = get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
+    const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
     set({
       upgrades: {},
       weeklyExpenses: getWeeklyBaseExpenses(industryId),

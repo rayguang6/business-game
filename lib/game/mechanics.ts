@@ -30,7 +30,7 @@ import {
 } from '@/lib/features/economy';
 import { shouldSpawnCustomerWithUpgrades, getUpgradeEffects, UpgradeEffects } from '@/lib/features/upgrades';
 import { getWaitingPositions, getServiceRoomPosition } from '@/lib/game/positioning';
-import type { IndustryId } from '@/lib/game/types';
+import { IndustryId } from '@/lib/game/types';
 import { findPath } from '@/lib/game/pathfinding';
 import { audioManager, AudioFx } from '@/lib/audio/audioManager';
 
@@ -48,7 +48,7 @@ interface TickSnapshot {
   weeklyOneTimeCostsPaid: number;
   weeklyHistory: WeeklyHistoryEntry[];
   upgrades: Upgrades;
-  industryId?: string;
+  industryId?: IndustryId;
   weeklyExpenseAdjustments: number;
 }
 
@@ -346,7 +346,7 @@ function processCustomersForTick({
 export function updateGameTimer(
   gameTime: number,
   gameTick: number,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): number {
   const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
   const ticksPerSecondRounded = Math.max(1, Math.round(ticksPerSecond));
