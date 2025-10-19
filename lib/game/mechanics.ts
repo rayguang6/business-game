@@ -359,8 +359,83 @@ export function updateGameTimer(
   return gameTime;
 }
 
+interface WeekPreparationState {
+  metrics: Metrics;
+  weeklyRevenue: number;
+  weeklyExpenses: number;
+  weeklyRevenueDetails: RevenueEntry[];
+  weeklyOneTimeCosts: number;
+  weeklyOneTimeCostDetails: OneTimeCost[];
+  weeklyOneTimeCostsPaid: number;
+  weeklyHistory: WeeklyHistoryEntry[];
+  currentWeek: number;
+  weeklyExpenseAdjustments: number;
+}
+
+function applyWeekTransitionIfNeeded(
+  state: TickSnapshot,
+  industryId: IndustryId,
+  nextGameTime: number,
+): WeekPreparationState {
+  const cloneCurrentWeekState = (): WeekPreparationState => ({
+    metrics: { ...state.metrics },
+    weeklyRevenue: state.weeklyRevenue,
+    weeklyExpenses: state.weeklyExpenses,
+    weeklyRevenueDetails: [...state.weeklyRevenueDetails],
+    weeklyOneTimeCosts: state.weeklyOneTimeCosts,
+    weeklyOneTimeCostDetails: [...state.weeklyOneTimeCostDetails],
+    weeklyOneTimeCostsPaid: state.weeklyOneTimeCostsPaid ?? 0,
+    weeklyHistory: [...state.weeklyHistory],
+    currentWeek: state.currentWeek,
+    weeklyExpenseAdjustments: state.weeklyExpenseAdjustments ?? 0,
+  });
+
+  if (!isNewWeek(nextGameTime, state.gameTime, industryId)) {
+    return cloneCurrentWeekState();
+  }
+
+  const transition = processWeekTransition({
+    currentWeek: state.currentWeek,
+    metrics: state.metrics,
+    weeklyRevenue: state.weeklyRevenue,
+    weeklyExpenses: state.weeklyExpenses,
+    weeklyRevenueDetails: state.weeklyRevenueDetails,
+    weeklyOneTimeCosts: state.weeklyOneTimeCosts,
+    weeklyOneTimeCostDetails: state.weeklyOneTimeCostDetails,
+    weeklyOneTimeCostsPaid: state.weeklyOneTimeCostsPaid ?? 0,
+    weeklyHistory: state.weeklyHistory,
+    weeklyExpenseAdjustments: state.weeklyExpenseAdjustments ?? 0,
+    upgrades: state.upgrades,
+    industryId,
+  });
+
+  return {
+    metrics: transition.metrics,
+    weeklyRevenue: transition.weeklyRevenue,
+    weeklyExpenses: transition.weeklyExpenses,
+    weeklyRevenueDetails: transition.weeklyRevenueDetails,
+    weeklyOneTimeCosts: transition.weeklyOneTimeCosts,
+    weeklyOneTimeCostDetails: transition.weeklyOneTimeCostDetails,
+    weeklyOneTimeCostsPaid: transition.weeklyOneTimeCostsPaid,
+    weeklyHistory: transition.weeklyHistory,
+    currentWeek: transition.currentWeek,
+    weeklyExpenseAdjustments: transition.weeklyExpenseAdjustments,
+  };
+}
+
+function resolveUpgradeEffects(
+  upgrades: Upgrades,
+  industryId: IndustryId,
+): UpgradeEffects {
+  return getUpgradeEffects(upgrades, industryId);
+}
+
+function processCustomersWithEffects(params: ProcessCustomersParams): ProcessCustomersResult {
+  return processCustomersForTick(params);
+}
+
 /**
- * Pure tick processor: given the current store state, returns updated fields. 
+ * Pure tick processor: given the current store state, returns updated fields.
  * (produce next tick given current snapshot.)
  */
 export function tickOnce(state: TickSnapshot): TickResult {
@@ -370,57 +445,23 @@ export function tickOnce(state: TickSnapshot): TickResult {
   const nextTick = state.gameTick + 1;
   const nextGameTime = updateGameTimer(state.gameTime, nextTick, industryId);
 
-  //To keep it pure, the function copies arrays and objects (customers, metrics, weeklyRevenueDetails, etc.) before changing them.
+  const preparedWeek = applyWeekTransitionIfNeeded(state, industryId, nextGameTime);
+
+  // To keep it pure, the function copies arrays and objects (customers, metrics, weeklyRevenueDetails, etc.) before changing them.
   let customers = [...state.customers];
-  let metrics = { ...state.metrics };
-  let weeklyRevenue = state.weeklyRevenue;
-  let weeklyExpenses = state.weeklyExpenses;
-  let weeklyRevenueDetails = [...state.weeklyRevenueDetails];
-  let weeklyOneTimeCosts = state.weeklyOneTimeCosts;
-  let weeklyOneTimeCostDetails = [...state.weeklyOneTimeCostDetails];
-  let weeklyOneTimeCostsPaid = state.weeklyOneTimeCostsPaid ?? 0;
-  let weeklyHistory = [...state.weeklyHistory];
-  let currentWeek = state.currentWeek;
-  let weeklyExpenseAdjustments = state.weeklyExpenseAdjustments ?? 0;
-
-  // If gameTime crosses to the next week (isNewWeek), call processWeekTransition. That:
-  // Runs endOfWeek to subtract expenses from cash.
-  // Summarizes revenue by category.
-  
-  // Adds a WeeklyHistoryEntry.
-  // Resets the weekly accumulators and recomputes weekly expenses (base + upgrade).
-  // Resets weeklyExpenseAdjustments (since upgrade deltas are now baked in).
-  if (isNewWeek(nextGameTime, state.gameTime, industryId)) {
-    const transition = processWeekTransition({
-      currentWeek,
-      metrics,
-      weeklyRevenue,
-      weeklyExpenses,
-      weeklyRevenueDetails,
-      weeklyOneTimeCosts,
-      weeklyOneTimeCostDetails,
-      weeklyOneTimeCostsPaid,
-      weeklyHistory,
-      weeklyExpenseAdjustments,
-      upgrades: state.upgrades,
-      industryId,
-    });
-
-    metrics = transition.metrics;
-    weeklyRevenue = transition.weeklyRevenue;
-    weeklyExpenses = transition.weeklyExpenses;
-    weeklyRevenueDetails = transition.weeklyRevenueDetails;
-    weeklyOneTimeCosts = transition.weeklyOneTimeCosts;
-    weeklyOneTimeCostDetails = transition.weeklyOneTimeCostDetails;
-    weeklyOneTimeCostsPaid = transition.weeklyOneTimeCostsPaid;
-    weeklyHistory = transition.weeklyHistory;
-    currentWeek = transition.currentWeek;
-    weeklyExpenseAdjustments = transition.weeklyExpenseAdjustments;
-  }
-
+  let metrics = { ...preparedWeek.metrics };
+  let weeklyRevenue = preparedWeek.weeklyRevenue;
+  let weeklyExpenses = preparedWeek.weeklyExpenses;
+  let weeklyRevenueDetails = [...preparedWeek.weeklyRevenueDetails];
+  let weeklyOneTimeCosts = preparedWeek.weeklyOneTimeCosts;
+  let weeklyOneTimeCostDetails = [...preparedWeek.weeklyOneTimeCostDetails];
+  let weeklyOneTimeCostsPaid = preparedWeek.weeklyOneTimeCostsPaid;
+  let weeklyHistory = [...preparedWeek.weeklyHistory];
+  let currentWeek = preparedWeek.currentWeek;
+  let weeklyExpenseAdjustments = preparedWeek.weeklyExpenseAdjustments;
 
   //Get the upgrade effects for the current upgrades.
-  const upgradeEffects = getUpgradeEffects(state.upgrades, industryId);
+  const upgradeEffects = resolveUpgradeEffects(state.upgrades, industryId);
 
   //If the customer should spawn with the upgrades, create a new customer.
   if (shouldSpawnCustomerWithUpgrades(nextTick, state.upgrades, industryId, upgradeEffects)) {
@@ -428,12 +469,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
   }
 
   //Process customers for the tick.
-  const {
-    customers: processedCustomers,
-    metrics: processedMetrics,
-    weeklyRevenue: processedWeeklyRevenue,
-    weeklyRevenueDetails: processedRevenueDetails,
-  } = processCustomersForTick({
+  const processedCustomersForTick = processCustomersWithEffects({
     customers,
     metrics,
     weeklyRevenue,
@@ -442,15 +478,18 @@ export function tickOnce(state: TickSnapshot): TickResult {
     industryId,
   });
 
-  weeklyRevenueDetails = processedRevenueDetails;
+  customers = processedCustomersForTick.customers;
+  metrics = processedCustomersForTick.metrics;
+  weeklyRevenue = processedCustomersForTick.weeklyRevenue;
+  weeklyRevenueDetails = processedCustomersForTick.weeklyRevenueDetails;
 
   return {
     gameTick: nextTick,
     gameTime: nextGameTime,
     currentWeek,
-    customers: processedCustomers,
-    metrics: processedMetrics,
-    weeklyRevenue: processedWeeklyRevenue,
+    customers,
+    metrics,
+    weeklyRevenue,
     weeklyExpenses,
     weeklyRevenueDetails,
     weeklyOneTimeCosts,
