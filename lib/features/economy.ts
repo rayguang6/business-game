@@ -24,42 +24,6 @@ export interface ExpenseBreakdownItem {
 
 // Mechanics
 /**
- * Adds revenue from a completed service
- */
-export function addServiceRevenue(currentMoney: number, servicePrice: number): number {
-  return currentMoney + servicePrice;
-}
-
-/**
- * Adds score from a completed service
- */
-export function addServiceScore(
-  currentScore: number,
-  reputationMultiplier: number = 1,
-  industryId: IndustryId,
-): number {
-  const scorePerCustomer = getBusinessStats(industryId).reputationGainPerHappyCustomer;
-  const reputationGain = Math.floor(scorePerCustomer * reputationMultiplier);
-  return currentScore + reputationGain;
-}
-
-/**
- * Processes a completed service and returns updated economy state
- */
-export function processServiceCompletion(
-  currentCash: number, 
-  currentReputation: number, 
-  servicePrice: number,
-  reputationMultiplier: number = 1,
-  industryId: IndustryId,
-): { cash: number; reputation: number } {
-  return {
-    cash: addServiceRevenue(currentCash, servicePrice), 
-    reputation: addServiceScore(currentReputation, reputationMultiplier, industryId)
-  };
-}
-
-/**
  * Returns the baseline weekly operating expenses
  */
 export function getWeeklyBaseExpenses(industryId: IndustryId): number {
@@ -174,49 +138,5 @@ export function endOfWeek(
     baseExpenses,
     additionalExpenses,
     oneTimeCosts: weeklyOneTimeCosts
-  };
-}
-
-/**
- * Handles week transition logic
- */
-export function handleWeekTransition(
-  currentWeek: number,
-  currentCash: number,
-  weeklyRevenue: number,
-  weeklyExpenses: number,
-  weeklyOneTimeCosts: number,
-  weeklyOneTimeCostsPaid: number,
-  currentReputation: number,
-  upgrades: Upgrades,
-  industryId: IndustryId,
-): {
-  currentWeek: number;
-  cash: number;
-  weeklyRevenue: number;
-  weeklyExpenses: number;
-  weeklyOneTimeCosts: number;
-  reputation: number;
-  weeklyExpenseAdjustments: number;
-} {
-  const { cash } = endOfWeek(
-    currentCash,
-    weeklyRevenue,
-    weeklyExpenses,
-    weeklyOneTimeCosts,
-    weeklyOneTimeCostsPaid,
-    industryId,
-  );
-
-  return {
-    currentWeek: currentWeek + 1,
-    cash,
-    weeklyRevenue: 0, // Reset weekly tracking
-    weeklyExpenses:
-      getWeeklyBaseExpenses(industryId) +
-      calculateUpgradeWeeklyExpenses(upgrades, industryId),
-    weeklyOneTimeCosts: 0, // Reset one-time costs
-    reputation: currentReputation, // Reputation persists
-    weeklyExpenseAdjustments: 0,
   };
 }
