@@ -4,10 +4,11 @@
  */
 
 import { Service, getServicesForIndustry } from './services';
+import { IndustryId } from '@/lib/game/types';
 
 // Types
 export interface Industry {
-  id: string;
+  id: IndustryId;
   name: string;
   icon: string;
   description: string;
@@ -18,19 +19,19 @@ export interface Industry {
 }
 
 // Dental Services Configuration (now using centralized config)
-export const DENTAL_SERVICES: Service[] = getServicesForIndustry('dental');
+export const DENTAL_SERVICES: Service[] = getServicesForIndustry(IndustryId.Dental);
 export const DENTAL_SERVICE_IDS = DENTAL_SERVICES.map(service => service.id);
 
-export const RESTAURANT_SERVICES: Service[] = getServicesForIndustry('restaurant');
+export const RESTAURANT_SERVICES: Service[] = getServicesForIndustry(IndustryId.Restaurant);
 export const RESTAURANT_SERVICE_IDS = RESTAURANT_SERVICES.map(service => service.id);
 
-export const GYM_SERVICES: Service[] = getServicesForIndustry('gym');
+export const GYM_SERVICES: Service[] = getServicesForIndustry(IndustryId.Gym);
 export const GYM_SERVICE_IDS = GYM_SERVICES.map(service => service.id);
 
 // Industry Definitions
 //TODO: Extract to Config, and later Database
 export const DentalIndustry: Industry = {
-  id: 'dental',
+  id: IndustryId.Dental,
   name: 'Dental Clinic',
   icon: '🦷',
   description: 'Keep your patients smiling with clean teeth!',
@@ -41,7 +42,7 @@ export const DentalIndustry: Industry = {
 };
 
 export const RestaurantIndustry: Industry = {
-  id: 'restaurant',
+  id: IndustryId.Restaurant,
   name: 'Restaurant',
   icon: '🍽️',
   description: 'Serve delicious meals and build a culinary empire!',
@@ -52,7 +53,7 @@ export const RestaurantIndustry: Industry = {
 };
 
 export const GymIndustry: Industry = {
-  id: 'gym',
+  id: IndustryId.Gym,
   name: 'Fitness Gym',
   icon: '💪',
   description: 'Help people get fit and build a healthy community!',
@@ -63,13 +64,12 @@ export const GymIndustry: Industry = {
 };
 
 // Industry Registry
-export const INDUSTRIES = {
-  dental: DentalIndustry,
-  restaurant: RestaurantIndustry,
-  gym: GymIndustry,
+export const INDUSTRIES: Record<IndustryId, Industry> = {
+  [IndustryId.Dental]: DentalIndustry,
+  [IndustryId.Restaurant]: RestaurantIndustry,
+  [IndustryId.Gym]: GymIndustry,
 } as const;
 
-export type IndustryId = keyof typeof INDUSTRIES;
 
 /**
  * Gets all available industries
@@ -81,6 +81,6 @@ export function getAllIndustries(): Industry[] {
 /**
  * Finds an industry by ID
  */
-export function getIndustryById(id: string): Industry | undefined {
-  return INDUSTRIES[id as IndustryId];
+export function getIndustryById(id: IndustryId): Industry | undefined {
+  return INDUSTRIES[id];
 }

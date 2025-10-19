@@ -6,7 +6,7 @@ import { useGameStore } from '@/lib/store/gameStore';
 import { getUpgradeSummary, getUpgradeCatalog } from '@/lib/features/upgrades';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { UpgradeEffect } from '@/lib/game/config';
-import type { IndustryId } from '@/lib/game/types';
+import { IndustryId } from '@/lib/game/types';
 
 const metricLabels: Record<string, string> = {
   treatmentRooms: 'Treatment Rooms',

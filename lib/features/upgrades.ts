@@ -15,7 +15,7 @@ import {
 } from '@/lib/game/config';
 import { calculateUpgradeMetrics, UpgradeMetricsResult } from '@/lib/game/upgradeEngine';
 import { Upgrades } from '@/lib/store/types';
-import type { IndustryId } from '@/lib/game/types';
+import { IndustryId } from '@/lib/game/types';
 
 export type ActiveUpgradeIds = UpgradeId[]; // Legacy type for compatibility
 
@@ -35,7 +35,7 @@ interface UpgradeWithLevel {
 
 function resolveActiveUpgrades(
   upgrades: Upgrades,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): UpgradeWithLevel[] {
   return Object.entries(upgrades)
     .filter(([_, level]) => level > 0)
@@ -48,7 +48,7 @@ function resolveActiveUpgrades(
 
 export function calculateActiveUpgradeMetrics(
   upgrades: Upgrades,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): UpgradeMetricsResult {
   const activeUpgrades = resolveActiveUpgrades(upgrades, industryId);
   // Expand upgrades by their levels with multiplied effects
@@ -65,7 +65,7 @@ export function calculateActiveUpgradeMetrics(
 
 export function getUpgradeEffects(
   upgrades: Upgrades,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): UpgradeEffects {
   const { currentMetrics } = calculateActiveUpgradeMetrics(upgrades, industryId);
 
@@ -84,28 +84,28 @@ export function getUpgradeEffects(
 
 export function getEffectiveSpawnInterval(
   upgrades: Upgrades,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): number {
   return getUpgradeEffects(upgrades, industryId).spawnIntervalTicks;
 }
 
 export function getEffectiveServiceSpeedMultiplier(
   upgrades: Upgrades,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): number {
   return getUpgradeEffects(upgrades, industryId).serviceSpeedMultiplier;
 }
 
 export function getEffectiveReputationMultiplier(
   upgrades: Upgrades,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): number {
   return getUpgradeEffects(upgrades, industryId).reputationMultiplier;
 }
 
 export function getEffectiveTreatmentRooms(
   upgrades: Upgrades,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): number {
   return getUpgradeEffects(upgrades, industryId).treatmentRooms;
 }
@@ -113,20 +113,20 @@ export function getEffectiveTreatmentRooms(
 export function shouldSpawnCustomerWithUpgrades(
   gameTick: number,
   upgrades: Upgrades,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
   effects?: UpgradeEffects,
 ): boolean {
   const upgradeEffects = effects ?? getUpgradeEffects(upgrades, industryId);
   return upgradeEffects.spawnIntervalTicks > 0 && gameTick % upgradeEffects.spawnIntervalTicks === 0;
 }
 
-export function getUpgradeCatalog(industryId: IndustryId = DEFAULT_INDUSTRY_ID): UpgradeDefinition[] {
+export function getUpgradeCatalog(industryId: IndustryId): UpgradeDefinition[] {
   return getAllUpgrades(industryId);
 }
 
 export function getUpgradeSummary(
   upgrades: Upgrades,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): UpgradeMetricsResult {
   return calculateActiveUpgradeMetrics(upgrades, industryId);
 }
@@ -138,7 +138,7 @@ export function getUpgradeLevel(upgrades: Upgrades, upgradeId: UpgradeId): numbe
 export function canUpgradeMore(
   upgrades: Upgrades,
   upgradeId: UpgradeId,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): boolean {
   const upgrade = getUpgradeById(upgradeId, industryId);
   if (!upgrade) return false;

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { getMovementConfigForIndustry } from '@/lib/game/config';
 import { useGameStore } from '@/lib/store/gameStore';
+import { IndustryId } from '@/lib/game/types';
 
 // 32x32px tile system configuration
 const TILE_SIZE = 32;
@@ -31,7 +32,7 @@ export function Character2D({
   isCelebrating = false
 }: Character2DProps) {
   const [currentFrame, setCurrentFrame] = useState(frame);
-  const selectedIndustryId = useGameStore((state) => state.selectedIndustry?.id);
+  const selectedIndustryId = useGameStore((state) => state.selectedIndustry?.id as IndustryId | undefined);
   const {
     customerTilesPerTick,
     animationReferenceTilesPerTick,

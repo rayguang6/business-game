@@ -3,7 +3,7 @@
 import React from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
 import { DEFAULT_INDUSTRY_ID, getRoundDurationSecondsForIndustry } from '@/lib/game/config';
-import type { IndustryId } from '@/lib/game/types';
+import { IndustryId } from '@/lib/game/types';
 
 export function WeekProgress() {
   const { gameTime, currentWeek, selectedIndustry } = useGameStore();

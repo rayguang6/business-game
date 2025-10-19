@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
 import { DEFAULT_INDUSTRY_ID, getTickIntervalMsForIndustry } from '@/lib/game/config';
-import type { IndustryId } from '@/lib/game/types';
+import { IndustryId } from '@/lib/game/types';
 
 export const useGameLoop = () => {
   const isGameStarted = useGameStore((state) => state.isGameStarted);

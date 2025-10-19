@@ -1,5 +1,5 @@
 import { getIndustrySimulationConfig, getAllSimulationConfigs } from './industryConfigs';
-import type {
+import {
   BusinessMetrics,
   BusinessStats,
   MapConfig,
@@ -46,7 +46,7 @@ export type {
 // exports above and remove the legacy constants.
 // -----------------------------------------------------------------------------
 
-export const DEFAULT_INDUSTRY_ID: IndustryId = 'dental';
+export const DEFAULT_INDUSTRY_ID: IndustryId = IndustryId.Dental;
 
 export function getSimulationConfig(
   industryId: IndustryId = DEFAULT_INDUSTRY_ID,

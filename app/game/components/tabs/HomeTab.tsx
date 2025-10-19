@@ -8,7 +8,7 @@ import {
   getBaseUpgradeMetricsForIndustry,
 } from '@/lib/game/config';
 import { getUpgradeEffects } from '@/lib/features/upgrades';
-import type { IndustryId } from '@/lib/game/types';
+import { IndustryId } from '@/lib/game/types';
 
 interface StatItem {
   label: string;

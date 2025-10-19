@@ -1,6 +1,10 @@
 import { GameEvent } from '@/lib/types/gameEvents';
 
-export type IndustryId = 'dental' | 'restaurant' | 'gym';
+export enum IndustryId {
+  Dental = 'dental',
+  Restaurant = 'restaurant',
+  Gym = 'gym',
+}
 
 export interface BusinessMetrics {
   startingCash: number;

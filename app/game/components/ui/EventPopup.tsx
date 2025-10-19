@@ -2,20 +2,18 @@ import React, { useEffect, useRef, useState } from "react";
 import { useGameStore } from "../../../../lib/store/gameStore";
 import { GameEvent, GameEventChoice, GameEventEffect } from "../../../../lib/types/gameEvents";
 
-const getEffectIcon = (type: string) => {
+const getEffectIcon = (type: GameEventEffect['type']) => {
   switch (type) {
     case 'cash':
       return '💰';
     case 'reputation':
       return '⭐';
-    case 'oneTimeCost':
-      return '💸';
     default:
       return '';
   }
 };
 
-const getEffectColorClass = (type: string, amount: number) => {
+const getEffectColorClass = (type: GameEventEffect['type'], amount: number) => {
   if (type === 'reputation') {
     return amount > 0 ? 'text-green-700' : 'text-red-600'; // Darker green for reputation
   }
@@ -24,7 +22,7 @@ const getEffectColorClass = (type: string, amount: number) => {
 
 const formatEffect = (effect: GameEventEffect) => {
   let prefix = '';
-  if (effect.type === 'cash' || effect.type === 'oneTimeCost') {
+  if (effect.type === 'cash') {
     prefix = '$';
   }
   const sign = effect.amount >= 0 ? '+' : '';

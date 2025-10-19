@@ -7,17 +7,17 @@
  */
 
 import { DEFAULT_INDUSTRY_ID, getLayoutConfig } from '@/lib/game/config';
-import type { GridPosition, IndustryId } from '@/lib/game/types';
+import { GridPosition, IndustryId } from '@/lib/game/types';
 
-export function getWaitingPositions(industryId: IndustryId = DEFAULT_INDUSTRY_ID): GridPosition[] {
+export function getWaitingPositions(industryId: IndustryId): GridPosition[] {
   return getLayoutConfig(industryId).waitingPositions;
 }
 
-export function getServiceRoomPositions(industryId: IndustryId = DEFAULT_INDUSTRY_ID): GridPosition[] {
+export function getServiceRoomPositions(industryId: IndustryId): GridPosition[] {
   return getLayoutConfig(industryId).serviceRoomPositions;
 }
 
-export function getEntryPosition(industryId: IndustryId = DEFAULT_INDUSTRY_ID): GridPosition {
+export function getEntryPosition(industryId: IndustryId): GridPosition {
   return getLayoutConfig(industryId).entryPosition;
 }
 
@@ -27,7 +27,7 @@ export function getEntryPosition(industryId: IndustryId = DEFAULT_INDUSTRY_ID): 
  */
 export function getAvailableWaitingPosition(
   occupiedPositions: GridPosition[],
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): GridPosition | null {
   const waitingPositions = getWaitingPositions(industryId);
   for (const position of waitingPositions) {
@@ -46,7 +46,7 @@ export function getAvailableWaitingPosition(
  */
 export function getServiceRoomPosition(
   roomId: number,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): GridPosition | null {
   const positions = getServiceRoomPositions(industryId);
   return positions[roomId - 1] ?? null;
@@ -57,13 +57,13 @@ export function getServiceRoomPosition(
  */
 export function getWaitingPositionByIndex(
   index: number,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+  industryId: IndustryId,
 ): GridPosition | null {
   const positions = getWaitingPositions(industryId);
   return positions[index] ?? null;
 }
 
 // Backwards-compatible constants for existing callers.
-export const WAITING_POSITIONS = getWaitingPositions();
-export const SERVICE_ROOM_POSITIONS = getServiceRoomPositions();
-export const ENTRY_POSITION = getEntryPosition();
+export const WAITING_POSITIONS = getWaitingPositions(DEFAULT_INDUSTRY_ID);
+export const SERVICE_ROOM_POSITIONS = getServiceRoomPositions(DEFAULT_INDUSTRY_ID);
+export const ENTRY_POSITION = getEntryPosition(DEFAULT_INDUSTRY_ID);
