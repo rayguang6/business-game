@@ -7,6 +7,10 @@ export type EffectMultiplierMap = Partial<Record<UpgradeMetric, number>>;
 
 export interface EffectBundle {
   /**
+   * Identifier for debugging/logging (e.g., "staff", "marketing")
+   */
+  id?: string;
+  /**
    * Upgrade-style effects applied sequentially using (value + add) * (1 + percent)
    */
   effects?: UpgradeEffect[];
