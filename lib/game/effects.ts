@@ -3,23 +3,23 @@ import { IndustryId } from '@/lib/game/types';
 import { getTicksPerSecondForIndustry } from '@/lib/game/config';
 import { UpgradeEffect, UpgradeMetric } from '@/lib/game/config';
 
-export interface StaffEffectModifiers {
-  serviceSpeedMultiplier?: number;
-  reputationMultiplier?: number;
+export type EffectMultiplierMap = Partial<Record<UpgradeMetric, number>>;
+
+export interface EffectBundle {
+  /**
+   * Upgrade-style effects applied sequentially using (value + add) * (1 + percent)
+   */
+  effects?: UpgradeEffect[];
+  /**
+   * Final multipliers applied after effects. For example, { reputationMultiplier: 2 } doubles the current value.
+   */
+  multipliers?: EffectMultiplierMap;
 }
 
 export interface EffectSources {
-  upgrades: UpgradeEffects;
-  marketing?: UpgradeEffect[];
-  staff?: StaffEffectModifiers;
+  base: UpgradeEffects;
+  bundles?: EffectBundle[];
 }
-
-const clampMultiplier = (value: number | undefined, fallback: number = 1): number => {
-  if (value === undefined || Number.isNaN(value)) {
-    return fallback;
-  }
-  return value;
-};
 
 const applyUpgradeEffectMetric = (
   value: number,
@@ -85,26 +85,82 @@ const applyUpgradeEffectsToCombined = (
   return result;
 };
 
+const applyMultipliersToCombined = (
+  combined: UpgradeEffects,
+  multipliers: EffectMultiplierMap,
+  industryId: IndustryId,
+): UpgradeEffects => {
+  let result: UpgradeEffects = { ...combined };
+
+  Object.entries(multipliers).forEach(([metric, multiplier]) => {
+    if (multiplier === undefined || Number.isNaN(multiplier)) {
+      return;
+    }
+    const safeMultiplier = Math.max(0, multiplier);
+    switch (metric as UpgradeMetric) {
+      case 'spawnIntervalSeconds': {
+        const updatedSeconds = Math.max(0.1, combined.spawnIntervalSeconds * safeMultiplier);
+        const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
+        result = {
+          ...result,
+          spawnIntervalSeconds: updatedSeconds,
+          spawnIntervalTicks: Math.max(1, Math.round(updatedSeconds * ticksPerSecond)),
+        };
+        break;
+      }
+      case 'serviceSpeedMultiplier': {
+        result = {
+          ...result,
+          serviceSpeedMultiplier: Math.max(0.1, combined.serviceSpeedMultiplier * safeMultiplier),
+        };
+        break;
+      }
+      case 'reputationMultiplier': {
+        result = {
+          ...result,
+          reputationMultiplier: Math.max(0, combined.reputationMultiplier * safeMultiplier),
+        };
+        break;
+      }
+      case 'treatmentRooms': {
+        result = {
+          ...result,
+          treatmentRooms: Math.max(1, Math.round(combined.treatmentRooms * safeMultiplier)),
+        };
+        break;
+      }
+      case 'weeklyExpenses': {
+        result = {
+          ...result,
+          weeklyExpenses: Math.max(0, combined.weeklyExpenses * safeMultiplier),
+        };
+        break;
+      }
+      default:
+        break;
+    }
+  });
+
+  return result;
+};
+
 export function combineEffects(
   sources: EffectSources,
   industryId: IndustryId,
 ): UpgradeEffects {
-  let combined: UpgradeEffects = { ...sources.upgrades };
+  let combined: UpgradeEffects = { ...sources.base };
 
-  if (sources.marketing && sources.marketing.length > 0) {
-    combined = applyUpgradeEffectsToCombined(combined, sources.marketing, industryId);
-  }
+  (sources.bundles ?? []).forEach((bundle) => {
+    if (!bundle) return;
 
-  if (sources.staff) {
-    const serviceSpeedMultiplier = Math.max(0.1, clampMultiplier(sources.staff.serviceSpeedMultiplier));
-    const reputationMultiplier = Math.max(0, clampMultiplier(sources.staff.reputationMultiplier));
+    if (bundle.effects && bundle.effects.length > 0) {
+      combined = applyUpgradeEffectsToCombined(combined, bundle.effects, industryId);
+    }
 
-    combined = {
-      ...combined,
-      serviceSpeedMultiplier: combined.serviceSpeedMultiplier * serviceSpeedMultiplier,
-      reputationMultiplier: combined.reputationMultiplier * reputationMultiplier,
-    };
-  }
+    if (bundle.multipliers && Object.keys(bundle.multipliers).length > 0) {
+      combined = applyMultipliersToCombined(combined, bundle.multipliers, industryId);
+    }
+  });
 
   return combined;
 }

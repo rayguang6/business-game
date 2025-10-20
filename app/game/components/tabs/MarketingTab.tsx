@@ -41,8 +41,8 @@ export function MarketingTab() {
     () =>
       combineEffects(
         {
-          upgrades: upgradeEffects,
-          marketing: marketingEffects,
+          base: upgradeEffects,
+          bundles: marketingEffects.length > 0 ? [{ effects: marketingEffects }] : [],
         },
         industryId,
       ),

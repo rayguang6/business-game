@@ -16,7 +16,7 @@ import {
 // Shared
 // -----------------------------------------------------------------------------
 const DEFAULT_BUSINESS_METRICS: BusinessMetrics = {
-  startingCash: 3000,
+  startingCash: 10000,
   weeklyExpenses: 800,
   startingReputation: 5,
 } as const;
