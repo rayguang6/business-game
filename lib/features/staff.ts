@@ -1,3 +1,6 @@
+import { UpgradeEffect, UpgradeEffectType, UpgradeMetric } from '@/lib/game/config';
+import { EffectBundle } from '@/lib/game/effects';
+
 export interface Staff {
   id: string;
   name: string;
@@ -111,3 +114,54 @@ export const generateRandomStaff = (id: string): Staff => {
     hireCost,
   };
 };
+
+export function buildStaffEffectBundle(staffMembers: Staff[]): EffectBundle | null {
+  if (!staffMembers || staffMembers.length === 0) {
+    return null;
+  }
+
+  const totalServiceSpeedPercent = staffMembers.reduce(
+    (sum, staff) => sum + (staff.increaseServiceSpeed ?? 0),
+    0,
+  );
+  const totalReputationPercent = staffMembers.reduce(
+    (sum, staff) => sum + (staff.increaseHappyCustomerProbability ?? 0),
+    0,
+  );
+  const totalSalary = staffMembers.reduce((sum, staff) => sum + (staff.salary ?? 0), 0);
+
+  const effects: UpgradeEffect[] = [];
+
+  if (totalServiceSpeedPercent !== 0) {
+    effects.push({
+      metric: UpgradeMetric.ServiceSpeedMultiplier,
+      type: UpgradeEffectType.Percent,
+      value: -totalServiceSpeedPercent,
+      source: `Staff service boost (-${(totalServiceSpeedPercent * 100).toFixed(0)}%)`,
+    });
+  }
+
+  if (totalReputationPercent !== 0) {
+    effects.push({
+      metric: UpgradeMetric.ReputationMultiplier,
+      type: UpgradeEffectType.Percent,
+      value: totalReputationPercent,
+      source: `Staff reputation boost (+${(totalReputationPercent * 100).toFixed(0)}%)`,
+    });
+  }
+
+  if (totalSalary > 0) {
+    effects.push({
+      metric: UpgradeMetric.WeeklyExpenses,
+      type: UpgradeEffectType.Add,
+      value: totalSalary,
+      source: 'Staff salaries',
+    });
+  }
+
+  if (effects.length === 0) {
+    return null;
+  }
+
+  return { id: 'staff', effects };
+}

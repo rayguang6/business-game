@@ -31,6 +31,7 @@ import {
 } from '@/lib/features/economy';
 import { shouldSpawnCustomerWithUpgrades, getUpgradeEffects, UpgradeEffects } from '@/lib/features/upgrades';
 import { combineEffects, EffectBundle } from '@/lib/game/effects';
+import { buildStaffEffectBundle, Staff } from '@/lib/features/staff';
 import { getWaitingPositions, getServiceRoomPosition } from '@/lib/game/positioning';
 import { IndustryId } from '@/lib/game/types';
 import { findPath } from '@/lib/game/pathfinding';
@@ -55,6 +56,7 @@ interface TickSnapshot {
   industryId?: IndustryId;
   weeklyExpenseAdjustments: number;
   marketingEffects?: ActiveMarketingEffects;
+  hiredStaff?: Staff[];
 }
 
 type TickResult = Omit<TickSnapshot, 'industryId'>;
@@ -459,12 +461,18 @@ export function tickOnce(state: TickSnapshot): TickResult {
   const weeklyExpenseAdjustments = preparedWeek.weeklyExpenseAdjustments;
 
   const marketingEffects = state.marketingEffects ?? [];
+  const hiredStaff = state.hiredStaff ?? [];
 
   const upgradeBaseEffects = getUpgradeEffects(state.upgrades, industryId);
   const effectBundles: EffectBundle[] = [];
 
   if (marketingEffects.length > 0) {
-    effectBundles.push({ effects: marketingEffects });
+    effectBundles.push({ id: 'marketing', effects: marketingEffects });
+  }
+
+  const staffBundle = buildStaffEffectBundle(hiredStaff);
+  if (staffBundle) {
+    effectBundles.push(staffBundle);
   }
 
   const upgradeEffects = combineEffects(

@@ -10,8 +10,9 @@ import { SpriteCustomer } from './SpriteCustomer';
 import { GridOverlay } from './GridOverlay';
 import { getUpgradeEffects } from '@/lib/features/upgrades';
 import { DEFAULT_INDUSTRY_ID, getBusinessStats } from '@/lib/game/config';
-import { combineEffects } from '@/lib/game/effects';
+import { combineEffects, EffectBundle } from '@/lib/game/effects';
 import { IndustryId } from '@/lib/game/types';
+import { buildStaffEffectBundle } from '@/lib/features/staff';
 
 // Canvas scaling configuration
 const CANVAS_CONFIG = {
@@ -41,11 +42,12 @@ export function GameCanvas() {
     activeCampaign,
     campaignEndsAt,
     gameTime,
+    hiredStaff,
   } = useGameStore();
   const canvasRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState(350);
   const [scaleFactor, setScaleFactor] = useState(1);
-  const [showModifiers, setShowModifiers] = useState(false);
+  const [showModifiers, setShowModifiers] = useState(true);
 
   // Calculate responsive canvas size
   useEffect(() => {
@@ -69,7 +71,17 @@ export function GameCanvas() {
 
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
   const baseUpgradeEffects = useMemo(() => getUpgradeEffects(upgrades, industryId), [upgrades, industryId]);
-  const effectBundles = useMemo(() => (marketingEffects.length > 0 ? [{ effects: marketingEffects }] : []), [marketingEffects]);
+  const effectBundles = useMemo(() => {
+    const bundles: EffectBundle[] = [];
+    if (marketingEffects.length > 0) {
+      bundles.push({ effects: marketingEffects });
+    }
+    const staffBundle = buildStaffEffectBundle(hiredStaff);
+    if (staffBundle) {
+      bundles.push(staffBundle);
+    }
+    return bundles;
+  }, [marketingEffects, hiredStaff]);
   const combinedEffects = useMemo(
     () => combineEffects({ base: baseUpgradeEffects, bundles: effectBundles }, industryId),
     [baseUpgradeEffects, effectBundles, industryId],
@@ -140,6 +152,10 @@ export function GameCanvas() {
             <div>
               <span className="text-gray-300">Treatment rooms:</span>{' '}
               <span className="font-semibold">{treatmentRooms}</span>
+            </div>
+            <div>
+              <span className="text-gray-300">Staff on duty:</span>{' '}
+              <span className="font-semibold">{hiredStaff.length}</span>
             </div>
             <div>
               <span className="text-gray-300">Weekly expenses:</span>{' '}

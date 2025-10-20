@@ -40,7 +40,7 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
         metric: UpgradeMetric.SpawnIntervalSeconds,
         type: UpgradeEffectType.Add,
         value: -1,
-        source: 'Neighborhood Flyers',
+        source: 'Neighborhood Flyers (−1s spawn)',
       }, // Flow +~1 customer/minute
     ],
   },
@@ -55,7 +55,7 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
         metric: UpgradeMetric.ReputationMultiplier,
         type: UpgradeEffectType.Percent,
         value: 1,
-        source: 'Community Open House',
+        source: 'Community Open House (+100%)',
       }, // Reputation ×2.0
     ],
   },
@@ -70,7 +70,7 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
         metric: UpgradeMetric.SpawnIntervalSeconds,
         type: UpgradeEffectType.Percent,
         value: -0.5,
-        source: 'Limited-Time Promo',
+        source: 'Limited-Time Promo (×0.5 spawn interval)',
       }, // Flow ×2.0
     ],
   },
@@ -85,7 +85,7 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
         metric: UpgradeMetric.ReputationMultiplier,
         type: UpgradeEffectType.Percent,
         value: 2,
-        source: 'Influencer Blitz',
+        source: 'Influencer Blitz (+200%)',
       },
     ],
   },

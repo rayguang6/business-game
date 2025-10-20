@@ -121,6 +121,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
         industryId: (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId,
         weeklyExpenseAdjustments: state.weeklyExpenseAdjustments,
         marketingEffects: state.marketingEffects,
+        hiredStaff: state.hiredStaff,
       });
       return { ...state, ...updated };
     });
