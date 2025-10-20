@@ -120,15 +120,15 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
         weeklyHistory: state.weeklyHistory,
         industryId: (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId,
         weeklyExpenseAdjustments: state.weeklyExpenseAdjustments,
+        marketingEffects: state.marketingEffects,
       });
       return { ...state, ...updated };
     });
     
     // Check for game over after tick updates
-    const { checkGameOver } = get();
-    if (checkGameOver) {
-      checkGameOver();
-    }
+    const { tickMarketing, checkGameOver, gameTime } = get();
+    tickMarketing(gameTime);
+    checkGameOver();
   },
 
   //adjust cash or reputation immediately and run checkGameOver afterward.

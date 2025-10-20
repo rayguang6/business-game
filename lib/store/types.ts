@@ -34,7 +34,7 @@ export interface RevenueEntry {
 export interface OneTimeCost {
   label: string;
   amount: number;
-  category: 'upgrade' | 'repair' | 'event';
+  category: 'upgrade' | 'repair' | 'event' | 'marketing';
   alreadyDeducted?: boolean;
 }
 
