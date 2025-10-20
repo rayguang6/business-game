@@ -205,6 +205,7 @@ function processCustomersForTick({
   const revenueDetails = [...weeklyRevenueDetails];
   const stats = getBusinessStats(industryId);
   const reputationMultiplier = upgradeEffects.reputationMultiplier;
+  const happyProbability = Math.max(0, Math.min(1, upgradeEffects.happyProbability ?? stats.baseHappyProbability));
 
   // Find already occupied waiting positions (including both current and target positions)
   // occupiedWaitingPositions: the grid locations where someone is already sitting or heading; used to avoid overlap.
@@ -289,7 +290,7 @@ function processCustomersForTick({
       const newCash = metricsAccumulator.cash + servicePrice;
       
       // Check if customer is happy based on probability
-      const isHappy = Math.random() < stats.baseHappyProbability;
+      const isHappy = Math.random() < happyProbability;
       const reputationGain = isHappy 
         ? Math.floor(stats.reputationGainPerHappyCustomer * reputationMultiplier)
         : 0;
@@ -451,7 +452,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
   let customers = [...state.customers];
   let metrics = { ...preparedWeek.metrics };
   let weeklyRevenue = preparedWeek.weeklyRevenue;
-  const weeklyExpenses = preparedWeek.weeklyExpenses;
+  let weeklyExpenses = preparedWeek.weeklyExpenses;
   let weeklyRevenueDetails = [...preparedWeek.weeklyRevenueDetails];
   const weeklyOneTimeCosts = preparedWeek.weeklyOneTimeCosts;
   const weeklyOneTimeCostDetails = [...preparedWeek.weeklyOneTimeCostDetails];
@@ -482,6 +483,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
     },
     industryId,
   );
+  weeklyExpenses = upgradeEffects.weeklyExpenses;
 
   //If the customer should spawn with the upgrades, create a new customer.
   if (shouldSpawnCustomerWithUpgrades(nextTick, state.upgrades, industryId, upgradeEffects)) {

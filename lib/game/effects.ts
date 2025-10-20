@@ -81,6 +81,11 @@ const applyUpgradeEffectsToCombined = (
         result = { ...result, weeklyExpenses: updated };
         break;
       }
+      case UpgradeMetric.HappyProbability: {
+        const updated = applyUpgradeEffectMetric(result.happyProbability, effect);
+        result = { ...result, happyProbability: Math.max(0, Math.min(1, updated)) };
+        break;
+      }
       default:
         break;
     }
@@ -137,6 +142,13 @@ const applyMultipliersToCombined = (
         result = {
           ...result,
           weeklyExpenses: Math.max(0, combined.weeklyExpenses * safeMultiplier),
+        };
+        break;
+      }
+      case UpgradeMetric.HappyProbability: {
+        result = {
+          ...result,
+          happyProbability: Math.max(0, Math.min(1, combined.happyProbability * safeMultiplier)),
         };
         break;
       }

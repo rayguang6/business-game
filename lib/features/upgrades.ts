@@ -26,6 +26,7 @@ export interface UpgradeEffects {
   reputationMultiplier: number;
   treatmentRooms: number;
   weeklyExpenses: number;
+  happyProbability: number;
 }
 
 interface UpgradeWithLevel {
@@ -79,6 +80,7 @@ export function getUpgradeEffects(
     reputationMultiplier: Math.max(0, currentMetrics.reputationMultiplier),
     treatmentRooms: Math.max(1, Math.round(currentMetrics.treatmentRooms)),
     weeklyExpenses: currentMetrics.weeklyExpenses,
+    happyProbability: Math.min(1, Math.max(0, currentMetrics.happyProbability)),
   };
 }
 

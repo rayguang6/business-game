@@ -2,48 +2,22 @@
 
 import React, { useState } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
-import { Staff, getRankStyles, generateRandomStaff } from '@/lib/features/staff';
-
-const STAFF_NAMES = [
-  'Liam', 'Olivia', 'Noah', 'Emma', 'Oliver', 'Charlotte', 'Elijah', 'Amelia',
-  'James', 'Ava', 'William', 'Sophia', 'Benjamin', 'Isabella', 'Lucas', 'Mia',
-  'Henry', 'Evelyn', 'Theodore', 'Harper', 'Jackson', 'Camila', 'Samuel', 'Abigail',
-];
+import { Staff, StaffApplicant, getRankStyles } from '@/lib/features/staff';
+import { JOB_POST_COST } from '@/lib/store/slices/staffSlice';
 
 export function StaffTab() {
   const [showJobBoard, setShowJobBoard] = useState(false);
-  const [jobBoardStaff, setJobBoardStaff] = useState<Staff[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const hiredStaff = useGameStore((state) => state.hiredStaff);
   const hireStaff = useGameStore((state) => state.hireStaff);
-  const applyCashChange = useGameStore((state) => state.applyCashChange);
-
-  const JOB_POST_COST = 1000;
-
-  // Generate staff for the job board, ensuring unique names
-  const generateJobBoardStaff = () => {
-    const newStaff: Staff[] = [];
-    const usedNames: Set<string> = new Set();
-
-    for (let i = 0; i < 3; i++) {
-      let staffMember: Staff;
-      let uniqueNameFound = false;
-      do {
-        staffMember = generateRandomStaff(`job-staff-${Date.now()}-${i}`);
-        if (!usedNames.has(staffMember.name)) {
-          uniqueNameFound = true;
-          usedNames.add(staffMember.name);
-        }
-      } while (!uniqueNameFound);
-      newStaff.push(staffMember);
-    }
-    setJobBoardStaff(newStaff);
-  };
+  const jobBoardApplicants = useGameStore((state) => state.jobBoardApplicants);
+  const ensureJobBoardApplicants = useGameStore((state) => state.ensureJobBoardApplicants);
+  const repostJobBoardApplicants = useGameStore((state) => state.repostJobBoardApplicants);
 
   const handleOpenJobBoard = () => {
+    ensureJobBoardApplicants();
     setShowJobBoard(true);
-    generateJobBoardStaff();
   };
 
   const handleCloseJobBoard = () => {
@@ -51,18 +25,20 @@ export function StaffTab() {
   };
 
   const handlePostNewJob = () => {
-    applyCashChange(-JOB_POST_COST); // Deduct cost when reposting jobs
+    const result = repostJobBoardApplicants();
+    if (!result.success) {
+      console.warn(result.message);
+      return;
+    }
     setIsGenerating(true);
     setTimeout(() => {
-      generateJobBoardStaff();
       setIsGenerating(false);
-    }, 800); // Wait for old cards to fully disappear (duration-700 + a small buffer)
+    }, 800);
   };
 
   const handleHireStaff = (staffToHire: Staff) => {
-    hireStaff(staffToHire); // Use the store's hireStaff action
+    hireStaff(staffToHire);
     console.log(`Hiring ${staffToHire.name} for ${staffToHire.hireCost} and ${staffToHire.salary}/week`);
-    handleCloseJobBoard();
   };
 
   return (
@@ -112,20 +88,7 @@ export function StaffTab() {
                   <span className="text-gray-200 text-sm">😊 Happy Customer Chance</span>
                   <span className="text-green-400 font-bold text-base">{Math.round(member.increaseHappyCustomerProbability * 100)}%</span>
                 </div>
-                <div className="flex justify-between items-center bg-white/10 p-2 rounded-lg">
-                  <span className="text-gray-200 text-sm">🧠 Skill</span>
-                  <span className="text-yellow-400 font-bold text-base">N/A</span>
-                </div>
-                <div className="flex justify-between items-center bg-white/10 p-2 rounded-lg">
-                  <span className="text-gray-200 text-sm">⭐ Rating</span>
-                  <span className="text-yellow-400 text-base">4.9 (Placeholder)</span>
-                </div>
               </div>
-
-              {/* View Details Button */}
-              <button className={`w-full bg-${member.rank}-500 hover:bg-${member.rank}-600 text-white font-bold py-3 rounded-xl transition-colors duration-200 shadow-md`}>
-                View Details
-              </button>
             </div>
           );
         })}
@@ -156,8 +119,9 @@ export function StaffTab() {
 
             {/* Generated Staff Cards */}
             <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 mb-6`}>
-              {jobBoardStaff.map((member, index) => {
+              {jobBoardApplicants.map((member: StaffApplicant, index) => {
                 const rankStyles = getRankStyles(member.rank);
+                const isHired = member.isHired ?? false;
                 const animationClasses = isGenerating
                   ? 'opacity-0 transform -translate-y-16 scale-50'
                   : 'opacity-100 transform translate-y-0 scale-100';
@@ -196,9 +160,13 @@ export function StaffTab() {
                         <span className="text-red-400 font-bold text-lg">${Math.round(member.hireCost)}</span>
                       </div>
                     </div>
-                    <button onClick={() => handleHireStaff(member)} className={`w-full bg-${member.rank}-500 hover:bg-${member.rank}-600 text-white font-bold py-2 rounded-xl transition-colors duration-200 shadow-md flex items-center justify-center space-x-2`}>
-                      <span>Hire {member.name}</span>
-                      <span className="text-sm opacity-90">(${Math.round(member.hireCost)})</span>
+                    <button
+                      onClick={() => handleHireStaff(member)}
+                      disabled={isHired}
+                      className={`w-full bg-${member.rank}-500 hover:bg-${member.rank}-600 text-white font-bold py-2 rounded-xl transition-colors duration-200 shadow-md flex items-center justify-center space-x-2 ${isHired ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    >
+                      <span>{isHired ? `${member.name} hired` : `Hire ${member.name}`}</span>
+                      {!isHired && <span className="text-sm opacity-90">(${Math.round(member.hireCost)})</span>}
                     </button>
                   </div>
                 );
@@ -208,7 +176,7 @@ export function StaffTab() {
             {/* Regenerate Button */}
             <div className="text-center">
               <button onClick={handlePostNewJob} className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl transition-colors duration-200 shadow-md">
-                Repost Job Board ($1000)
+                Repost Job Board (${JOB_POST_COST})
               </button>
             </div>
           </div>
