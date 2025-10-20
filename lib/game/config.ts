@@ -110,6 +110,7 @@ export function getBaseUpgradeMetricsForIndustry(
     serviceSpeedMultiplier: 1,
     reputationMultiplier: 1,
     treatmentRooms: stats.treatmentRooms,
+    happyProbability: stats.baseHappyProbability,
   };
 }
 

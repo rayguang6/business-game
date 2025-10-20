@@ -23,6 +23,7 @@ function createEmptyModifiers(): Record<UpgradeMetric, MetricModifiers> {
     [UpgradeMetric.ServiceSpeedMultiplier]: { add: 0, percent: 0, contributions: [] },
     [UpgradeMetric.ReputationMultiplier]: { add: 0, percent: 0, contributions: [] },
     [UpgradeMetric.TreatmentRooms]: { add: 0, percent: 0, contributions: [] },
+    [UpgradeMetric.HappyProbability]: { add: 0, percent: 0, contributions: [] },
   };
 }
 
@@ -68,6 +69,7 @@ export function calculateUpgradeMetrics(
     [UpgradeMetric.ServiceSpeedMultiplier]: [],
     [UpgradeMetric.ReputationMultiplier]: [],
     [UpgradeMetric.TreatmentRooms]: [],
+    [UpgradeMetric.HappyProbability]: [],
   };
   const formulas: Record<UpgradeMetric, string> = {
     [UpgradeMetric.WeeklyExpenses]: '',
@@ -75,6 +77,7 @@ export function calculateUpgradeMetrics(
     [UpgradeMetric.ServiceSpeedMultiplier]: '',
     [UpgradeMetric.ReputationMultiplier]: '',
     [UpgradeMetric.TreatmentRooms]: '',
+    [UpgradeMetric.HappyProbability]: '',
   };
 
   (Object.keys(baseMetrics) as UpgradeMetric[]).forEach((metric) => {

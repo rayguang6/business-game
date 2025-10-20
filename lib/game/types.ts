@@ -55,6 +55,7 @@ export enum UpgradeMetric {
   ServiceSpeedMultiplier = 'serviceSpeedMultiplier',
   ReputationMultiplier = 'reputationMultiplier',
   TreatmentRooms = 'treatmentRooms',
+  HappyProbability = 'happyProbability',
 }
 
 export enum UpgradeEffectType {
@@ -87,6 +88,7 @@ export interface BaseUpgradeMetrics {
   serviceSpeedMultiplier: number;
   reputationMultiplier: number;
   treatmentRooms: number;
+  happyProbability: number;
 }
 
 export interface GridPosition {

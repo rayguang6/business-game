@@ -98,6 +98,8 @@ export function GameCanvas() {
   const serviceSpeedMultiplier = combinedEffects.serviceSpeedMultiplier;
   const baseReputationGain = businessStats.reputationGainPerHappyCustomer;
   const reputationPerHappy = baseReputationGain * combinedEffects.reputationMultiplier;
+  const baseHappyProbability = businessStats.baseHappyProbability;
+  const happyProbability = combinedEffects.happyProbability ?? baseHappyProbability;
   const weeklyExpenses = combinedEffects.weeklyExpenses;
   const campaignSecondsRemaining = activeCampaign && campaignEndsAt != null ? Math.max(0, campaignEndsAt - gameTime) : null;
 
@@ -147,6 +149,12 @@ export function GameCanvas() {
               <span className="text-gray-300">Reputation / happy:</span>{' '}
               <span className="font-semibold">
                 {baseReputationGain.toFixed(1)} → {reputationPerHappy.toFixed(1)}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-300">Happy chance:</span>{' '}
+              <span className="font-semibold">
+                {(baseHappyProbability * 100).toFixed(0)}% → {(happyProbability * 100).toFixed(0)}%
               </span>
             </div>
             <div>

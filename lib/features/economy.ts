@@ -15,10 +15,12 @@ import { IndustryId, UpgradeId } from '@/lib/game/types';
 import { calculateActiveUpgradeMetrics, getUpgradeLevel } from './upgrades';
 import { Upgrades } from '@/lib/store/types';
 
+import { Staff } from '@/lib/features/staff';
+
 export interface ExpenseBreakdownItem {
   label: string;
   amount: number;
-  category: 'base' | 'upgrade' | 'event';
+  category: 'base' | 'upgrade' | 'event' | 'staff';
   sourceId?: string;
 }
 
@@ -54,6 +56,7 @@ export function buildWeeklyExpenseBreakdown(
   upgrades: Upgrades,
   weeklyOneTimeCosts: number = 0,
   industryId: IndustryId,
+  staffMembers: Staff[] = [],
 ): ExpenseBreakdownItem[] {
   const breakdown: ExpenseBreakdownItem[] = [
     {
@@ -62,6 +65,15 @@ export function buildWeeklyExpenseBreakdown(
       category: 'base',
     },
   ];
+
+  const totalStaffSalary = staffMembers.reduce((sum, staff) => sum + (staff.salary ?? 0), 0);
+  if (totalStaffSalary > 0) {
+    breakdown.push({
+      label: 'Staff salaries',
+      amount: totalStaffSalary,
+      category: 'staff',
+    });
+  }
 
   Object.entries(upgrades)
     .filter(([_, level]) => level > 0)

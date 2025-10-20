@@ -14,6 +14,10 @@ export interface Staff {
   hireCost: number; // Cost to hire this staff member
 }
 
+export interface StaffApplicant extends Staff {
+  isHired: boolean;
+}
+
 export const STAFF_NAMES = [
   'Liam', 'Olivia', 'Noah', 'Emma', 'Oliver', 'Charlotte', 'Elijah', 'Amelia',
   'James', 'Ava', 'William', 'Sophia', 'Benjamin', 'Isabella', 'Lucas', 'Mia',
@@ -93,7 +97,9 @@ export const generateRandomStaff = (id: string): Staff => {
 
   const salary = Math.round((500 * multiplier + Math.random() * 200) / 100) * 100;
   const increaseServiceSpeed = parseFloat((0.05 * multiplier + Math.random() * 0.05).toFixed(2));
-  const increaseHappyCustomerProbability = parseFloat((0.03 * multiplier + Math.random() * 0.03).toFixed(2));
+  const increaseHappyCustomerProbability = parseFloat(
+    Math.min(0.05, Math.max(0.01, 0.01 + Math.random() * 0.04)).toFixed(2),
+  );
   const level = Math.floor(Math.random() * 5 * multiplier) + 1; // Level 1-5 for blue, higher for others
   const hireCost = Math.round((salary * 2 + level * 50) / 100) * 100; // Example cost calculation
 
@@ -124,7 +130,7 @@ export function buildStaffEffectBundle(staffMembers: Staff[]): EffectBundle | nu
     (sum, staff) => sum + (staff.increaseServiceSpeed ?? 0),
     0,
   );
-  const totalReputationPercent = staffMembers.reduce(
+  const totalHappyProbabilityBonus = staffMembers.reduce(
     (sum, staff) => sum + (staff.increaseHappyCustomerProbability ?? 0),
     0,
   );
@@ -141,12 +147,13 @@ export function buildStaffEffectBundle(staffMembers: Staff[]): EffectBundle | nu
     });
   }
 
-  if (totalReputationPercent !== 0) {
+  if (totalHappyProbabilityBonus !== 0) {
+    const clampedBonus = Math.max(0, Math.min(0.5, totalHappyProbabilityBonus));
     effects.push({
-      metric: UpgradeMetric.ReputationMultiplier,
-      type: UpgradeEffectType.Percent,
-      value: totalReputationPercent,
-      source: `Staff reputation boost (+${(totalReputationPercent * 100).toFixed(0)}%)`,
+      metric: UpgradeMetric.HappyProbability,
+      type: UpgradeEffectType.Add,
+      value: clampedBonus,
+      source: `Staff happy chance (+${(clampedBonus * 100).toFixed(0)}%)`,
     });
   }
 

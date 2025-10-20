@@ -94,6 +94,10 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       weeklyExpenses: getWeeklyBaseExpenses(DEFAULT_INDUSTRY_ID),
       weeklyExpenseAdjustments: 0,
     });
+    const { resetStaff } = get();
+    if (resetStaff) {
+      resetStaff();
+    }
   },
   
   tickGame: () => {
