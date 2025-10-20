@@ -1,7 +1,7 @@
 import { StateCreator } from 'zustand';
 import { GameStore } from '../gameStore';
-import { OneTimeCost } from '../types';
-import { UpgradeEffect } from '@/lib/game/config';
+import { OneTimeCost, OneTimeCostCategory } from '../types';
+import { UpgradeEffect, UpgradeEffectType, UpgradeMetric } from '@/lib/game/config';
 
 export type MarketingEffects = UpgradeEffect[];
 
@@ -36,7 +36,12 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
     cost: 150,
     durationSeconds: 20,
     effects: [
-      { metric: 'spawnIntervalSeconds', type: 'add', value: -1, source: 'Neighborhood Flyers' }, // Flow +~1 customer/minute
+      {
+        metric: UpgradeMetric.SpawnIntervalSeconds,
+        type: UpgradeEffectType.Add,
+        value: -1,
+        source: 'Neighborhood Flyers',
+      }, // Flow +~1 customer/minute
     ],
   },
   {
@@ -46,7 +51,12 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
     cost: 200,
     durationSeconds: 30,
     effects: [
-      { metric: 'reputationMultiplier', type: 'percent', value: 1, source: 'Community Open House' }, // Reputation ×2.0
+      {
+        metric: UpgradeMetric.ReputationMultiplier,
+        type: UpgradeEffectType.Percent,
+        value: 1,
+        source: 'Community Open House',
+      }, // Reputation ×2.0
     ],
   },
   {
@@ -56,7 +66,12 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
     cost: 260,
     durationSeconds: 25,
     effects: [
-      { metric: 'spawnIntervalSeconds', type: 'percent', value: -0.5, source: 'Limited-Time Promo' }, // Flow ×2.0
+      {
+        metric: UpgradeMetric.SpawnIntervalSeconds,
+        type: UpgradeEffectType.Percent,
+        value: -0.5,
+        source: 'Limited-Time Promo',
+      }, // Flow ×2.0
     ],
   },
   {
@@ -66,7 +81,12 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
     cost: 420,
     durationSeconds: 30,
     effects: [
-      { metric: 'reputationMultiplier', type: 'percent', value: 2, source: 'Influencer Blitz' },
+      {
+        metric: UpgradeMetric.ReputationMultiplier,
+        type: UpgradeEffectType.Percent,
+        value: 2,
+        source: 'Influencer Blitz',
+      },
     ],
   },
 ];
@@ -103,7 +123,7 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       const costEntry: OneTimeCost = {
         label: campaign.name,
         amount: campaign.cost,
-        category: 'marketing',
+        category: OneTimeCostCategory.Marketing,
         alreadyDeducted: true,
       };
       addOneTimeCost(costEntry, true);

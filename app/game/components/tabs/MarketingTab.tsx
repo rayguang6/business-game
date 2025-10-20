@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
 import { getUpgradeEffects } from '@/lib/features/upgrades';
-import { DEFAULT_INDUSTRY_ID, UpgradeEffect } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, UpgradeEffect, UpgradeMetric } from '@/lib/game/config';
 import { combineEffects } from '@/lib/game/effects';
 import { IndustryId } from '@/lib/game/types';
 
@@ -145,9 +145,9 @@ export function MarketingTab() {
         {availableCampaigns.map((campaign) => {
           const isActive = activeCampaign?.id === campaign.id;
           const isAnotherActive = Boolean(activeCampaign && !isActive);
-          const spawnPercent = getPercentDelta(campaign.effects, 'spawnIntervalSeconds');
-          const spawnAdd = getAddDelta(campaign.effects, 'spawnIntervalSeconds');
-          const reputationPercent = getPercentDelta(campaign.effects, 'reputationMultiplier');
+          const spawnPercent = getPercentDelta(campaign.effects, UpgradeMetric.SpawnIntervalSeconds);
+          const spawnAdd = getAddDelta(campaign.effects, UpgradeMetric.SpawnIntervalSeconds);
+          const reputationPercent = getPercentDelta(campaign.effects, UpgradeMetric.ReputationMultiplier);
           const flowDescriptions = describeFlowEffect(spawnPercent, spawnAdd);
           const reputationDescription = describeReputationEffect(reputationPercent);
           const canAfford = metrics.cash >= campaign.cost;
@@ -219,9 +219,9 @@ export function MarketingTab() {
 
       <div className="text-xs text-gray-400 border-t border-gray-800 pt-3">
         {(() => {
-          const activeFlow = (1 / Math.max(0.1, 1 + getPercentDelta(marketingEffects, 'spawnIntervalSeconds'))).toFixed(1);
-          const activeFlowAdd = getAddDelta(marketingEffects, 'spawnIntervalSeconds');
-          const activeReputation = (1 + getPercentDelta(marketingEffects, 'reputationMultiplier')).toFixed(1);
+          const activeFlow = (1 / Math.max(0.1, 1 + getPercentDelta(marketingEffects, UpgradeMetric.SpawnIntervalSeconds))).toFixed(1);
+          const activeFlowAdd = getAddDelta(marketingEffects, UpgradeMetric.SpawnIntervalSeconds);
+          const activeReputation = (1 + getPercentDelta(marketingEffects, UpgradeMetric.ReputationMultiplier)).toFixed(1);
 
           const parts: string[] = [];
           if (activeFlow !== '1.0' || activeFlowAdd !== 0) {

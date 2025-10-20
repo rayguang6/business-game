@@ -16,12 +16,16 @@ export interface Metrics {
 // Map of upgrade ID to current level
 export type Upgrades = Record<UpgradeId, number>;
 
-export type RevenueCategory = 'customer' | 'event' | 'other';
+export enum RevenueCategory {
+  Customer = 'customer',
+  Event = 'event',
+  Other = 'other',
+}
 
 export const REVENUE_CATEGORY_LABELS: Record<RevenueCategory, string> = {
-  customer: 'Customer payments',
-  event: 'Event payouts',
-  other: 'Other income',
+  [RevenueCategory.Customer]: 'Customer payments',
+  [RevenueCategory.Event]: 'Event payouts',
+  [RevenueCategory.Other]: 'Other income',
 };
 
 export interface RevenueEntry {
@@ -31,10 +35,17 @@ export interface RevenueEntry {
   sourceId?: string;
 }
 
+export enum OneTimeCostCategory {
+  Upgrade = 'upgrade',
+  Repair = 'repair',
+  Event = 'event',
+  Marketing = 'marketing',
+}
+
 export interface OneTimeCost {
   label: string;
   amount: number;
-  category: 'upgrade' | 'repair' | 'event' | 'marketing';
+  category: OneTimeCostCategory;
   alreadyDeducted?: boolean;
 }
 

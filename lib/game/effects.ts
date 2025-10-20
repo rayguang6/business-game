@@ -43,8 +43,8 @@ const applyUpgradeEffectsToCombined = (
   let result: UpgradeEffects = { ...combined };
 
   effects.forEach((effect) => {
-    switch (effect.metric as UpgradeMetric) {
-      case 'spawnIntervalSeconds': {
+    switch (effect.metric) {
+      case UpgradeMetric.SpawnIntervalSeconds: {
         const updatedSeconds = Math.max(
           0.1,
           applyUpgradeEffectMetric(result.spawnIntervalSeconds, effect),
@@ -57,22 +57,22 @@ const applyUpgradeEffectsToCombined = (
         };
         break;
       }
-      case 'serviceSpeedMultiplier': {
+      case UpgradeMetric.ServiceSpeedMultiplier: {
         const updated = Math.max(0.1, applyUpgradeEffectMetric(result.serviceSpeedMultiplier, effect));
         result = { ...result, serviceSpeedMultiplier: updated };
         break;
       }
-      case 'reputationMultiplier': {
+      case UpgradeMetric.ReputationMultiplier: {
         const updated = Math.max(0, applyUpgradeEffectMetric(result.reputationMultiplier, effect));
         result = { ...result, reputationMultiplier: updated };
         break;
       }
-      case 'treatmentRooms': {
+      case UpgradeMetric.TreatmentRooms: {
         const updated = applyUpgradeEffectMetric(result.treatmentRooms, effect);
         result = { ...result, treatmentRooms: Math.max(1, Math.round(updated)) };
         break;
       }
-      case 'weeklyExpenses': {
+      case UpgradeMetric.WeeklyExpenses: {
         const updated = Math.max(0, applyUpgradeEffectMetric(result.weeklyExpenses, effect));
         result = { ...result, weeklyExpenses: updated };
         break;
@@ -98,7 +98,7 @@ const applyMultipliersToCombined = (
     }
     const safeMultiplier = Math.max(0, multiplier);
     switch (metric as UpgradeMetric) {
-      case 'spawnIntervalSeconds': {
+      case UpgradeMetric.SpawnIntervalSeconds: {
         const updatedSeconds = Math.max(0.1, combined.spawnIntervalSeconds * safeMultiplier);
         const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
         result = {
@@ -108,28 +108,28 @@ const applyMultipliersToCombined = (
         };
         break;
       }
-      case 'serviceSpeedMultiplier': {
+      case UpgradeMetric.ServiceSpeedMultiplier: {
         result = {
           ...result,
           serviceSpeedMultiplier: Math.max(0.1, combined.serviceSpeedMultiplier * safeMultiplier),
         };
         break;
       }
-      case 'reputationMultiplier': {
+      case UpgradeMetric.ReputationMultiplier: {
         result = {
           ...result,
           reputationMultiplier: Math.max(0, combined.reputationMultiplier * safeMultiplier),
         };
         break;
       }
-      case 'treatmentRooms': {
+      case UpgradeMetric.TreatmentRooms: {
         result = {
           ...result,
           treatmentRooms: Math.max(1, Math.round(combined.treatmentRooms * safeMultiplier)),
         };
         break;
       }
-      case 'weeklyExpenses': {
+      case UpgradeMetric.WeeklyExpenses: {
         result = {
           ...result,
           weeklyExpenses: Math.max(0, combined.weeklyExpenses * safeMultiplier),

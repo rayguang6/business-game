@@ -1,4 +1,4 @@
-import { UpgradeDefinition, UpgradeEffect, UpgradeMetric } from './config';
+import { UpgradeDefinition, UpgradeEffect, UpgradeMetric, UpgradeEffectType } from './config';
 
 //TODO: This file is hardcoded the upgrades, if new upgrades added, we need to add them all manually
 
@@ -18,16 +18,16 @@ export interface UpgradeMetricsResult {
 
 function createEmptyModifiers(): Record<UpgradeMetric, MetricModifiers> {
   return {
-    weeklyExpenses: { add: 0, percent: 0, contributions: [] },
-    spawnIntervalSeconds: { add: 0, percent: 0, contributions: [] },
-    serviceSpeedMultiplier: { add: 0, percent: 0, contributions: [] },
-    reputationMultiplier: { add: 0, percent: 0, contributions: [] },
-    treatmentRooms: { add: 0, percent: 0, contributions: [] },
+    [UpgradeMetric.WeeklyExpenses]: { add: 0, percent: 0, contributions: [] },
+    [UpgradeMetric.SpawnIntervalSeconds]: { add: 0, percent: 0, contributions: [] },
+    [UpgradeMetric.ServiceSpeedMultiplier]: { add: 0, percent: 0, contributions: [] },
+    [UpgradeMetric.ReputationMultiplier]: { add: 0, percent: 0, contributions: [] },
+    [UpgradeMetric.TreatmentRooms]: { add: 0, percent: 0, contributions: [] },
   };
 }
 
 function formatContribution(effect: UpgradeEffect): string {
-  if (effect.type === 'add') {
+  if (effect.type === UpgradeEffectType.Add) {
     const sign = effect.value >= 0 ? '+' : '';
     return `${sign}${effect.value} (${effect.source})`;
   }
@@ -52,9 +52,9 @@ export function calculateUpgradeMetrics(
   activeUpgrades.forEach((upgrade) => {
     upgrade.effects.forEach((effect) => {
       const metricModifier = modifiers[effect.metric];
-      if (effect.type === 'add') {
+      if (effect.type === UpgradeEffectType.Add) {
         metricModifier.add += effect.value;
-      } else if (effect.type === 'percent') {
+      } else if (effect.type === UpgradeEffectType.Percent) {
         metricModifier.percent += effect.value;
       }
       metricModifier.contributions.push(formatContribution(effect));
@@ -63,18 +63,18 @@ export function calculateUpgradeMetrics(
 
   const currentMetrics: Record<UpgradeMetric, number> = { ...baseMetrics };
   const contributionsList: Record<UpgradeMetric, string[]> = {
-    weeklyExpenses: [],
-    spawnIntervalSeconds: [],
-    serviceSpeedMultiplier: [],
-    reputationMultiplier: [],
-    treatmentRooms: [],
+    [UpgradeMetric.WeeklyExpenses]: [],
+    [UpgradeMetric.SpawnIntervalSeconds]: [],
+    [UpgradeMetric.ServiceSpeedMultiplier]: [],
+    [UpgradeMetric.ReputationMultiplier]: [],
+    [UpgradeMetric.TreatmentRooms]: [],
   };
   const formulas: Record<UpgradeMetric, string> = {
-    weeklyExpenses: '',
-    spawnIntervalSeconds: '',
-    serviceSpeedMultiplier: '',
-    reputationMultiplier: '',
-    treatmentRooms: '',
+    [UpgradeMetric.WeeklyExpenses]: '',
+    [UpgradeMetric.SpawnIntervalSeconds]: '',
+    [UpgradeMetric.ServiceSpeedMultiplier]: '',
+    [UpgradeMetric.ReputationMultiplier]: '',
+    [UpgradeMetric.TreatmentRooms]: '',
   };
 
   (Object.keys(baseMetrics) as UpgradeMetric[]).forEach((metric) => {
