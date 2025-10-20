@@ -13,6 +13,7 @@ import {
   getBusinessStats,
   getTicksPerSecondForIndustry,
   isNewWeek,
+  UpgradeEffect,
 } from '@/lib/game/config';
 
 import {
@@ -29,10 +30,13 @@ import {
   calculateUpgradeWeeklyExpenses,
 } from '@/lib/features/economy';
 import { shouldSpawnCustomerWithUpgrades, getUpgradeEffects, UpgradeEffects } from '@/lib/features/upgrades';
+import { combineEffects } from '@/lib/game/effects';
 import { getWaitingPositions, getServiceRoomPosition } from '@/lib/game/positioning';
 import { IndustryId } from '@/lib/game/types';
 import { findPath } from '@/lib/game/pathfinding';
 import { audioManager, AudioFx } from '@/lib/audio/audioManager';
+
+type ActiveMarketingEffects = UpgradeEffect[];
 
 interface TickSnapshot {
   gameTick: number;
@@ -50,6 +54,7 @@ interface TickSnapshot {
   upgrades: Upgrades;
   industryId?: IndustryId;
   weeklyExpenseAdjustments: number;
+  marketingEffects?: ActiveMarketingEffects;
 }
 
 type TickResult = Omit<TickSnapshot, 'industryId'>;
@@ -423,13 +428,6 @@ function applyWeekTransitionIfNeeded(
   };
 }
 
-function resolveUpgradeEffects(
-  upgrades: Upgrades,
-  industryId: IndustryId,
-): UpgradeEffects {
-  return getUpgradeEffects(upgrades, industryId);
-}
-
 function processCustomersWithEffects(params: ProcessCustomersParams): ProcessCustomersResult {
   return processCustomersForTick(params);
 }
@@ -451,17 +449,25 @@ export function tickOnce(state: TickSnapshot): TickResult {
   let customers = [...state.customers];
   let metrics = { ...preparedWeek.metrics };
   let weeklyRevenue = preparedWeek.weeklyRevenue;
-  let weeklyExpenses = preparedWeek.weeklyExpenses;
+  const weeklyExpenses = preparedWeek.weeklyExpenses;
   let weeklyRevenueDetails = [...preparedWeek.weeklyRevenueDetails];
-  let weeklyOneTimeCosts = preparedWeek.weeklyOneTimeCosts;
-  let weeklyOneTimeCostDetails = [...preparedWeek.weeklyOneTimeCostDetails];
-  let weeklyOneTimeCostsPaid = preparedWeek.weeklyOneTimeCostsPaid;
-  let weeklyHistory = [...preparedWeek.weeklyHistory];
-  let currentWeek = preparedWeek.currentWeek;
-  let weeklyExpenseAdjustments = preparedWeek.weeklyExpenseAdjustments;
+  const weeklyOneTimeCosts = preparedWeek.weeklyOneTimeCosts;
+  const weeklyOneTimeCostDetails = [...preparedWeek.weeklyOneTimeCostDetails];
+  const weeklyOneTimeCostsPaid = preparedWeek.weeklyOneTimeCostsPaid;
+  const weeklyHistory = [...preparedWeek.weeklyHistory];
+  const currentWeek = preparedWeek.currentWeek;
+  const weeklyExpenseAdjustments = preparedWeek.weeklyExpenseAdjustments;
 
-  //Get the upgrade effects for the current upgrades.
-  const upgradeEffects = resolveUpgradeEffects(state.upgrades, industryId);
+  const marketingEffects = state.marketingEffects ?? [];
+
+  const upgradeBaseEffects = getUpgradeEffects(state.upgrades, industryId);
+  const upgradeEffects = combineEffects(
+    {
+      upgrades: upgradeBaseEffects,
+      marketing: marketingEffects,
+    },
+    industryId,
+  );
 
   //If the customer should spawn with the upgrades, create a new customer.
   if (shouldSpawnCustomerWithUpgrades(nextTick, state.upgrades, industryId, upgradeEffects)) {

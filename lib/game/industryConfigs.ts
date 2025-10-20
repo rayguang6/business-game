@@ -51,7 +51,7 @@ const DEFAULT_MAP_CONFIG: MapConfig = {
   width: 10,
   height: 10,
   walls: [
-    { x: 3, y: 0 },
+
     { x: 3, y: 1 },
     { x: 3, y: 2 },
     { x: 3, y: 3 },
@@ -147,8 +147,20 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     cost: 700,
     maxLevel: 3,
     effects: [
-      { metric: 'reputationMultiplier', type: 'percent', value: 0.25, source: 'Staff Training Program' },
+      { metric: 'reputationMultiplier', type: 'percent', value: 2, source: 'Staff Training Program' },
       { metric: 'weeklyExpenses', type: 'add', value: 80, source: 'Staff Training Program' },
+    ],
+  },
+  {
+    id: 'priority_booking',
+    name: 'Priority Booking Software',
+    description: 'Digital scheduling that packs the day and keeps the chairs full.',
+    icon: '🗓️',
+    cost: 800,
+    maxLevel: 2,
+    effects: [
+      { metric: 'spawnIntervalSeconds', type: 'percent', value: -0.25, source: 'Priority Booking Software' },
+      { metric: 'weeklyExpenses', type: 'add', value: 110, source: 'Priority Booking Software' },
     ],
   },
   {
