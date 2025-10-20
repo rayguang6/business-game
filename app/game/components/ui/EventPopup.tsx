@@ -122,33 +122,35 @@ const EventPopup: React.FC = () => {
   const eventTitleColor = currentEvent.category === 'opportunity' ? 'text-green-800' : 'text-red-700'; // Darker green title
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 sm:px-6 py-6">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-      <div className="relative z-10 w-full max-w-lg sm:max-w-xl">
-        <div className={`bg-white rounded-lg shadow-2xl p-5 sm:p-6 md:p-8 relative border-t-4 ${eventTypeColorClass.split(' ')[0]} max-h-[85vh] overflow-y-auto`}>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center text-center sm:text-left mb-4 gap-2 sm:gap-3">
-            <span className={`text-2xl sm:text-3xl sm:mr-1 ${eventTypeColorClass.split(' ')[1]}`}>{eventIcon}</span>
-            <h2 className={`text-2xl sm:text-3xl font-bold ${eventTitleColor}`}>{currentEvent.title}</h2>
+    <div className="absolute inset-0 z-30 flex items-center justify-center px-2 sm:px-6 py-3 sm:py-6 pointer-events-none">
+      <div className="absolute inset-0 bg-black/35 sm:bg-black/50 backdrop-blur-sm pointer-events-auto" />
+      <div className="relative z-10 w-full max-w-xs sm:max-w-lg pointer-events-auto">
+        <div
+          className={`bg-white rounded-2xl shadow-xl p-3 sm:p-5 md:p-6 border-t-4 ${eventTypeColorClass.split(' ')[0]} max-h-[65vh] sm:max-h-[80vh] overflow-y-auto`}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center text-center sm:text-left mb-3 gap-1.5 sm:gap-3">
+            <span className={`text-xl sm:text-3xl sm:mr-1 ${eventTypeColorClass.split(' ')[1]}`}>{eventIcon}</span>
+            <h2 className={`text-xl sm:text-3xl font-semibold sm:font-bold ${eventTitleColor}`}>{currentEvent.title}</h2>
           </div>
-          <p className="text-gray-700 text-center sm:text-left mb-5 sm:mb-6 text-sm md:text-base leading-relaxed">{currentEvent.summary}</p>
+          <p className="text-gray-700 text-center sm:text-left mb-4 sm:mb-5 text-xs sm:text-sm leading-relaxed">{currentEvent.summary}</p>
 
-          <div className="space-y-3 sm:space-y-4">
+          <div className="space-y-2.5 sm:space-y-4">
             {currentEvent.choices.map((choice) => (
               <button
                 key={choice.id}
                 onClick={() => handleUserChoice(choice)}
-                className={`w-full text-left p-3 sm:p-4 rounded-lg transition duration-200 border
+                className={`w-full text-left p-2.5 sm:p-4 rounded-lg transition duration-200 border text-sm sm:text-base
                 ${currentEvent.category === 'opportunity'
                   ? (choice.isDefault ? 'bg-green-100 hover:bg-green-200 border-green-300 text-green-900' : 'bg-green-300 hover:bg-green-400 border-green-500 text-green-900')
                   : (choice.isDefault ? 'bg-red-100 hover:bg-red-200 border-red-300 text-red-900' : 'bg-red-300 hover:bg-red-400 border-red-500 text-red-900')
                 }
                 flex flex-col items-start`}
               >
-                <span className="font-bold text-base sm:text-lg mb-1">{choice.label}</span>
-                <span className="text-gray-800 text-sm mb-2 leading-relaxed">{choice.description}</span>
-                <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm">
+                <span className="font-semibold text-sm sm:text-lg mb-1">{choice.label}</span>
+                <span className="text-gray-800 text-xs sm:text-sm mb-2 leading-relaxed">{choice.description}</span>
+                <div className="flex flex-wrap gap-x-2.5 gap-y-1 text-[10px] sm:text-sm">
                   {choice.effects.map((effect, index) => (
-                    <span key={index} className={`text-xs sm:text-sm ${getEffectColorClass(effect.type, effect.amount)}`}>
+                    <span key={index} className={`${getEffectColorClass(effect.type, effect.amount)}`}>
                       {formatEffect(effect)}
                     </span>
                   ))}
