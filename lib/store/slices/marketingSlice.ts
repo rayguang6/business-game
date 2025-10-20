@@ -27,6 +27,7 @@ export interface MarketingSlice {
 
 export const BASE_MARKETING_EFFECTS: MarketingEffects = [];
 
+// Note: percent values use the shared upgrade convention (e.g., 1 = +100% multiplier).
 const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
   {
     id: 'neighborhood-flyers',
@@ -35,7 +36,7 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
     cost: 150,
     durationSeconds: 20,
     effects: [
-      { metric: 'spawnIntervalSeconds', type: 'add', value: -1, source: 'Neighborhood Flyers' },
+      { metric: 'spawnIntervalSeconds', type: 'add', value: -1, source: 'Neighborhood Flyers' }, // Flow +~1 customer/minute
     ],
   },
   {
@@ -45,8 +46,7 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
     cost: 200,
     durationSeconds: 30,
     effects: [
-      //1 means +100% so it means x2
-      { metric: 'reputationMultiplier', type: 'percent', value: 1, source: 'Community Open House' },
+      { metric: 'reputationMultiplier', type: 'percent', value: 1, source: 'Community Open House' }, // Reputation ×2.0
     ],
   },
   {
@@ -57,6 +57,16 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
     durationSeconds: 25,
     effects: [
       { metric: 'spawnIntervalSeconds', type: 'percent', value: -0.5, source: 'Limited-Time Promo' }, // Flow ×2.0
+    ],
+  },
+  {
+    id: 'influencer-blitz',
+    name: 'Influencer Blitz',
+    description: 'Sponsor a local influencer for a two-day spotlight on your clinic.',
+    cost: 420,
+    durationSeconds: 30,
+    effects: [
+      { metric: 'reputationMultiplier', type: 'percent', value: 2, source: 'Influencer Blitz' },
     ],
   },
 ];

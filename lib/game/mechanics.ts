@@ -30,7 +30,7 @@ import {
   calculateUpgradeWeeklyExpenses,
 } from '@/lib/features/economy';
 import { shouldSpawnCustomerWithUpgrades, getUpgradeEffects, UpgradeEffects } from '@/lib/features/upgrades';
-import { combineEffects } from '@/lib/game/effects';
+import { combineEffects, EffectBundle } from '@/lib/game/effects';
 import { getWaitingPositions, getServiceRoomPosition } from '@/lib/game/positioning';
 import { IndustryId } from '@/lib/game/types';
 import { findPath } from '@/lib/game/pathfinding';
@@ -461,10 +461,16 @@ export function tickOnce(state: TickSnapshot): TickResult {
   const marketingEffects = state.marketingEffects ?? [];
 
   const upgradeBaseEffects = getUpgradeEffects(state.upgrades, industryId);
+  const effectBundles: EffectBundle[] = [];
+
+  if (marketingEffects.length > 0) {
+    effectBundles.push({ effects: marketingEffects });
+  }
+
   const upgradeEffects = combineEffects(
     {
-      upgrades: upgradeBaseEffects,
-      marketing: marketingEffects,
+      base: upgradeBaseEffects,
+      bundles: effectBundles,
     },
     industryId,
   );
