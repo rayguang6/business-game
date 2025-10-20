@@ -301,7 +301,7 @@ function processCustomersForTick({
       revenueAccumulator += servicePrice;
       revenueDetails.push({
         amount: servicePrice,
-        category: 'customer',
+        category: RevenueCategory.Customer,
         label: updatedCustomer.service?.name ?? 'Dental service',
       });
       // Play sound effect for service finished

@@ -49,14 +49,18 @@ export interface MovementConfig {
   celebrationFrameDurationMs: number;
 }
 
-export type UpgradeMetric =
-  | 'weeklyExpenses'
-  | 'spawnIntervalSeconds'
-  | 'serviceSpeedMultiplier'
-  | 'reputationMultiplier'
-  | 'treatmentRooms';
+export enum UpgradeMetric {
+  WeeklyExpenses = 'weeklyExpenses',
+  SpawnIntervalSeconds = 'spawnIntervalSeconds',
+  ServiceSpeedMultiplier = 'serviceSpeedMultiplier',
+  ReputationMultiplier = 'reputationMultiplier',
+  TreatmentRooms = 'treatmentRooms',
+}
 
-export type UpgradeEffectType = 'add' | 'percent';
+export enum UpgradeEffectType {
+  Add = 'add',
+  Percent = 'percent',
+}
 
 export interface UpgradeEffect {
   metric: UpgradeMetric;

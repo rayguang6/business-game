@@ -23,13 +23,13 @@ export type {
   MovementConfig,
   UpgradeDefinition,
   UpgradeEffect,
-  UpgradeEffectType,
-  UpgradeMetric,
   UpgradeId,
   IndustrySimulationConfig,
   IndustryId,
   BaseUpgradeMetrics,
 } from './types';
+
+export { UpgradeEffectType, UpgradeMetric } from './types';
 
 /**
  * Centralized game configuration

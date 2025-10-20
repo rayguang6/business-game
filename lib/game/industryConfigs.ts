@@ -8,6 +8,8 @@ import {
   SimulationLayoutConfig,
   IndustryServiceDefinition,
   UpgradeDefinition,
+  UpgradeEffectType,
+  UpgradeMetric,
   IndustrySimulationConfig,
   IndustryId,
 } from './types';
@@ -123,8 +125,8 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     cost: 1200,
     maxLevel: 3,
     effects: [
-      { metric: 'treatmentRooms', type: 'add', value: 1, source: 'Extra Treatment Room' },
-      { metric: 'weeklyExpenses', type: 'add', value: 150, source: 'Extra Treatment Room' },
+      { metric: UpgradeMetric.TreatmentRooms, type: UpgradeEffectType.Add, value: 1, source: 'Extra Treatment Room' },
+      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 150, source: 'Extra Treatment Room' },
     ],
   },
   {
@@ -135,8 +137,8 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     cost: 900,
     maxLevel: 2,
     effects: [
-      { metric: 'serviceSpeedMultiplier', type: 'percent', value: -0.2, source: 'Modern Equipment' },
-      { metric: 'weeklyExpenses', type: 'add', value: 90, source: 'Modern Equipment' },
+      { metric: UpgradeMetric.ServiceSpeedMultiplier, type: UpgradeEffectType.Percent, value: -0.2, source: 'Modern Equipment' },
+      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 90, source: 'Modern Equipment' },
     ],
   },
   {
@@ -147,8 +149,8 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     cost: 700,
     maxLevel: 3,
     effects: [
-      { metric: 'reputationMultiplier', type: 'percent', value: 2, source: 'Staff Training Program' },
-      { metric: 'weeklyExpenses', type: 'add', value: 80, source: 'Staff Training Program' },
+      { metric: UpgradeMetric.ReputationMultiplier, type: UpgradeEffectType.Percent, value: 2, source: 'Staff Training Program' },
+      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 80, source: 'Staff Training Program' },
     ],
   },
   {
@@ -159,8 +161,8 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     cost: 800,
     maxLevel: 2,
     effects: [
-      { metric: 'spawnIntervalSeconds', type: 'percent', value: -0.25, source: 'Priority Booking Software' },
-      { metric: 'weeklyExpenses', type: 'add', value: 110, source: 'Priority Booking Software' },
+      { metric: UpgradeMetric.SpawnIntervalSeconds, type: UpgradeEffectType.Percent, value: -0.25, source: 'Priority Booking Software' },
+      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 110, source: 'Priority Booking Software' },
     ],
   },
   {
@@ -171,8 +173,8 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     cost: 600,
     maxLevel: 2,
     effects: [
-      { metric: 'spawnIntervalSeconds', type: 'percent', value: -0.15, source: 'Local Marketing Blitz' },
-      { metric: 'weeklyExpenses', type: 'add', value: 70, source: 'Local Marketing Blitz' },
+      { metric: UpgradeMetric.SpawnIntervalSeconds, type: UpgradeEffectType.Percent, value: -0.15, source: 'Local Marketing Blitz' },
+      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 70, source: 'Local Marketing Blitz' },
     ],
   },
   {
@@ -183,8 +185,8 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     cost: 450,
     maxLevel: 1,
     effects: [
-      { metric: 'reputationMultiplier', type: 'percent', value: 0.15, source: 'Spa Waiting Area' },
-      { metric: 'weeklyExpenses', type: 'add', value: 60, source: 'Spa Waiting Area' },
+      { metric: UpgradeMetric.ReputationMultiplier, type: UpgradeEffectType.Percent, value: 0.15, source: 'Spa Waiting Area' },
+      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 60, source: 'Spa Waiting Area' },
     ],
   },
 ];
@@ -200,8 +202,8 @@ const RESTAURANT_UPGRADES: UpgradeDefinition[] = [
     cost: 800,
     maxLevel: 2,
     effects: [
-      { metric: 'treatmentRooms', type: 'add', value: 1, source: 'Expanded Seating' },
-      { metric: 'weeklyExpenses', type: 'add', value: 90, source: 'Expanded Seating' },
+      { metric: UpgradeMetric.TreatmentRooms, type: UpgradeEffectType.Add, value: 1, source: 'Expanded Seating' },
+      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 90, source: 'Expanded Seating' },
     ],
   },
   {
@@ -212,8 +214,8 @@ const RESTAURANT_UPGRADES: UpgradeDefinition[] = [
     cost: 950,
     maxLevel: 2,
     effects: [
-      { metric: 'serviceSpeedMultiplier', type: 'percent', value: -0.15, source: 'Kitchen Line Upgrade' },
-      { metric: 'weeklyExpenses', type: 'add', value: 110, source: 'Kitchen Line Upgrade' },
+      { metric: UpgradeMetric.ServiceSpeedMultiplier, type: UpgradeEffectType.Percent, value: -0.15, source: 'Kitchen Line Upgrade' },
+      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 110, source: 'Kitchen Line Upgrade' },
     ],
   },
 ];
@@ -307,8 +309,8 @@ const GYM_UPGRADES: UpgradeDefinition[] = [
     cost: 850,
     maxLevel: 2,
     effects: [
-      { metric: 'serviceSpeedMultiplier', type: 'percent', value: -0.1, source: 'New Training Equipment' },
-      { metric: 'weeklyExpenses', type: 'add', value: 95, source: 'New Training Equipment' },
+      { metric: UpgradeMetric.ServiceSpeedMultiplier, type: UpgradeEffectType.Percent, value: -0.1, source: 'New Training Equipment' },
+      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 95, source: 'New Training Equipment' },
     ],
   },
   {
@@ -319,8 +321,8 @@ const GYM_UPGRADES: UpgradeDefinition[] = [
     cost: 600,
     maxLevel: 1,
     effects: [
-      { metric: 'reputationMultiplier', type: 'percent', value: 0.2, source: 'Recovery Lounge' },
-      { metric: 'weeklyExpenses', type: 'add', value: 70, source: 'Recovery Lounge' },
+      { metric: UpgradeMetric.ReputationMultiplier, type: UpgradeEffectType.Percent, value: 0.2, source: 'Recovery Lounge' },
+      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 70, source: 'Recovery Lounge' },
     ],
   },
 ];

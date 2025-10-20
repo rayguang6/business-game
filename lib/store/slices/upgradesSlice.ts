@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import { GameState, Upgrades } from '../types';
+import { GameState, Upgrades, OneTimeCostCategory } from '../types';
 import {
   DEFAULT_INDUSTRY_ID,
   UpgradeDefinition,
@@ -89,7 +89,7 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
         addOneTimeCost({
           label: upgradeLabel,
           amount: upgrade.cost,
-          category: 'upgrade' as const,
+          category: OneTimeCostCategory.Upgrade,
         });
       }
 

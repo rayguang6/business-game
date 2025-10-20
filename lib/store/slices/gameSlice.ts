@@ -1,7 +1,7 @@
 import { StateCreator } from 'zustand';
 import { getWeeklyBaseExpenses } from '@/lib/features/economy';
 import { tickOnce } from '@/lib/game/mechanics';
-import { GameState } from '../types';
+import { GameState, RevenueCategory, OneTimeCostCategory } from '../types';
 import { getInitialMetrics } from './metricsSlice';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import { GameStore } from '../gameStore';
@@ -159,7 +159,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
         ...state.weeklyRevenueDetails,
         {
           amount,
-          category: 'event' as const,
+          category: RevenueCategory.Event,
           label,
         },
       ],
@@ -176,7 +176,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     const { addOneTimeCost } = get();
     if (addOneTimeCost) {
       addOneTimeCost(
-        { label, amount, category: 'event' as const },
+        { label, amount, category: OneTimeCostCategory.Event },
         true
       );
     }
