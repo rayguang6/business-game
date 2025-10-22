@@ -19,8 +19,8 @@ import {
 // -----------------------------------------------------------------------------
 const DEFAULT_BUSINESS_METRICS: BusinessMetrics = {
   startingCash: 10000,
-  weeklyExpenses: 300,
-  startingReputation: 5,
+  weeklyExpenses: 200,
+  startingReputation: 10,
 } as const;
 
 const DEFAULT_BUSINESS_STATS: BusinessStats = {
