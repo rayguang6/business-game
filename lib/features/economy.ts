@@ -20,7 +20,7 @@ import { Staff } from '@/lib/features/staff';
 export interface ExpenseBreakdownItem {
   label: string;
   amount: number;
-  category: 'base' | 'upgrade' | 'event' | 'staff';
+  category: 'base' | 'upgrade' | 'event' | 'staff'; //TODO: Turn into Global Enum
   sourceId?: string;
 }
 
@@ -37,6 +37,7 @@ function calculateUpgradeExpenseFromDefinition(
   industryId: IndustryId,
 ): number {
   const baseWeeklyExpenses = getWeeklyBaseExpenses(industryId);
+  //TODO: Turn into Global Enum
   return upgrade.effects
     .filter((effect) => effect.metric === 'weeklyExpenses')
     .reduce((total, effect) => {
