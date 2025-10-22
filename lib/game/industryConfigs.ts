@@ -19,7 +19,7 @@ import {
 // -----------------------------------------------------------------------------
 const DEFAULT_BUSINESS_METRICS: BusinessMetrics = {
   startingCash: 10000,
-  weeklyExpenses: 800,
+  weeklyExpenses: 300,
   startingReputation: 5,
 } as const;
 
@@ -41,8 +41,8 @@ const DEFAULT_BUSINESS_STATS: BusinessStats = {
 } as const;
 
 const DEFAULT_MOVEMENT_CONFIG: MovementConfig = {
-  customerTilesPerTick: 0.15,
-  animationReferenceTilesPerTick: 0.15,
+  customerTilesPerTick: 0.25,
+  animationReferenceTilesPerTick: 0.25,
   walkFrameDurationMs: 200,
   minWalkFrameDurationMs: 80,
   maxWalkFrameDurationMs: 320,
@@ -100,8 +100,8 @@ const DEFAULT_CUSTOMER_IMAGES = [
 // -----------------------------------------------------------------------------
 const DENTAL_SERVICES: IndustryServiceDefinition[] = [
   { id: 'dental_cleaning', name: 'Teeth Cleaning', duration: 10, price: 100 },
-  { id: 'dental_filling', name: 'Cavity Filling', duration: 10, price: 200 },
-  { id: 'dental_root_canal', name: 'Root Canal', duration: 10, price: 300 },
+  { id: 'dental_filling', name: 'Cavity Filling', duration: 10, price: 300 },
+  { id: 'dental_root_canal', name: 'Root Canal', duration: 10, price: 500 },
 ];
 
 const RESTAURANT_SERVICES: IndustryServiceDefinition[] = [
