@@ -124,8 +124,6 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
         weeklyHistory: state.weeklyHistory,
         industryId: (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId,
         weeklyExpenseAdjustments: state.weeklyExpenseAdjustments,
-        marketingEffects: state.marketingEffects,
-        hiredStaff: state.hiredStaff,
       });
       return { ...state, ...updated };
     });

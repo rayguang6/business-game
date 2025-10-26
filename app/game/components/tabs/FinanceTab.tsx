@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useFinanceData } from '@/hooks/useFinanceData';
-import type { RevenueEntry } from '@/lib/store/types';
+import { RevenueCategory, type RevenueEntry } from '@/lib/store/types';
 
 export function FinanceTab() {
   const {
@@ -158,7 +158,13 @@ export function FinanceTab() {
               const revenueBreakdown: RevenueEntry[] =
                 w.revenueBreakdown && w.revenueBreakdown.length > 0
                   ? w.revenueBreakdown
-                  : [{ category: 'customer', label: 'Customer payments', amount: w.revenue }];
+                  : [
+                      {
+                        category: RevenueCategory.Customer,
+                        label: 'Customer payments',
+                        amount: w.revenue,
+                      },
+                    ];
               
               return (
                 <div key={`week-${w.week}`} className="bg-gray-700 rounded-lg p-3">

@@ -49,25 +49,13 @@ export interface MovementConfig {
   celebrationFrameDurationMs: number;
 }
 
-export enum UpgradeMetric {
-  WeeklyExpenses = 'weeklyExpenses',
-  SpawnIntervalSeconds = 'spawnIntervalSeconds',
-  ServiceSpeedMultiplier = 'serviceSpeedMultiplier',
-  ReputationMultiplier = 'reputationMultiplier',
-  TreatmentRooms = 'treatmentRooms',
-  HappyProbability = 'happyProbability',
-}
-
-export enum UpgradeEffectType {
-  Add = 'add',
-  Percent = 'percent',
-}
-
+// Upgrade effect now uses new effectManager enums
 export interface UpgradeEffect {
-  metric: UpgradeMetric;
-  type: UpgradeEffectType;
+  metric: import('@/lib/game/effectManager').GameMetric;
+  type: import('@/lib/game/effectManager').EffectType;
   value: number;
-  source: string;
+  priority?: number;
+  // source removed - will be auto-generated when registering with effectManager
 }
 
 export interface UpgradeDefinition {

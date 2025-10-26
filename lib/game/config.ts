@@ -7,8 +7,6 @@ import {
   MovementConfig,
   UpgradeDefinition,
   UpgradeEffect,
-  UpgradeEffectType,
-  UpgradeMetric,
   UpgradeId,
   IndustrySimulationConfig,
   IndustryId,
@@ -28,8 +26,6 @@ export type {
   IndustryId,
   BaseUpgradeMetrics,
 } from './types';
-
-export { UpgradeEffectType, UpgradeMetric } from './types';
 
 /**
  * Centralized game configuration

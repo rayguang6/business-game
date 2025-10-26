@@ -11,6 +11,7 @@ import { calculateUpgradeWeeklyExpenses, getWeeklyBaseExpenses } from '@/lib/fea
 import { getUpgradeLevel, canUpgradeMore } from '@/lib/features/upgrades';
 import { GameStore } from '../gameStore';
 import type { IndustryId } from '@/lib/game/types';
+import { effectManager } from '@/lib/game/effectManager';
 
 export interface UpgradesSlice {
   upgrades: Upgrades;
@@ -21,6 +22,34 @@ export interface UpgradesSlice {
   getAvailableUpgrades: () => UpgradeDefinition[];
   purchaseUpgrade: (upgradeId: UpgradeId) => { success: boolean; message: string };
   resetUpgrades: () => void;
+}
+
+/**
+ * Register upgrade effects with effectManager
+ * @param upgrade - The upgrade definition
+ * @param level - The level of the upgrade (effects are multiplied by level)
+ */
+function addUpgradeEffects(upgrade: UpgradeDefinition, level: number): void {
+  upgrade.effects.forEach((effect, index) => {
+    effectManager.add({
+      id: `upgrade_${upgrade.id}_${index}`,
+      source: {
+        category: 'upgrade',
+        id: upgrade.id,
+        name: upgrade.name,
+      },
+      metric: effect.metric,
+      type: effect.type,
+      value: effect.value * level, // Multiply by level
+    });
+  });
+}
+
+/**
+ * Remove all effects for a specific upgrade
+ */
+function removeUpgradeEffects(upgradeId: string): void {
+  effectManager.removeBySource('upgrade', upgradeId);
 }
 
 export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice> = (set, get) => ({
@@ -111,12 +140,25 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
       applyCashChange(-upgrade.cost);
     }
 
+    // Register upgrade effects with effectManager
+    // Remove old effects first (if upgrading from previous level)
+    removeUpgradeEffects(upgradeId);
+    // Add new effects with multiplied values based on new level
+    addUpgradeEffects(upgrade, newLevel);
+
     const levelText = upgrade.maxLevel > 1 ? ` Level ${newLevel}` : '';
     return { success: true, message: `${upgrade.name}${levelText} unlocked! Cost: $${upgrade.cost}` };
   },
 
   resetUpgrades: () => {
     const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+    
+    // Remove all upgrade effects from effectManager
+    const availableUpgrades = getAllUpgrades(industryId);
+    availableUpgrades.forEach(upgrade => {
+      removeUpgradeEffects(upgrade.id);
+    });
+    
     set({
       upgrades: {},
       weeklyExpenses: getWeeklyBaseExpenses(industryId),
