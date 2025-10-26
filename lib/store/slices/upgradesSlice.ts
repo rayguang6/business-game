@@ -111,17 +111,19 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
       ? `${upgrade.name} (Lvl ${newLevel})`
       : upgrade.name;
 
-    set((state) => {
-      // Add upgrade purchase as a one-time cost (this will be tracked in weekly history)
-      const { addOneTimeCost } = state;
-      if (addOneTimeCost) {
-        addOneTimeCost({
+    const { addOneTimeCost } = get();
+    if (addOneTimeCost) {
+      addOneTimeCost(
+        {
           label: upgradeLabel,
           amount: upgrade.cost,
           category: OneTimeCostCategory.Upgrade,
-        });
-      }
+        },
+        { deductNow: true },
+      );
+    }
 
+    set((state) => {
       return {
         upgrades: nextUpgrades,
         metrics: {
@@ -133,12 +135,6 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
         weeklyExpenseAdjustments: state.weeklyExpenseAdjustments + Math.max(0, weeklyExpenseDelta),
       };
     });
-
-    // Deduct cash after the upgrade is processed (this will trigger game over check)
-    const { applyCashChange } = get();
-    if (applyCashChange) {
-      applyCashChange(-upgrade.cost);
-    }
 
     // Register upgrade effects with effectManager
     // Remove old effects first (if upgrading from previous level)

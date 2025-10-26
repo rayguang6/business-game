@@ -140,20 +140,15 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       return { success: false, message: `Need $${campaign.cost} to launch ${campaign.name}.` };
     }
 
-    const { applyCashChange, addOneTimeCost } = get();
+    const { addOneTimeCost } = get();
 
     if (addOneTimeCost) {
       const costEntry: OneTimeCost = {
         label: campaign.name,
         amount: campaign.cost,
         category: OneTimeCostCategory.Marketing,
-        alreadyDeducted: true,
       };
-      addOneTimeCost(costEntry, true);
-    }
-
-    if (applyCashChange) {
-      applyCashChange(-campaign.cost);
+      addOneTimeCost(costEntry, { deductNow: true });
     }
 
     const campaignStartedAt = get().gameTime ?? 0;

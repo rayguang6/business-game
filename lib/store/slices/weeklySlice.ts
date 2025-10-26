@@ -2,6 +2,8 @@ import { StateCreator } from 'zustand';
 import { WeeklyHistoryEntry, OneTimeCost, RevenueEntry } from '../types';
 import { GameState } from '../types';
 
+type OneTimeCostInput = Omit<OneTimeCost, 'alreadyDeducted'>;
+
 export interface WeeklySlice {
   weeklyRevenue: number;
   weeklyExpenses: number;
@@ -14,13 +16,20 @@ export interface WeeklySlice {
   
   updateWeeklyRevenue: (amount: number) => void;
   updateWeeklyExpenses: (amount: number) => void;
-  addOneTimeCost: (cost: OneTimeCost, alreadyDeducted?: boolean) => void;
+  /**
+   * Track a one-off cost for history/finance views.
+   * Set `deductNow` to true to also pull the cash immediately.
+   */
+  addOneTimeCost: (
+    cost: OneTimeCostInput,
+    options?: { deductNow?: boolean },
+  ) => void;
   addRevenueEntry: (entry: RevenueEntry) => void;
   addWeeklyHistoryEntry: (entry: WeeklyHistoryEntry) => void;
   resetWeeklyTracking: () => void;
 }
 
-export const createWeeklySlice: StateCreator<GameState, [], [], WeeklySlice> = (set) => ({
+export const createWeeklySlice: StateCreator<GameState, [], [], WeeklySlice> = (set, get) => ({
   weeklyRevenue: 0,
   weeklyExpenses: 0,
   weeklyRevenueDetails: [],
@@ -42,17 +51,27 @@ export const createWeeklySlice: StateCreator<GameState, [], [], WeeklySlice> = (
     }));
   },
   
-  addOneTimeCost: (cost: OneTimeCost, alreadyDeducted: boolean = false) => {
+  // Central place to log one-off expenses; optionally deducts cash immediately.
+  addOneTimeCost: (cost: OneTimeCostInput, options = {}) => {
+    const { deductNow = false } = options;
+
     set((state) => ({
       weeklyOneTimeCosts: state.weeklyOneTimeCosts + cost.amount,
       weeklyOneTimeCostDetails: [
         ...state.weeklyOneTimeCostDetails,
-        { ...cost, alreadyDeducted },
+        { ...cost, alreadyDeducted: deductNow },
       ],
-      weeklyOneTimeCostsPaid: alreadyDeducted
+      weeklyOneTimeCostsPaid: deductNow
         ? state.weeklyOneTimeCostsPaid + cost.amount
         : state.weeklyOneTimeCostsPaid,
     }));
+
+    if (deductNow) {
+      const { applyCashChange } = get();
+      if (applyCashChange) {
+        applyCashChange(-cost.amount);
+      }
+    }
   },
   
   addRevenueEntry: (entry: RevenueEntry) => {

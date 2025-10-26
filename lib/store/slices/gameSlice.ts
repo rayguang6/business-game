@@ -174,25 +174,14 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     }));
   },
 
-  // registers a one-time cost via weeklySlice.addOneTimeCost (with alreadyDeducted=true to note it’s immediate) and then subtracts cash.
+  // registers a one-time cost via weeklySlice.addOneTimeCost (which handles immediate deductions when requested).
   recordEventExpense: (amount: number, label: string) => {
     const { addOneTimeCost } = get();
     if (addOneTimeCost) {
       addOneTimeCost(
         { label, amount, category: OneTimeCostCategory.Event },
-        true
+        { deductNow: true },
       );
-    }
-
-    set((state) => ({
-      metrics: {
-        ...state.metrics,
-        cash: state.metrics.cash - amount,
-      },
-    }));
-    const { checkGameOver } = get();
-    if (checkGameOver) {
-      checkGameOver();
     }
   },
 
