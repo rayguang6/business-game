@@ -2,10 +2,10 @@
 
 import React, { useMemo, useState } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
-import { getUpgradeEffects } from '@/lib/features/upgrades';
-import { DEFAULT_INDUSTRY_ID, UpgradeEffect, UpgradeMetric } from '@/lib/game/config';
-import { combineEffects } from '@/lib/game/effects';
+import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
+import { CampaignEffect } from '@/lib/store/slices/marketingSlice';
+import { GameMetric, EffectType } from '@/lib/game/effectManager';
 
 const formatSeconds = (seconds: number): string => {
   const clamped = Math.max(0, Math.floor(seconds));
@@ -21,51 +21,36 @@ export function MarketingTab() {
   const availableCampaigns = useGameStore((state) => state.availableCampaigns);
   const activeCampaign = useGameStore((state) => state.activeCampaign);
   const campaignEndsAt = useGameStore((state) => state.campaignEndsAt);
-  const marketingEffects = useGameStore((state) => state.marketingEffects);
   const startCampaign = useGameStore((state) => state.startCampaign);
   const metrics = useGameStore((state) => state.metrics);
   const gameTime = useGameStore((state) => state.gameTime);
-  const upgrades = useGameStore((state) => state.upgrades);
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
 
   const [message, setMessage] = useState<string | null>(null);
 
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
 
-  const upgradeEffects = useMemo(
-    () => getUpgradeEffects(upgrades, industryId),
-    [upgrades, industryId],
-  );
-
-  const combinedEffects = useMemo(
-    () =>
-      combineEffects(
-        {
-          base: upgradeEffects,
-          bundles: marketingEffects.length > 0 ? [{ effects: marketingEffects }] : [],
-        },
-        industryId,
-      ),
-    [upgradeEffects, marketingEffects, industryId],
-  );
-
-  const getPercentDelta = (effects: UpgradeEffect[], metric: UpgradeEffect['metric']) =>
+  // Helper functions for new CampaignEffect type
+  const getPercentDelta = (effects: CampaignEffect[], metric: GameMetric) =>
     effects
-      .filter((effect) => effect.metric === metric && effect.type === 'percent')
+      .filter((effect) => effect.metric === metric && effect.type === EffectType.Percent)
       .reduce((sum, effect) => sum + effect.value, 0);
 
-  const getAddDelta = (effects: UpgradeEffect[], metric: UpgradeEffect['metric']) =>
+  const getAddDelta = (effects: CampaignEffect[], metric: GameMetric) =>
     effects
-      .filter((effect) => effect.metric === metric && effect.type === 'add')
+      .filter((effect) => effect.metric === metric && effect.type === EffectType.Add)
       .reduce((sum, effect) => sum + effect.value, 0);
 
   const describeFlowEffect = (percent: number, add: number) => {
     const descriptions: string[] = [];
     if (percent !== 0) {
-      const flowMultiplier = 1 / Math.max(0.1, 1 + percent);
+      const percentDecimal = percent / 100;
+      const intervalMultiplier = 1 + percentDecimal;
+      const safeIntervalMultiplier = intervalMultiplier <= 0 ? 0.1 : intervalMultiplier;
+      const flowMultiplier = 1 / safeIntervalMultiplier;
       const flowPercent = (flowMultiplier - 1) * 100;
       descriptions.push(
-        `Customer flow ${flowPercent >= 0 ? '+' : ''}${flowPercent.toFixed(0)}% (×${flowMultiplier.toFixed(1)})`,
+        `Customer flow ${flowPercent >= 0 ? '+' : ''}${flowPercent.toFixed(0)}% (×${flowMultiplier.toFixed(2)})`,
       );
     }
     if (add !== 0) {
@@ -76,9 +61,8 @@ export function MarketingTab() {
 
   const describeReputationEffect = (percent: number) => {
     if (percent === 0) return null;
-    const reputationMultiplier = 1 + percent;
-    const reputationPercent = percent * 100;
-    return `Reputation gains ${reputationPercent >= 0 ? '+' : ''}${reputationPercent.toFixed(0)}% (×${reputationMultiplier.toFixed(1)})`;
+    const reputationMultiplier = 1 + percent / 100;
+    return `Reputation gains ${percent >= 0 ? '+' : ''}${percent.toFixed(0)}% (×${reputationMultiplier.toFixed(2)})`;
   };
 
   const remainingSeconds = useMemo(() => {
@@ -102,39 +86,6 @@ export function MarketingTab() {
         </p>
       </div>
 
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 text-xs text-gray-200">
-        <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center">
-          <div>
-            <span className="text-gray-400">Spawn interval:</span>{' '}
-            <span className="text-white font-semibold">
-              {upgradeEffects.spawnIntervalSeconds.toFixed(2)}s
-            </span>{' '}
-            <span className="text-gray-400">→</span>{' '}
-            <span className="text-green-300 font-semibold">
-              {combinedEffects.spawnIntervalSeconds.toFixed(2)}s
-            </span>{' '}
-            <span className="text-gray-400">(×</span>
-            <span className="text-green-300 font-semibold">
-              {(upgradeEffects.spawnIntervalSeconds / combinedEffects.spawnIntervalSeconds).toFixed(1)}
-            </span>
-            <span className="text-gray-400"> flow)</span>
-          </div>
-          <div>
-            <span className="text-gray-400">Reputation multiplier:</span>{' '}
-            <span className="text-white font-semibold">
-              {upgradeEffects.reputationMultiplier.toFixed(1)}x
-            </span>{' '}
-            <span className="text-gray-400">→</span>{' '}
-            <span className="text-green-300 font-semibold">
-              {combinedEffects.reputationMultiplier.toFixed(1)}x
-            </span>
-          </div>
-        </div>
-        <p className="text-gray-400 mt-2">
-          (Left numbers show upgrade baseline; right numbers include active marketing boosts.)
-        </p>
-      </div>
-
       {message && (
         <div className="bg-gray-800 border border-gray-700 text-gray-200 text-sm px-3 py-2 rounded">
           {message}
@@ -145,9 +96,9 @@ export function MarketingTab() {
         {availableCampaigns.map((campaign) => {
           const isActive = activeCampaign?.id === campaign.id;
           const isAnotherActive = Boolean(activeCampaign && !isActive);
-          const spawnPercent = getPercentDelta(campaign.effects, UpgradeMetric.SpawnIntervalSeconds);
-          const spawnAdd = getAddDelta(campaign.effects, UpgradeMetric.SpawnIntervalSeconds);
-          const reputationPercent = getPercentDelta(campaign.effects, UpgradeMetric.ReputationMultiplier);
+          const spawnPercent = getPercentDelta(campaign.effects, GameMetric.SpawnIntervalSeconds);
+          const spawnAdd = getAddDelta(campaign.effects, GameMetric.SpawnIntervalSeconds);
+          const reputationPercent = getPercentDelta(campaign.effects, GameMetric.ReputationMultiplier);
           const flowDescriptions = describeFlowEffect(spawnPercent, spawnAdd);
           const reputationDescription = describeReputationEffect(reputationPercent);
           const canAfford = metrics.cash >= campaign.cost;
@@ -218,34 +169,13 @@ export function MarketingTab() {
       </div>
 
       <div className="text-xs text-gray-400 border-t border-gray-800 pt-3">
-        {(() => {
-          const activeFlow = (1 / Math.max(0.1, 1 + getPercentDelta(marketingEffects, UpgradeMetric.SpawnIntervalSeconds))).toFixed(1);
-          const activeFlowAdd = getAddDelta(marketingEffects, UpgradeMetric.SpawnIntervalSeconds);
-          const activeReputation = (1 + getPercentDelta(marketingEffects, UpgradeMetric.ReputationMultiplier)).toFixed(1);
-
-          const parts: string[] = [];
-          if (activeFlow !== '1.0' || activeFlowAdd !== 0) {
-            if (activeFlow !== '1.0') {
-              parts.push(`Flow ×${activeFlow}`);
-            }
-            if (activeFlowAdd !== 0) {
-              parts.push(`Spawn interval ${activeFlowAdd > 0 ? '+' : ''}${activeFlowAdd.toFixed(1)}s`);
-            }
-          }
-          if (activeReputation !== '1.0') {
-            parts.push(`Reputation ×${activeReputation}`);
-          }
-
-          if (parts.length === 0) {
-            return <span className="text-gray-400">No active marketing modifiers.</span>;
-          }
-
-          return (
-            <span>
-              Active marketing modifiers: {parts.join(' · ')}
-            </span>
-          );
-        })()}
+        {activeCampaign ? (
+          <span>
+            Active marketing: <span className="text-emerald-400 font-semibold">{activeCampaign.name}</span>
+          </span>
+        ) : (
+          <span className="text-gray-400">No active marketing campaign.</span>
+        )}
       </div>
     </div>
   );

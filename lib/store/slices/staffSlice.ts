@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand';
 import { GameStore } from '../gameStore';
-import { Staff, StaffApplicant, generateRandomStaff } from '@/lib/features/staff';
+import { Staff, StaffApplicant, generateRandomStaff, addStaffEffects } from '@/lib/features/staff';
+import { effectManager } from '@/lib/game/effectManager';
 
 const JOB_BOARD_APPLICANT_COUNT = 3;
 export const JOB_POST_COST = 1000;
@@ -10,8 +11,8 @@ export const createInitialHiredStaff = (): Staff[] => [
     id: 'staff-initial-1',
     name: 'Alice',
     salary: 500,
-    increaseServiceSpeed: 0.1,
-    increaseHappyCustomerProbability: 0.04,
+    increaseServiceSpeed: 10,  // 10% speed boost
+    increaseHappyCustomerProbability: 4,  // +4% to happy chance
     emoji: '👩‍⚕️',
     rank: 'blue',
     role: 'Assistant',
@@ -22,8 +23,8 @@ export const createInitialHiredStaff = (): Staff[] => [
     id: 'staff-initial-2',
     name: 'Bob',
     salary: 600,
-    increaseServiceSpeed: 0.05,
-    increaseHappyCustomerProbability: 0.05,
+    increaseServiceSpeed: 5,  // 5% speed boost
+    increaseHappyCustomerProbability: 5,  // +5% to happy chance
     emoji: '👨‍🔬',
     rank: 'purple',
     role: 'Specialist',
@@ -61,8 +62,13 @@ export interface StaffSlice {
   resetStaff: () => void;
 }
 
-export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (set, get) => ({
-  hiredStaff: createInitialHiredStaff(),
+export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (set, get) => {
+  // Register initial staff effects
+  const initialStaff = createInitialHiredStaff();
+  initialStaff.forEach(staff => addStaffEffects(staff));
+
+  return {
+  hiredStaff: initialStaff,
   jobBoardApplicants: [],
   hireStaff: (staff: Staff) =>
     set((state) => {
@@ -78,6 +84,10 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
 
       const { isHired: _ignored, ...rest } = (staff as StaffApplicant & { isHired?: boolean });
       const cleanStaff = rest as Staff;
+      
+      // Add staff effects to the effect manager
+      addStaffEffects(cleanStaff);
+      
       const newHiredStaff = [...state.hiredStaff, cleanStaff];
       const updatedApplicants =
         applicantMatch != null
@@ -108,9 +118,19 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
     return { success: true, message: 'Job board refreshed with new applicants.' };
   },
   resetStaff: () => {
+    // Clear all staff effects
+    get().hiredStaff.forEach(staff => {
+      effectManager.removeBySource('staff', staff.id);
+    });
+    
+    // Reset to initial staff and add their effects
+    const initialStaff = createInitialHiredStaff();
+    initialStaff.forEach(staff => addStaffEffects(staff));
+    
     set({
-      hiredStaff: createInitialHiredStaff(),
+      hiredStaff: initialStaff,
       jobBoardApplicants: [],
     });
   },
-});
+};
+};

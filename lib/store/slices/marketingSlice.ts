@@ -1,9 +1,14 @@
 import { StateCreator } from 'zustand';
 import { GameStore } from '../gameStore';
 import { OneTimeCost, OneTimeCostCategory } from '../types';
-import { UpgradeEffect, UpgradeEffectType, UpgradeMetric } from '@/lib/game/config';
+import { effectManager, GameMetric, EffectType, Effect } from '@/lib/game/effectManager';
 
-export type MarketingEffects = UpgradeEffect[];
+// Marketing campaign effect (simplified from full Effect, no ID/source yet)
+export interface CampaignEffect {
+  metric: GameMetric;
+  type: EffectType;
+  value: number;
+}
 
 export interface MarketingCampaign {
   id: string;
@@ -11,23 +16,46 @@ export interface MarketingCampaign {
   description: string;
   cost: number;
   durationSeconds: number;
-  effects: UpgradeEffect[];
+  effects: CampaignEffect[];
 }
 
 export interface MarketingSlice {
   activeCampaign: MarketingCampaign | null;
   campaignStartedAt: number | null;
   campaignEndsAt: number | null;
-  marketingEffects: MarketingEffects;
   availableCampaigns: MarketingCampaign[];
   startCampaign: (campaignId: string) => { success: boolean; message: string };
   stopCampaign: () => void;
   tickMarketing: (currentGameTime: number) => void;
 }
 
-export const BASE_MARKETING_EFFECTS: MarketingEffects = [];
+/**
+ * Add marketing campaign effects to the effect manager
+ */
+function addMarketingEffects(campaign: MarketingCampaign): void {
+  campaign.effects.forEach((effect, index) => {
+    effectManager.add({
+      id: `marketing_${campaign.id}_${index}`,
+      source: {
+        category: 'marketing',
+        id: campaign.id,
+        name: campaign.name,
+      },
+      metric: effect.metric,
+      type: effect.type,
+      value: effect.value,
+    });
+  });
+}
 
-// Note: percent values use the shared upgrade convention (e.g., 1 = +100% multiplier).
+/**
+ * Remove marketing campaign effects from the effect manager
+ */
+function removeMarketingEffects(campaignId: string): void {
+  effectManager.removeBySource('marketing', campaignId);
+}
+
+// Note: percent values now use whole numbers (e.g., 100 = +100%)
 const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
   {
     id: 'neighborhood-flyers',
@@ -37,11 +65,10 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
     durationSeconds: 20,
     effects: [
       {
-        metric: UpgradeMetric.SpawnIntervalSeconds,
-        type: UpgradeEffectType.Add,
-        value: -1,
-        source: 'Neighborhood Flyers (−1s spawn)',
-      }, // Flow +~1 customer/minute
+        metric: GameMetric.SpawnIntervalSeconds,
+        type: EffectType.Add,
+        value: -1, // -1s spawn = faster customer flow
+      },
     ],
   },
   {
@@ -52,11 +79,10 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
     durationSeconds: 30,
     effects: [
       {
-        metric: UpgradeMetric.ReputationMultiplier,
-        type: UpgradeEffectType.Percent,
-        value: 1,
-        source: 'Community Open House (+100%)',
-      }, // Reputation ×2.0
+        metric: GameMetric.ReputationMultiplier,
+        type: EffectType.Percent,
+        value: 100, // +100% reputation gain
+      },
     ],
   },
   {
@@ -67,11 +93,10 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
     durationSeconds: 25,
     effects: [
       {
-        metric: UpgradeMetric.SpawnIntervalSeconds,
-        type: UpgradeEffectType.Percent,
-        value: -0.5,
-        source: 'Limited-Time Promo (×0.5 spawn interval)',
-      }, // Flow ×2.0
+        metric: GameMetric.SpawnIntervalSeconds,
+        type: EffectType.Percent,
+        value: -50, // -50% spawn interval = 2x customer flow
+      },
     ],
   },
   {
@@ -82,10 +107,9 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
     durationSeconds: 30,
     effects: [
       {
-        metric: UpgradeMetric.ReputationMultiplier,
-        type: UpgradeEffectType.Percent,
-        value: 2,
-        source: 'Influencer Blitz (+200%)',
+        metric: GameMetric.ReputationMultiplier,
+        type: EffectType.Percent,
+        value: 200, // +200% reputation gain
       },
     ],
   },
@@ -95,7 +119,6 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
   activeCampaign: null,
   campaignStartedAt: null,
   campaignEndsAt: null,
-  marketingEffects: BASE_MARKETING_EFFECTS,
   availableCampaigns: DEFAULT_CAMPAIGNS,
 
   startCampaign: (campaignId: string) => {
@@ -136,26 +159,31 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
     const campaignStartedAt = get().gameTime ?? 0;
     const campaignEndsAt = campaignStartedAt + campaign.durationSeconds;
 
+    // Register effects to effectManager
+    addMarketingEffects(campaign);
+
     set({
       activeCampaign: campaign,
       campaignStartedAt,
       campaignEndsAt,
-      marketingEffects: campaign.effects.map((effect) => ({ ...effect })),
     });
 
     return { success: true, message: `${campaign.name} launched!` };
   },
 
   stopCampaign: () => {
-    if (!get().activeCampaign) {
+    const { activeCampaign } = get();
+    if (!activeCampaign) {
       return;
     }
+
+    // Remove effects from effectManager
+    removeMarketingEffects(activeCampaign.id);
 
     set({
       activeCampaign: null,
       campaignStartedAt: null,
       campaignEndsAt: null,
-      marketingEffects: [],
     });
   },
 
@@ -166,11 +194,13 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
     }
 
     if (currentGameTime >= campaignEndsAt) {
+      // Remove effects from effectManager
+      removeMarketingEffects(activeCampaign.id);
+
       set({
         activeCampaign: null,
         campaignStartedAt: null,
         campaignEndsAt: null,
-        marketingEffects: [],
       });
     }
   },

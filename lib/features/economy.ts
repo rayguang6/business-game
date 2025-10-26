@@ -14,7 +14,7 @@ import {
 import { IndustryId, UpgradeId } from '@/lib/game/types';
 import { calculateActiveUpgradeMetrics, getUpgradeLevel } from './upgrades';
 import { Upgrades } from '@/lib/store/types';
-
+import { EffectType, GameMetric } from '@/lib/game/effectManager';
 import { Staff } from '@/lib/features/staff';
 
 export interface ExpenseBreakdownItem {
@@ -37,16 +37,15 @@ function calculateUpgradeExpenseFromDefinition(
   industryId: IndustryId,
 ): number {
   const baseWeeklyExpenses = getWeeklyBaseExpenses(industryId);
-  //TODO: Turn into Global Enum
   return upgrade.effects
-    .filter((effect) => effect.metric === 'weeklyExpenses')
+    .filter((effect) => effect.metric === GameMetric.WeeklyExpenses)
     .reduce((total, effect) => {
-      if (effect.type === 'add') {
+      if (effect.type === EffectType.Add) {
         return total + effect.value;
       }
 
-      if (effect.type === 'percent') {
-        return total + baseWeeklyExpenses * effect.value;
+      if (effect.type === EffectType.Percent) {
+        return total + baseWeeklyExpenses * (effect.value / 100);
       }
 
       return total;

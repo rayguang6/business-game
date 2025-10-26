@@ -29,15 +29,11 @@ import {
   getWeeklyBaseExpenses,
   calculateUpgradeWeeklyExpenses,
 } from '@/lib/features/economy';
-import { shouldSpawnCustomerWithUpgrades, getUpgradeEffects, UpgradeEffects } from '@/lib/features/upgrades';
-import { combineEffects, EffectBundle } from '@/lib/game/effects';
-import { buildStaffEffectBundle, Staff } from '@/lib/features/staff';
 import { getWaitingPositions, getServiceRoomPosition } from '@/lib/game/positioning';
 import { IndustryId } from '@/lib/game/types';
 import { findPath } from '@/lib/game/pathfinding';
 import { audioManager, AudioFx } from '@/lib/audio/audioManager';
-
-type ActiveMarketingEffects = UpgradeEffect[];
+import { effectManager, GameMetric } from '@/lib/game/effectManager';
 
 interface TickSnapshot {
   gameTick: number;
@@ -55,8 +51,6 @@ interface TickSnapshot {
   upgrades: Upgrades;
   industryId?: IndustryId;
   weeklyExpenseAdjustments: number;
-  marketingEffects?: ActiveMarketingEffects;
-  hiredStaff?: Staff[];
 }
 
 type TickResult = Omit<TickSnapshot, 'industryId'>;
@@ -94,7 +88,11 @@ interface ProcessCustomersParams {
   metrics: Metrics;
   weeklyRevenue: number;
   weeklyRevenueDetails: RevenueEntry[];
-  upgradeEffects: UpgradeEffects;
+  gameMetrics: {
+    serviceRooms: number;
+    reputationMultiplier: number;
+    happyProbability: number;
+  };
   industryId: IndustryId;
 }
 
@@ -195,17 +193,17 @@ function processCustomersForTick({
   metrics,
   weeklyRevenue,
   weeklyRevenueDetails,
-  upgradeEffects,
+  gameMetrics,
   industryId,
 }: ProcessCustomersParams): ProcessCustomersResult {
-  const roomsRemaining = [...getAvailableRooms(customers, upgradeEffects.treatmentRooms)];
+  const roomsRemaining = [...getAvailableRooms(customers, gameMetrics.serviceRooms)];
   const updatedCustomers: Customer[] = [];
   let metricsAccumulator: Metrics = { ...metrics };
   let revenueAccumulator = weeklyRevenue;
   const revenueDetails = [...weeklyRevenueDetails];
   const stats = getBusinessStats(industryId);
-  const reputationMultiplier = upgradeEffects.reputationMultiplier;
-  const happyProbability = Math.max(0, Math.min(1, upgradeEffects.happyProbability ?? stats.baseHappyProbability));
+  const reputationMultiplier = gameMetrics.reputationMultiplier;
+  const happyProbability = Math.max(0, Math.min(1, gameMetrics.happyProbability));
 
   // Find already occupied waiting positions (including both current and target positions)
   // occupiedWaitingPositions: the grid locations where someone is already sitting or heading; used to avoid overlap.
@@ -461,33 +459,26 @@ export function tickOnce(state: TickSnapshot): TickResult {
   const currentWeek = preparedWeek.currentWeek;
   const weeklyExpenseAdjustments = preparedWeek.weeklyExpenseAdjustments;
 
-  const marketingEffects = state.marketingEffects ?? [];
-  const hiredStaff = state.hiredStaff ?? [];
+  // Calculate all metrics using effectManager (includes upgrades, marketing, staff effects)
+  const baseStats = getBusinessStats(industryId);
+  const gameMetrics = {
+    spawnIntervalSeconds: effectManager.calculate(GameMetric.SpawnIntervalSeconds, baseStats.customerSpawnIntervalSeconds),
+    serviceSpeedMultiplier: effectManager.calculate(GameMetric.ServiceSpeedMultiplier, 1.0),
+    serviceRooms: effectManager.calculate(GameMetric.ServiceRooms, baseStats.treatmentRooms),
+    reputationMultiplier: effectManager.calculate(GameMetric.ReputationMultiplier, 1.0),
+    happyProbability: effectManager.calculate(GameMetric.HappyProbability, baseStats.baseHappyProbability),
+    weeklyExpenses: effectManager.calculate(GameMetric.WeeklyExpenses, 0),
+  };
+  weeklyExpenses = gameMetrics.weeklyExpenses;
 
-  const upgradeBaseEffects = getUpgradeEffects(state.upgrades, industryId);
-  const effectBundles: EffectBundle[] = [];
+  // Calculate spawn interval in ticks and check if it's time to spawn a customer
+  const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
+  const spawnIntervalTicks = Math.max(1, Math.round(gameMetrics.spawnIntervalSeconds * ticksPerSecond));
+  const shouldSpawn = spawnIntervalTicks > 0 && nextTick % spawnIntervalTicks === 0;
 
-  if (marketingEffects.length > 0) {
-    effectBundles.push({ id: 'marketing', effects: marketingEffects });
-  }
-
-  const staffBundle = buildStaffEffectBundle(hiredStaff);
-  if (staffBundle) {
-    effectBundles.push(staffBundle);
-  }
-
-  const upgradeEffects = combineEffects(
-    {
-      base: upgradeBaseEffects,
-      bundles: effectBundles,
-    },
-    industryId,
-  );
-  weeklyExpenses = upgradeEffects.weeklyExpenses;
-
-  //If the customer should spawn with the upgrades, create a new customer.
-  if (shouldSpawnCustomerWithUpgrades(nextTick, state.upgrades, industryId, upgradeEffects)) {
-    customers = [...customers, createCustomer(upgradeEffects.serviceSpeedMultiplier, industryId)];
+  //If the customer should spawn, create a new customer.
+  if (shouldSpawn) {
+    customers = [...customers, createCustomer(gameMetrics.serviceSpeedMultiplier, industryId)];
   }
 
   //Process customers for the tick.
@@ -496,7 +487,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
     metrics,
     weeklyRevenue,
     weeklyRevenueDetails,
-    upgradeEffects,
+    gameMetrics,
     industryId,
   });
 

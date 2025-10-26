@@ -1,12 +1,11 @@
-import { UpgradeEffect, UpgradeEffectType, UpgradeMetric } from '@/lib/game/config';
-import { EffectBundle } from '@/lib/game/effects';
+import { effectManager, GameMetric, EffectType } from '@/lib/game/effectManager';
 
 export interface Staff {
   id: string;
   name: string;
   salary: number;
-  increaseServiceSpeed: number; // e.g., 0.1 for 10% increase
-  increaseHappyCustomerProbability: number; // e.g., 0.05 for 5% increase
+  increaseServiceSpeed: number; // Percentage: 10 = 10% speed boost (reduces service time)
+  increaseHappyCustomerProbability: number; // Percentage points: 4 = +4% to happy chance
   emoji: string; // To represent the staff member
   rank: 'blue' | 'purple' | 'orange' | 'red';
   role: string;
@@ -96,10 +95,10 @@ export const generateRandomStaff = (id: string): Staff => {
   const multiplier = getStatMultiplier(rank);
 
   const salary = Math.round((500 * multiplier + Math.random() * 200) / 100) * 100;
-  const increaseServiceSpeed = parseFloat((0.05 * multiplier + Math.random() * 0.05).toFixed(2));
-  const increaseHappyCustomerProbability = parseFloat(
-    Math.min(0.05, Math.max(0.01, 0.01 + Math.random() * 0.04)).toFixed(2),
-  );
+  // Speed boost as percentage: 5-10% for blue, scales with rank
+  const increaseServiceSpeed = Math.round(5 * multiplier + Math.random() * 5);
+  // Happy probability as percentage points: 1-5% for blue, scales with rank
+  const increaseHappyCustomerProbability = Math.round(1 * multiplier + Math.random() * 4);
   const level = Math.floor(Math.random() * 5 * multiplier) + 1; // Level 1-5 for blue, higher for others
   const hireCost = Math.round((salary * 2 + level * 50) / 100) * 100; // Example cost calculation
 
@@ -121,54 +120,63 @@ export const generateRandomStaff = (id: string): Staff => {
   };
 };
 
-export function buildStaffEffectBundle(staffMembers: Staff[]): EffectBundle | null {
-  if (!staffMembers || staffMembers.length === 0) {
-    return null;
-  }
-
-  const totalServiceSpeedPercent = staffMembers.reduce(
-    (sum, staff) => sum + (staff.increaseServiceSpeed ?? 0),
-    0,
-  );
-  const totalHappyProbabilityBonus = staffMembers.reduce(
-    (sum, staff) => sum + (staff.increaseHappyCustomerProbability ?? 0),
-    0,
-  );
-  const totalSalary = staffMembers.reduce((sum, staff) => sum + (staff.salary ?? 0), 0);
-
-  const effects: UpgradeEffect[] = [];
-
-  if (totalServiceSpeedPercent !== 0) {
-    effects.push({
-      metric: UpgradeMetric.ServiceSpeedMultiplier,
-      type: UpgradeEffectType.Percent,
-      value: -totalServiceSpeedPercent,
-      source: `Staff service boost (-${(totalServiceSpeedPercent * 100).toFixed(0)}%)`,
+/**
+ * Add a staff member's effects to the effect manager
+ * This should be called when a staff member is hired
+ */
+export function addStaffEffects(staff: Staff): void {
+  // Service speed boost (stored as percentage)
+  // e.g., 10 = +10% speed boost, which means -10% service time
+  if (staff.increaseServiceSpeed > 0) {
+    effectManager.add({
+      id: `staff_${staff.id}_speed`,
+      source: {
+        category: 'staff',
+        id: staff.id,
+        name: staff.name,
+      },
+      metric: GameMetric.ServiceSpeedMultiplier,
+      type: EffectType.Percent,
+      value: -staff.increaseServiceSpeed, // Negative to reduce service time
     });
   }
 
-  if (totalHappyProbabilityBonus !== 0) {
-    const clampedBonus = Math.max(0, Math.min(0.5, totalHappyProbabilityBonus));
-    effects.push({
-      metric: UpgradeMetric.HappyProbability,
-      type: UpgradeEffectType.Add,
-      value: clampedBonus,
-      source: `Staff happy chance (+${(clampedBonus * 100).toFixed(0)}%)`,
+  // Happy customer probability boost (convert percentage points to decimal)
+  // e.g., 4 = +4% = +0.04 to probability (which is 0-1 range)
+  if (staff.increaseHappyCustomerProbability > 0) {
+    effectManager.add({
+      id: `staff_${staff.id}_happy`,
+      source: {
+        category: 'staff',
+        id: staff.id,
+        name: staff.name,
+      },
+      metric: GameMetric.HappyProbability,
+      type: EffectType.Add,
+      value: staff.increaseHappyCustomerProbability / 100, // Convert to 0-1 range
     });
   }
 
-  if (totalSalary > 0) {
-    effects.push({
-      metric: UpgradeMetric.WeeklyExpenses,
-      type: UpgradeEffectType.Add,
-      value: totalSalary,
-      source: 'Staff salaries',
+  // Weekly salary expense
+  if (staff.salary > 0) {
+    effectManager.add({
+      id: `staff_${staff.id}_salary`,
+      source: {
+        category: 'staff',
+        id: staff.id,
+        name: staff.name,
+      },
+      metric: GameMetric.WeeklyExpenses,
+      type: EffectType.Add,
+      value: staff.salary,
     });
   }
+}
 
-  if (effects.length === 0) {
-    return null;
-  }
-
-  return { id: 'staff', effects };
+/**
+ * Remove a staff member's effects from the effect manager
+ * This should be called when a staff member is fired/removed
+ */
+export function removeStaffEffects(staffId: string): void {
+  effectManager.removeBySource('staff', staffId);
 }

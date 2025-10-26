@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
 import { CustomerStatus } from '@/lib/features/customers';
 import { WaitingArea } from './WaitingArea';
@@ -8,11 +8,9 @@ import { TreatmentRoom } from './TreatmentRoom';
 import { Character2D } from './Character2D';
 import { SpriteCustomer } from './SpriteCustomer';
 import { GridOverlay } from './GridOverlay';
-import { getUpgradeEffects } from '@/lib/features/upgrades';
 import { DEFAULT_INDUSTRY_ID, getBusinessStats } from '@/lib/game/config';
-import { combineEffects, EffectBundle } from '@/lib/game/effects';
 import { IndustryId } from '@/lib/game/types';
-import { buildStaffEffectBundle } from '@/lib/features/staff';
+import { effectManager, GameMetric } from '@/lib/game/effectManager';
 
 // Canvas scaling configuration
 const CANVAS_CONFIG = {
@@ -37,8 +35,6 @@ export function GameCanvas() {
   const {
     selectedIndustry,
     customers,
-    upgrades,
-    marketingEffects,
     activeCampaign,
     campaignEndsAt,
     gameTime,
@@ -70,37 +66,43 @@ export function GameCanvas() {
   }, []);
 
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-  const baseUpgradeEffects = useMemo(() => getUpgradeEffects(upgrades, industryId), [upgrades, industryId]);
-  const effectBundles = useMemo(() => {
-    const bundles: EffectBundle[] = [];
-    if (marketingEffects.length > 0) {
-      bundles.push({ effects: marketingEffects });
-    }
-    const staffBundle = buildStaffEffectBundle(hiredStaff);
-    if (staffBundle) {
-      bundles.push(staffBundle);
-    }
-    return bundles;
-  }, [marketingEffects, hiredStaff]);
-  const combinedEffects = useMemo(
-    () => combineEffects({ base: baseUpgradeEffects, bundles: effectBundles }, industryId),
-    [baseUpgradeEffects, effectBundles, industryId],
-  );
   const businessStats = useMemo(() => getBusinessStats(industryId), [industryId]);
+  
+  const computeMetrics = useCallback(() => ({
+    spawnIntervalSeconds: effectManager.calculate(
+      GameMetric.SpawnIntervalSeconds,
+      businessStats.customerSpawnIntervalSeconds,
+    ),
+    serviceSpeedMultiplier: effectManager.calculate(GameMetric.ServiceSpeedMultiplier, 1.0),
+    serviceRooms: effectManager.calculate(GameMetric.ServiceRooms, businessStats.treatmentRooms),
+    reputationMultiplier: effectManager.calculate(GameMetric.ReputationMultiplier, 1.0),
+    happyProbability: effectManager.calculate(GameMetric.HappyProbability, businessStats.baseHappyProbability),
+    weeklyExpenses: effectManager.calculate(GameMetric.WeeklyExpenses, 0),
+  }), [businessStats]);
+
+  const [metrics, setMetrics] = useState(() => computeMetrics());
+
+  useEffect(() => {
+    setMetrics(computeMetrics());
+    const unsubscribe = effectManager.subscribe(() => {
+      setMetrics(computeMetrics());
+    });
+    return () => unsubscribe();
+  }, [computeMetrics]);
 
   if (!selectedIndustry) return null;
-  const treatmentRoomsLabel = 'Treatment Rooms';
-  const treatmentRooms = Math.max(1, Math.round(combinedEffects.treatmentRooms));
+  const serviceRoomsLabel = 'Service Rooms';
+  const serviceRooms = Math.max(1, Math.round(metrics.serviceRooms));
   const mapBackground = selectedIndustry.mapImage ?? '/images/maps/dental-map.png';
 
-  const spawnIntervalSeconds = combinedEffects.spawnIntervalSeconds;
+  const spawnIntervalSeconds = metrics.spawnIntervalSeconds;
   const customersPerMinute = spawnIntervalSeconds > 0 ? 60 / spawnIntervalSeconds : null;
-  const serviceSpeedMultiplier = combinedEffects.serviceSpeedMultiplier;
+  const serviceSpeedMultiplier = metrics.serviceSpeedMultiplier;
   const baseReputationGain = businessStats.reputationGainPerHappyCustomer;
-  const reputationPerHappy = baseReputationGain * combinedEffects.reputationMultiplier;
+  const reputationPerHappy = baseReputationGain * metrics.reputationMultiplier;
   const baseHappyProbability = businessStats.baseHappyProbability;
-  const happyProbability = combinedEffects.happyProbability ?? baseHappyProbability;
-  const weeklyExpenses = combinedEffects.weeklyExpenses;
+  const happyProbability = metrics.happyProbability;
+  const weeklyExpenses = metrics.weeklyExpenses;
   const campaignSecondsRemaining = activeCampaign && campaignEndsAt != null ? Math.max(0, campaignEndsAt - gameTime) : null;
 
   // Canvas coordinate system (for future 2D animations)
@@ -158,8 +160,8 @@ export function GameCanvas() {
               </span>
             </div>
             <div>
-              <span className="text-gray-300">Treatment rooms:</span>{' '}
-              <span className="font-semibold">{treatmentRooms}</span>
+              <span className="text-gray-300">{serviceRoomsLabel}:</span>{' '}
+              <span className="font-semibold">{serviceRooms}</span>
             </div>
             <div>
               <span className="text-gray-300">Staff on duty:</span>{' '}
@@ -256,17 +258,17 @@ export function GameCanvas() {
                   className="font-semibold text-gray-700"
                   style={{ fontSize: `${12 * scaleFactor}px` }}
                 >
-                  {treatmentRoomsLabel}
+                  {serviceRoomsLabel}
                 </h4>
                 <div 
                   className="text-gray-500"
                   style={{ fontSize: `${12 * scaleFactor}px` }}
                 >
-                  {customers.filter((c) => c.status === CustomerStatus.InService).length}/{treatmentRooms} in service
+                  {customers.filter((c) => c.status === CustomerStatus.InService).length}/{serviceRooms} in service
                 </div>
               </div>
               <div className="space-y-2">
-                {Array.from({ length: treatmentRooms }, (_, index) => (
+                {Array.from({ length: serviceRooms }, (_, index) => (
                   <TreatmentRoom 
                     key={index + 1} 
                     roomId={index + 1} 

@@ -8,11 +8,10 @@ import {
   SimulationLayoutConfig,
   IndustryServiceDefinition,
   UpgradeDefinition,
-  UpgradeEffectType,
-  UpgradeMetric,
   IndustrySimulationConfig,
   IndustryId,
 } from './types';
+import { GameMetric, EffectType } from './effectManager';
 
 // -----------------------------------------------------------------------------
 // Shared
@@ -119,14 +118,14 @@ const GYM_SERVICES: IndustryServiceDefinition[] = [
 const DENTAL_UPGRADES: UpgradeDefinition[] = [
   {
     id: 'extra_treatment_room',
-    name: 'Extra Treatment Room',
-    description: 'Add another treatment room so more patients can be helped at once.',
+    name: 'Extra Service Room',
+    description: 'Add another service room so more patients can be helped at once.',
     icon: '🦷',
     cost: 1200,
     maxLevel: 3,
     effects: [
-      { metric: UpgradeMetric.TreatmentRooms, type: UpgradeEffectType.Add, value: 1, source: 'Extra Treatment Room' },
-      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 150, source: 'Extra Treatment Room' },
+      { metric: GameMetric.ServiceRooms, type: EffectType.Add, value: 1 },
+      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 150 },
     ],
   },
   {
@@ -137,8 +136,8 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     cost: 900,
     maxLevel: 2,
     effects: [
-      { metric: UpgradeMetric.ServiceSpeedMultiplier, type: UpgradeEffectType.Percent, value: -0.2, source: 'Modern Equipment' },
-      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 90, source: 'Modern Equipment' },
+      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: -20 }, // -20% service time
+      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 90 },
     ],
   },
   {
@@ -149,8 +148,8 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     cost: 700,
     maxLevel: 3,
     effects: [
-      { metric: UpgradeMetric.ReputationMultiplier, type: UpgradeEffectType.Percent, value: 2, source: 'Staff Training Program' },
-      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 80, source: 'Staff Training Program' },
+      { metric: GameMetric.ReputationMultiplier, type: EffectType.Percent, value: 200 }, // +200% reputation gain
+      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 80 },
     ],
   },
   {
@@ -161,8 +160,8 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     cost: 800,
     maxLevel: 2,
     effects: [
-      { metric: UpgradeMetric.SpawnIntervalSeconds, type: UpgradeEffectType.Percent, value: -0.25, source: 'Priority Booking Software' },
-      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 110, source: 'Priority Booking Software' },
+      { metric: GameMetric.SpawnIntervalSeconds, type: EffectType.Percent, value: -25 }, // -25% spawn interval
+      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 110 },
     ],
   },
   {
@@ -173,8 +172,8 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     cost: 600,
     maxLevel: 2,
     effects: [
-      { metric: UpgradeMetric.SpawnIntervalSeconds, type: UpgradeEffectType.Percent, value: -0.15, source: 'Local Marketing Blitz' },
-      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 70, source: 'Local Marketing Blitz' },
+      { metric: GameMetric.SpawnIntervalSeconds, type: EffectType.Percent, value: -15 }, // -15% spawn interval
+      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 70 },
     ],
   },
   {
@@ -185,8 +184,8 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     cost: 450,
     maxLevel: 1,
     effects: [
-      { metric: UpgradeMetric.ReputationMultiplier, type: UpgradeEffectType.Percent, value: 0.15, source: 'Spa Waiting Area' },
-      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 60, source: 'Spa Waiting Area' },
+      { metric: GameMetric.ReputationMultiplier, type: EffectType.Percent, value: 15 }, // +15% reputation gain
+      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 60 },
     ],
   },
 ];
@@ -202,8 +201,8 @@ const RESTAURANT_UPGRADES: UpgradeDefinition[] = [
     cost: 800,
     maxLevel: 2,
     effects: [
-      { metric: UpgradeMetric.TreatmentRooms, type: UpgradeEffectType.Add, value: 1, source: 'Expanded Seating' },
-      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 90, source: 'Expanded Seating' },
+      { metric: GameMetric.ServiceRooms, type: EffectType.Add, value: 1 },
+      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 90 },
     ],
   },
   {
@@ -214,8 +213,8 @@ const RESTAURANT_UPGRADES: UpgradeDefinition[] = [
     cost: 950,
     maxLevel: 2,
     effects: [
-      { metric: UpgradeMetric.ServiceSpeedMultiplier, type: UpgradeEffectType.Percent, value: -0.15, source: 'Kitchen Line Upgrade' },
-      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 110, source: 'Kitchen Line Upgrade' },
+      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: -15 }, // -15% service time
+      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 110 },
     ],
   },
 ];
@@ -309,8 +308,8 @@ const GYM_UPGRADES: UpgradeDefinition[] = [
     cost: 850,
     maxLevel: 2,
     effects: [
-      { metric: UpgradeMetric.ServiceSpeedMultiplier, type: UpgradeEffectType.Percent, value: -0.1, source: 'New Training Equipment' },
-      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 95, source: 'New Training Equipment' },
+      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: -10 }, // -10% service time
+      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 95 },
     ],
   },
   {
@@ -321,8 +320,8 @@ const GYM_UPGRADES: UpgradeDefinition[] = [
     cost: 600,
     maxLevel: 1,
     effects: [
-      { metric: UpgradeMetric.ReputationMultiplier, type: UpgradeEffectType.Percent, value: 0.2, source: 'Recovery Lounge' },
-      { metric: UpgradeMetric.WeeklyExpenses, type: UpgradeEffectType.Add, value: 70, source: 'Recovery Lounge' },
+      { metric: GameMetric.ReputationMultiplier, type: EffectType.Percent, value: 20 }, // +20% reputation gain
+      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 70 },
     ],
   },
 ];

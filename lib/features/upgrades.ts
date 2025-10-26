@@ -5,17 +5,17 @@
 
 import {
   DEFAULT_INDUSTRY_ID,
+  BaseUpgradeMetrics,
   UpgradeDefinition,
   UpgradeId,
   getAllUpgrades,
   getUpgradeById,
   getBaseUpgradeMetricsForIndustry,
-  UpgradeEffect,
   secondsToTicks,
 } from '@/lib/game/config';
-import { calculateUpgradeMetrics, UpgradeMetricsResult } from '@/lib/game/upgradeEngine';
 import { Upgrades } from '@/lib/store/types';
 import { IndustryId } from '@/lib/game/types';
+import { applyUpgradeEffectsToMetrics, UpgradeLevelDefinition } from '@/lib/game/effects/upgradeEffects';
 
 export type ActiveUpgradeIds = UpgradeId[]; // Legacy type for compatibility
 
@@ -29,39 +29,38 @@ export interface UpgradeEffects {
   happyProbability: number;
 }
 
-interface UpgradeWithLevel {
-  definition: UpgradeDefinition;
-  level: number;
+export interface UpgradeMetricsSummary {
+  baseMetrics: BaseUpgradeMetrics;
+  currentMetrics: BaseUpgradeMetrics;
 }
 
 function resolveActiveUpgrades(
   upgrades: Upgrades,
   industryId: IndustryId,
-): UpgradeWithLevel[] {
+): UpgradeLevelDefinition[] {
   return Object.entries(upgrades)
     .filter(([_, level]) => level > 0)
-    .map(([id, level]) => ({
-      definition: getUpgradeById(id as UpgradeId, industryId),
-      level,
-    }))
-    .filter((item): item is UpgradeWithLevel => Boolean(item.definition));
+    .map(([id, level]) => {
+      const definition = getUpgradeById(id as UpgradeId, industryId);
+      if (!definition) {
+        return null;
+      }
+      return { definition, level };
+    })
+    .filter((item): item is UpgradeLevelDefinition => item !== null);
 }
 
 export function calculateActiveUpgradeMetrics(
   upgrades: Upgrades,
   industryId: IndustryId,
-): UpgradeMetricsResult {
-  const activeUpgrades = resolveActiveUpgrades(upgrades, industryId);
-  // Expand upgrades by their levels with multiplied effects
-  const expandedUpgrades = activeUpgrades.flatMap(({ definition, level }) => {
-    const leveledEffects: UpgradeEffect[] = definition.effects.map(effect => ({
-      ...effect,
-      value: effect.value * level,
-    }));
-    return { ...definition, effects: leveledEffects };
-  });
+): UpgradeMetricsSummary {
   const baseMetrics = getBaseUpgradeMetricsForIndustry(industryId);
-  return calculateUpgradeMetrics(baseMetrics, expandedUpgrades);
+  const activeUpgrades = resolveActiveUpgrades(upgrades, industryId);
+
+  return {
+    baseMetrics,
+    currentMetrics: applyUpgradeEffectsToMetrics(baseMetrics, activeUpgrades),
+  };
 }
 
 export function getUpgradeEffects(
@@ -129,7 +128,7 @@ export function getUpgradeCatalog(industryId: IndustryId): UpgradeDefinition[] {
 export function getUpgradeSummary(
   upgrades: Upgrades,
   industryId: IndustryId,
-): UpgradeMetricsResult {
+): UpgradeMetricsSummary {
   return calculateActiveUpgradeMetrics(upgrades, industryId);
 }
 
