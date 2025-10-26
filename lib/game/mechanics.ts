@@ -467,7 +467,10 @@ export function tickOnce(state: TickSnapshot): TickResult {
     serviceRooms: effectManager.calculate(GameMetric.ServiceRooms, baseStats.treatmentRooms),
     reputationMultiplier: effectManager.calculate(GameMetric.ReputationMultiplier, 1.0),
     happyProbability: effectManager.calculate(GameMetric.HappyProbability, baseStats.baseHappyProbability),
-    weeklyExpenses: effectManager.calculate(GameMetric.WeeklyExpenses, 0),
+    weeklyExpenses: effectManager.calculate(
+      GameMetric.WeeklyExpenses,
+      getWeeklyBaseExpenses(industryId),
+    ),
   };
   weeklyExpenses = gameMetrics.weeklyExpenses;
 
