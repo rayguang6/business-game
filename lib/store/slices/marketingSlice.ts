@@ -27,6 +27,7 @@ export interface MarketingSlice {
   startCampaign: (campaignId: string) => { success: boolean; message: string };
   stopCampaign: () => void;
   tickMarketing: (currentGameTime: number) => void;
+  resetMarketing: () => void;
 }
 
 /**
@@ -115,11 +116,21 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
   },
 ];
 
-export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlice> = (set, get) => ({
+export const getInitialMarketingState = (): Pick<
+  MarketingSlice,
+  'activeCampaign' | 'campaignStartedAt' | 'campaignEndsAt' | 'availableCampaigns'
+> => ({
   activeCampaign: null,
   campaignStartedAt: null,
   campaignEndsAt: null,
-  availableCampaigns: DEFAULT_CAMPAIGNS,
+  availableCampaigns: DEFAULT_CAMPAIGNS.map((campaign) => ({
+    ...campaign,
+    effects: campaign.effects.map((effect) => ({ ...effect })),
+  })),
+});
+
+export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlice> = (set, get) => ({
+  ...getInitialMarketingState(),
 
   startCampaign: (campaignId: string) => {
     const campaign = get().availableCampaigns.find((item) => item.id === campaignId);
@@ -198,5 +209,14 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
         campaignEndsAt: null,
       });
     }
+  },
+
+  resetMarketing: () => {
+    const { activeCampaign } = get();
+    if (activeCampaign) {
+      removeMarketingEffects(activeCampaign.id);
+    }
+    effectManager.clearCategory('marketing');
+    set(getInitialMarketingState());
   },
 });

@@ -6,6 +6,7 @@ import { getInitialMetrics } from './metricsSlice';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import { GameStore } from '../gameStore';
 import { IndustryId } from '@/lib/game/types';
+import { effectManager } from '@/lib/game/effectManager';
 
 // Shared initial game state - DRY principle
 const getInitialGameState = (
@@ -88,16 +89,35 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
   },
   
   resetAllGame: () => {
+    const {
+      resetStaff,
+      resetUpgrades,
+      resetMarketing,
+      setCurrentEvent,
+    } = get();
+
+    // Clear all active effects before rebuilding initial ones
+    effectManager.clearAll();
+
+    if (resetUpgrades) {
+      resetUpgrades();
+    }
+    if (resetMarketing) {
+      resetMarketing();
+    }
+    if (setCurrentEvent) {
+      setCurrentEvent(null);
+    }
+    if (resetStaff) {
+      resetStaff();
+    }
+
     // Reset everything to initial state including industry selection
     set({
       ...getInitialGameState(DEFAULT_INDUSTRY_ID, false), // keepIndustry = false
       weeklyExpenses: getWeeklyBaseExpenses(DEFAULT_INDUSTRY_ID),
       weeklyExpenseAdjustments: 0,
     });
-    const { resetStaff } = get();
-    if (resetStaff) {
-      resetStaff();
-    }
   },
   
   tickGame: () => {

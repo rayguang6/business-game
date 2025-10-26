@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand';
 import { WeeklyHistoryEntry, OneTimeCost, RevenueEntry } from '../types';
-import { GameState } from '../types';
+import { GameStore } from '../gameStore';
 
 type OneTimeCostInput = Omit<OneTimeCost, 'alreadyDeducted'>;
 
@@ -29,7 +29,7 @@ export interface WeeklySlice {
   resetWeeklyTracking: () => void;
 }
 
-export const createWeeklySlice: StateCreator<GameState, [], [], WeeklySlice> = (set, get) => ({
+export const getInitialWeeklyState = () => ({
   weeklyRevenue: 0,
   weeklyExpenses: 0,
   weeklyRevenueDetails: [],
@@ -38,6 +38,10 @@ export const createWeeklySlice: StateCreator<GameState, [], [], WeeklySlice> = (
   weeklyOneTimeCostsPaid: 0,
   weeklyHistory: [],
   weeklyExpenseAdjustments: 0,
+});
+
+export const createWeeklySlice: StateCreator<GameStore, [], [], WeeklySlice> = (set, get) => ({
+  ...getInitialWeeklyState(),
   
   updateWeeklyRevenue: (amount: number) => {
     set((state) => ({
@@ -90,15 +94,6 @@ export const createWeeklySlice: StateCreator<GameState, [], [], WeeklySlice> = (
   },
   
   resetWeeklyTracking: () => {
-    set({
-      weeklyRevenue: 0,
-      weeklyExpenses: 0,
-      weeklyRevenueDetails: [],
-      weeklyOneTimeCosts: 0,
-      weeklyOneTimeCostDetails: [],
-      weeklyOneTimeCostsPaid: 0,
-      weeklyHistory: [],
-      weeklyExpenseAdjustments: 0
-    });
+    set(getInitialWeeklyState());
   },
 });
