@@ -15,7 +15,7 @@ interface TopBarProps {
 }
 
 export function TopBar({ onSettingsOpen }: TopBarProps) {
-  const { selectedIndustry, isPaused, unpauseGame, pauseGame, gameTime, currentWeek } = useGameStore();
+  const { selectedIndustry, isPaused, unpauseGame, pauseGame, gameTime, currentMonth } = useGameStore();
 
   if (!selectedIndustry) return null;
 
@@ -66,7 +66,7 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
             
             {/* Progress Section */}
             <div className="flex items-center space-x-0.5 md:space-x-1 bg-black/45 py-0.5 pl-4 md:pl-6">
-              <span className="text-stroke text-stroke-thin text-yellow-400 text-[10px] md:text-xs font-bold flex-shrink-0">Week {currentWeek}</span>
+              <span className="text-stroke text-stroke-thin text-yellow-400 text-[10px] md:text-xs font-bold flex-shrink-0">Month {currentMonth}</span>
               <div className="w-1/2 bg-gray-600 rounded-xs h-1 md:h-1.5 overflow-hidden flex-shrink-0">
                 <div 
                   className="bg-green-500 h-1 md:h-1.5 rounded-xs transition-all duration-300"

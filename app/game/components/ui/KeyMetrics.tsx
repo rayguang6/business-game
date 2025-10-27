@@ -7,7 +7,7 @@ import { MetricFeedback, FeedbackItem } from './MetricFeedback';
 import Image from 'next/image';
 
 export function KeyMetrics() {
-  const { metrics, weeklyRevenue, weeklyExpenses } = useFinanceData();
+  const { metrics, monthlyRevenue, monthlyExpenses } = useFinanceData();
   const changes = useMetricChanges();
   const [feedbackByMetric, setFeedbackByMetric] = useState<Record<string, FeedbackItem[]>>({
     cash: [],
@@ -89,7 +89,7 @@ export function KeyMetrics() {
       key: 'revenue',
       icon: '💎',
       image: '/images/icons/home.png',
-      value: weeklyRevenue.toLocaleString(),
+      value: monthlyRevenue.toLocaleString(),
       label: 'Revenue',
       color: 'text-blue-400',
       feedback: feedbackByMetric.revenue,
@@ -107,8 +107,8 @@ export function KeyMetrics() {
       key: 'expenses',
       icon: '💎',
       image: '/images/icons/staff.png',
-      value: weeklyExpenses.toLocaleString(),
-      label: 'Weekly Expenses',
+      value: monthlyExpenses.toLocaleString(),
+      label: 'Monthly Expenses',
       color: 'text-red-400',
       feedback: feedbackByMetric.expenses,
     }

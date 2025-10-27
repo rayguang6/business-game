@@ -7,17 +7,17 @@ import { RevenueCategory, type RevenueEntry } from '@/lib/store/types';
 export function FinanceTab() {
   const {
     metrics,
-    weeklyHistory,
+    monthlyHistory,
     totalProfit,
-    lastWeek,
-    weeklyExpenses,
-    weeklyExpenseBreakdown,
-    weeklyRevenue,
-    weeklyRevenueBreakdown,
+    lastMonth,
+    monthlyExpenses,
+    monthlyExpenseBreakdown,
+    monthlyRevenue,
+    monthlyRevenueBreakdown,
   } = useFinanceData();
 
-  const recurringExpenses = weeklyExpenseBreakdown.filter((entry) => entry.category !== 'event');
-  const eventExpenses = weeklyExpenseBreakdown.filter((entry) => entry.category === 'event');
+  const recurringExpenses = monthlyExpenseBreakdown.filter((entry) => entry.category !== 'event');
+  const eventExpenses = monthlyExpenseBreakdown.filter((entry) => entry.category === 'event');
 
   return (
     <div>
@@ -39,16 +39,16 @@ export function FinanceTab() {
           <div className="text-center">
             <div className="text-2xl font-bold text-green-400">${metrics.totalRevenue}</div>
             <div className="text-green-300 text-xs">
-              {lastWeek ? `Week ${lastWeek.week}: $${lastWeek.revenue}` : 'No data yet'}
+              {lastMonth ? `Month ${lastMonth.month}: $${lastMonth.revenue}` : 'No data yet'}
             </div>
             <div className="text-green-300 text-xs mt-2">
-              Current weekly revenue: ${weeklyRevenue.toLocaleString()}
+              Current monthly revenue: ${monthlyRevenue.toLocaleString()}
             </div>
-            {weeklyRevenueBreakdown.length > 0 && (
+            {monthlyRevenueBreakdown.length > 0 && (
               <div className="text-left text-xs text-green-200 mt-3 space-y-1">
                 <div className="font-semibold text-green-100">Revenue breakdown</div>
                 <ul className="space-y-1">
-                  {weeklyRevenueBreakdown.map((entry) => (
+                  {monthlyRevenueBreakdown.map((entry) => (
                     <li key={`rev-${entry.category}`} className="flex justify-between">
                       <span>{entry.label}</span>
                       <span>${entry.amount.toLocaleString()}</span>
@@ -74,12 +74,12 @@ export function FinanceTab() {
           <div className="text-center">
             <div className="text-2xl font-bold text-red-400">${metrics.totalExpenses}</div>
             <div className="text-red-300 text-xs">
-              {lastWeek ? `Week ${lastWeek.week}: $${lastWeek.expenses}` : 'No data yet'}
+              {lastMonth ? `Month ${lastMonth.month}: $${lastMonth.expenses}` : 'No data yet'}
             </div>
             <div className="text-red-300 text-xs mt-2">
-              Current weekly expenses: ${weeklyExpenses}
+              Current monthly expenses: ${monthlyExpenses}
             </div>
-            {weeklyExpenseBreakdown.length > 0 && (
+            {monthlyExpenseBreakdown.length > 0 && (
               <div className="text-left text-xs text-red-200 mt-3 space-y-1">
                 <div className="font-semibold text-red-100">Expense breakdown</div>
                 <ul className="space-y-1">
@@ -97,7 +97,7 @@ export function FinanceTab() {
                   ))}
                   <li className="flex justify-between text-red-300/80">
                     <span>Total (recurring)</span>
-                    <span>${weeklyExpenses.toLocaleString()}</span>
+                    <span>${monthlyExpenses.toLocaleString()}</span>
                   </li>
                   {eventExpenses.map((entry, index) => (
                     <li
@@ -131,27 +131,27 @@ export function FinanceTab() {
                 ${totalProfit}
               </div>
               <div className={`text-sm ${totalProfit >= 0 ? 'text-green-300' : 'text-red-300'}`}>
-                {lastWeek ? `Week ${lastWeek.week}: $${lastWeek.profit}` : 'No data yet'}
+                {lastMonth ? `Month ${lastMonth.month}: $${lastMonth.profit}` : 'No data yet'}
               </div>
             </div>
           </div>
         </div>
       </div>
       
-      {/* Weekly History */}
+      {/* Monthly History */}
       <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
         <h4 className="text-white font-bold text-sm mb-4 flex items-center gap-2">
           <span className="text-yellow-400">📈</span>
-          Weekly Performance
+          Monthly Performance
         </h4>
         
-        {weeklyHistory.length === 0 ? (
+        {monthlyHistory.length === 0 ? (
           <div className="text-center py-8">
-            <div className="text-gray-400 text-sm">No history yet. Complete a week to see data.</div>
+            <div className="text-gray-400 text-sm">No history yet. Complete a month to see data.</div>
           </div>
         ) : (
           <div className="space-y-3">
-            {weeklyHistory.slice(-5).reverse().map((w, index) => {
+            {monthlyHistory.slice(-5).reverse().map((w, index) => {
               // Calculate recurring vs one-time expenses
               const oneTimeCostsTotal = w.oneTimeCosts?.reduce((sum, cost) => sum + cost.amount, 0) || 0;
               const recurringExpenses = w.expenses - oneTimeCostsTotal;
@@ -167,10 +167,10 @@ export function FinanceTab() {
                     ];
               
               return (
-                <div key={`week-${w.week}`} className="bg-gray-700 rounded-lg p-3">
+                <div key={`month-${w.month}`} className="bg-gray-700 rounded-lg p-3">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-yellow-400 font-bold text-sm">Week {w.week}</span>
+                      <span className="text-yellow-400 font-bold text-sm">Month {w.month}</span>
                       {index === 0 && (
                         <span className="bg-green-600 text-white px-2 py-1 rounded text-xs">Latest</span>
                       )}

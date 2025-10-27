@@ -25,7 +25,7 @@ export interface UpgradeEffects {
   serviceSpeedMultiplier: number;
   reputationMultiplier: number;
   treatmentRooms: number;
-  weeklyExpenses: number;
+  monthlyExpenses: number;
   happyProbability: number;
 }
 
@@ -78,7 +78,7 @@ export function getUpgradeEffects(
     serviceSpeedMultiplier: Math.max(0.1, currentMetrics.serviceSpeedMultiplier),
     reputationMultiplier: Math.max(0, currentMetrics.reputationMultiplier),
     treatmentRooms: Math.max(1, Math.round(currentMetrics.treatmentRooms)),
-    weeklyExpenses: currentMetrics.weeklyExpenses,
+    monthlyExpenses: currentMetrics.monthlyExpenses,
     happyProbability: Math.min(1, Math.max(0, currentMetrics.happyProbability)),
   };
 }

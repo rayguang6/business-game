@@ -20,7 +20,7 @@ interface StatItem {
 }
 
 export function HomeTab() {
-  const { upgrades, weeklyExpenses, selectedIndustry } = useGameStore();
+  const { upgrades, monthlyExpenses, selectedIndustry } = useGameStore();
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
   const businessStats = getBusinessStats(industryId);
   const baseUpgradeMetrics = getBaseUpgradeMetricsForIndustry(industryId);
@@ -48,12 +48,12 @@ export function HomeTab() {
       description: 'Service time multiplier (lower is faster)',
     },
     {
-      label: 'Weekly Expenses',
-      value: `$${weeklyExpenses}`,
-      baseValue: `$${baseUpgradeMetrics.weeklyExpenses}`,
+      label: 'Monthly Expenses',
+      value: `$${monthlyExpenses}`,
+      baseValue: `$${baseUpgradeMetrics.monthlyExpenses}`,
       icon: '💸',
       category: 'economics',
-      description: 'Recurring costs deducted at week end',
+      description: 'Recurring costs deducted at month end',
     },
     
     // Customer Stats
@@ -72,29 +72,14 @@ export function HomeTab() {
       category: 'customer',
       description: 'How long customers wait before leaving angry',
     },
-    {
-      label: 'Reputation Multiplier',
-      value: `×${upgradeEffects.reputationMultiplier.toFixed(2)}`,
-      baseValue: '×1.00',
-      icon: '⭐',
-      category: 'customer',
-      description: 'Reputation gain when customers are happy',
-    },
-    {
-      label: 'Happy Probability',
-      value: `${(businessStats.baseHappyProbability * 100).toFixed(0)}%`,
-      icon: '😊',
-      category: 'customer',
-      description: 'Chance customer gives reputation after service',
-    },
     
     // Economics Stats
     {
-      label: 'Week Duration',
-      value: `${businessStats.weekDurationSeconds}s`,
+      label: 'Month Duration',
+      value: `${businessStats.monthDurationSeconds}s`,
       icon: '📅',
       category: 'economics',
-      description: 'How long each week lasts',
+      description: 'How long each month lasts',
     },
     {
       label: 'Reputation per Happy Customer',

@@ -13,7 +13,7 @@ export interface UpgradeLevelDefinition {
 }
 
 const toMetricValues = (base: BaseUpgradeMetrics): MetricValues => ({
-  [GameMetric.WeeklyExpenses]: base.weeklyExpenses,
+  [GameMetric.MonthlyExpenses]: base.monthlyExpenses,
   [GameMetric.SpawnIntervalSeconds]: base.spawnIntervalSeconds,
   [GameMetric.ServiceSpeedMultiplier]: base.serviceSpeedMultiplier,
   [GameMetric.ReputationMultiplier]: base.reputationMultiplier,
@@ -22,7 +22,7 @@ const toMetricValues = (base: BaseUpgradeMetrics): MetricValues => ({
 });
 
 const fromMetricValues = (values: MetricValues): BaseUpgradeMetrics => ({
-  weeklyExpenses: values[GameMetric.WeeklyExpenses],
+  monthlyExpenses: values[GameMetric.MonthlyExpenses],
   spawnIntervalSeconds: values[GameMetric.SpawnIntervalSeconds],
   serviceSpeedMultiplier: values[GameMetric.ServiceSpeedMultiplier],
   reputationMultiplier: values[GameMetric.ReputationMultiplier],

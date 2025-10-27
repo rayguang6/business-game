@@ -103,9 +103,9 @@ const applyUpgradeEffectsToCombined = (
         result = { ...result, treatmentRooms: Math.max(1, Math.round(updated)) };
         break;
       }
-      case GameMetric.WeeklyExpenses: {
-        const updated = Math.max(0, applyUpgradeEffectMetric(result.weeklyExpenses, effect));
-        result = { ...result, weeklyExpenses: updated };
+      case GameMetric.MonthlyExpenses: {
+        const updated = Math.max(0, applyUpgradeEffectMetric(result.monthlyExpenses, effect));
+        result = { ...result, monthlyExpenses: updated };
         break;
       }
       case GameMetric.HappyProbability: {
@@ -166,10 +166,10 @@ const applyMultipliersToCombined = (
         };
         break;
       }
-      case GameMetric.WeeklyExpenses: {
+      case GameMetric.MonthlyExpenses: {
         result = {
           ...result,
-          weeklyExpenses: Math.max(0, combined.weeklyExpenses * safeMultiplier),
+          monthlyExpenses: Math.max(0, combined.monthlyExpenses * safeMultiplier),
         };
         break;
       }

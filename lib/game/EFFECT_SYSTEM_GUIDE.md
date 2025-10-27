@@ -113,8 +113,8 @@ GameMetric.SpawnIntervalSeconds      // How often customers spawn (positive % = 
 GameMetric.ServiceSpeedMultiplier    // Service speed multiplier (higher = faster service)
 GameMetric.TreatmentRooms           // Number of service rooms
 GameMetric.ReputationMultiplier     // Reputation gain/loss multiplier
-GameMetric.HappyProbability         // Customer satisfaction chance
-GameMetric.WeeklyExpenses           // Recurring costs
+GameMetric.HappyProbability         // Customer satisfaction chance (currently fixed at 100%)
+GameMetric.MonthlyExpenses           // Recurring costs
 ```
 
 ---

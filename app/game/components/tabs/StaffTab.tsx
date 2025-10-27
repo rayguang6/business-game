@@ -38,7 +38,7 @@ export function StaffTab() {
 
   const handleHireStaff = (staffToHire: Staff) => {
     hireStaff(staffToHire);
-    console.log(`Hiring ${staffToHire.name} for ${staffToHire.hireCost} and ${staffToHire.salary}/week`);
+    console.log(`Hiring ${staffToHire.name} for ${staffToHire.hireCost} and ${staffToHire.salary}/month`);
   };
 
   return (
@@ -85,15 +85,11 @@ export function StaffTab() {
               <div className="space-y-2 sm:space-y-3 mb-5 sm:mb-6">
                 <div className="flex justify-between items-center bg-white/10 px-2 py-1.5 sm:p-2 rounded-lg">
                   <span className="text-gray-200 text-xs sm:text-sm">💰 Salary</span>
-                  <span className="text-white font-bold text-sm sm:text-base">${Math.round(member.salary)}/week</span>
+                  <span className="text-white font-bold text-sm sm:text-base">${Math.round(member.salary)}/month</span>
                 </div>
                 <div className="flex justify-between items-center bg-white/10 px-2 py-1.5 sm:p-2 rounded-lg">
                   <span className="text-gray-200 text-xs sm:text-sm">⚡ Speed Boost</span>
                   <span className="text-yellow-400 font-bold text-sm sm:text-base">{Math.round(member.increaseServiceSpeed)}%</span>
-                </div>
-                <div className="flex justify-between items-center bg-white/10 px-2 py-1.5 sm:p-2 rounded-lg">
-                  <span className="text-gray-200 text-xs sm:text-sm">😊 Happy Customer Chance</span>
-                  <span className="text-green-400 font-bold text-sm sm:text-base">+{Math.round(member.increaseHappyCustomerProbability)}%</span>
                 </div>
               </div>
             </div>
@@ -153,15 +149,11 @@ export function StaffTab() {
                     <div className="space-y-1.5 sm:space-y-2 mb-4 text-xs sm:text-sm">
                       <div className="flex justify-between items-center">
                         <span className="text-gray-200">💰 Salary:</span>
-                        <span className="text-white font-bold">${Math.round(member.salary)}/week</span>
+                        <span className="text-white font-bold">${Math.round(member.salary)}/month</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-200">⚡ Speed Boost:</span>
                         <span className="text-yellow-400 font-bold">{Math.round(member.increaseServiceSpeed)}%</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-200">😊 Happy Chance:</span>
-                        <span className="text-green-400 font-bold">+{Math.round(member.increaseHappyCustomerProbability)}%</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-200">💸 Hire Cost:</span>

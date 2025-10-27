@@ -2,7 +2,7 @@ import {
   GameState,
   Metrics,
   Upgrades,
-  WeeklyHistoryEntry,
+  MonthlyHistoryEntry,
   OneTimeCost,
   RevenueEntry,
   REVENUE_CATEGORY_LABELS,
@@ -12,7 +12,7 @@ import {
   DEFAULT_INDUSTRY_ID,
   getBusinessStats,
   getTicksPerSecondForIndustry,
-  isNewWeek,
+  isNewMonth,
   UpgradeEffect,
 } from '@/lib/game/config';
 
@@ -25,9 +25,9 @@ import {
   getAvailableRooms,
 } from '@/lib/features/customers';
 import {
-  endOfWeek,
-  getWeeklyBaseExpenses,
-  calculateUpgradeWeeklyExpenses,
+  endOfMonth,
+  getMonthlyBaseExpenses,
+  calculateUpgradeMonthlyExpenses,
 } from '@/lib/features/economy';
 import { getWaitingPositions, getServiceRoomPosition } from '@/lib/game/positioning';
 import { IndustryId } from '@/lib/game/types';
@@ -38,60 +38,59 @@ import { effectManager, GameMetric } from '@/lib/game/effectManager';
 interface TickSnapshot {
   gameTick: number;
   gameTime: number;
-  currentWeek: number;
+  currentMonth: number;
   customers: Customer[];
   metrics: Metrics;
-  weeklyRevenue: number;
-  weeklyExpenses: number;
-  weeklyRevenueDetails: RevenueEntry[];
-  weeklyOneTimeCosts: number;
-  weeklyOneTimeCostDetails: OneTimeCost[];
-  weeklyOneTimeCostsPaid: number;
-  weeklyHistory: WeeklyHistoryEntry[];
+  monthlyRevenue: number;
+  monthlyExpenses: number;
+  monthlyRevenueDetails: RevenueEntry[];
+  monthlyOneTimeCosts: number;
+  monthlyOneTimeCostDetails: OneTimeCost[];
+  monthlyOneTimeCostsPaid: number;
+  monthlyHistory: MonthlyHistoryEntry[];
   upgrades: Upgrades;
   industryId?: IndustryId;
-  weeklyExpenseAdjustments: number;
+  monthlyExpenseAdjustments: number;
 }
 
 type TickResult = Omit<TickSnapshot, 'industryId'>;
 
-interface WeekTransitionParams {
-  currentWeek: number;
+interface MonthTransitionParams {
+  currentMonth: number;
   metrics: Metrics;
-  weeklyRevenue: number;
-  weeklyExpenses: number;
-  weeklyRevenueDetails: RevenueEntry[];
-  weeklyOneTimeCosts: number;
-  weeklyOneTimeCostDetails: OneTimeCost[];
-  weeklyOneTimeCostsPaid: number;
-  weeklyHistory: WeeklyHistoryEntry[];
-  weeklyExpenseAdjustments: number;
+  monthlyRevenue: number;
+  monthlyExpenses: number;
+  monthlyRevenueDetails: RevenueEntry[];
+  monthlyOneTimeCosts: number;
+  monthlyOneTimeCostDetails: OneTimeCost[];
+  monthlyOneTimeCostsPaid: number;
+  monthlyHistory: MonthlyHistoryEntry[];
+  monthlyExpenseAdjustments: number;
   upgrades: Upgrades;
   industryId: IndustryId;
 }
 
-interface WeekTransitionResult {
+interface MonthTransitionResult {
   metrics: Metrics;
-  weeklyRevenue: number;
-  weeklyExpenses: number;
-  weeklyRevenueDetails: RevenueEntry[];
-  weeklyOneTimeCosts: number;
-  weeklyOneTimeCostDetails: OneTimeCost[];
-  weeklyOneTimeCostsPaid: number;
-  weeklyHistory: WeeklyHistoryEntry[];
-  currentWeek: number;
-  weeklyExpenseAdjustments: number;
+  monthlyRevenue: number;
+  monthlyExpenses: number;
+  monthlyRevenueDetails: RevenueEntry[];
+  monthlyOneTimeCosts: number;
+  monthlyOneTimeCostDetails: OneTimeCost[];
+  monthlyOneTimeCostsPaid: number;
+  monthlyHistory: MonthlyHistoryEntry[];
+  currentMonth: number;
+  monthlyExpenseAdjustments: number;
 }
 
 interface ProcessCustomersParams {
   customers: Customer[];
   metrics: Metrics;
-  weeklyRevenue: number;
-  weeklyRevenueDetails: RevenueEntry[];
+  monthlyRevenue: number;
+  monthlyRevenueDetails: RevenueEntry[];
   gameMetrics: {
     serviceRooms: number;
     reputationMultiplier: number;
-    happyProbability: number;
   };
   industryId: IndustryId;
 }
@@ -99,8 +98,8 @@ interface ProcessCustomersParams {
 interface ProcessCustomersResult {
   customers: Customer[];
   metrics: Metrics;
-  weeklyRevenue: number;
-  weeklyRevenueDetails: RevenueEntry[];
+  monthlyRevenue: number;
+  monthlyRevenueDetails: RevenueEntry[];
 }
 
 const summarizeRevenueByCategory = (entries: RevenueEntry[]): RevenueEntry[] => {
@@ -117,93 +116,92 @@ const summarizeRevenueByCategory = (entries: RevenueEntry[]): RevenueEntry[] => 
   }));
 };
 
-// Runs endOfWeek to subtract expenses from cash and calculate profit.
-// Summarizes weekly revenue by category (customer, event, other).
-// Adds a WeeklyHistoryEntry so the UI can show a week-by-week log.
-// Resets weekly accumulators (weeklyRevenue, weeklyOneTimeCosts, details arrays).
-// Recomputes weeklyExpenses for the new week: base + upgrade-driven expenses.
-// Resets weeklyExpenseAdjustments to 0 (any upgrade deltas have now been rolled forward).
-// metrics.totalExpenses goes up by the new expenses (minus any adjustments we already tracked mid-week).
-function processWeekTransition({
-  currentWeek,
+// Runs endOfMonth to subtract expenses from cash and calculate profit.
+// Summarizes monthly revenue by category (customer, event, other).
+// Adds a MonthlyHistoryEntry so the UI can show a month-by-month log.
+// Resets monthly accumulators (monthlyRevenue, monthlyOneTimeCosts, details arrays).
+// Recomputes monthlyExpenses for the new month: base + upgrade-driven expenses.
+// Resets monthlyExpenseAdjustments to 0 (any upgrade deltas have now been rolled forward).
+// metrics.totalExpenses goes up by the new expenses (minus any adjustments we already tracked mid-month).
+function processMonthTransition({
+  currentMonth,
   metrics,
-  weeklyRevenue,
-  weeklyExpenses,
-  weeklyRevenueDetails,
-  weeklyOneTimeCosts,
-  weeklyOneTimeCostDetails,
-  weeklyOneTimeCostsPaid,
-  weeklyHistory,
-  weeklyExpenseAdjustments,
+  monthlyRevenue,
+  monthlyExpenses,
+  monthlyRevenueDetails,
+  monthlyOneTimeCosts,
+  monthlyOneTimeCostDetails,
+  monthlyOneTimeCostsPaid,
+  monthlyHistory,
+  monthlyExpenseAdjustments,
   upgrades,
   industryId,
-}: WeekTransitionParams): WeekTransitionResult {
-  const weekResult = endOfWeek(
+}: MonthTransitionParams): MonthTransitionResult {
+  const monthResult = endOfMonth(
     metrics.cash,
-    weeklyRevenue,
-    weeklyExpenses,
-    weeklyOneTimeCosts,
-    weeklyOneTimeCostsPaid,
+    monthlyRevenue,
+    monthlyExpenses,
+    monthlyOneTimeCosts,
+    monthlyOneTimeCostsPaid,
     industryId,
   );
-  const revenueBreakdown = summarizeRevenueByCategory(weeklyRevenueDetails);
-  const alreadyAccounted = weeklyExpenseAdjustments ?? 0;
-  const netExpensesForMetrics = Math.max(0, weekResult.totalExpenses - alreadyAccounted);
+  const revenueBreakdown = summarizeRevenueByCategory(monthlyRevenueDetails);
+  const alreadyAccounted = monthlyExpenseAdjustments ?? 0;
+  const netExpensesForMetrics = Math.max(0, monthResult.totalExpenses - alreadyAccounted);
 
   const updatedMetrics: Metrics = {
     ...metrics,
-    cash: weekResult.cash,
+    cash: monthResult.cash,
     totalExpenses: metrics.totalExpenses + netExpensesForMetrics,
   };
 
-  const previousReputation = weeklyHistory.length > 0 ? weeklyHistory[weeklyHistory.length - 1].reputation : 0;
-  const updatedHistory: WeeklyHistoryEntry[] = [
-    ...weeklyHistory,
+  const previousReputation = monthlyHistory.length > 0 ? monthlyHistory[monthlyHistory.length - 1].reputation : 0;
+  const updatedHistory: MonthlyHistoryEntry[] = [
+    ...monthlyHistory,
     {
-      week: currentWeek,
-      revenue: weeklyRevenue,
-      expenses: weekResult.totalExpenses,
-      oneTimeCosts: weeklyOneTimeCostDetails,
+      month: currentMonth,
+      revenue: monthlyRevenue,
+      expenses: monthResult.totalExpenses,
+      oneTimeCosts: monthlyOneTimeCostDetails,
       revenueBreakdown,
-      profit: weekResult.profit,
+      profit: monthResult.profit,
       reputation: updatedMetrics.reputation,
       reputationChange: updatedMetrics.reputation - previousReputation,
     },
   ];
 
-  const baseExpenses = getWeeklyBaseExpenses(industryId);
-  const upgradeExpenses = calculateUpgradeWeeklyExpenses(upgrades, industryId);
+  const baseExpenses = getMonthlyBaseExpenses(industryId);
+  const upgradeExpenses = calculateUpgradeMonthlyExpenses(upgrades, industryId);
 
   return {
     metrics: updatedMetrics,
-    weeklyRevenue: 0,
-    weeklyExpenses: baseExpenses + upgradeExpenses,
-    weeklyRevenueDetails: [],
-    weeklyOneTimeCosts: 0,
-    weeklyOneTimeCostDetails: [],
-    weeklyOneTimeCostsPaid: 0,
-    weeklyHistory: updatedHistory,
-    currentWeek: currentWeek + 1,
-    weeklyExpenseAdjustments: 0,
+    monthlyRevenue: 0,
+    monthlyExpenses: baseExpenses + upgradeExpenses,
+    monthlyRevenueDetails: [],
+    monthlyOneTimeCosts: 0,
+    monthlyOneTimeCostDetails: [],
+    monthlyOneTimeCostsPaid: 0,
+    monthlyHistory: updatedHistory,
+    currentMonth: currentMonth + 1,
+    monthlyExpenseAdjustments: 0,
   };
 }
 
 function processCustomersForTick({
   customers,
   metrics,
-  weeklyRevenue,
-  weeklyRevenueDetails,
+  monthlyRevenue,
+  monthlyRevenueDetails,
   gameMetrics,
   industryId,
 }: ProcessCustomersParams): ProcessCustomersResult {
   const roomsRemaining = [...getAvailableRooms(customers, gameMetrics.serviceRooms)];
   const updatedCustomers: Customer[] = [];
   let metricsAccumulator: Metrics = { ...metrics };
-  let revenueAccumulator = weeklyRevenue;
-  const revenueDetails = [...weeklyRevenueDetails];
+  let revenueAccumulator = monthlyRevenue;
+  const revenueDetails = [...monthlyRevenueDetails];
   const stats = getBusinessStats(industryId);
   const reputationMultiplier = gameMetrics.reputationMultiplier;
-  const happyProbability = Math.max(0, Math.min(1, gameMetrics.happyProbability));
 
   // Find already occupied waiting positions (including both current and target positions)
   // occupiedWaitingPositions: the grid locations where someone is already sitting or heading; used to avoid overlap.
@@ -287,11 +285,8 @@ function processCustomersForTick({
       // Add revenue
       const newCash = metricsAccumulator.cash + servicePrice;
       
-      // Check if customer is happy based on probability
-      const isHappy = Math.random() < happyProbability;
-      const reputationGain = isHappy 
-        ? Math.floor(stats.reputationGainPerHappyCustomer * reputationMultiplier)
-        : 0;
+      // Customers always leave satisfied, so apply the full reputation gain
+      const reputationGain = Math.floor(stats.reputationGainPerHappyCustomer * reputationMultiplier);
 
       metricsAccumulator = {
         ...metricsAccumulator,
@@ -341,8 +336,8 @@ function processCustomersForTick({
   return {
     customers: updatedCustomers,
     metrics: metricsAccumulator,
-    weeklyRevenue: revenueAccumulator,
-    weeklyRevenueDetails: revenueDetails,
+    monthlyRevenue: revenueAccumulator,
+    monthlyRevenueDetails: revenueDetails,
   };
 }
 
@@ -365,67 +360,67 @@ export function updateGameTimer(
   return gameTime;
 }
 
-interface WeekPreparationState {
+interface MonthPreparationState {
   metrics: Metrics;
-  weeklyRevenue: number;
-  weeklyExpenses: number;
-  weeklyRevenueDetails: RevenueEntry[];
-  weeklyOneTimeCosts: number;
-  weeklyOneTimeCostDetails: OneTimeCost[];
-  weeklyOneTimeCostsPaid: number;
-  weeklyHistory: WeeklyHistoryEntry[];
-  currentWeek: number;
-  weeklyExpenseAdjustments: number;
+  monthlyRevenue: number;
+  monthlyExpenses: number;
+  monthlyRevenueDetails: RevenueEntry[];
+  monthlyOneTimeCosts: number;
+  monthlyOneTimeCostDetails: OneTimeCost[];
+  monthlyOneTimeCostsPaid: number;
+  monthlyHistory: MonthlyHistoryEntry[];
+  currentMonth: number;
+  monthlyExpenseAdjustments: number;
 }
 
-function applyWeekTransitionIfNeeded(
+function applyMonthTransitionIfNeeded(
   state: TickSnapshot,
   industryId: IndustryId,
   nextGameTime: number,
-): WeekPreparationState {
-  const cloneCurrentWeekState = (): WeekPreparationState => ({
+): MonthPreparationState {
+  const cloneCurrentMonthState = (): MonthPreparationState => ({
     metrics: { ...state.metrics },
-    weeklyRevenue: state.weeklyRevenue,
-    weeklyExpenses: state.weeklyExpenses,
-    weeklyRevenueDetails: [...state.weeklyRevenueDetails],
-    weeklyOneTimeCosts: state.weeklyOneTimeCosts,
-    weeklyOneTimeCostDetails: [...state.weeklyOneTimeCostDetails],
-    weeklyOneTimeCostsPaid: state.weeklyOneTimeCostsPaid ?? 0,
-    weeklyHistory: [...state.weeklyHistory],
-    currentWeek: state.currentWeek,
-    weeklyExpenseAdjustments: state.weeklyExpenseAdjustments ?? 0,
+    monthlyRevenue: state.monthlyRevenue,
+    monthlyExpenses: state.monthlyExpenses,
+    monthlyRevenueDetails: [...state.monthlyRevenueDetails],
+    monthlyOneTimeCosts: state.monthlyOneTimeCosts,
+    monthlyOneTimeCostDetails: [...state.monthlyOneTimeCostDetails],
+    monthlyOneTimeCostsPaid: state.monthlyOneTimeCostsPaid ?? 0,
+    monthlyHistory: [...state.monthlyHistory],
+    currentMonth: state.currentMonth,
+    monthlyExpenseAdjustments: state.monthlyExpenseAdjustments ?? 0,
   });
 
-  if (!isNewWeek(nextGameTime, state.gameTime, industryId)) {
-    return cloneCurrentWeekState();
+  if (!isNewMonth(nextGameTime, state.gameTime, industryId)) {
+    return cloneCurrentMonthState();
   }
 
-  const transition = processWeekTransition({
-    currentWeek: state.currentWeek,
+  const transition = processMonthTransition({
+    currentMonth: state.currentMonth,
     metrics: state.metrics,
-    weeklyRevenue: state.weeklyRevenue,
-    weeklyExpenses: state.weeklyExpenses,
-    weeklyRevenueDetails: state.weeklyRevenueDetails,
-    weeklyOneTimeCosts: state.weeklyOneTimeCosts,
-    weeklyOneTimeCostDetails: state.weeklyOneTimeCostDetails,
-    weeklyOneTimeCostsPaid: state.weeklyOneTimeCostsPaid ?? 0,
-    weeklyHistory: state.weeklyHistory,
-    weeklyExpenseAdjustments: state.weeklyExpenseAdjustments ?? 0,
+    monthlyRevenue: state.monthlyRevenue,
+    monthlyExpenses: state.monthlyExpenses,
+    monthlyRevenueDetails: state.monthlyRevenueDetails,
+    monthlyOneTimeCosts: state.monthlyOneTimeCosts,
+    monthlyOneTimeCostDetails: state.monthlyOneTimeCostDetails,
+    monthlyOneTimeCostsPaid: state.monthlyOneTimeCostsPaid ?? 0,
+    monthlyHistory: state.monthlyHistory,
+    monthlyExpenseAdjustments: state.monthlyExpenseAdjustments ?? 0,
     upgrades: state.upgrades,
     industryId,
   });
 
   return {
     metrics: transition.metrics,
-    weeklyRevenue: transition.weeklyRevenue,
-    weeklyExpenses: transition.weeklyExpenses,
-    weeklyRevenueDetails: transition.weeklyRevenueDetails,
-    weeklyOneTimeCosts: transition.weeklyOneTimeCosts,
-    weeklyOneTimeCostDetails: transition.weeklyOneTimeCostDetails,
-    weeklyOneTimeCostsPaid: transition.weeklyOneTimeCostsPaid,
-    weeklyHistory: transition.weeklyHistory,
-    currentWeek: transition.currentWeek,
-    weeklyExpenseAdjustments: transition.weeklyExpenseAdjustments,
+    monthlyRevenue: transition.monthlyRevenue,
+    monthlyExpenses: transition.monthlyExpenses,
+    monthlyRevenueDetails: transition.monthlyRevenueDetails,
+    monthlyOneTimeCosts: transition.monthlyOneTimeCosts,
+    monthlyOneTimeCostDetails: transition.monthlyOneTimeCostDetails,
+    monthlyOneTimeCostsPaid: transition.monthlyOneTimeCostsPaid,
+    monthlyHistory: transition.monthlyHistory,
+    currentMonth: transition.currentMonth,
+    monthlyExpenseAdjustments: transition.monthlyExpenseAdjustments,
   };
 }
 
@@ -444,20 +439,20 @@ export function tickOnce(state: TickSnapshot): TickResult {
   const nextTick = state.gameTick + 1;
   const nextGameTime = updateGameTimer(state.gameTime, nextTick, industryId);
 
-  const preparedWeek = applyWeekTransitionIfNeeded(state, industryId, nextGameTime);
+  const preparedMonth = applyMonthTransitionIfNeeded(state, industryId, nextGameTime);
 
-  // To keep it pure, the function copies arrays and objects (customers, metrics, weeklyRevenueDetails, etc.) before changing them.
+  // To keep it pure, the function copies arrays and objects (customers, metrics, monthlyRevenueDetails, etc.) before changing them.
   let customers = [...state.customers];
-  let metrics = { ...preparedWeek.metrics };
-  let weeklyRevenue = preparedWeek.weeklyRevenue;
-  let weeklyExpenses = preparedWeek.weeklyExpenses;
-  let weeklyRevenueDetails = [...preparedWeek.weeklyRevenueDetails];
-  const weeklyOneTimeCosts = preparedWeek.weeklyOneTimeCosts;
-  const weeklyOneTimeCostDetails = [...preparedWeek.weeklyOneTimeCostDetails];
-  const weeklyOneTimeCostsPaid = preparedWeek.weeklyOneTimeCostsPaid;
-  const weeklyHistory = [...preparedWeek.weeklyHistory];
-  const currentWeek = preparedWeek.currentWeek;
-  const weeklyExpenseAdjustments = preparedWeek.weeklyExpenseAdjustments;
+  let metrics = { ...preparedMonth.metrics };
+  let monthlyRevenue = preparedMonth.monthlyRevenue;
+  let monthlyExpenses = preparedMonth.monthlyExpenses;
+  let monthlyRevenueDetails = [...preparedMonth.monthlyRevenueDetails];
+  const monthlyOneTimeCosts = preparedMonth.monthlyOneTimeCosts;
+  const monthlyOneTimeCostDetails = [...preparedMonth.monthlyOneTimeCostDetails];
+  const monthlyOneTimeCostsPaid = preparedMonth.monthlyOneTimeCostsPaid;
+  const monthlyHistory = [...preparedMonth.monthlyHistory];
+  const currentMonth = preparedMonth.currentMonth;
+  const monthlyExpenseAdjustments = preparedMonth.monthlyExpenseAdjustments;
 
   // Calculate all metrics using effectManager (includes upgrades, marketing, staff effects)
   const baseStats = getBusinessStats(industryId);
@@ -466,13 +461,12 @@ export function tickOnce(state: TickSnapshot): TickResult {
     serviceSpeedMultiplier: effectManager.calculate(GameMetric.ServiceSpeedMultiplier, 1.0),
     serviceRooms: effectManager.calculate(GameMetric.ServiceRooms, baseStats.treatmentRooms),
     reputationMultiplier: effectManager.calculate(GameMetric.ReputationMultiplier, 1.0),
-    happyProbability: effectManager.calculate(GameMetric.HappyProbability, baseStats.baseHappyProbability),
-    weeklyExpenses: effectManager.calculate(
-      GameMetric.WeeklyExpenses,
-      getWeeklyBaseExpenses(industryId),
+    monthlyExpenses: effectManager.calculate(
+      GameMetric.MonthlyExpenses,
+      getMonthlyBaseExpenses(industryId),
     ),
   };
-  weeklyExpenses = gameMetrics.weeklyExpenses;
+  monthlyExpenses = gameMetrics.monthlyExpenses;
 
   // Calculate spawn interval in ticks and check if it's time to spawn a customer
   const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
@@ -488,31 +482,31 @@ export function tickOnce(state: TickSnapshot): TickResult {
   const processedCustomersForTick = processCustomersWithEffects({
     customers,
     metrics,
-    weeklyRevenue,
-    weeklyRevenueDetails,
+    monthlyRevenue,
+    monthlyRevenueDetails,
     gameMetrics,
     industryId,
   });
 
   customers = processedCustomersForTick.customers;
   metrics = processedCustomersForTick.metrics;
-  weeklyRevenue = processedCustomersForTick.weeklyRevenue;
-  weeklyRevenueDetails = processedCustomersForTick.weeklyRevenueDetails;
+  monthlyRevenue = processedCustomersForTick.monthlyRevenue;
+  monthlyRevenueDetails = processedCustomersForTick.monthlyRevenueDetails;
 
   return {
     gameTick: nextTick,
     gameTime: nextGameTime,
-    currentWeek,
+    currentMonth,
     customers,
     metrics,
-    weeklyRevenue,
-    weeklyExpenses,
-    weeklyRevenueDetails,
-    weeklyOneTimeCosts,
-    weeklyOneTimeCostDetails,
-    weeklyOneTimeCostsPaid,
-    weeklyHistory,
+    monthlyRevenue,
+    monthlyExpenses,
+    monthlyRevenueDetails,
+    monthlyOneTimeCosts,
+    monthlyOneTimeCostDetails,
+    monthlyOneTimeCostsPaid,
+    monthlyHistory,
     upgrades: state.upgrades,
-    weeklyExpenseAdjustments,
+    monthlyExpenseAdjustments,
   };
 }

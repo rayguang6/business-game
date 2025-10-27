@@ -8,13 +8,13 @@ export enum IndustryId {
 
 export interface BusinessMetrics {
   startingCash: number;
-  weeklyExpenses: number;
+  monthlyExpenses: number;
   startingReputation: number;
 }
 
 export interface BusinessStats {
   ticksPerSecond: number;
-  weekDurationSeconds: number;
+  monthDurationSeconds: number;
   customerSpawnIntervalSeconds: number;
   customerPatienceSeconds: number;
   leavingAngryDurationTicks: number;
@@ -71,7 +71,7 @@ export interface UpgradeDefinition {
 export type UpgradeId = UpgradeDefinition['id'];
 
 export interface BaseUpgradeMetrics {
-  weeklyExpenses: number;
+  monthlyExpenses: number;
   spawnIntervalSeconds: number;
   serviceSpeedMultiplier: number;
   reputationMultiplier: number;
