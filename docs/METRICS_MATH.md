@@ -12,7 +12,7 @@ Shows: `metrics.cash`
 
 ### **Changes:**
 1. **Customer completes service** → `cash += servicePrice` (e.g., +$100)
-2. **Week ends** → `cash -= (weeklyExpenses + weeklyOneTimeCosts)` (e.g., -$800)
+2. **Month ends** → `cash -= (monthlyExpenses + monthlyOneTimeCosts)` (e.g., -$800)
 3. **Buy upgrade** → `cash -= upgradeCost` (e.g., -$900)
 
 ### **Tracking:**
@@ -24,42 +24,42 @@ Shows: `metrics.cash`
 ```
 Start: $3,000
 Customer pays $100 → $3,100 (shows "+100")
-Week ends -$800 → $2,300 (shows "-800")
+Month ends -$800 → $2,300 (shows "-800")
 Buy upgrade -$900 → $1,400 (shows "-900")
 ```
 
 ---
 
-## 📊 **Revenue (Current Week)**
+## 📊 **Revenue (Current Month)**
 
 ### **Display:**
-Shows: `weeklyRevenue` (current week's accumulating revenue)
+Shows: `monthlyRevenue` (current month's accumulating revenue)
 
 ### **Changes:**
-1. **Customer completes service** → `weeklyRevenue += servicePrice`
-2. **Week ends** → `weeklyRevenue = 0` (reset and saved to history)
+1. **Customer completes service** → `monthlyRevenue += servicePrice`
+2. **Month ends** → `monthlyRevenue = 0` (reset and saved to history)
 
 ### **Tracking:**
-- **Source**: `weeklyRevenue` (from game state)
-- **Feedback**: Tracks changes in `weeklyRevenue`
-- **Math**: ✅ **Correct** - Display and feedback both use `weeklyRevenue`
+- **Source**: `monthlyRevenue` (from game state)
+- **Feedback**: Tracks changes in `monthlyRevenue`
+- **Math**: ✅ **Correct** - Display and feedback both use `monthlyRevenue`
 
 ### **Example Flow:**
 ```
-Week 1 starts: $0
+Month 1 starts: $0
 Customer 1 pays $100 → $100 (shows "+100")
 Customer 2 pays $200 → $300 (shows "+200")
 Customer 3 pays $100 → $400 (shows "+100")
-Week ends → Saved as history { week: 1, revenue: 400 }, then reset to $0
+Month ends → Saved as history { month: 1, revenue: 400 }, then reset to $0
 
-Week 2 starts: $0
+Month 2 starts: $0
 Customer 1 pays $150 → $150 (shows "+150")
 ...
 ```
 
 ### **History:**
-- Last week's revenue can be viewed in the Finance Tab's P&L
-- Weekly history shows all completed weeks
+- Last month's revenue can be viewed in the Finance Tab's P&L
+- Monthly history shows all completed months
 
 ---
 
@@ -69,9 +69,8 @@ Customer 1 pays $150 → $150 (shows "+150")
 Shows: `metrics.reputation`
 
 ### **Changes:**
-1. **Customer leaves happy (70% probability)** → `reputation += 1 × reputationMultiplier`
-2. **Customer leaves happy (30% probability)** → No change (service still generates revenue)
-3. **Customer leaves angry** → `reputation -= 1`
+1. **Customer completes service** → `reputation += 1 × reputationMultiplier`
+2. **Customer leaves angry** → `reputation -= 1`
 
 ### **Tracking:**
 - **Source**: `metrics.reputation` (from game state)
@@ -82,30 +81,29 @@ Shows: `metrics.reputation`
 ```
 Start: 0
 Customer 1 finishes (happy) → 1 (shows "+1")
-Customer 2 finishes (neutral) → 1 (no change, no feedback)
-Customer 3 finishes (happy) → 2 (shows "+1")
-Customer 4 runs out of patience → 1 (shows "-1")
+Customer 2 finishes (happy) → 2 (shows "+1")
+Customer 3 runs out of patience → 1 (shows "-1")
 ```
 
 ---
 
-## 💸 **Weekly Expenses**
+## 💸 **Monthly Expenses**
 
 ### **Display:**
-Shows: `weeklyExpenses` (current recurring weekly costs)
+Shows: `monthlyExpenses` (current recurring monthly costs)
 
 ### **Changes:**
-1. **Buy upgrade** → `weeklyExpenses += upgradeExpenseIncrease` (e.g., +$90)
-2. **Week ends** → No change (expenses persist)
+1. **Buy upgrade** → `monthlyExpenses += upgradeExpenseIncrease` (e.g., +$90)
+2. **Month ends** → No change (expenses persist)
 
 ### **Tracking:**
-- **Source**: `weeklyExpenses` (from game state)
-- **Feedback**: Tracks changes in `weeklyExpenses`
-- **Math**: ✅ **Correct** - Display and feedback both use `weeklyExpenses`
+- **Source**: `monthlyExpenses` (from game state)
+- **Feedback**: Tracks changes in `monthlyExpenses`
+- **Math**: ✅ **Correct** - Display and feedback both use `monthlyExpenses`
 
 ### **Calculation:**
 ```typescript
-weeklyExpenses = baseWeeklyExpenses + sum(all upgrade expense effects)
+monthlyExpenses = baseMonthlyExpenses + sum(all upgrade expense effects)
 
 Example:
 - Base expenses: $800
@@ -119,8 +117,8 @@ Total: $1,040
 Start: $800 (base)
 Buy Modern Equipment → $890 (shows "+90")
 Buy Extra Room → $1,040 (shows "+150")
-Week ends → Still $1,040 (no change)
-Week 2 starts → Still $1,040 (recurring)
+Month ends → Still $1,040 (no change)
+Month 2 starts → Still $1,040 (recurring)
 ```
 
 ### **Breakdown:**
@@ -136,12 +134,12 @@ Available in Finance Tab showing:
 
 ### **Total Revenue:**
 ```typescript
-metrics.totalRevenue = sum of all weeklyRevenue from all weeks
+metrics.totalRevenue = sum of all monthlyRevenue from all months
 ```
 
 ### **Total Expenses:**
 ```typescript
-metrics.totalExpenses = sum of all weeklyExpenses from all weeks
+metrics.totalExpenses = sum of all monthlyExpenses from all months
 ```
 
 ### **Total Profit:**
@@ -149,64 +147,64 @@ metrics.totalExpenses = sum of all weeklyExpenses from all weeks
 totalProfit = metrics.totalRevenue - metrics.totalExpenses
 ```
 
-### **Weekly History Entry:**
+### **Monthly History Entry:**
 ```typescript
 {
-  week: currentWeek,
-  revenue: weeklyRevenue,           // Revenue earned this week
-  expenses: weeklyExpenses + weeklyOneTimeCosts,  // Costs this week
-  profit: revenue - expenses,       // Net profit this week
-  reputation: currentReputation,    // Reputation at week end
-  reputationChange: delta           // Change from last week
+  month: currentMonth,
+  revenue: monthlyRevenue,           // Revenue earned this month
+  expenses: monthlyExpenses + monthlyOneTimeCosts,  // Costs this month
+  profit: revenue - expenses,       // Net profit this month
+  reputation: currentReputation,    // Reputation at month end
+  reputationChange: delta           // Change from last month
 }
 ```
 
 ---
 
-## 🔄 **Week Transition Flow**
+## 🔄 **Month Transition Flow**
 
-### **At the end of each week (every 30 seconds):**
+### **At the end of each month (every 30 seconds):**
 
-1. **Calculate week results:**
+1. **Calculate month results:**
    ```typescript
-   weekResult = endOfWeek(
+   monthResult = endOfMonth(
      currentCash,
-     weeklyRevenue,      // Revenue earned this week
-     weeklyExpenses,     // Recurring expenses
-     weeklyOneTimeCosts, // One-time costs this week
-     weeklyOneTimeCostsPaid // Portion already deducted during the week
+     monthlyRevenue,      // Revenue earned this month
+     monthlyExpenses,     // Recurring expenses
+     monthlyOneTimeCosts, // One-time costs this month
+     monthlyOneTimeCostsPaid // Portion already deducted during the month
    )
    ```
 
 2. **Update totals:**
    ```typescript
-   metrics.totalExpenses += (weeklyExpenses + weeklyOneTimeCosts)
-   // Note: totalRevenue already updated during the week
+   metrics.totalExpenses += (monthlyExpenses + monthlyOneTimeCosts)
+   // Note: totalRevenue already updated during the month
    ```
 
 3. **Deduct expenses from cash:**
    ```typescript
-   metrics.cash -= (weeklyExpenses + weeklyOneTimeCosts - weeklyOneTimeCostsPaid)
+   metrics.cash -= (monthlyExpenses + monthlyOneTimeCosts - monthlyOneTimeCostsPaid)
    ```
 
 4. **Save to history:**
    ```typescript
-   weeklyHistory.push({
-     week: currentWeek,
-     revenue: weeklyRevenue,
-     expenses: weeklyExpenses + weeklyOneTimeCosts,
-     profit: weeklyRevenue - (weeklyExpenses + weeklyOneTimeCosts),
+   monthlyHistory.push({
+     month: currentMonth,
+     revenue: monthlyRevenue,
+     expenses: monthlyExpenses + monthlyOneTimeCosts,
+     profit: monthlyRevenue - (monthlyExpenses + monthlyOneTimeCosts),
      reputation: metrics.reputation,
      reputationChange: reputationDelta
    })
    ```
 
-5. **Reset weekly counters:**
+5. **Reset monthly counters:**
    ```typescript
-   weeklyRevenue = 0
-   weeklyOneTimeCosts = 0
-   // weeklyExpenses stays the same (recurring)
-   currentWeek++
+   monthlyRevenue = 0
+   monthlyOneTimeCosts = 0
+   // monthlyExpenses stays the same (recurring)
+   currentMonth++
    ```
 
 ---
@@ -216,28 +214,28 @@ totalProfit = metrics.totalRevenue - metrics.totalExpenses
 | Metric | Display Source | Feedback Source | Match? | Status |
 |--------|---------------|-----------------|--------|--------|
 | Cash | `metrics.cash` | `metrics.cash` | ✅ | Correct |
-| Revenue | `weeklyRevenue` | `weeklyRevenue` | ✅ | **Fixed!** |
+| Revenue | `monthlyRevenue` | `monthlyRevenue` | ✅ | **Fixed!** |
 | Reputation | `metrics.reputation` | `metrics.reputation` | ✅ | Correct |
-| Expenses | `weeklyExpenses` | `weeklyExpenses` | ✅ | Correct |
+| Expenses | `monthlyExpenses` | `monthlyExpenses` | ✅ | Correct |
 
 ---
 
 ## 🎮 **Expected Behavior in Game**
 
-### **During Week 1 (First 30 seconds):**
+### **During Month 1 (First 30 seconds):**
 - Cash starts at $3,000
 - Revenue starts at $0, increases with each customer
 - Reputation starts at 0, changes with customer outcomes
 - Expenses show $800 (base recurring cost)
 
-### **Week Transition (30 second mark):**
+### **Month Transition (30 second mark):**
 - Cash decreases by $800 (shows "-800" feedback)
-- Revenue resets to $0 (new week starts)
+- Revenue resets to $0 (new month starts)
 - Reputation persists (no change)
 - Expenses stay at $800 (recurring)
-- History entry created for Week 1
+- History entry created for Month 1
 
-### **During Week 2:**
+### **During Month 2:**
 - Revenue starts fresh from $0
 - All metrics continue accumulating
 
@@ -245,24 +243,24 @@ totalProfit = metrics.totalRevenue - metrics.totalExpenses
 
 ## 🧮 **Math Examples**
 
-### **Scenario: First Two Weeks**
+### **Scenario: First Two Months**
 
-**Week 1:**
+**Month 1:**
 ```
 Starting cash: $3,000
 Customer 1: +$100 → Cash: $3,100, Revenue: $100
 Customer 2: +$200 → Cash: $3,300, Revenue: $300
 Customer 3: +$100 → Cash: $3,400, Revenue: $400
-Week ends: -$800 → Cash: $2,600, Revenue: $0 (saved: Week 1 = $400)
+Month ends: -$800 → Cash: $2,600, Revenue: $0 (saved: Month 1 = $400)
 ```
 
-**Week 2:**
+**Month 2:**
 ```
 Starting cash: $2,600
 Customer 1: +$150 → Cash: $2,750, Revenue: $150
 Buy upgrade: -$900 → Cash: $1,850, Expenses: $890
 Customer 2: +$200 → Cash: $2,050, Revenue: $350
-Week ends: -$890 → Cash: $1,160, Revenue: $0 (saved: Week 2 = $350)
+Month ends: -$890 → Cash: $1,160, Revenue: $0 (saved: Month 2 = $350)
 ```
 
 **Totals:**

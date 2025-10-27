@@ -12,7 +12,6 @@ export const createInitialHiredStaff = (): Staff[] => [
     name: 'Alice',
     salary: 500,
     increaseServiceSpeed: 10,  // 10% speed boost
-    increaseHappyCustomerProbability: 4,  // +4% to happy chance
     emoji: '👩‍⚕️',
     rank: 'blue',
     role: 'Assistant',
@@ -24,7 +23,6 @@ export const createInitialHiredStaff = (): Staff[] => [
     name: 'Bob',
     salary: 600,
     increaseServiceSpeed: 5,  // 5% speed boost
-    increaseHappyCustomerProbability: 5,  // +5% to happy chance
     emoji: '👨‍🔬',
     rank: 'purple',
     role: 'Specialist',

@@ -38,7 +38,6 @@ export function GameCanvas() {
     activeCampaign,
     campaignEndsAt,
     gameTime,
-    hiredStaff,
   } = useGameStore();
   const canvasRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState(350);
@@ -76,8 +75,7 @@ export function GameCanvas() {
     serviceSpeedMultiplier: effectManager.calculate(GameMetric.ServiceSpeedMultiplier, 1.0),
     serviceRooms: effectManager.calculate(GameMetric.ServiceRooms, businessStats.treatmentRooms),
     reputationMultiplier: effectManager.calculate(GameMetric.ReputationMultiplier, 1.0),
-    happyProbability: effectManager.calculate(GameMetric.HappyProbability, businessStats.baseHappyProbability),
-    weeklyExpenses: effectManager.calculate(GameMetric.WeeklyExpenses, 0),
+    monthlyExpenses: effectManager.calculate(GameMetric.MonthlyExpenses, 0),
   }), [businessStats]);
 
   const [metrics, setMetrics] = useState(() => computeMetrics());
@@ -98,11 +96,7 @@ export function GameCanvas() {
   const spawnIntervalSeconds = metrics.spawnIntervalSeconds;
   const customersPerMinute = spawnIntervalSeconds > 0 ? 60 / spawnIntervalSeconds : null;
   const serviceSpeedMultiplier = metrics.serviceSpeedMultiplier;
-  const baseReputationGain = businessStats.reputationGainPerHappyCustomer;
-  const reputationPerHappy = baseReputationGain * metrics.reputationMultiplier;
-  const baseHappyProbability = businessStats.baseHappyProbability;
-  const happyProbability = metrics.happyProbability;
-  const weeklyExpenses = metrics.weeklyExpenses;
+  const monthlyExpenses = metrics.monthlyExpenses;
   const campaignSecondsRemaining = activeCampaign && campaignEndsAt != null ? Math.max(0, campaignEndsAt - gameTime) : null;
 
   // Canvas coordinate system (for future 2D animations)
@@ -148,28 +142,12 @@ export function GameCanvas() {
               <span className="text-gray-400"> (lower is faster)</span>
             </div>
             <div>
-              <span className="text-gray-300">Reputation / happy:</span>{' '}
-              <span className="font-semibold">
-                {baseReputationGain.toFixed(1)} → {reputationPerHappy.toFixed(1)}
-              </span>
-            </div>
-            <div>
-              <span className="text-gray-300">Happy chance:</span>{' '}
-              <span className="font-semibold">
-                {(baseHappyProbability * 100).toFixed(0)}% → {(happyProbability * 100).toFixed(0)}%
-              </span>
-            </div>
-            <div>
               <span className="text-gray-300">{serviceRoomsLabel}:</span>{' '}
               <span className="font-semibold">{serviceRooms}</span>
             </div>
             <div>
-              <span className="text-gray-300">Staff on duty:</span>{' '}
-              <span className="font-semibold">{hiredStaff.length}</span>
-            </div>
-            <div>
-              <span className="text-gray-300">Weekly expenses:</span>{' '}
-              <span className="font-semibold">${weeklyExpenses.toFixed(0)}</span>
+              <span className="text-gray-300">Monthly expenses:</span>{' '}
+              <span className="font-semibold">${monthlyExpenses.toFixed(0)}</span>
             </div>
             <div>
               <span className="text-gray-300">Campaign:</span>{' '}

@@ -101,7 +101,7 @@ export function getBaseUpgradeMetricsForIndustry(
   const stats = getBusinessStats(industryId);
   const metrics = getBusinessMetrics(industryId);
   return {
-    weeklyExpenses: metrics.weeklyExpenses,
+    monthlyExpenses: metrics.monthlyExpenses,
     spawnIntervalSeconds: stats.customerSpawnIntervalSeconds,
     serviceSpeedMultiplier: 1,
     reputationMultiplier: 1,
@@ -117,7 +117,7 @@ export function getTicksPerSecondForIndustry(industryId: IndustryId = DEFAULT_IN
 export function getRoundDurationSecondsForIndustry(
   industryId: IndustryId = DEFAULT_INDUSTRY_ID,
 ): number {
-  return getBusinessStats(industryId).weekDurationSeconds;
+  return getBusinessStats(industryId).monthDurationSeconds;
 }
 
 export function getAllSimulationConfigsList(): IndustrySimulationConfig[] {
@@ -152,7 +152,7 @@ export function ticksToSeconds(
   return ticks / getTicksPerSecondForIndustry(industryId);
 }
 
-export function getCurrentWeek(
+export function getCurrentMonth(
   gameTimeSeconds: number,
   industryId: IndustryId = DEFAULT_INDUSTRY_ID,
 ): number {
@@ -160,27 +160,27 @@ export function getCurrentWeek(
   return Math.floor(gameTimeSeconds / roundDuration) + 1;
 }
 
-export function getWeekProgress(
+export function getMonthProgress(
   gameTimeSeconds: number,
   industryId: IndustryId = DEFAULT_INDUSTRY_ID,
 ): number {
   const roundDuration = getRoundDurationSecondsForIndustry(industryId);
-  const currentWeekTime = gameTimeSeconds % roundDuration;
-  return (currentWeekTime / roundDuration) * 100;
+  const currentMonthTime = gameTimeSeconds % roundDuration;
+  return (currentMonthTime / roundDuration) * 100;
 }
 
-export function isNewWeek(
+export function isNewMonth(
   gameTimeSeconds: number,
   previousGameTime: number,
   industryId: IndustryId = DEFAULT_INDUSTRY_ID,
 ): boolean {
-  return getCurrentWeek(gameTimeSeconds, industryId) > getCurrentWeek(previousGameTime, industryId);
+  return getCurrentMonth(gameTimeSeconds, industryId) > getCurrentMonth(previousGameTime, industryId);
 }
 
-export function calculateWeeklyRevenuePotential(
+export function calculateMonthlyRevenuePotential(
   industryId: IndustryId = DEFAULT_INDUSTRY_ID,
 ): {
-  customersPerWeek: number;
+  customersPerMonth: number;
   averageServicePrice: number;
   potentialRevenue: number;
   realisticTarget: number;
@@ -188,14 +188,14 @@ export function calculateWeeklyRevenuePotential(
   const stats = getBusinessStats(industryId);
   const services = getServicesForIndustry(industryId);
 
-  const customersPerWeek = Math.floor(stats.weekDurationSeconds / stats.customerSpawnIntervalSeconds);
+  const customersPerMonth = Math.floor(stats.monthDurationSeconds / stats.customerSpawnIntervalSeconds);
   const averageServicePrice =
     services.reduce((sum, service) => sum + service.price, 0) / Math.max(services.length, 1);
-  const potentialRevenue = customersPerWeek * averageServicePrice;
+  const potentialRevenue = customersPerMonth * averageServicePrice;
   const realisticTarget = potentialRevenue * 0.7;
 
   return {
-    customersPerWeek,
+    customersPerMonth,
     averageServicePrice,
     potentialRevenue,
     realisticTarget,

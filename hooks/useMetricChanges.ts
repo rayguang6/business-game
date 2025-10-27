@@ -9,12 +9,12 @@ export interface MetricChange {
 }
 
 export function useMetricChanges() {
-  const { metrics, weeklyRevenue, weeklyExpenses } = useGameStore();
+  const { metrics, monthlyRevenue, monthlyExpenses } = useGameStore();
   const prevMetrics = useRef({ 
     cash: metrics.cash, 
     reputation: metrics.reputation,
-    revenue: weeklyRevenue,
-    expenses: weeklyExpenses,
+    revenue: monthlyRevenue,
+    expenses: monthlyExpenses,
   });
   const [changes, setChanges] = useState<MetricChange>({});
 
@@ -32,21 +32,21 @@ export function useMetricChanges() {
     }
 
     // Track revenue changes
-    if (weeklyRevenue !== prevMetrics.current.revenue) {
-      newChanges.revenue = weeklyRevenue - prevMetrics.current.revenue;
+    if (monthlyRevenue !== prevMetrics.current.revenue) {
+      newChanges.revenue = monthlyRevenue - prevMetrics.current.revenue;
     }
 
     // Track expense changes
-    if (weeklyExpenses !== prevMetrics.current.expenses) {
-      newChanges.expenses = weeklyExpenses - prevMetrics.current.expenses;
+    if (monthlyExpenses !== prevMetrics.current.expenses) {
+      newChanges.expenses = monthlyExpenses - prevMetrics.current.expenses;
     }
 
     // Update previous values
     prevMetrics.current = {
       cash: metrics.cash,
       reputation: metrics.reputation,
-      revenue: weeklyRevenue,
-      expenses: weeklyExpenses,
+      revenue: monthlyRevenue,
+      expenses: monthlyExpenses,
     };
 
     // Only set changes if there are actual changes
@@ -60,7 +60,7 @@ export function useMetricChanges() {
 
       return () => clearTimeout(timer);
     }
-  }, [metrics.cash, metrics.reputation, weeklyRevenue, weeklyExpenses]);
+  }, [metrics.cash, metrics.reputation, monthlyRevenue, monthlyExpenses]);
 
   return changes;
 }

@@ -21,7 +21,7 @@ export enum GameMetric {
   ServiceRooms = 'serviceRooms',
   ReputationMultiplier = 'reputationMultiplier',
   HappyProbability = 'happyProbability',
-  WeeklyExpenses = 'weeklyExpenses',
+  MonthlyExpenses = 'monthlyExpenses',
 }
 
 // How effects are applied
@@ -79,7 +79,7 @@ export const METRIC_CONSTRAINTS: Record<GameMetric, MetricConstraints> = {
     min: 0, 
     max: 1,
   },
-  [GameMetric.WeeklyExpenses]: { 
+  [GameMetric.MonthlyExpenses]: { 
     min: 0,
   },
 };

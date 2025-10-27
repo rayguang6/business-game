@@ -75,7 +75,7 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
   {
     id: 'community-open-house',
     name: 'Community Open House',
-    description: 'Host a weekend open house with free mini check-ups and swag.',
+    description: 'Host a monthend open house with free mini check-ups and swag.',
     cost: 200,
     durationSeconds: 30,
     effects: [

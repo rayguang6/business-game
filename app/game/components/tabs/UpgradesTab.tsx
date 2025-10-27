@@ -13,8 +13,7 @@ const metricLabels: Record<string, string> = {
   treatmentRooms: 'Treatment Rooms',
   serviceSpeedMultiplier: 'Service Speed',
   spawnIntervalSeconds: 'Spawn Interval',
-  reputationMultiplier: 'Reputation Gain',
-  weeklyExpenses: 'Weekly Expenses',
+  monthlyExpenses: 'Monthly Expenses',
 };
 
 type MetricKey = keyof typeof metricLabels;
@@ -23,11 +22,9 @@ const formatMetricValue = (metric: MetricKey, value: number): string => {
   switch (metric) {
     case 'treatmentRooms':
       return Math.round(value).toString();
-    case 'weeklyExpenses':
+    case 'monthlyExpenses':
       return `$${Math.round(value).toLocaleString()}`;
     case 'serviceSpeedMultiplier':
-      return `×${value.toFixed(2)}`;
-    case 'reputationMultiplier':
       return `×${value.toFixed(2)}`;
     case 'spawnIntervalSeconds':
       return `${value.toFixed(2)}s`;
@@ -41,15 +38,11 @@ const formatEffect = (effect: UpgradeEffect): string => {
   switch (effect.metric) {
     case GameMetric.ServiceRooms:
       return `${sign}${effect.value} treatment room${effect.value === 1 ? '' : 's'}`;
-    case GameMetric.WeeklyExpenses:
-      return `${effect.value >= 0 ? '+' : '-'}$${Math.abs(effect.value)} weekly expenses`;
+    case GameMetric.MonthlyExpenses:
+      return `${effect.value >= 0 ? '+' : '-'}$${Math.abs(effect.value)} monthly expenses`;
     case GameMetric.ServiceSpeedMultiplier: {
       const percent = Math.round(effect.value);
       return `${percent >= 0 ? '+' : ''}${percent}% service speed`;
-    }
-    case GameMetric.ReputationMultiplier: {
-      const percent = Math.round(effect.value);
-      return `${percent >= 0 ? '+' : ''}${percent}% reputation gain`;
     }
     case GameMetric.SpawnIntervalSeconds: {
       const percent = Math.round(effect.value);
@@ -113,7 +106,7 @@ export function UpgradesTab() {
         <h3 className="text-lg font-bold mb-3 text-white">Upgrade Overview</h3>
         <p className="text-gray-300 text-sm mb-4">
           Purchase upgrades once to permanently improve your clinic. Each upgrade deducts its cost immediately and adjusts
-          weekly expenses automatically.
+          monthly expenses automatically.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {metricsOverview}

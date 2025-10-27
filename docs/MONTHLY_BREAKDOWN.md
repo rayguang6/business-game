@@ -1,17 +1,17 @@
-# Weekly Revenue & Expense Breakdown
+# Monthly Revenue & Expense Breakdown
 
 ## Overview
-The Finance Tab now shows detailed breakdowns for both revenue and expenses in each week's history, making it easy to understand where money came from and where it went.
+The Finance Tab now shows detailed breakdowns for both revenue and expenses in each month's history, making it easy to understand where money came from and where it went.
 
 ---
 
 ## 📊 **Visual Layout**
 
-### **Week Display Format:**
+### **Month Display Format:**
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ Week 2 [Latest]                      Profit: $-100      │
+│ Month 2 [Latest]                      Profit: $-100      │
 ├─────────────────────────────────────────────────────────┤
 │                                                          │
 │  Revenue                    Expenses                     │
@@ -55,8 +55,8 @@ Revenue                     $1,200
 Shows all costs separated into recurring and one-time
 
 **Categories:**
-1. **Recurring costs** - Weekly operational expenses (base + upgrades)
-2. **One-time costs** - Purchases made this week:
+1. **Recurring costs** - Monthly operational expenses (base + upgrades)
+2. **One-time costs** - Purchases made this month:
    - 🔧 **Upgrades** - Equipment, rooms, training
    - 🔨 **Repairs** - Equipment breakdowns (future)
    - 📋 **Events** - Marketing campaigns, special events (future)
@@ -78,12 +78,12 @@ Expenses                    $1,890
 
 ### **Revenue Total:**
 ```typescript
-weeklyRevenue = sum(all customer payments during the week)
+monthlyRevenue = sum(all customer payments during the month)
 ```
 
 ### **Expenses Total:**
 ```typescript
-weeklyExpenses = recurringCosts + oneTimeCosts
+monthlyExpenses = recurringCosts + oneTimeCosts
 
 recurringCosts = baseOperations + sum(upgrade recurring costs)
 oneTimeCosts = sum(upgrade purchases, repairs, events)
@@ -91,18 +91,18 @@ oneTimeCosts = sum(upgrade purchases, repairs, events)
 
 ### **Example Breakdown:**
 
-**Week 2 Scenario:**
+**Month 2 Scenario:**
 ```
-Starting Week:
+Starting Month:
 - Base recurring: $800
-- Upgrade recurring: $90 (from Modern Equipment bought week 1)
+- Upgrade recurring: $90 (from Modern Equipment bought month 1)
 - Total recurring: $890
 
-During Week:
+During Month:
 - Buy "Extra Treatment Room" for $1,000 (one-time)
 - This adds $150 to future recurring costs
 
-Week End Calculation:
+Month End Calculation:
 - Revenue: $1,200 (12 customers × $100 avg)
 - Recurring Costs: $890
 - One-time Costs: $1,000 (Extra Room purchase)
@@ -125,7 +125,7 @@ Expenses: $1,890
 ### **Revenue Sources to Add:**
 1. **Event Bonuses**
    - "Holiday Rush": +$200
-   - "Perfect Week": +$150
+   - "Perfect Month": +$150
 
 2. **Investment Income**
    - "Stock dividends": +$50
@@ -175,7 +175,7 @@ The breakdown uses a **2-column grid** that displays:
 
 ## 📈 **Usage Patterns**
 
-### **Week 1** (Base operations):
+### **Month 1** (Base operations):
 ```
 Revenue: $800
   └─ Customer payments: $800
@@ -184,7 +184,7 @@ Expenses: $800
   └─ Recurring costs: $800
 ```
 
-### **Week 2** (After buying upgrade):
+### **Month 2** (After buying upgrade):
 ```
 Revenue: $1,000
   └─ Customer payments: $1,000
@@ -194,7 +194,7 @@ Expenses: $1,790
   └─ 🔧 Modern Equipment: $900
 ```
 
-### **Week 3** (Just recurring):
+### **Month 3** (Just recurring):
 ```
 Revenue: $1,200
   └─ Customer payments: $1,200
@@ -224,14 +224,14 @@ Currently shows all breakdowns by default. Future enhancement:
 
 ```typescript
 // Click to expand/collapse
-[Week 2 ▼]  Profit: -$100
+[Month 2 ▼]  Profit: -$100
   Revenue: $800 ▼
     └─ [Breakdown shown]
   Expenses: $900 ▼
     └─ [Breakdown shown]
 
 // Collapsed state
-[Week 2 ▶]  Profit: -$100
+[Month 2 ▶]  Profit: -$100
   Revenue: $800 ▶
   Expenses: $900 ▶
 ```

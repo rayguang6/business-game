@@ -17,14 +17,14 @@ import { GameMetric, EffectType } from './effectManager';
 // Shared
 // -----------------------------------------------------------------------------
 const DEFAULT_BUSINESS_METRICS: BusinessMetrics = {
-  startingCash: 10000,
-  weeklyExpenses: 200,
+  startingCash: 15000,
+  monthlyExpenses: 5000,
   startingReputation: 10,
 } as const;
 
 const DEFAULT_BUSINESS_STATS: BusinessStats = {
   ticksPerSecond: 10,
-  weekDurationSeconds: 30,
+  monthDurationSeconds: 60,
   customerSpawnIntervalSeconds: 3,
   customerPatienceSeconds: 10,
   leavingAngryDurationTicks: 10,
@@ -36,7 +36,7 @@ const DEFAULT_BUSINESS_STATS: BusinessStats = {
   treatmentRooms: 2,
   reputationGainPerHappyCustomer: 1,
   reputationLossPerAngryCustomer: 1,
-  baseHappyProbability: 0.7,
+  baseHappyProbability: 1,
 } as const;
 
 const DEFAULT_MOVEMENT_CONFIG: MovementConfig = {
@@ -98,9 +98,9 @@ const DEFAULT_CUSTOMER_IMAGES = [
 // Industry Specific
 // -----------------------------------------------------------------------------
 const DENTAL_SERVICES: IndustryServiceDefinition[] = [
-  { id: 'dental_cleaning', name: 'Teeth Cleaning', duration: 10, price: 100 },
-  { id: 'dental_filling', name: 'Cavity Filling', duration: 10, price: 300 },
-  { id: 'dental_root_canal', name: 'Root Canal', duration: 10, price: 500 },
+  { id: 'dental_cleaning', name: 'Teeth Cleaning', duration: 5, price: 500 },
+  { id: 'dental_filling', name: 'Cavity Filling', duration: 5, price: 700 },
+  { id: 'dental_root_canal', name: 'Root Canal', duration: 5, price: 1000 },
 ];
 
 const RESTAURANT_SERVICES: IndustryServiceDefinition[] = [
@@ -125,7 +125,7 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     maxLevel: 3,
     effects: [
       { metric: GameMetric.ServiceRooms, type: EffectType.Add, value: 1 },
-      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 150 },
+      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 150 },
     ],
   },
   {
@@ -137,19 +137,19 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     maxLevel: 2,
     effects: [
       { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 20 }, // +20% service speed
-      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 90 },
+      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 90 },
     ],
   },
   {
     id: 'staff_training',
     name: 'Staff Training Program',
-    description: 'Improve customer experience and reputation gains with staff coaching.',
+    description: 'Improve customer experience and keep service times tight with staff coaching.',
     icon: '👩‍⚕️',
     cost: 700,
     maxLevel: 3,
     effects: [
-      { metric: GameMetric.ReputationMultiplier, type: EffectType.Percent, value: 200 }, // +200% reputation gain
-      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 80 },
+      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 10 }, // +10% service speed
+      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 80 },
     ],
   },
   {
@@ -161,7 +161,7 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     maxLevel: 2,
     effects: [
       { metric: GameMetric.SpawnIntervalSeconds, type: EffectType.Percent, value: 25 }, // +25% customer spawn speed
-      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 110 },
+      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 110 },
     ],
   },
   {
@@ -173,19 +173,19 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     maxLevel: 2,
     effects: [
       { metric: GameMetric.SpawnIntervalSeconds, type: EffectType.Percent, value: 15 }, // +15% customer spawn speed
-      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 70 },
+      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 70 },
     ],
   },
   {
     id: 'spa_waiting_area',
     name: 'Spa Waiting Area',
-    description: 'Create a relaxing environment that keeps customers calm and patient.',
+    description: 'Create a relaxing environment that streamlines the customer flow.',
     icon: '🛋️',
     cost: 450,
     maxLevel: 1,
     effects: [
-      { metric: GameMetric.ReputationMultiplier, type: EffectType.Percent, value: 15 }, // +15% reputation gain
-      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 60 },
+      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 5 }, // +5% service speed
+      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 60 },
     ],
   },
 ];
@@ -202,7 +202,7 @@ const RESTAURANT_UPGRADES: UpgradeDefinition[] = [
     maxLevel: 2,
     effects: [
       { metric: GameMetric.ServiceRooms, type: EffectType.Add, value: 1 },
-      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 90 },
+      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 90 },
     ],
   },
   {
@@ -214,7 +214,7 @@ const RESTAURANT_UPGRADES: UpgradeDefinition[] = [
     maxLevel: 2,
     effects: [
       { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 15 }, // +15% service speed
-      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 110 },
+      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 110 },
     ],
   },
 ];
@@ -309,19 +309,19 @@ const GYM_UPGRADES: UpgradeDefinition[] = [
     maxLevel: 2,
     effects: [
       { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 10 }, // +10% service speed
-      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 95 },
+      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 95 },
     ],
   },
   {
     id: 'gym_recovery_lounge',
     name: 'Recovery Lounge',
-    description: 'Create a recovery lounge that keeps members happier for longer.',
+    description: 'Create a recovery lounge that keeps members energized between sessions.',
     icon: '🧘',
     cost: 600,
     maxLevel: 1,
     effects: [
-      { metric: GameMetric.ReputationMultiplier, type: EffectType.Percent, value: 20 }, // +20% reputation gain
-      { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 70 },
+      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 8 }, // +8% service speed
+      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 70 },
     ],
   },
 ];

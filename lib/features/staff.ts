@@ -5,7 +5,6 @@ export interface Staff {
   name: string;
   salary: number;
   increaseServiceSpeed: number; // Percentage: 10 = 10% speed boost (1.1x faster service)
-  increaseHappyCustomerProbability: number; // Percentage points: 4 = +4% to happy chance
   emoji: string; // To represent the staff member
   rank: 'blue' | 'purple' | 'orange' | 'red';
   role: string;
@@ -97,8 +96,6 @@ export const generateRandomStaff = (id: string): Staff => {
   const salary = Math.round((500 * multiplier + Math.random() * 200) / 100) * 100;
   // Speed boost as percentage: 5-10% for blue, scales with rank
   const increaseServiceSpeed = Math.round(5 * multiplier + Math.random() * 5);
-  // Happy probability as percentage points: 1-5% for blue, scales with rank
-  const increaseHappyCustomerProbability = Math.round(1 * multiplier + Math.random() * 4);
   const level = Math.floor(Math.random() * 5 * multiplier) + 1; // Level 1-5 for blue, higher for others
   const hireCost = Math.round((salary * 2 + level * 50) / 100) * 100; // Example cost calculation
 
@@ -111,7 +108,6 @@ export const generateRandomStaff = (id: string): Staff => {
     name: randomName,
     salary,
     increaseServiceSpeed,
-    increaseHappyCustomerProbability,
     emoji: getRandomEmoji(rank),
     rank,
     role,
@@ -141,23 +137,7 @@ export function addStaffEffects(staff: Staff): void {
     });
   }
 
-  // Happy customer probability boost (convert percentage points to decimal)
-  // e.g., 4 = +4% = +0.04 to probability (which is 0-1 range)
-  if (staff.increaseHappyCustomerProbability > 0) {
-    effectManager.add({
-      id: `staff_${staff.id}_happy`,
-      source: {
-        category: 'staff',
-        id: staff.id,
-        name: staff.name,
-      },
-      metric: GameMetric.HappyProbability,
-      type: EffectType.Add,
-      value: staff.increaseHappyCustomerProbability / 100, // Convert to 0-1 range
-    });
-  }
-
-  // Weekly salary expense
+  // Monthly salary expense
   if (staff.salary > 0) {
     effectManager.add({
       id: `staff_${staff.id}_salary`,
@@ -166,7 +146,7 @@ export function addStaffEffects(staff: Staff): void {
         id: staff.id,
         name: staff.name,
       },
-      metric: GameMetric.WeeklyExpenses,
+      metric: GameMetric.MonthlyExpenses,
       type: EffectType.Add,
       value: staff.salary,
     });

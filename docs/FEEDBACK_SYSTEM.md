@@ -14,7 +14,7 @@ A simple, elegant animation system that shows floating "+100" style notification
 
 ### 1. **useMetricChanges Hook** (`hooks/useMetricChanges.ts`)
 Tracks changes in game metrics by comparing previous values:
-- Monitors: cash, reputation, weekly revenue, weekly expenses
+- Monitors: cash, reputation, monthly revenue, monthly expenses
 - Returns an object with the delta (change amount) for each metric
 - Auto-resets after 100ms to avoid duplicate triggers
 
@@ -51,8 +51,8 @@ The feedback system is already integrated! When playing the game:
 1. **Customer completes service** → Shows "+100" (green) on Cash
 2. **Customer leaves happy** → Shows "+1" (yellow) on Reputation
 3. **Customer leaves angry** → Shows "-1" (red) on Reputation  
-4. **Week ends** → Shows "-800" (red) on Cash
-5. **Buy upgrade** → Shows expense increase (red) on Weekly Expenses
+4. **Month ends** → Shows "-800" (red) on Cash
+5. **Buy upgrade** → Shows expense increase (red) on Monthly Expenses
 
 ## Color Coding
 

@@ -7,7 +7,7 @@ import {
   getAllUpgrades,
   getUpgradeById,
 } from '@/lib/game/config';
-import { calculateUpgradeWeeklyExpenses, getWeeklyBaseExpenses } from '@/lib/features/economy';
+import { calculateUpgradeMonthlyExpenses, getMonthlyBaseExpenses } from '@/lib/features/economy';
 import { getUpgradeLevel, canUpgradeMore } from '@/lib/features/upgrades';
 import { GameStore } from '../gameStore';
 import type { IndustryId } from '@/lib/game/types';
@@ -98,13 +98,13 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
       return { success: false, message: `Need $${upgrade.cost} to purchase ${upgrade.name}.` };
     }
 
-    const previousUpgradeExpenses = calculateUpgradeWeeklyExpenses(store.upgrades, industryId);
+    const previousUpgradeExpenses = calculateUpgradeMonthlyExpenses(store.upgrades, industryId);
     const nextUpgrades: Upgrades = {
       ...store.upgrades,
       [upgradeId]: currentLevel + 1,
     };
-    const newUpgradeExpenses = calculateUpgradeWeeklyExpenses(nextUpgrades, industryId);
-    const weeklyExpenseDelta = newUpgradeExpenses - previousUpgradeExpenses;
+    const newUpgradeExpenses = calculateUpgradeMonthlyExpenses(nextUpgrades, industryId);
+    const monthlyExpenseDelta = newUpgradeExpenses - previousUpgradeExpenses;
 
     const newLevel = currentLevel + 1;
     const upgradeLabel = upgrade.maxLevel > 1 
@@ -128,11 +128,11 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
         upgrades: nextUpgrades,
         metrics: {
           ...state.metrics,
-          totalExpenses: state.metrics.totalExpenses + Math.max(0, weeklyExpenseDelta),
+          totalExpenses: state.metrics.totalExpenses + Math.max(0, monthlyExpenseDelta),
         },
-        weeklyExpenses:
-          getWeeklyBaseExpenses(industryId) + newUpgradeExpenses,
-        weeklyExpenseAdjustments: state.weeklyExpenseAdjustments + Math.max(0, weeklyExpenseDelta),
+        monthlyExpenses:
+          getMonthlyBaseExpenses(industryId) + newUpgradeExpenses,
+        monthlyExpenseAdjustments: state.monthlyExpenseAdjustments + Math.max(0, monthlyExpenseDelta),
       };
     });
 
@@ -157,8 +157,8 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
     
     set({
       upgrades: {},
-      weeklyExpenses: getWeeklyBaseExpenses(industryId),
-      weeklyExpenseAdjustments: 0,
+      monthlyExpenses: getMonthlyBaseExpenses(industryId),
+      monthlyExpenseAdjustments: 0,
     });
   },
 });

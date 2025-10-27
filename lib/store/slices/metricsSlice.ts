@@ -18,8 +18,8 @@ export interface MetricsSlice {
   metrics: Metrics;
   
   updateMetrics: (updates: Partial<Metrics>) => void;
-  updateWeeklyRevenue: (amount: number) => void;
-  updateWeeklyExpenses: (amount: number) => void;
+  updateMonthlyRevenue: (amount: number) => void;
+  updateMonthlyExpenses: (amount: number) => void;
 }
 
 export const createMetricsSlice: StateCreator<GameState, [], [], MetricsSlice> = (set) => ({
@@ -31,9 +31,9 @@ export const createMetricsSlice: StateCreator<GameState, [], [], MetricsSlice> =
     }));
   },
   
-  updateWeeklyRevenue: (amount: number) => {
+  updateMonthlyRevenue: (amount: number) => {
     set((state) => ({
-      weeklyRevenue: state.weeklyRevenue + amount,
+      monthlyRevenue: state.monthlyRevenue + amount,
       metrics: {
         ...state.metrics,
         cash: state.metrics.cash + amount,
@@ -42,10 +42,10 @@ export const createMetricsSlice: StateCreator<GameState, [], [], MetricsSlice> =
     }));
   },
   
-  updateWeeklyExpenses: (amount: number) => {
+  updateMonthlyExpenses: (amount: number) => {
     set((state) => ({
-      weeklyExpenses: state.weeklyExpenses + amount,
-      // Note: Additional expenses are only deducted at end of week, not immediately
+      monthlyExpenses: state.monthlyExpenses + amount,
+      // Note: Additional expenses are only deducted at end of month, not immediately
     }));
   },
   

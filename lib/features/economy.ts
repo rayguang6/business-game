@@ -26,42 +26,42 @@ export interface ExpenseBreakdownItem {
 
 // Mechanics
 /**
- * Returns the baseline weekly operating expenses
+ * Returns the baseline monthly operating expenses
  */
-export function getWeeklyBaseExpenses(industryId: IndustryId): number {
-  return getBusinessMetrics(industryId).weeklyExpenses;
+export function getMonthlyBaseExpenses(industryId: IndustryId): number {
+  return getBusinessMetrics(industryId).monthlyExpenses;
 }
 
 function calculateUpgradeExpenseFromDefinition(
   upgrade: UpgradeDefinition,
   industryId: IndustryId,
 ): number {
-  const baseWeeklyExpenses = getWeeklyBaseExpenses(industryId);
+  const baseMonthlyExpenses = getMonthlyBaseExpenses(industryId);
   return upgrade.effects
-    .filter((effect) => effect.metric === GameMetric.WeeklyExpenses)
+    .filter((effect) => effect.metric === GameMetric.MonthlyExpenses)
     .reduce((total, effect) => {
       if (effect.type === EffectType.Add) {
         return total + effect.value;
       }
 
       if (effect.type === EffectType.Percent) {
-        return total + baseWeeklyExpenses * (effect.value / 100);
+        return total + baseMonthlyExpenses * (effect.value / 100);
       }
 
       return total;
     }, 0);
 }
 
-export function buildWeeklyExpenseBreakdown(
+export function buildMonthlyExpenseBreakdown(
   upgrades: Upgrades,
-  weeklyOneTimeCosts: number = 0,
+  monthlyOneTimeCosts: number = 0,
   industryId: IndustryId,
   staffMembers: Staff[] = [],
 ): ExpenseBreakdownItem[] {
   const breakdown: ExpenseBreakdownItem[] = [
     {
       label: 'Base operations',
-      amount: getWeeklyBaseExpenses(industryId),
+      amount: getMonthlyBaseExpenses(industryId),
       category: 'base',
     },
   ];
@@ -93,10 +93,10 @@ export function buildWeeklyExpenseBreakdown(
       }
     });
 
-  if (weeklyOneTimeCosts > 0) {
+  if (monthlyOneTimeCosts > 0) {
     breakdown.push({
       label: 'One-time costs',
-      amount: weeklyOneTimeCosts,
+      amount: monthlyOneTimeCosts,
       category: 'event',
     });
   }
@@ -105,43 +105,43 @@ export function buildWeeklyExpenseBreakdown(
 }
 
 /**
- * Calculates the total weekly expenses contributed by upgrades.
+ * Calculates the total monthly expenses contributed by upgrades.
  */
-export function calculateUpgradeWeeklyExpenses(
+export function calculateUpgradeMonthlyExpenses(
   upgrades: Upgrades,
   industryId: IndustryId,
 ): number {
   const { currentMetrics } = calculateActiveUpgradeMetrics(upgrades, industryId);
   const baseMetrics = getBaseUpgradeMetricsForIndustry(industryId);
-  return Math.max(0, currentMetrics.weeklyExpenses - baseMetrics.weeklyExpenses);
+  return Math.max(0, currentMetrics.monthlyExpenses - baseMetrics.monthlyExpenses);
 }
 
 /**
- * Handles end of week calculations
- * Note: Cash is updated instantly during the week, so we only deduct expenses here
+ * Handles end of month calculations
+ * Note: Cash is updated instantly during the month, so we only deduct expenses here
  */
-export function endOfWeek(
+export function endOfMonth(
   currentCash: number,
-  weeklyRevenue: number,
-  weeklyExpenses: number = 0,
-  weeklyOneTimeCosts: number = 0,
-  weeklyOneTimeCostsPaid: number = 0,
+  monthlyRevenue: number,
+  monthlyExpenses: number = 0,
+  monthlyOneTimeCosts: number = 0,
+  monthlyOneTimeCostsPaid: number = 0,
   industryId: IndustryId,
 ): { cash: number; profit: number; totalExpenses: number; baseExpenses: number; additionalExpenses: number; oneTimeCosts: number } {
-  // weeklyExpenses already contains base expenses, so don't add them again
-  // Total expenses = weeklyExpenses (which includes base) + one-time costs
-  const totalExpenses = weeklyExpenses + weeklyOneTimeCosts;
-  const payableOneTimeCosts = Math.max(0, weeklyOneTimeCosts - weeklyOneTimeCostsPaid);
+  // monthlyExpenses already contains base expenses, so don't add them again
+  // Total expenses = monthlyExpenses (which includes base) + one-time costs
+  const totalExpenses = monthlyExpenses + monthlyOneTimeCosts;
+  const payableOneTimeCosts = Math.max(0, monthlyOneTimeCosts - monthlyOneTimeCostsPaid);
   
-  // Only deduct expenses (cash was already updated during the week)
-  const newCash = currentCash - (weeklyExpenses + payableOneTimeCosts);
+  // Only deduct expenses (cash was already updated during the month)
+  const newCash = currentCash - (monthlyExpenses + payableOneTimeCosts);
   
   // Calculate profit for reporting (revenue - expenses)
-  const profit = weeklyRevenue - totalExpenses;
+  const profit = monthlyRevenue - totalExpenses;
   
   // For reporting, separate base from additional expenses
-  const baseExpenses = getWeeklyBaseExpenses(industryId);
-  const additionalExpenses = Math.max(weeklyExpenses - baseExpenses, 0);
+  const baseExpenses = getMonthlyBaseExpenses(industryId);
+  const additionalExpenses = Math.max(monthlyExpenses - baseExpenses, 0);
   
   return {
     cash: newCash,
@@ -149,6 +149,6 @@ export function endOfWeek(
     totalExpenses,
     baseExpenses,
     additionalExpenses,
-    oneTimeCosts: weeklyOneTimeCosts
+    oneTimeCosts: monthlyOneTimeCosts
   };
 }

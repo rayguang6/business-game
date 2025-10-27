@@ -49,8 +49,8 @@ export interface OneTimeCost {
   alreadyDeducted?: boolean;
 }
 
-export interface WeeklyHistoryEntry {
-  week: number;
+export interface MonthlyHistoryEntry {
+  month: number;
   revenue: number;
   expenses: number;
   oneTimeCosts: OneTimeCost[];
@@ -67,7 +67,7 @@ export interface GameState {
   isPaused: boolean;
   gameTime: number;
   gameTick: number;
-  currentWeek: number;
+  currentMonth: number;
   isGameOver: boolean;
   gameOverReason: 'cash' | 'reputation' | null;
   
@@ -77,15 +77,15 @@ export interface GameState {
   // Upgrades
   upgrades: Upgrades;
   
-  // Weekly Tracking
-  weeklyRevenue: number;
-  weeklyExpenses: number;
-  weeklyRevenueDetails: RevenueEntry[];
-  weeklyOneTimeCosts: number; // Total one-time costs amount
-  weeklyOneTimeCostDetails: OneTimeCost[]; // Detailed list of one-time costs
-  weeklyOneTimeCostsPaid: number;
-  weeklyHistory: WeeklyHistoryEntry[];
-  weeklyExpenseAdjustments: number;
+  // Monthly Tracking
+  monthlyRevenue: number;
+  monthlyExpenses: number;
+  monthlyRevenueDetails: RevenueEntry[];
+  monthlyOneTimeCosts: number; // Total one-time costs amount
+  monthlyOneTimeCostDetails: OneTimeCost[]; // Detailed list of one-time costs
+  monthlyOneTimeCostsPaid: number;
+  monthlyHistory: MonthlyHistoryEntry[];
+  monthlyExpenseAdjustments: number;
 
   // Customers
   customers: Customer[];
