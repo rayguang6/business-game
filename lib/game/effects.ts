@@ -1,9 +1,10 @@
 import { UpgradeEffects } from '@/lib/features/upgrades';
 import { IndustryId } from '@/lib/game/types';
 import { getTicksPerSecondForIndustry } from '@/lib/game/config';
-import { UpgradeEffect, UpgradeMetric } from '@/lib/game/config';
+import { UpgradeEffect } from '@/lib/game/config';
+import { EffectType, GameMetric } from '@/lib/game/effectManager';
 
-export type EffectMultiplierMap = Partial<Record<UpgradeMetric, number>>;
+export type EffectMultiplierMap = Partial<Record<GameMetric, number>>;
 
 export interface EffectBundle {
   /**
@@ -29,10 +30,18 @@ const applyUpgradeEffectMetric = (
   value: number,
   effect: UpgradeEffect,
 ): number => {
-  if (effect.type === 'add') {
-    return value + effect.value;
+  switch (effect.type) {
+    case EffectType.Add:
+      return value + effect.value;
+    case EffectType.Percent:
+      return value * (1 + effect.value / 100);
+    case EffectType.Multiply:
+      return value * effect.value;
+    case EffectType.Set:
+      return effect.value;
+    default:
+      return value;
   }
-  return value * (1 + effect.value);
 };
 
 const applyUpgradeEffectsToCombined = (
@@ -48,11 +57,29 @@ const applyUpgradeEffectsToCombined = (
 
   effects.forEach((effect) => {
     switch (effect.metric) {
-      case UpgradeMetric.SpawnIntervalSeconds: {
-        const updatedSeconds = Math.max(
-          0.1,
-          applyUpgradeEffectMetric(result.spawnIntervalSeconds, effect),
-        );
+      case GameMetric.SpawnIntervalSeconds: {
+        let updatedSeconds = result.spawnIntervalSeconds;
+        switch (effect.type) {
+          case EffectType.Add:
+            updatedSeconds = result.spawnIntervalSeconds + effect.value;
+            break;
+          case EffectType.Percent: {
+            const divisor = Math.max(0.01, 1 + effect.value / 100);
+            updatedSeconds = result.spawnIntervalSeconds / divisor;
+            break;
+          }
+          case EffectType.Multiply: {
+            const divisor = Math.max(0.01, Math.abs(effect.value));
+            updatedSeconds = result.spawnIntervalSeconds / divisor;
+            break;
+          }
+          case EffectType.Set:
+            updatedSeconds = effect.value;
+            break;
+          default:
+            break;
+        }
+        updatedSeconds = Math.max(0.1, updatedSeconds);
         const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
         result = {
           ...result,
@@ -61,27 +88,27 @@ const applyUpgradeEffectsToCombined = (
         };
         break;
       }
-      case UpgradeMetric.ServiceSpeedMultiplier: {
+      case GameMetric.ServiceSpeedMultiplier: {
         const updated = Math.max(0.1, applyUpgradeEffectMetric(result.serviceSpeedMultiplier, effect));
         result = { ...result, serviceSpeedMultiplier: updated };
         break;
       }
-      case UpgradeMetric.ReputationMultiplier: {
+      case GameMetric.ReputationMultiplier: {
         const updated = Math.max(0, applyUpgradeEffectMetric(result.reputationMultiplier, effect));
         result = { ...result, reputationMultiplier: updated };
         break;
       }
-      case UpgradeMetric.TreatmentRooms: {
+      case GameMetric.ServiceRooms: {
         const updated = applyUpgradeEffectMetric(result.treatmentRooms, effect);
         result = { ...result, treatmentRooms: Math.max(1, Math.round(updated)) };
         break;
       }
-      case UpgradeMetric.WeeklyExpenses: {
+      case GameMetric.WeeklyExpenses: {
         const updated = Math.max(0, applyUpgradeEffectMetric(result.weeklyExpenses, effect));
         result = { ...result, weeklyExpenses: updated };
         break;
       }
-      case UpgradeMetric.HappyProbability: {
+      case GameMetric.HappyProbability: {
         const updated = applyUpgradeEffectMetric(result.happyProbability, effect);
         result = { ...result, happyProbability: Math.max(0, Math.min(1, updated)) };
         break;
@@ -101,14 +128,15 @@ const applyMultipliersToCombined = (
 ): UpgradeEffects => {
   let result: UpgradeEffects = { ...combined };
 
-  Object.entries(multipliers).forEach(([metric, multiplier]) => {
+  (Object.entries(multipliers) as [GameMetric, number | undefined][]).forEach(([metric, multiplier]) => {
     if (multiplier === undefined || Number.isNaN(multiplier)) {
       return;
     }
     const safeMultiplier = Math.max(0, multiplier);
-    switch (metric as UpgradeMetric) {
-      case UpgradeMetric.SpawnIntervalSeconds: {
-        const updatedSeconds = Math.max(0.1, combined.spawnIntervalSeconds * safeMultiplier);
+    switch (metric) {
+      case GameMetric.SpawnIntervalSeconds: {
+        const divisor = Math.max(0.01, safeMultiplier);
+        const updatedSeconds = Math.max(0.1, combined.spawnIntervalSeconds / divisor);
         const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
         result = {
           ...result,
@@ -117,35 +145,35 @@ const applyMultipliersToCombined = (
         };
         break;
       }
-      case UpgradeMetric.ServiceSpeedMultiplier: {
+      case GameMetric.ServiceSpeedMultiplier: {
         result = {
           ...result,
           serviceSpeedMultiplier: Math.max(0.1, combined.serviceSpeedMultiplier * safeMultiplier),
         };
         break;
       }
-      case UpgradeMetric.ReputationMultiplier: {
+      case GameMetric.ReputationMultiplier: {
         result = {
           ...result,
           reputationMultiplier: Math.max(0, combined.reputationMultiplier * safeMultiplier),
         };
         break;
       }
-      case UpgradeMetric.TreatmentRooms: {
+      case GameMetric.ServiceRooms: {
         result = {
           ...result,
           treatmentRooms: Math.max(1, Math.round(combined.treatmentRooms * safeMultiplier)),
         };
         break;
       }
-      case UpgradeMetric.WeeklyExpenses: {
+      case GameMetric.WeeklyExpenses: {
         result = {
           ...result,
           weeklyExpenses: Math.max(0, combined.weeklyExpenses * safeMultiplier),
         };
         break;
       }
-      case UpgradeMetric.HappyProbability: {
+      case GameMetric.HappyProbability: {
         result = {
           ...result,
           happyProbability: Math.max(0, Math.min(1, combined.happyProbability * safeMultiplier)),

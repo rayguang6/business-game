@@ -72,8 +72,8 @@ export function spawnCustomer(
   const layout = getLayoutConfig(industryId);
   const patience = secondsToTicks(stats.customerPatienceSeconds, industryId);
   
-  // Apply equipment upgrades to service duration
-  const effectiveDuration = service.duration * serviceSpeedMultiplier;
+  // Convert the aggregated speed multiplier into a shorter duration (higher speed = shorter time)
+  const effectiveDuration = service.duration / Math.max(serviceSpeedMultiplier, 0.1);
   
   return {
     id: Math.random().toString(36).substr(2, 9),

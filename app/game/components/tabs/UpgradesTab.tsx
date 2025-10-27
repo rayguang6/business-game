@@ -45,8 +45,7 @@ const formatEffect = (effect: UpgradeEffect): string => {
       return `${effect.value >= 0 ? '+' : '-'}$${Math.abs(effect.value)} weekly expenses`;
     case GameMetric.ServiceSpeedMultiplier: {
       const percent = Math.round(effect.value);
-      const label = percent <= 0 ? 'faster service time' : 'slower service time';
-      return `${percent > 0 ? '+' : ''}${percent}% ${label}`;
+      return `${percent >= 0 ? '+' : ''}${percent}% service speed`;
     }
     case GameMetric.ReputationMultiplier: {
       const percent = Math.round(effect.value);
@@ -54,8 +53,9 @@ const formatEffect = (effect: UpgradeEffect): string => {
     }
     case GameMetric.SpawnIntervalSeconds: {
       const percent = Math.round(effect.value);
-      const label = percent <= 0 ? 'faster customer spawns' : 'slower customer spawns';
-      return `${percent > 0 ? '+' : ''}${percent}% ${label}`;
+      const isIncrease = percent >= 0;
+      const label = isIncrease ? 'faster customer spawns' : 'slower customer spawns';
+      return `${isIncrease ? '+' : ''}${percent}% ${label}`;
     }
     default:
       return `${sign}${effect.value}`;
