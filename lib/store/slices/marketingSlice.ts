@@ -96,7 +96,7 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
       {
         metric: GameMetric.SpawnIntervalSeconds,
         type: EffectType.Percent,
-        value: -50, // -50% spawn interval = 2x customer flow
+        value: 100, // +100% spawn speed = 2x customer flow
       },
     ],
   },

@@ -4,7 +4,7 @@ export interface Staff {
   id: string;
   name: string;
   salary: number;
-  increaseServiceSpeed: number; // Percentage: 10 = 10% speed boost (reduces service time)
+  increaseServiceSpeed: number; // Percentage: 10 = 10% speed boost (1.1x faster service)
   increaseHappyCustomerProbability: number; // Percentage points: 4 = +4% to happy chance
   emoji: string; // To represent the staff member
   rank: 'blue' | 'purple' | 'orange' | 'red';
@@ -126,7 +126,7 @@ export const generateRandomStaff = (id: string): Staff => {
  */
 export function addStaffEffects(staff: Staff): void {
   // Service speed boost (stored as percentage)
-  // e.g., 10 = +10% speed boost, which means -10% service time
+  // e.g., 10 = +10% speed boost, which means duration ÷ 1.10
   if (staff.increaseServiceSpeed > 0) {
     effectManager.add({
       id: `staff_${staff.id}_speed`,
@@ -137,7 +137,7 @@ export function addStaffEffects(staff: Staff): void {
       },
       metric: GameMetric.ServiceSpeedMultiplier,
       type: EffectType.Percent,
-      value: -staff.increaseServiceSpeed, // Negative to reduce service time
+      value: staff.increaseServiceSpeed,
     });
   }
 

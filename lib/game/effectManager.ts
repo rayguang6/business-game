@@ -59,7 +59,7 @@ export interface MetricConstraints {
 // Constraints definition
 export const METRIC_CONSTRAINTS: Record<GameMetric, MetricConstraints> = {
   [GameMetric.SpawnIntervalSeconds]: { 
-    min: 0.5, 
+    min: 0.1, 
     max: 60,
   },
   [GameMetric.ServiceSpeedMultiplier]: { 
@@ -163,12 +163,21 @@ export function calculateMetricValue(
       (sum, effect) => sum + effect.value,
       0,
     );
-    value *= 1 + percentTotal / 100;
+    if (metric === GameMetric.SpawnIntervalSeconds) {
+      const divisor = Math.max(0.01, 1 + percentTotal / 100);
+      value /= divisor;
+    } else {
+      value *= 1 + percentTotal / 100;
+    }
   }
 
   if (byType[EffectType.Multiply].length > 0) {
     sortEffectsByPriority(byType[EffectType.Multiply]).forEach((effect) => {
-      value *= effect.value;
+      if (metric === GameMetric.SpawnIntervalSeconds) {
+        value /= Math.max(0.01, Math.abs(effect.value));
+      } else {
+        value *= effect.value;
+      }
     });
   }
 

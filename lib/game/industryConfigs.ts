@@ -136,7 +136,7 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     cost: 900,
     maxLevel: 2,
     effects: [
-      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: -20 }, // -20% service time
+      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 20 }, // +20% service speed
       { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 90 },
     ],
   },
@@ -160,7 +160,7 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     cost: 800,
     maxLevel: 2,
     effects: [
-      { metric: GameMetric.SpawnIntervalSeconds, type: EffectType.Percent, value: -25 }, // -25% spawn interval
+      { metric: GameMetric.SpawnIntervalSeconds, type: EffectType.Percent, value: 25 }, // +25% customer spawn speed
       { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 110 },
     ],
   },
@@ -172,7 +172,7 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     cost: 600,
     maxLevel: 2,
     effects: [
-      { metric: GameMetric.SpawnIntervalSeconds, type: EffectType.Percent, value: -15 }, // -15% spawn interval
+      { metric: GameMetric.SpawnIntervalSeconds, type: EffectType.Percent, value: 15 }, // +15% customer spawn speed
       { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 70 },
     ],
   },
@@ -213,7 +213,7 @@ const RESTAURANT_UPGRADES: UpgradeDefinition[] = [
     cost: 950,
     maxLevel: 2,
     effects: [
-      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: -15 }, // -15% service time
+      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 15 }, // +15% service speed
       { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 110 },
     ],
   },
@@ -308,7 +308,7 @@ const GYM_UPGRADES: UpgradeDefinition[] = [
     cost: 850,
     maxLevel: 2,
     effects: [
-      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: -10 }, // -10% service time
+      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 10 }, // +10% service speed
       { metric: GameMetric.WeeklyExpenses, type: EffectType.Add, value: 95 },
     ],
   },

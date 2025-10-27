@@ -109,8 +109,8 @@ Percent modifiers are summed first and then applied once, so `-10` and `-5` comb
 ## 🎯 Available Metrics
 
 ```typescript
-GameMetric.SpawnIntervalSeconds      // How often customers spawn
-GameMetric.ServiceSpeedMultiplier    // Service duration multiplier
+GameMetric.SpawnIntervalSeconds      // How often customers spawn (positive % = faster spawns)
+GameMetric.ServiceSpeedMultiplier    // Service speed multiplier (higher = faster service)
 GameMetric.TreatmentRooms           // Number of service rooms
 GameMetric.ReputationMultiplier     // Reputation gain/loss multiplier
 GameMetric.HappyProbability         // Customer satisfaction chance

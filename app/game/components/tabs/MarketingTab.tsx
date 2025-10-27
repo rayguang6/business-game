@@ -45,9 +45,7 @@ export function MarketingTab() {
     const descriptions: string[] = [];
     if (percent !== 0) {
       const percentDecimal = percent / 100;
-      const intervalMultiplier = 1 + percentDecimal;
-      const safeIntervalMultiplier = intervalMultiplier <= 0 ? 0.1 : intervalMultiplier;
-      const flowMultiplier = 1 / safeIntervalMultiplier;
+      const flowMultiplier = Math.max(0, 1 + percentDecimal);
       const flowPercent = (flowMultiplier - 1) * 100;
       descriptions.push(
         `Customer flow ${flowPercent >= 0 ? '+' : ''}${flowPercent.toFixed(0)}% (×${flowMultiplier.toFixed(2)})`,
