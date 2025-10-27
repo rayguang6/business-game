@@ -91,6 +91,7 @@ interface ProcessCustomersParams {
   gameMetrics: {
     serviceRooms: number;
     reputationMultiplier: number;
+    serviceRevenueMultiplier: number;
   };
   industryId: IndustryId;
 }
@@ -202,6 +203,7 @@ function processCustomersForTick({
   const revenueDetails = [...monthlyRevenueDetails];
   const stats = getBusinessStats(industryId);
   const reputationMultiplier = gameMetrics.reputationMultiplier;
+  const serviceRevenueMultiplier = Math.max(0, gameMetrics.serviceRevenueMultiplier || 0);
 
   // Find already occupied waiting positions (including both current and target positions)
   // occupiedWaitingPositions: the grid locations where someone is already sitting or heading; used to avoid overlap.
@@ -281,9 +283,10 @@ function processCustomersForTick({
     // If customer is leaving happy, add revenue and reputation
     if (updatedCustomer.status === CustomerStatus.WalkingOutHappy) {
       const servicePrice = updatedCustomer.service.price;
+      const serviceRevenue = servicePrice * (serviceRevenueMultiplier > 0 ? serviceRevenueMultiplier : 1);
       
       // Add revenue
-      const newCash = metricsAccumulator.cash + servicePrice;
+      const newCash = metricsAccumulator.cash + serviceRevenue;
       
       // Customers always leave satisfied, so apply the full reputation gain
       const reputationGain = Math.floor(stats.reputationGainPerHappyCustomer * reputationMultiplier);
@@ -292,11 +295,11 @@ function processCustomersForTick({
         ...metricsAccumulator,
         cash: newCash,
         reputation: metricsAccumulator.reputation + reputationGain,
-        totalRevenue: metricsAccumulator.totalRevenue + servicePrice,
+        totalRevenue: metricsAccumulator.totalRevenue + serviceRevenue,
       };
-      revenueAccumulator += servicePrice;
+      revenueAccumulator += serviceRevenue;
       revenueDetails.push({
-        amount: servicePrice,
+        amount: serviceRevenue,
         category: RevenueCategory.Customer,
         label: updatedCustomer.service?.name ?? 'Dental service',
       });
@@ -461,6 +464,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
     serviceSpeedMultiplier: effectManager.calculate(GameMetric.ServiceSpeedMultiplier, 1.0),
     serviceRooms: effectManager.calculate(GameMetric.ServiceRooms, baseStats.treatmentRooms),
     reputationMultiplier: effectManager.calculate(GameMetric.ReputationMultiplier, 1.0),
+    serviceRevenueMultiplier: Math.max(0, baseStats.serviceRevenueMultiplier ?? 1),
     monthlyExpenses: effectManager.calculate(
       GameMetric.MonthlyExpenses,
       getMonthlyBaseExpenses(industryId),
