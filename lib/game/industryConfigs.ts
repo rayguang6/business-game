@@ -37,6 +37,7 @@ const DEFAULT_BUSINESS_STATS: BusinessStats = {
   reputationGainPerHappyCustomer: 1,
   reputationLossPerAngryCustomer: 1,
   baseHappyProbability: 1,
+  eventTriggerSeconds: [15, 30, 45],
 } as const;
 
 const DEFAULT_MOVEMENT_CONFIG: MovementConfig = {

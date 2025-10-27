@@ -130,24 +130,15 @@ export function GameCanvas() {
           <div className="bg-black/75 text-white text-xs sm:text-[13px] px-3 py-2 rounded-lg shadow-lg space-y-1 max-w-[240px]">
             <div className="font-semibold text-sm">Live Modifiers</div>
             <div>
-              <span className="text-gray-300">Spawn interval:</span>{' '}
-              <span className="font-semibold">{spawnIntervalSeconds.toFixed(2)}s</span>
-              {customersPerMinute ? (
-                <span className="text-gray-300"> ({customersPerMinute.toFixed(1)}/min)</span>
-              ) : null}
+              <span className="text-gray-300">Customer spawn interval:</span>{' '}
             </div>
             <div>
               <span className="text-gray-300">Service speed:</span>{' '}
               <span className="font-semibold">×{serviceSpeedMultiplier.toFixed(2)}</span>
-              <span className="text-gray-400"> (lower is faster)</span>
             </div>
             <div>
               <span className="text-gray-300">{serviceRoomsLabel}:</span>{' '}
               <span className="font-semibold">{serviceRooms}</span>
-            </div>
-            <div>
-              <span className="text-gray-300">Monthly expenses:</span>{' '}
-              <span className="font-semibold">${monthlyExpenses.toFixed(0)}</span>
             </div>
             <div>
               <span className="text-gray-300">Campaign:</span>{' '}

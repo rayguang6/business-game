@@ -27,6 +27,7 @@ export interface BusinessStats {
   reputationGainPerHappyCustomer: number;
   reputationLossPerAngryCustomer: number;
   baseHappyProbability: number;
+  eventTriggerSeconds?: number[];
 }
 
 export interface MapWall {

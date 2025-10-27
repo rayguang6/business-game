@@ -120,6 +120,21 @@ export function getRoundDurationSecondsForIndustry(
   return getBusinessStats(industryId).monthDurationSeconds;
 }
 
+export function getEventTriggerSecondsForIndustry(
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+): number[] {
+  const stats = getBusinessStats(industryId);
+  const duration = stats.monthDurationSeconds;
+  if (duration <= 0) {
+    return [];
+  }
+
+  const configured = (stats.eventTriggerSeconds ?? [])
+    .filter((value) => value > 0 && value < duration);
+
+  return [...new Set(configured)].sort((a, b) => a - b);
+}
+
 export function getAllSimulationConfigsList(): IndustrySimulationConfig[] {
   return getAllSimulationConfigs();
 }

@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useGameStore } from "../../../../lib/store/gameStore";
-import { GameEvent, GameEventChoice, GameEventEffect } from "../../../../lib/types/gameEvents";
+import React, { useEffect, useRef, useState } from 'react';
+import { useGameStore } from '../../../../lib/store/gameStore';
+import { GameEvent, GameEventChoice, GameEventEffect } from '../../../../lib/types/gameEvents';
 
 const getEffectIcon = (type: GameEventEffect['type']) => {
   switch (type) {
@@ -32,87 +32,98 @@ const formatEffect = (effect: GameEventEffect) => {
 const EventPopup: React.FC = () => {
   const currentEvent = useGameStore((state) => state.currentEvent);
   const setCurrentEvent = useGameStore((state) => state.setCurrentEvent);
-  const [countdown, setCountdown] = useState(10); // Initial countdown for 10 seconds (changed from 4)
-
-  const choiceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const processChoice = React.useCallback((event: GameEvent, choice: GameEventChoice) => {
-    const {
-      applyReputationChange,
-      recordEventRevenue,
-      recordEventExpense,
-    } = useGameStore.getState();
+  const processChoice = React.useCallback(
+    (event: GameEvent, choice: GameEventChoice) => {
+      const {
+        applyReputationChange,
+        recordEventRevenue,
+        recordEventExpense,
+      } = useGameStore.getState();
 
-    console.log(`Event: ${event.title}, Choice made: ${choice.label}`);
-    choice.effects.forEach((effect) => {
-      switch (effect.type) {
-        case "cash":
-          if (effect.amount >= 0) {
-            recordEventRevenue(effect.amount, effect.label ?? `${event.title} payout`);
-            console.log(`  Recording Event Revenue: ${effect.amount}`);
-          } else {
-            recordEventExpense(Math.abs(effect.amount), effect.label ?? `${event.title} cost`);
-            console.log(`  Recording Event Expense: ${effect.amount}`);
-          }
-          break;
-        case "reputation":
-          applyReputationChange(effect.amount);
-          console.log(`  Applying Reputation Change: ${effect.amount}`);
-          break;
-      }
-    });
-    setCurrentEvent(null);
-  }, [setCurrentEvent]);
+      console.log(`Event: ${event.title}, Choice made: ${choice.label}`);
+      choice.effects.forEach((effect) => {
+        switch (effect.type) {
+          case 'cash':
+            if (effect.amount >= 0) {
+              recordEventRevenue(effect.amount, effect.label ?? `${event.title} payout`);
+              console.log(`  Recording Event Revenue: ${effect.amount}`);
+            } else {
+              recordEventExpense(Math.abs(effect.amount), effect.label ?? `${event.title} cost`);
+              console.log(`  Recording Event Expense: ${effect.amount}`);
+            }
+            break;
+          case 'reputation':
+            applyReputationChange(effect.amount);
+            console.log(`  Applying Reputation Change: ${effect.amount}`);
+            break;
+          default:
+            break;
+        }
+      });
+      setCurrentEvent(null);
+    },
+    [setCurrentEvent],
+  );
 
   useEffect(() => {
-    if (currentEvent) {
-      if (choiceTimerRef.current) {
-        clearTimeout(choiceTimerRef.current);
+    if (!currentEvent) {
+      setCountdown(null);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
-      setCountdown(10); // Reset countdown for the new event (changed from 4)
-
-      const defaultChoice = currentEvent.choices.find((choice) => choice.isDefault);
-
-      if (defaultChoice) {
-        choiceTimerRef.current = setTimeout(() => {
-          processChoice(currentEvent, defaultChoice);
-        }, 10000); // Auto-select default choice after 10 seconds (changed from 4000)
-
-        intervalRef.current = setInterval(() => {
-          setCountdown((prev) => prev - 1);
-        }, 1000);
-      }
-    } else {
-      if (choiceTimerRef.current) {
-        clearTimeout(choiceTimerRef.current);
-      }
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+      return;
     }
 
+    const defaultChoice = currentEvent.choices.find((choice) => choice.isDefault);
+    if (!defaultChoice) {
+      setCountdown(null);
+      return;
+    }
+
+    setCountdown(10);
+
+    timeoutRef.current = setTimeout(() => {
+      processChoice(currentEvent, defaultChoice);
+    }, 10_000);
+
+    intervalRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev === null) return prev;
+        return prev > 0 ? prev - 1 : 0;
+      });
+    }, 1_000);
+
     return () => {
-      if (choiceTimerRef.current) {
-        clearTimeout(choiceTimerRef.current);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
-  }, [currentEvent, setCurrentEvent, processChoice]);
+  }, [currentEvent, processChoice]);
 
   if (!currentEvent) return null;
 
   const handleUserChoice = (choice: GameEventChoice) => {
-    if (choiceTimerRef.current) {
-      clearTimeout(choiceTimerRef.current);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
     processChoice(currentEvent, choice);
   };
@@ -123,10 +134,10 @@ const EventPopup: React.FC = () => {
 
   return (
     <div className="absolute inset-0 z-30 flex items-center justify-center px-2 sm:px-6 py-3 sm:py-6 pointer-events-none">
-      <div className="absolute inset-0 bg-black/35 sm:bg-black/50 backdrop-blur-sm pointer-events-auto" />
+      <div className="absolute inset-0 bg-black/35 sm:bg-black/50 pointer-events-auto" />
       <div className="relative z-10 w-full max-w-xs sm:max-w-lg pointer-events-auto">
         <div
-          className={`bg-white rounded-2xl shadow-xl p-3 sm:p-5 md:p-6 border-t-4 ${eventTypeColorClass.split(' ')[0]} max-h-[65vh] sm:max-h-[80vh] overflow-y-auto`}
+          className={`bg-white/90 rounded-2xl shadow-xl p-3 sm:p-5 md:p-6 border-t-4 ${eventTypeColorClass.split(' ')[0]} max-h-[65vh] sm:max-h-[80vh] overflow-y-auto`}
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center text-center sm:text-left mb-3 gap-1.5 sm:gap-3">
             <span className={`text-xl sm:text-3xl sm:mr-1 ${eventTypeColorClass.split(' ')[1]}`}>{eventIcon}</span>
@@ -155,7 +166,7 @@ const EventPopup: React.FC = () => {
                     </span>
                   ))}
                 </div>
-                {choice.isDefault && countdown > 0 && (
+                {choice.isDefault && countdown !== null && countdown > 0 && (
                   <span className="mt-2 text-xs sm:text-sm font-semibold text-gray-700 block animate-pulse">
                     Auto-selecting in {countdown}s...
                   </span>
