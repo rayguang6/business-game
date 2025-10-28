@@ -80,9 +80,9 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
     durationSeconds: 30,
     effects: [
       {
-        metric: GameMetric.ReputationMultiplier,
-        type: EffectType.Percent,
-        value: 100, // +100% reputation gain
+        metric: GameMetric.ServiceRevenueFlatBonus,
+        type: EffectType.Add,
+        value: 100, 
       },
     ],
   },
