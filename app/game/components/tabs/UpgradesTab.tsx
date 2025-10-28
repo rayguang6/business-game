@@ -7,28 +7,78 @@ import { getUpgradeCatalog } from '@/lib/features/upgrades';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { UpgradeEffect } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
-import { GameMetric } from '@/lib/game/effectManager';
+import { GameMetric, EffectType } from '@/lib/game/effectManager';
+
+const METRIC_LABELS: Partial<Record<GameMetric, string>> = {
+  [GameMetric.ServiceRooms]: 'Service Rooms',
+  [GameMetric.MonthlyExpenses]: 'Monthly Expenses',
+  [GameMetric.ServiceSpeedMultiplier]: 'Service Speed',
+  [GameMetric.SpawnIntervalSeconds]: 'Customer Spawn',
+  [GameMetric.ReputationMultiplier]: 'Reputation',
+  [GameMetric.HappyProbability]: 'Happy Chance',
+  [GameMetric.ServiceRevenueMultiplier]: 'Service Price',
+  [GameMetric.ServiceRevenueFlatBonus]: 'Service Price',
+};
+
+const formatMagnitude = (value: number): string => {
+  return Number.isInteger(value) ? Math.abs(value).toString() : Math.abs(value).toFixed(2);
+};
+
+const formatRawNumber = (value: number): string => {
+  return Number.isInteger(value) ? value.toString() : value.toFixed(2);
+};
+
+const formatCurrency = (value: number): string => `$${Math.abs(value).toLocaleString()}`;
+const formatRawCurrency = (value: number): string => `${value < 0 ? '-' : ''}$${Math.abs(value).toLocaleString()}`;
 
 const formatEffect = (effect: UpgradeEffect): string => {
-  const sign = effect.value >= 0 ? '+' : '';
-  switch (effect.metric) {
-    case GameMetric.ServiceRooms:
-      return `${sign}${effect.value} treatment room${effect.value === 1 ? '' : 's'}`;
-    case GameMetric.MonthlyExpenses:
-      return `${effect.value >= 0 ? '+' : '-'}$${Math.abs(effect.value)} monthly expenses`;
-    case GameMetric.ServiceSpeedMultiplier: {
-      const percent = Math.round(effect.value);
-      return `${percent >= 0 ? '+' : ''}${percent}% service speed`;
+  const { metric, type, value } = effect;
+  const label = METRIC_LABELS[metric] ?? metric;
+  const sign = value >= 0 ? '+' : '-';
+  const absValue = Math.abs(value);
+
+  if (type === EffectType.Add) {
+    switch (metric) {
+      case GameMetric.MonthlyExpenses:
+      case GameMetric.ServiceRevenueFlatBonus:
+        return `${sign}${formatCurrency(value)} ${label}`;
+      case GameMetric.SpawnIntervalSeconds:
+        return `${sign}${formatMagnitude(value)}s ${label} Interval`;
+      case GameMetric.ServiceRooms:
+        return `${sign}${formatMagnitude(value)} ${label}`;
+      default:
+        return `${sign}${formatMagnitude(value)} ${label}`;
     }
-    case GameMetric.SpawnIntervalSeconds: {
-      const percent = Math.round(effect.value);
-      const isIncrease = percent >= 0;
-      const label = isIncrease ? 'faster customer spawns' : 'slower customer spawns';
-      return `${isIncrease ? '+' : ''}${percent}% ${label}`;
-    }
-    default:
-      return `${sign}${effect.value}`;
   }
+
+  if (type === EffectType.Percent) {
+    const percent = Math.round(absValue);
+    switch (metric) {
+      case GameMetric.SpawnIntervalSeconds:
+        return `${sign}${percent}% Customer Spawn Rate`;
+      default:
+        return `${sign}${percent}% ${label}`;
+    }
+  }
+
+  if (type === EffectType.Multiply) {
+    const multiplier = Number.isInteger(value) ? value.toString() : value.toFixed(2);
+    return `×${multiplier} ${label}`;
+  }
+
+  if (type === EffectType.Set) {
+    switch (metric) {
+      case GameMetric.MonthlyExpenses:
+      case GameMetric.ServiceRevenueFlatBonus:
+        return `Set ${label} to ${formatRawCurrency(value)}`;
+      case GameMetric.SpawnIntervalSeconds:
+        return `Set ${label} Interval to ${formatRawNumber(value)}s`;
+      default:
+        return `Set ${label} to ${formatRawNumber(value)}`;
+    }
+  }
+
+  return `${sign}${formatMagnitude(value)} ${label}`;
 };
 
 export function UpgradesTab() {

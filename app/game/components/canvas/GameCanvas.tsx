@@ -75,6 +75,11 @@ export function GameCanvas() {
     serviceSpeedMultiplier: effectManager.calculate(GameMetric.ServiceSpeedMultiplier, 1.0),
     serviceRooms: effectManager.calculate(GameMetric.ServiceRooms, businessStats.treatmentRooms),
     reputationMultiplier: effectManager.calculate(GameMetric.ReputationMultiplier, 1.0),
+    serviceRevenueMultiplier: effectManager.calculate(
+      GameMetric.ServiceRevenueMultiplier,
+      businessStats.serviceRevenueMultiplier ?? 1,
+    ),
+    serviceRevenueFlatBonus: effectManager.calculate(GameMetric.ServiceRevenueFlatBonus, 0),
     monthlyExpenses: effectManager.calculate(GameMetric.MonthlyExpenses, 0),
   }), [businessStats]);
 
