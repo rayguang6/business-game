@@ -19,6 +19,8 @@ const toMetricValues = (base: BaseUpgradeMetrics): MetricValues => ({
   [GameMetric.ReputationMultiplier]: base.reputationMultiplier,
   [GameMetric.ServiceRooms]: base.treatmentRooms,
   [GameMetric.HappyProbability]: base.happyProbability,
+  [GameMetric.ServiceRevenueMultiplier]: base.serviceRevenueMultiplier,
+  [GameMetric.ServiceRevenueFlatBonus]: base.serviceRevenueFlatBonus,
 });
 
 const fromMetricValues = (values: MetricValues): BaseUpgradeMetrics => ({
@@ -28,6 +30,8 @@ const fromMetricValues = (values: MetricValues): BaseUpgradeMetrics => ({
   reputationMultiplier: values[GameMetric.ReputationMultiplier],
   treatmentRooms: values[GameMetric.ServiceRooms],
   happyProbability: values[GameMetric.HappyProbability],
+  serviceRevenueMultiplier: values[GameMetric.ServiceRevenueMultiplier],
+  serviceRevenueFlatBonus: values[GameMetric.ServiceRevenueFlatBonus],
 });
 
 const scaleUpgradeEffectValue = (effect: UpgradeEffect, level: number): number => {

@@ -2,8 +2,6 @@
 
 import React, { useMemo, useState } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
-import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
-import { IndustryId } from '@/lib/game/types';
 import { CampaignEffect } from '@/lib/store/slices/marketingSlice';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 
@@ -17,6 +15,58 @@ const formatSeconds = (seconds: number): string => {
   return `${mins}m ${secs}s`;
 };
 
+const METRIC_LABELS: Record<GameMetric, string> = {
+  [GameMetric.SpawnIntervalSeconds]: 'Customer flow',
+  [GameMetric.ServiceSpeedMultiplier]: 'Service speed',
+  [GameMetric.ServiceRooms]: 'Service rooms',
+  [GameMetric.ReputationMultiplier]: 'Reputation gains',
+  [GameMetric.HappyProbability]: 'Happy customer chance',
+  [GameMetric.MonthlyExpenses]: 'Monthly expenses',
+  [GameMetric.ServiceRevenueMultiplier]: 'Service revenue',
+  [GameMetric.ServiceRevenueFlatBonus]: 'Average ticket',
+};
+
+const formatValue = (value: number): string => {
+  return Number.isInteger(value) ? value.toString() : value.toFixed(2).replace(/0+$/u, '').replace(/\.$/u, '');
+};
+
+const formatSigned = (value: number): string => {
+  const sign = value >= 0 ? '+' : '';
+  return `${sign}${formatValue(value)}`;
+};
+
+const describeEffect = (effect: CampaignEffect): string => {
+  const label = METRIC_LABELS[effect.metric] ?? effect.metric;
+
+  switch (effect.type) {
+    case EffectType.Add:
+      return `${label} ${formatSigned(effect.value)}`;
+    case EffectType.Percent:
+      return `${label} ${formatSigned(effect.value)}%`;
+    case EffectType.Multiply:
+      return `${label} ×${formatValue(effect.value)}`;
+    case EffectType.Set:
+      return `${label} = ${formatValue(effect.value)}`;
+    default:
+      return `${label} ${effect.type} ${formatValue(effect.value)}`;
+  }
+};
+
+const getToneClass = (effect: CampaignEffect): string => {
+  switch (effect.type) {
+    case EffectType.Add:
+    case EffectType.Percent:
+      return effect.value >= 0 ? 'text-green-300' : 'text-red-300';
+    case EffectType.Multiply:
+      if (effect.value > 1) return 'text-green-300';
+      if (effect.value < 1) return 'text-red-300';
+      return 'text-gray-300';
+    case EffectType.Set:
+    default:
+      return 'text-gray-300';
+  }
+};
+
 export function MarketingTab() {
   const availableCampaigns = useGameStore((state) => state.availableCampaigns);
   const activeCampaign = useGameStore((state) => state.activeCampaign);
@@ -24,44 +74,8 @@ export function MarketingTab() {
   const startCampaign = useGameStore((state) => state.startCampaign);
   const metrics = useGameStore((state) => state.metrics);
   const gameTime = useGameStore((state) => state.gameTime);
-  const selectedIndustry = useGameStore((state) => state.selectedIndustry);
 
   const [message, setMessage] = useState<string | null>(null);
-
-  const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-
-  // Helper functions for new CampaignEffect type
-  const getPercentDelta = (effects: CampaignEffect[], metric: GameMetric) =>
-    effects
-      .filter((effect) => effect.metric === metric && effect.type === EffectType.Percent)
-      .reduce((sum, effect) => sum + effect.value, 0);
-
-  const getAddDelta = (effects: CampaignEffect[], metric: GameMetric) =>
-    effects
-      .filter((effect) => effect.metric === metric && effect.type === EffectType.Add)
-      .reduce((sum, effect) => sum + effect.value, 0);
-
-  const describeFlowEffect = (percent: number, add: number) => {
-    const descriptions: string[] = [];
-    if (percent !== 0) {
-      const percentDecimal = percent / 100;
-      const flowMultiplier = Math.max(0, 1 + percentDecimal);
-      const flowPercent = (flowMultiplier - 1) * 100;
-      descriptions.push(
-        `Customer flow ${flowPercent >= 0 ? '+' : ''}${flowPercent.toFixed(0)}% (×${flowMultiplier.toFixed(2)})`,
-      );
-    }
-    if (add !== 0) {
-      descriptions.push(`Spawn interval ${add > 0 ? '+' : ''}${add.toFixed(1)}s`);
-    }
-    return descriptions;
-  };
-
-  const describeReputationEffect = (percent: number) => {
-    if (percent === 0) return null;
-    const reputationMultiplier = 1 + percent / 100;
-    return `Reputation gains ${percent >= 0 ? '+' : ''}${percent.toFixed(0)}% (×${reputationMultiplier.toFixed(2)})`;
-  };
 
   const remainingSeconds = useMemo(() => {
     if (!activeCampaign || campaignEndsAt == null) {
@@ -94,12 +108,11 @@ export function MarketingTab() {
         {availableCampaigns.map((campaign) => {
           const isActive = activeCampaign?.id === campaign.id;
           const isAnotherActive = Boolean(activeCampaign && !isActive);
-          const spawnPercent = getPercentDelta(campaign.effects, GameMetric.SpawnIntervalSeconds);
-          const spawnAdd = getAddDelta(campaign.effects, GameMetric.SpawnIntervalSeconds);
-          const reputationPercent = getPercentDelta(campaign.effects, GameMetric.ReputationMultiplier);
-          const flowDescriptions = describeFlowEffect(spawnPercent, spawnAdd);
-          const reputationDescription = describeReputationEffect(reputationPercent);
           const canAfford = metrics.cash >= campaign.cost;
+          const descriptions = campaign.effects.map((effect) => ({
+            text: describeEffect(effect),
+            toneClass: getToneClass(effect),
+          }));
 
           return (
             <div
@@ -122,18 +135,14 @@ export function MarketingTab() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3 text-xs text-gray-300">
-                {flowDescriptions.map((item) => (
-                  <span key={item} className="text-green-300">
-                    {item}
-                  </span>
-                ))}
-                {reputationDescription && (
-                  <span key={reputationDescription} className="text-yellow-300">
-                    {reputationDescription}
-                  </span>
-                )}
-                {flowDescriptions.length === 0 && !reputationDescription && (
+                {descriptions.every((item) => !item.text) ? (
                   <span className="text-gray-400">No stat changes</span>
+                ) : (
+                  descriptions.map((item) => (
+                    <span key={`${campaign.id}-${item.text}`} className={item.toneClass}>
+                      {item.text}
+                    </span>
+                  ))
                 )}
                 {isActive && (
                   <span className="text-yellow-300">

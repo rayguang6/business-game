@@ -27,6 +27,8 @@ export interface UpgradeEffects {
   treatmentRooms: number;
   monthlyExpenses: number;
   happyProbability: number;
+  serviceRevenueMultiplier: number;
+  serviceRevenueFlatBonus: number;
 }
 
 export interface UpgradeMetricsSummary {
@@ -80,6 +82,8 @@ export function getUpgradeEffects(
     treatmentRooms: Math.max(1, Math.round(currentMetrics.treatmentRooms)),
     monthlyExpenses: currentMetrics.monthlyExpenses,
     happyProbability: Math.min(1, Math.max(0, currentMetrics.happyProbability)),
+    serviceRevenueMultiplier: Math.max(0, currentMetrics.serviceRevenueMultiplier),
+    serviceRevenueFlatBonus: currentMetrics.serviceRevenueFlatBonus,
   };
 }
 

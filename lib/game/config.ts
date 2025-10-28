@@ -107,6 +107,8 @@ export function getBaseUpgradeMetricsForIndustry(
     reputationMultiplier: 1,
     treatmentRooms: stats.treatmentRooms,
     happyProbability: stats.baseHappyProbability,
+    serviceRevenueMultiplier: stats.serviceRevenueMultiplier ?? 1,
+    serviceRevenueFlatBonus: 0,
   };
 }
 

@@ -115,6 +115,8 @@ GameMetric.TreatmentRooms           // Number of service rooms
 GameMetric.ReputationMultiplier     // Reputation gain/loss multiplier
 GameMetric.HappyProbability         // Customer satisfaction chance (currently fixed at 100%)
 GameMetric.MonthlyExpenses           // Recurring costs
+GameMetric.ServiceRevenueMultiplier  // Multiplier applied to service prices
+GameMetric.ServiceRevenueFlatBonus   // Flat amount added to each service price before multipliers
 ```
 
 ---
