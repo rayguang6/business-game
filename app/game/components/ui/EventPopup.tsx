@@ -7,9 +7,9 @@ import type { ResolvedEventOutcome } from '@/lib/store/slices/eventSlice';
 const getEffectIcon = (type: GameEventEffect['type']) => {
   switch (type) {
     case 'cash':
-      return '💰';
+      return '💰 CASH:';
     case 'reputation':
-      return '⭐';
+      return '⭐ REPUTATION:';
     default:
       return '';
   }
@@ -23,12 +23,10 @@ const getEffectColorClass = (type: GameEventEffect['type'], amount: number) => {
 };
 
 const formatEffect = (effect: GameEventEffect) => {
-  let prefix = '';
-  if (effect.type === 'cash') {
-    prefix = '$';
-  }
-  const sign = effect.amount >= 0 ? '+' : '';
-  return `${getEffectIcon(effect.type)} ${sign}${prefix}${Math.abs(effect.amount)}`;
+  const prefix = effect.type === 'cash' ? '$' : '';
+  const sign = effect.amount > 0 ? '+' : effect.amount < 0 ? '-' : '';
+  const value = Math.abs(effect.amount);
+  return `${getEffectIcon(effect.type)} ${sign}${prefix}${value}`;
 };
 
 type TemporaryEffectSummary = NonNullable<ResolvedEventOutcome['temporaryEffects']>[number];
@@ -44,19 +42,30 @@ const TEMPORARY_METRIC_LABELS: Record<GameMetric, string> = {
   [GameMetric.ServiceRevenueFlatBonus]: 'Service Revenue Bonus',
 };
 
+const formatDurationLabel = (durationSeconds: number) => {
+  if (!Number.isFinite(durationSeconds)) {
+    return ' (Permanent)';
+  }
+  if (durationSeconds <= 0) {
+    return ' (Instant)';
+  }
+  return ` for ${durationSeconds}s`;
+};
+
 const formatTemporaryEffect = (effect: TemporaryEffectSummary) => {
   const label = TEMPORARY_METRIC_LABELS[effect.metric] ?? effect.metric;
+  const durationLabel = formatDurationLabel(effect.durationSeconds);
   switch (effect.type) {
     case EffectType.Add:
-      return `${label}: ${effect.value >= 0 ? '+' : ''}${effect.value} for ${effect.durationSeconds}s`;
+      return `${label}: ${effect.value >= 0 ? '+' : ''}${effect.value}${durationLabel}`;
     case EffectType.Percent:
-      return `${label}: ${effect.value >= 0 ? '+' : ''}${effect.value}% for ${effect.durationSeconds}s`;
+      return `${label}: ${effect.value >= 0 ? '+' : ''}${effect.value}%${durationLabel}`;
     case EffectType.Multiply:
-      return `${label}: ×${effect.value} for ${effect.durationSeconds}s`;
+      return `${label}: ×${effect.value}${durationLabel}`;
     case EffectType.Set:
-      return `${label}: set to ${effect.value} for ${effect.durationSeconds}s`;
+      return `${label}: set to ${effect.value}${durationLabel}`;
     default:
-      return `${label}: effect active for ${effect.durationSeconds}s`;
+      return `${label}: effect active${durationLabel}`;
   }
 };
 
@@ -66,32 +75,26 @@ const EventPopup: React.FC = () => {
   const lastEventOutcome = useGameStore((state) => state.lastEventOutcome);
   const clearLastEventOutcome = useGameStore((state) => state.clearLastEventOutcome);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  const processChoice = React.useCallback(
-    (event: GameEvent, choice: GameEventChoice) => {
-      console.log(`Event: ${event.title}, Choice made: ${choice.label}`);
-      resolveEventChoice(choice.id);
-    },
-    [resolveEventChoice],
-  );
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    // Clear any existing timers first
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
     if (!currentEvent) {
       setCountdown(null);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
       return;
     }
 
-    const defaultChoice = currentEvent.choices.find((choice) => choice.isDefault);
+    const defaultChoice = currentEvent.choices[0];
     if (!defaultChoice) {
       setCountdown(null);
       return;
@@ -99,8 +102,9 @@ const EventPopup: React.FC = () => {
 
     setCountdown(10);
 
+    // Schedule auto-selection using the captured choice id
     timeoutRef.current = setTimeout(() => {
-      processChoice(currentEvent, defaultChoice);
+      resolveEventChoice(defaultChoice.id);
     }, 10_000);
 
     intervalRef.current = setInterval(() => {
@@ -120,11 +124,10 @@ const EventPopup: React.FC = () => {
         intervalRef.current = null;
       }
     };
-  }, [currentEvent, processChoice]);
+  }, [currentEvent?.id, resolveEventChoice]);
 
-  if (!currentEvent && !lastEventOutcome) return null;
-
-  if (!currentEvent && lastEventOutcome) {
+  // Prioritize showing the outcome if present
+  if (lastEventOutcome && !currentEvent) {
     return (
       <div className="absolute inset-0 z-30 flex items-center justify-center px-2 sm:px-6 py-3 sm:py-6 pointer-events-none">
         <div className="absolute inset-0 bg-black/35 sm:bg-black/50 pointer-events-auto" />
@@ -191,6 +194,8 @@ const EventPopup: React.FC = () => {
     );
   }
 
+  if (!currentEvent) return null;
+
   const handleUserChoice = (choice: GameEventChoice) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -200,12 +205,13 @@ const EventPopup: React.FC = () => {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-    processChoice(currentEvent, choice);
+    resolveEventChoice(choice.id);
   };
 
   const eventTypeColorClass = currentEvent.category === 'opportunity' ? 'border-green-600 text-green-700' : 'border-red-400 text-red-600'; // Darker green border and text
   const eventIcon = currentEvent.category === 'opportunity' ? '✨' : '⚠️';
   const eventTitleColor = currentEvent.category === 'opportunity' ? 'text-green-800' : 'text-red-700'; // Darker green title
+  const defaultChoiceId = currentEvent.choices[0]?.id;
 
   return (
     <div className="absolute inset-0 z-30 flex items-center justify-center px-2 sm:px-6 py-3 sm:py-6 pointer-events-none">
@@ -227,8 +233,8 @@ const EventPopup: React.FC = () => {
                 onClick={() => handleUserChoice(choice)}
                 className={`w-full text-left p-2.5 sm:p-4 rounded-lg transition duration-200 border text-sm sm:text-base
                 ${currentEvent.category === 'opportunity'
-                  ? (choice.isDefault ? 'bg-green-100 hover:bg-green-200 border-green-300 text-green-900' : 'bg-green-300 hover:bg-green-400 border-green-500 text-green-900')
-                  : (choice.isDefault ? 'bg-red-100 hover:bg-red-200 border-red-300 text-red-900' : 'bg-red-300 hover:bg-red-400 border-red-500 text-red-900')
+                  ? (choice.id === defaultChoiceId ? 'bg-green-100 hover:bg-green-200 border-green-300 text-green-900' : 'bg-green-300 hover:bg-green-400 border-green-500 text-green-900')
+                  : (choice.id === defaultChoiceId ? 'bg-red-100 hover:bg-red-200 border-red-300 text-red-900' : 'bg-red-300 hover:bg-red-400 border-red-500 text-red-900')
                 }
                 flex flex-col items-start`}
               >
@@ -239,7 +245,7 @@ const EventPopup: React.FC = () => {
                     Upfront cost: ${choice.cost}
                   </span>
                 )}
-                {choice.isDefault && countdown !== null && countdown > 0 && (
+                {choice.id === defaultChoiceId && countdown !== null && countdown > 0 && (
                   <span className="mt-2 text-xs sm:text-sm font-semibold text-gray-700 block animate-pulse">
                     Auto-selecting in {countdown}s...
                   </span>

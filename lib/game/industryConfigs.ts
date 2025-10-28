@@ -266,22 +266,66 @@ const RESTAURANT_EVENTS: GameEvent[] = [
     summary: 'A famous critic drops by for dinner without reservations.',
     choices: [
       {
-        id: 'comp-service',
-        label: 'Comp an Elegant Meal',
-        description: 'Pull out your best dishes and comp the meal.',
-        effects: [
-          { type: 'cash', amount: -200 },
-          { type: 'reputation', amount: 5 },
-        ],
-      },
-      {
         id: 'business-as-usual',
         label: 'Business as Usual',
         description: 'Treat them like any other guest.',
-        effects: [
-          { type: 'reputation', amount: 1 },
+        consequences: [
+          {
+            id: 'pleasantly-surprised',
+            label: 'Pleasantly Surprised',
+            weight: 40,
+            effects: [
+              { type: 'reputation', amount: 1 },
+            ],
+          },
+          {
+            id: 'no-coverage',
+            label: 'No Coverage',
+            weight: 40,
+            effects: [],
+          },
+          {
+            id: 'critical-piece',
+            label: 'Critical Piece',
+            weight: 20,
+            effects: [
+              { type: 'reputation', amount: -3 },
+            ],
+          },
         ],
-        isDefault: true,
+      },
+      {
+        id: 'comp-service',
+        label: 'Comp an Elegant Meal',
+        description: 'Pull out your best dishes and comp the meal.',
+        cost: 200,
+        consequences: [
+          {
+            id: 'rave-review',
+            label: 'Rave Review Published',
+            weight: 50,
+            effects: [
+              { type: 'cash', amount: 400 },
+              { type: 'reputation', amount: 6 },
+            ],
+          },
+          {
+            id: 'pleasant-dinner',
+            label: 'Pleasant Dinner',
+            weight: 30,
+            effects: [
+              { type: 'reputation', amount: 4 },
+            ],
+          },
+          {
+            id: 'lukewarm-response',
+            label: 'Lukewarm Response',
+            weight: 20,
+            effects: [
+              { type: 'reputation', amount: 2 },
+            ],
+          },
+        ],
       },
     ],
   },
@@ -292,47 +336,68 @@ const RESTAURANT_EVENTS: GameEvent[] = [
     summary: 'Your seafood supplier calls to say shipments are delayed.',
     choices: [
       {
-        id: 'source-locally',
-        label: 'Source Locally',
-        description: 'Pay a premium to replace ingredients locally.',
-        effects: [
-          { type: 'cash', amount: -300 },
-          { type: 'reputation', amount: 2 },
-        ],
-      },
-      {
         id: 'limited-menu',
         label: 'Run a Limited Menu',
         description: 'Explain the shortage to diners and reduce your offerings.',
-        effects: [
-          { type: 'cash', amount: -100 },
-          { type: 'reputation', amount: -2 },
+        cost: 100,
+        consequences: [
+          {
+            id: 'understanding-guests',
+            label: 'Guests Understand',
+            weight: 50,
+            effects: [
+              { type: 'reputation', amount: -2 },
+            ],
+          },
+          {
+            id: 'walk-outs',
+            label: 'Walk-Outs Increase',
+            weight: 30,
+            effects: [
+              { type: 'reputation', amount: -4 },
+              { type: 'cash', amount: -50 },
+            ],
+          },
+          {
+            id: 'make-the-best',
+            label: 'Make the Best of It',
+            weight: 20,
+            effects: [
+              { type: 'cash', amount: -200 },
+            ],
+          },
         ],
-        isDefault: true,
       },
-    ],
-  },
-  {
-    id: 'restaurant-community-festival',
-    title: 'Community Food Festival',
-    category: 'opportunity',
-    summary: 'A local food festival invites your restaurant to host a booth.',
-    choices: [
       {
-        id: 'join-festival',
-        label: 'Join the Festival',
-        description: 'Invest in a booth and showcase your signature dishes.',
-        effects: [
-          { type: 'cash', amount: -150 },
-          { type: 'reputation', amount: 4 },
+        id: 'source-locally',
+        label: 'Source Locally',
+        description: 'Pay a premium to replace ingredients locally.',
+        cost: 300,
+        consequences: [
+          {
+            id: 'fresh-flavors',
+            label: 'Fresh New Flavors',
+            weight: 60,
+            effects: [
+              { type: 'reputation', amount: 2 },
+            ],
+          },
+          {
+            id: 'supply-gap',
+            label: 'Supply Gap',
+            weight: 25,
+            effects: [
+              { type: 'reputation', amount: 1 },
+              { type: 'cash', amount: -100 },
+            ],
+          },
+          {
+            id: 'mixed-feedback',
+            label: 'Mixed Customer Feedback',
+            weight: 15,
+            effects: [],
+          },
         ],
-      },
-      {
-        id: 'stay-put',
-        label: 'Stay Put',
-        description: 'Focus on regulars instead.',
-        effects: [],
-        isDefault: true,
       },
     ],
   },
@@ -373,20 +438,67 @@ const GYM_EVENTS: GameEvent[] = [
     summary: 'A vendor offers premium treadmills at a discount.',
     choices: [
       {
-        id: 'buy-upgrade',
-        label: 'Upgrade Equipment',
-        description: 'Invest in the new machines to impress your members.',
-        effects: [
-          { type: 'cash', amount: -400 },
-          { type: 'reputation', amount: 4 },
-        ],
-      },
-      {
         id: 'decline',
         label: 'Decline for Now',
         description: 'Save money and stick with current equipment.',
-        effects: [],
-        isDefault: true,
+        consequences: [
+          {
+            id: 'status-quo',
+            label: 'Status Quo',
+            weight: 60,
+            effects: [],
+          },
+          {
+            id: 'members-disappointed',
+            label: 'Members Disappointed',
+            weight: 25,
+            effects: [
+              { type: 'reputation', amount: -2 },
+            ],
+          },
+          {
+            id: 'membership-drop',
+            label: 'Membership Drop',
+            weight: 15,
+            effects: [
+              { type: 'reputation', amount: -1 },
+              { type: 'cash', amount: -100 },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'buy-upgrade',
+        label: 'Upgrade Equipment',
+        description: 'Invest in the new machines to impress your members.',
+        cost: 400,
+        consequences: [
+          {
+            id: 'members-thrilled',
+            label: 'Members Are Thrilled',
+            weight: 50,
+            effects: [
+              { type: 'reputation', amount: 4 },
+            ],
+          },
+          {
+            id: 'buzz-surge',
+            label: 'Social Buzz Surge',
+            weight: 30,
+            effects: [
+              { type: 'cash', amount: 200 },
+              { type: 'reputation', amount: 5 },
+            ],
+          },
+          {
+            id: 'slow-adoption',
+            label: 'Slow Adoption',
+            weight: 20,
+            effects: [
+              { type: 'reputation', amount: 2 },
+            ],
+          },
+        ],
       },
     ],
   },
@@ -397,46 +509,67 @@ const GYM_EVENTS: GameEvent[] = [
     summary: 'Two trainers argue about class schedules in front of clients.',
     choices: [
       {
-        id: 'mediate',
-        label: 'Mediate Immediately',
-        description: 'Bring them into your office and work out a plan.',
-        effects: [
-          { type: 'cash', amount: -50 },
-          { type: 'reputation', amount: 3 },
-        ],
-      },
-      {
         id: 'let-it-pass',
         label: 'Let It Pass',
         description: 'Trust them to resolve it on their own.',
-        effects: [
-          { type: 'reputation', amount: -3 },
+        consequences: [
+          {
+            id: 'resentment-builds',
+            label: 'Resentment Builds',
+            weight: 50,
+            effects: [
+              { type: 'reputation', amount: -3 },
+            ],
+          },
+          {
+            id: 'full-blown-drama',
+            label: 'Full-Blown Drama',
+            weight: 30,
+            effects: [
+              { type: 'reputation', amount: -5 },
+            ],
+          },
+          {
+            id: 'self-resolution',
+            label: 'They Self-Resolve',
+            weight: 20,
+            effects: [
+              { type: 'reputation', amount: -1 },
+            ],
+          },
         ],
-        isDefault: true,
       },
-    ],
-  },
-  {
-    id: 'gym-local-marathon',
-    title: 'Local Marathon Collaboration',
-    category: 'opportunity',
-    summary: 'The city marathon wants your gym to run a warm-up session.',
-    choices: [
       {
-        id: 'host-session',
-        label: 'Host a Warm-up Session',
-        description: 'Dedicate trainers and resources to the marathon.',
-        effects: [
-          { type: 'cash', amount: -120 },
-          { type: 'reputation', amount: 5 },
+        id: 'mediate',
+        label: 'Mediate Immediately',
+        description: 'Bring them into your office and work out a plan.',
+        cost: 50,
+        consequences: [
+          {
+            id: 'team-unity',
+            label: 'Team Unity Restored',
+            weight: 60,
+            effects: [
+              { type: 'reputation', amount: 3 },
+            ],
+          },
+          {
+            id: 'mutual-compromise',
+            label: 'Mutual Compromise',
+            weight: 25,
+            effects: [
+              { type: 'reputation', amount: 2 },
+            ],
+          },
+          {
+            id: 'overtime-bill',
+            label: 'Overtime Bill',
+            weight: 15,
+            effects: [
+              { type: 'cash', amount: -150 },
+            ],
+          },
         ],
-      },
-      {
-        id: 'decline-invite',
-        label: 'Decline the Invite',
-        description: 'Stay focused on existing members.',
-        effects: [],
-        isDefault: true,
       },
     ],
   },
