@@ -38,7 +38,8 @@ const DEFAULT_BUSINESS_STATS: BusinessStats = {
   reputationLossPerAngryCustomer: 1,
   baseHappyProbability: 1,
   eventTriggerSeconds: [15, 30, 45],
-  serviceRevenueMultiplier: 10,
+  serviceRevenueMultiplier: 1,
+  serviceRevenueScale: 10,
 } as const;
 
 const DEFAULT_MOVEMENT_CONFIG: MovementConfig = {
@@ -188,6 +189,42 @@ const DENTAL_UPGRADES: UpgradeDefinition[] = [
     effects: [
       { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 5 }, // +5% service speed
       { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 60 },
+    ],
+  },
+  {
+    id: 'premium_patient_packages',
+    name: 'Premium Patient Packages',
+    description: 'Bundle deluxe add-ons into every visit to raise average ticket size.',
+    icon: '💎',
+    cost: 650,
+    maxLevel: 3,
+    effects: [
+      { metric: GameMetric.ServiceRevenueFlatBonus, type: EffectType.Add, value: 100 }, // +$100 per service
+      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 80 },
+    ],
+  },
+  {
+    id: 'dynamic_pricing_ai',
+    name: 'Dynamic Pricing AI',
+    description: 'Use AI-assisted pricing to automatically adjust fees for peak demand.',
+    icon: '🤖',
+    cost: 900,
+    maxLevel: 2,
+    effects: [
+      { metric: GameMetric.ServiceRevenueMultiplier, type: EffectType.Percent, value: 15 }, // +15% price multiplier
+      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 120 },
+    ],
+  },
+  {
+    id: 'concierge_experience',
+    name: 'Concierge Experience Program',
+    description: 'Offer concierge-level amenities that dramatically increase willingness to pay.',
+    icon: '🛎️',
+    cost: 1200,
+    maxLevel: 1,
+    effects: [
+      { metric: GameMetric.ServiceRevenueMultiplier, type: EffectType.Multiply, value: 1.5 }, // ×1.5 price multiplier
+      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 200 },
     ],
   },
 ];

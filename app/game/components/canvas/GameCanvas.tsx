@@ -80,7 +80,7 @@ export function GameCanvas() {
       businessStats.serviceRevenueMultiplier ?? 1,
     ),
     serviceRevenueFlatBonus: effectManager.calculate(GameMetric.ServiceRevenueFlatBonus, 0),
-    monthlyExpenses: effectManager.calculate(GameMetric.MonthlyExpenses, 0),
+    serviceRevenueScale: businessStats.serviceRevenueScale ?? 1,
   }), [businessStats]);
 
   const [metrics, setMetrics] = useState(() => computeMetrics());
@@ -101,7 +101,9 @@ export function GameCanvas() {
   const spawnIntervalSeconds = metrics.spawnIntervalSeconds;
   const customersPerMinute = spawnIntervalSeconds > 0 ? 60 / spawnIntervalSeconds : null;
   const serviceSpeedMultiplier = metrics.serviceSpeedMultiplier;
-  const monthlyExpenses = metrics.monthlyExpenses;
+  const serviceRevenueMultiplier = metrics.serviceRevenueMultiplier;
+  const serviceRevenueBonus = metrics.serviceRevenueFlatBonus;
+  const serviceRevenueScale = metrics.serviceRevenueScale ?? 1;
   const campaignSecondsRemaining = activeCampaign && campaignEndsAt != null ? Math.max(0, campaignEndsAt - gameTime) : null;
 
   // Canvas coordinate system (for future 2D animations)
@@ -136,6 +138,10 @@ export function GameCanvas() {
             <div className="font-semibold text-sm">Live Modifiers</div>
             <div>
               <span className="text-gray-300">Customer spawn interval:</span>{' '}
+              <span className="font-semibold">
+                {spawnIntervalSeconds.toFixed(2)}s
+                {customersPerMinute != null ? ` (${customersPerMinute.toFixed(1)}/min)` : ''}
+              </span>
             </div>
             <div>
               <span className="text-gray-300">Service speed:</span>{' '}
@@ -144,6 +150,20 @@ export function GameCanvas() {
             <div>
               <span className="text-gray-300">{serviceRoomsLabel}:</span>{' '}
               <span className="font-semibold">{serviceRooms}</span>
+            </div>
+            <div>
+              <span className="text-gray-300">Service price bonus:</span>{' '}
+              <span className="font-semibold">
+                {serviceRevenueBonus >= 0 ? '+' : '-'}${Math.abs(serviceRevenueBonus).toFixed(0)}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-300">Service price multiplier:</span>{' '}
+              <span className="font-semibold">×{serviceRevenueMultiplier.toFixed(2)}</span>
+            </div>
+            <div>
+              <span className="text-gray-300">Payout scale:</span>{' '}
+              <span className="font-semibold">×{serviceRevenueScale.toFixed(2)}</span>
             </div>
             <div>
               <span className="text-gray-300">Campaign:</span>{' '}

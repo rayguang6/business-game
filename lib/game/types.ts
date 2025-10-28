@@ -29,6 +29,7 @@ export interface BusinessStats {
   baseHappyProbability: number;
   eventTriggerSeconds?: number[];
   serviceRevenueMultiplier: number;
+  serviceRevenueScale?: number;
 }
 
 export interface MapWall {
@@ -79,6 +80,8 @@ export interface BaseUpgradeMetrics {
   reputationMultiplier: number;
   treatmentRooms: number;
   happyProbability: number;
+  serviceRevenueMultiplier: number;
+  serviceRevenueFlatBonus: number;
 }
 
 export interface GridPosition {

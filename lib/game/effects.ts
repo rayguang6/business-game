@@ -113,6 +113,16 @@ const applyUpgradeEffectsToCombined = (
         result = { ...result, happyProbability: Math.max(0, Math.min(1, updated)) };
         break;
       }
+      case GameMetric.ServiceRevenueMultiplier: {
+        const updated = Math.max(0, applyUpgradeEffectMetric(result.serviceRevenueMultiplier, effect));
+        result = { ...result, serviceRevenueMultiplier: updated };
+        break;
+      }
+      case GameMetric.ServiceRevenueFlatBonus: {
+        const updated = applyUpgradeEffectMetric(result.serviceRevenueFlatBonus, effect);
+        result = { ...result, serviceRevenueFlatBonus: Math.max(-100000, updated) };
+        break;
+      }
       default:
         break;
     }
@@ -177,6 +187,20 @@ const applyMultipliersToCombined = (
         result = {
           ...result,
           happyProbability: Math.max(0, Math.min(1, combined.happyProbability * safeMultiplier)),
+        };
+        break;
+      }
+      case GameMetric.ServiceRevenueMultiplier: {
+        result = {
+          ...result,
+          serviceRevenueMultiplier: Math.max(0, combined.serviceRevenueMultiplier * safeMultiplier),
+        };
+        break;
+      }
+      case GameMetric.ServiceRevenueFlatBonus: {
+        result = {
+          ...result,
+          serviceRevenueFlatBonus: Math.max(-100000, combined.serviceRevenueFlatBonus * safeMultiplier),
         };
         break;
       }

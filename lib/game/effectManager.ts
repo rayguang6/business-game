@@ -22,6 +22,8 @@ export enum GameMetric {
   ReputationMultiplier = 'reputationMultiplier',
   HappyProbability = 'happyProbability',
   MonthlyExpenses = 'monthlyExpenses',
+  ServiceRevenueMultiplier = 'serviceRevenueMultiplier',
+  ServiceRevenueFlatBonus = 'serviceRevenueFlatBonus',
 }
 
 // How effects are applied
@@ -81,6 +83,12 @@ export const METRIC_CONSTRAINTS: Record<GameMetric, MetricConstraints> = {
   },
   [GameMetric.MonthlyExpenses]: { 
     min: 0,
+  },
+  [GameMetric.ServiceRevenueMultiplier]: {
+    min: 0,
+  },
+  [GameMetric.ServiceRevenueFlatBonus]: {
+    min: -100000,
   },
 };
 

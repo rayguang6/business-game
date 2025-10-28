@@ -80,37 +80,75 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
     durationSeconds: 30,
     effects: [
       {
-        metric: GameMetric.ServiceRevenueFlatBonus,
-        type: EffectType.Add,
-        value: 100, 
+        metric: GameMetric.ReputationMultiplier,
+        type: EffectType.Percent,
+        value: 200, // +200% reputation gain
       },
     ],
   },
   {
-    id: 'limited-time-promo',
-    name: 'Limited-Time Promo',
-    description: 'Blast a flash promotion across social channels to fill the schedule.',
-    cost: 260,
-    durationSeconds: 25,
+    id: 'digital-ad-burst',
+    name: 'Digital Ad Burst',
+    description: 'Launch a short social media blitz to boost incoming customers.',
+    cost: 240,
+    durationSeconds: 24,
     effects: [
       {
         metric: GameMetric.SpawnIntervalSeconds,
         type: EffectType.Percent,
         value: 100, // +100% spawn speed = 2x customer flow
       },
+      {
+        metric: GameMetric.MonthlyExpenses,
+        type: EffectType.Add,
+        value: 300, // +$300 expenses while active
+      },
     ],
   },
   {
-    id: 'influencer-blitz',
-    name: 'Influencer Blitz',
-    description: 'Sponsor a local influencer for a two-day spotlight on your clinic.',
-    cost: 420,
-    durationSeconds: 30,
+    id: 'vip-weekend',
+    name: 'VIP Weekend',
+    description: 'Bundle premium services for high-value patients.',
+    cost: 360,
+    durationSeconds: 26,
     effects: [
       {
-        metric: GameMetric.ReputationMultiplier,
-        type: EffectType.Percent,
-        value: 200, // +200% reputation gain
+        metric: GameMetric.ServiceRevenueFlatBonus,
+        type: EffectType.Add,
+        value: 80, // +$80 per completed service
+      },
+    ],
+  },
+  {
+    id: 'revenue-multiplier-test',
+    name: 'Revenue Multiplier Test',
+    description: 'A test campaign to boost service revenue by a multiplier.',
+    cost: 400,
+    durationSeconds: 25,
+    effects: [
+      {
+        metric: GameMetric.ServiceRevenueMultiplier,
+        type: EffectType.Multiply,
+        value: 1.5, // +50% service revenue
+      },
+    ],
+  },
+  {
+    id: 'express-checkin',
+    name: 'Express Check-in',
+    description: 'Bring in temporary staff to keep chairs turning quickly.',
+    cost: 320,
+    durationSeconds: 22,
+    effects: [
+      {
+        metric: GameMetric.ServiceSpeedMultiplier,
+        type: EffectType.Multiply,
+        value: 1.25, // ×1.25 service speed
+      },
+      {
+        metric: GameMetric.ServiceRooms,
+        type: EffectType.Add,
+        value: 1, // +1 temporary service room
       },
     ],
   },
