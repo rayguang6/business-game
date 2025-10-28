@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '../../../../lib/store/gameStore';
 import { GameEvent, GameEventChoice, GameEventEffect } from '../../../../lib/types/gameEvents';
+import { EffectType, GameMetric } from '@/lib/game/effectManager';
+import type { ResolvedEventOutcome } from '@/lib/store/slices/eventSlice';
 
 const getEffectIcon = (type: GameEventEffect['type']) => {
   switch (type) {
@@ -29,44 +31,50 @@ const formatEffect = (effect: GameEventEffect) => {
   return `${getEffectIcon(effect.type)} ${sign}${prefix}${Math.abs(effect.amount)}`;
 };
 
+type TemporaryEffectSummary = NonNullable<ResolvedEventOutcome['temporaryEffects']>[number];
+
+const TEMPORARY_METRIC_LABELS: Record<GameMetric, string> = {
+  [GameMetric.SpawnIntervalSeconds]: 'Customer Spawn Speed',
+  [GameMetric.ServiceSpeedMultiplier]: 'Service Speed',
+  [GameMetric.ServiceRooms]: 'Service Rooms',
+  [GameMetric.ReputationMultiplier]: 'Reputation Gain',
+  [GameMetric.HappyProbability]: 'Customer Happiness',
+  [GameMetric.MonthlyExpenses]: 'Monthly Expenses',
+  [GameMetric.ServiceRevenueMultiplier]: 'Service Revenue Multiplier',
+  [GameMetric.ServiceRevenueFlatBonus]: 'Service Revenue Bonus',
+};
+
+const formatTemporaryEffect = (effect: TemporaryEffectSummary) => {
+  const label = TEMPORARY_METRIC_LABELS[effect.metric] ?? effect.metric;
+  switch (effect.type) {
+    case EffectType.Add:
+      return `${label}: ${effect.value >= 0 ? '+' : ''}${effect.value} for ${effect.durationSeconds}s`;
+    case EffectType.Percent:
+      return `${label}: ${effect.value >= 0 ? '+' : ''}${effect.value}% for ${effect.durationSeconds}s`;
+    case EffectType.Multiply:
+      return `${label}: ×${effect.value} for ${effect.durationSeconds}s`;
+    case EffectType.Set:
+      return `${label}: set to ${effect.value} for ${effect.durationSeconds}s`;
+    default:
+      return `${label}: effect active for ${effect.durationSeconds}s`;
+  }
+};
+
 const EventPopup: React.FC = () => {
   const currentEvent = useGameStore((state) => state.currentEvent);
-  const setCurrentEvent = useGameStore((state) => state.setCurrentEvent);
+  const resolveEventChoice = useGameStore((state) => state.resolveEventChoice);
+  const lastEventOutcome = useGameStore((state) => state.lastEventOutcome);
+  const clearLastEventOutcome = useGameStore((state) => state.clearLastEventOutcome);
   const [countdown, setCountdown] = useState<number | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const processChoice = React.useCallback(
     (event: GameEvent, choice: GameEventChoice) => {
-      const {
-        applyReputationChange,
-        recordEventRevenue,
-        recordEventExpense,
-      } = useGameStore.getState();
-
       console.log(`Event: ${event.title}, Choice made: ${choice.label}`);
-      choice.effects.forEach((effect) => {
-        switch (effect.type) {
-          case 'cash':
-            if (effect.amount >= 0) {
-              recordEventRevenue(effect.amount, effect.label ?? `${event.title} payout`);
-              console.log(`  Recording Event Revenue: ${effect.amount}`);
-            } else {
-              recordEventExpense(Math.abs(effect.amount), effect.label ?? `${event.title} cost`);
-              console.log(`  Recording Event Expense: ${effect.amount}`);
-            }
-            break;
-          case 'reputation':
-            applyReputationChange(effect.amount);
-            console.log(`  Applying Reputation Change: ${effect.amount}`);
-            break;
-          default:
-            break;
-        }
-      });
-      setCurrentEvent(null);
+      resolveEventChoice(choice.id);
     },
-    [setCurrentEvent],
+    [resolveEventChoice],
   );
 
   useEffect(() => {
@@ -114,7 +122,74 @@ const EventPopup: React.FC = () => {
     };
   }, [currentEvent, processChoice]);
 
-  if (!currentEvent) return null;
+  if (!currentEvent && !lastEventOutcome) return null;
+
+  if (!currentEvent && lastEventOutcome) {
+    return (
+      <div className="absolute inset-0 z-30 flex items-center justify-center px-2 sm:px-6 py-3 sm:py-6 pointer-events-none">
+        <div className="absolute inset-0 bg-black/35 sm:bg-black/50 pointer-events-auto" />
+        <div className="relative z-10 w-full max-w-xs sm:max-w-md pointer-events-auto">
+          <div className="bg-white/95 rounded-2xl shadow-xl p-4 sm:p-6 border-t-4 border-blue-500 max-h-[65vh] sm:max-h-[70vh] overflow-y-auto">
+            <div className="flex items-center justify-center mb-3 text-blue-700 text-xl sm:text-2xl font-semibold">
+              🎲 Outcome
+            </div>
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 text-center mb-2">
+              {lastEventOutcome.eventTitle}
+            </h3>
+            <p className="text-sm sm:text-base text-gray-700 text-center mb-4">
+              You chose <span className="font-semibold text-gray-900">{lastEventOutcome.choiceLabel}</span>.
+            </p>
+            {lastEventOutcome.costPaid > 0 && (
+              <div className="mb-3 text-sm sm:text-base text-red-700 text-center font-semibold">
+                Upfront cost paid: -${lastEventOutcome.costPaid}
+              </div>
+            )}
+            {lastEventOutcome.consequenceLabel && (
+              <div className="mb-2 text-sm text-gray-700 text-center">
+                Outcome: <span className="font-medium text-gray-900">{lastEventOutcome.consequenceLabel}</span>
+              </div>
+            )}
+            {lastEventOutcome.consequenceDescription && (
+              <p className="text-xs sm:text-sm text-gray-600 text-center mb-3">
+                {lastEventOutcome.consequenceDescription}
+              </p>
+            )}
+            <div className="bg-gray-100 rounded-lg p-3 sm:p-4">
+              <h4 className="text-sm sm:text-base font-semibold text-gray-800 mb-2">Effects</h4>
+              {lastEventOutcome.appliedEffects.length > 0 ? (
+                <ul className="space-y-1.5 text-xs sm:text-sm">
+                  {lastEventOutcome.appliedEffects.map((effect, index) => (
+                    <li key={index} className={getEffectColorClass(effect.type, effect.amount)}>
+                      {formatEffect(effect)}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs sm:text-sm text-gray-600">No additional changes.</p>
+              )}
+            </div>
+            {lastEventOutcome.temporaryEffects && lastEventOutcome.temporaryEffects.length > 0 && (
+              <div className="bg-blue-50 rounded-lg p-3 sm:p-4 mt-3 sm:mt-4 border border-blue-200">
+                <h4 className="text-sm sm:text-base font-semibold text-blue-800 mb-2">Temporary Buffs</h4>
+                <ul className="space-y-1.5 text-xs sm:text-sm text-blue-800">
+                  {lastEventOutcome.temporaryEffects.map((effect, index) => (
+                    <li key={index}>{formatTemporaryEffect(effect)}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={clearLastEventOutcome}
+              className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-semibold py-2 sm:py-2.5 rounded-lg transition"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleUserChoice = (choice: GameEventChoice) => {
     if (timeoutRef.current) {
@@ -159,13 +234,11 @@ const EventPopup: React.FC = () => {
               >
                 <span className="font-semibold text-sm sm:text-lg mb-1">{choice.label}</span>
                 <span className="text-gray-800 text-xs sm:text-sm mb-2 leading-relaxed">{choice.description}</span>
-                <div className="flex flex-wrap gap-x-2.5 gap-y-1 text-[10px] sm:text-sm">
-                  {choice.effects.map((effect, index) => (
-                    <span key={index} className={`${getEffectColorClass(effect.type, effect.amount)}`}>
-                      {formatEffect(effect)}
-                    </span>
-                  ))}
-                </div>
+                {choice.cost !== undefined && choice.cost > 0 && (
+                  <span className="text-xs sm:text-sm font-semibold text-red-700 mb-1">
+                    Upfront cost: ${choice.cost}
+                  </span>
+                )}
                 {choice.isDefault && countdown !== null && countdown > 0 && (
                   <span className="mt-2 text-xs sm:text-sm font-semibold text-gray-700 block animate-pulse">
                     Auto-selecting in {countdown}s...
