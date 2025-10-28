@@ -11,6 +11,7 @@ import {
   IndustrySimulationConfig,
   IndustryId,
   BaseUpgradeMetrics,
+  DEFAULT_INDUSTRY_ID,
 } from './types';
 
 export type {
@@ -23,9 +24,10 @@ export type {
   UpgradeEffect,
   UpgradeId,
   IndustrySimulationConfig,
-  IndustryId,
   BaseUpgradeMetrics,
 } from './types';
+
+export { DEFAULT_INDUSTRY_ID } from './types';
 
 /**
  * Centralized game configuration
@@ -41,8 +43,6 @@ export type {
 // TODO: once every subsystem consumes these APIs, fold them into the primary
 // exports above and remove the legacy constants.
 // -----------------------------------------------------------------------------
-
-export const DEFAULT_INDUSTRY_ID: IndustryId = IndustryId.Dental;
 
 export function getSimulationConfig(
   industryId: IndustryId = DEFAULT_INDUSTRY_ID,

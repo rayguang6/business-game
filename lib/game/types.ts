@@ -1,10 +1,8 @@
 import { GameEvent } from '@/lib/types/gameEvents';
 
-export enum IndustryId {
-  Dental = 'dental',
-  Restaurant = 'restaurant',
-  Gym = 'gym',
-}
+export type IndustryId = string;
+
+export const DEFAULT_INDUSTRY_ID: IndustryId = 'dental';
 
 export interface BusinessMetrics {
   startingCash: number;
@@ -97,6 +95,7 @@ export interface SimulationLayoutConfig {
 
 export interface IndustryServiceDefinition {
   id: string;
+  industryId: IndustryId;
   name: string;
   duration: number;
   price: number;

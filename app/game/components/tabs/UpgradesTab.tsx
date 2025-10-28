@@ -95,11 +95,6 @@ export function UpgradesTab() {
 
   const handlePurchase = (upgradeId: string) => {
     const result = purchaseUpgrade(upgradeId);
-    if (result.success) {
-      console.log('✅', result.message);
-    } else {
-      console.log('❌', result.message);
-    }
   };
 
   return (

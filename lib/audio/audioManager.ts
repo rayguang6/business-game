@@ -58,7 +58,7 @@ class AudioManager {
 
         // Handle successful loading
         audio.addEventListener('canplaythrough', () => {
-          console.log(`Audio track loaded successfully: ${track}`);
+          // console.log(`Audio track loaded successfully: ${track}`);
         });
 
         this.audioElements.set(track, audio);
@@ -135,7 +135,7 @@ class AudioManager {
       audio.volume = this.isMuted ? 0 : this.volume;
       
       await audio.play();
-      console.log(`Audio track playing: ${track}`);
+      // console.log(`Audio track playing: ${track}`);
     } catch (error) {
       console.warn(`Failed to play audio track: ${track}`, error);
       this.isPlaying = false;
@@ -165,7 +165,7 @@ class AudioManager {
       audio.currentTime = 0; // Reset to start for immediate playback
       audio.volume = this.isMuted ? 0 : this.soundEffectVolume;
       await audio.play();
-      console.log(`Sound effect playing: ${effect}`);
+      // console.log(`Sound effect playing: ${effect}`);
     } catch (error) {
       console.warn(`Failed to play sound effect: ${effect}`, error);
     }

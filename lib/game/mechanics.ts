@@ -9,12 +9,13 @@ import {
   RevenueCategory,
 } from '@/lib/store/types';
 import {
-  DEFAULT_INDUSTRY_ID,
   getBusinessStats,
   getTicksPerSecondForIndustry,
   isNewMonth,
   UpgradeEffect,
+  DEFAULT_INDUSTRY_ID,
 } from '@/lib/game/config';
+import type { IndustryId } from '@/lib/game/types';
 
 import {
   Customer,
@@ -30,7 +31,6 @@ import {
   calculateUpgradeMonthlyExpenses,
 } from '@/lib/features/economy';
 import { getWaitingPositions, getServiceRoomPosition } from '@/lib/game/positioning';
-import { IndustryId } from '@/lib/game/types';
 import { findPath } from '@/lib/game/pathfinding';
 import { audioManager, AudioFx } from '@/lib/audio/audioManager';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
@@ -49,7 +49,7 @@ interface TickSnapshot {
   monthlyOneTimeCostsPaid: number;
   monthlyHistory: MonthlyHistoryEntry[];
   upgrades: Upgrades;
-  industryId?: IndustryId;
+  industryId?: string;
   monthlyExpenseAdjustments: number;
 }
 
@@ -67,7 +67,7 @@ interface MonthTransitionParams {
   monthlyHistory: MonthlyHistoryEntry[];
   monthlyExpenseAdjustments: number;
   upgrades: Upgrades;
-  industryId: IndustryId;
+  industryId: string;
 }
 
 interface MonthTransitionResult {
@@ -95,7 +95,7 @@ interface ProcessCustomersParams {
     serviceRevenueFlatBonus: number;
     serviceRevenueScale: number;
   };
-  industryId: IndustryId;
+  industryId: string;
 }
 
 interface ProcessCustomersResult {
@@ -357,7 +357,7 @@ function processCustomersForTick({
 export function updateGameTimer(
   gameTime: number,
   gameTick: number,
-  industryId: IndustryId,
+  industryId: string,
 ): number {
   const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
   const ticksPerSecondRounded = Math.max(1, Math.round(ticksPerSecond));
@@ -385,7 +385,7 @@ interface MonthPreparationState {
 
 function applyMonthTransitionIfNeeded(
   state: TickSnapshot,
-  industryId: IndustryId,
+  industryId: string,
   nextGameTime: number,
 ): MonthPreparationState {
   const cloneCurrentMonthState = (): MonthPreparationState => ({
@@ -444,7 +444,6 @@ function processCustomersWithEffects(params: ProcessCustomersParams): ProcessCus
  */
 export function tickOnce(state: TickSnapshot): TickResult {
   const industryId = (state.industryId ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-
   // Adds 1 to gameTime each time the configured tick cadence has elapsed.
   const nextTick = state.gameTick + 1;
   const nextGameTime = updateGameTimer(state.gameTime, nextTick, industryId);

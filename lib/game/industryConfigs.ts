@@ -10,6 +10,7 @@ import {
   UpgradeDefinition,
   IndustrySimulationConfig,
   IndustryId,
+  DEFAULT_INDUSTRY_ID,
 } from './types';
 import { GameMetric, EffectType } from './effectManager';
 
@@ -101,21 +102,21 @@ const DEFAULT_CUSTOMER_IMAGES = [
 // Industry Specific
 // -----------------------------------------------------------------------------
 const DENTAL_SERVICES: IndustryServiceDefinition[] = [
-  { id: 'dental_cleaning', name: 'Teeth Cleaning', duration: 5, price: 500 },
-  { id: 'dental_filling', name: 'Cavity Filling', duration: 5, price: 700 },
-  { id: 'dental_root_canal', name: 'Root Canal', duration: 5, price: 1000 },
+  { id: 'dental_cleaning', industryId: 'dental', name: 'Teeth Cleaning', duration: 5, price: 500 },
+  { id: 'dental_filling', industryId: 'dental', name: 'Cavity Filling', duration: 5, price: 700 },
+  { id: 'dental_root_canal', industryId: 'dental', name: 'Root Canal', duration: 5, price: 1000 },
 ];
 
 const RESTAURANT_SERVICES: IndustryServiceDefinition[] = [
-  { id: 'restaurant_fast_meal', name: 'Express Meal', duration: 5, price: 60 },
-  { id: 'restaurant_full_course', name: 'Full Course Dinner', duration: 9, price: 90 },
-  { id: 'restaurant_family_combo', name: 'Family Combo', duration: 12, price: 130 },
+  { id: 'restaurant_fast_meal', industryId: 'restaurant', name: 'Express Meal', duration: 5, price: 60 },
+  { id: 'restaurant_full_course', industryId: 'restaurant', name: 'Full Course Dinner', duration: 9, price: 90 },
+  { id: 'restaurant_family_combo', industryId: 'restaurant', name: 'Family Combo', duration: 12, price: 130 },
 ];
 
 const GYM_SERVICES: IndustryServiceDefinition[] = [
-  { id: 'gym_quick_session', name: 'Quick Training Session', duration: 5, price: 65 },
-  { id: 'gym_group_class', name: 'Group Fitness Class', duration: 8, price: 95 },
-  { id: 'gym_personal_training', name: 'Personal Training', duration: 11, price: 140 },
+  { id: 'gym_quick_session', industryId: 'gym', name: 'Quick Training Session', duration: 5, price: 65 },
+  { id: 'gym_group_class', industryId: 'gym', name: 'Group Fitness Class', duration: 8, price: 95 },
+  { id: 'gym_personal_training', industryId: 'gym', name: 'Personal Training', duration: 11, price: 140 },
 ];
 
 const DENTAL_UPGRADES: UpgradeDefinition[] = [
@@ -585,23 +586,23 @@ const SHARED_BASE = {
   defaultCustomerImage: DEFAULT_CUSTOMER_IMAGES[0],
 } as const;
 
-const INDUSTRY_SIMULATION_CONFIGS: Record<IndustryId, IndustrySimulationConfig> = {
-  [IndustryId.Dental]: {
-    id: IndustryId.Dental,
+const INDUSTRY_SIMULATION_CONFIGS: Record<string, IndustrySimulationConfig> = {
+  [DEFAULT_INDUSTRY_ID]: {
+    id: DEFAULT_INDUSTRY_ID,
     ...SHARED_BASE,
     services: DENTAL_SERVICES,
     upgrades: DENTAL_UPGRADES,
     events: DENTAL_EVENTS,
   },
-  [IndustryId.Restaurant]: {
-    id: IndustryId.Restaurant,
+  restaurant: {
+    id: 'restaurant',
     ...SHARED_BASE,
     services: RESTAURANT_SERVICES,
     upgrades: RESTAURANT_UPGRADES,
     events: RESTAURANT_EVENTS,
   },
-  [IndustryId.Gym]: {
-    id: IndustryId.Gym,
+  gym: {
+    id: 'gym',
     ...SHARED_BASE,
     services: GYM_SERVICES,
     upgrades: GYM_UPGRADES,
@@ -610,7 +611,7 @@ const INDUSTRY_SIMULATION_CONFIGS: Record<IndustryId, IndustrySimulationConfig> 
 };
 
 export function getIndustrySimulationConfig(industryId: IndustryId): IndustrySimulationConfig {
-  return INDUSTRY_SIMULATION_CONFIGS[industryId] ?? INDUSTRY_SIMULATION_CONFIGS[IndustryId.Dental];
+  return INDUSTRY_SIMULATION_CONFIGS[industryId] ?? INDUSTRY_SIMULATION_CONFIGS[DEFAULT_INDUSTRY_ID];
 }
 
 export function getAllSimulationConfigs(): IndustrySimulationConfig[] {

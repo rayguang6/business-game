@@ -54,7 +54,6 @@ export function StaffTab() {
 
   const handleHireStaff = (staffToHire: Staff) => {
     hireStaff(staffToHire);
-    console.log(`Hiring ${staffToHire.name} for ${staffToHire.salary}/m`);
   };
 
   return (
