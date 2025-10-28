@@ -3,35 +3,11 @@
 import React, { useMemo } from 'react';
 import GameButton from '@/app/components/ui/GameButton';
 import { useGameStore } from '@/lib/store/gameStore';
-import { getUpgradeSummary, getUpgradeCatalog } from '@/lib/features/upgrades';
+import { getUpgradeCatalog } from '@/lib/features/upgrades';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { UpgradeEffect } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
 import { GameMetric } from '@/lib/game/effectManager';
-
-const metricLabels: Record<string, string> = {
-  treatmentRooms: 'Treatment Rooms',
-  serviceSpeedMultiplier: 'Service Speed',
-  spawnIntervalSeconds: 'Spawn Interval',
-  monthlyExpenses: 'Monthly Expenses',
-};
-
-type MetricKey = keyof typeof metricLabels;
-
-const formatMetricValue = (metric: MetricKey, value: number): string => {
-  switch (metric) {
-    case 'treatmentRooms':
-      return Math.round(value).toString();
-    case 'monthlyExpenses':
-      return `$${Math.round(value).toLocaleString()}`;
-    case 'serviceSpeedMultiplier':
-      return `×${value.toFixed(2)}`;
-    case 'spawnIntervalSeconds':
-      return `${value.toFixed(2)}s`;
-    default:
-      return value.toString();
-  }
-};
 
 const formatEffect = (effect: UpgradeEffect): string => {
   const sign = effect.value >= 0 ? '+' : '';
@@ -57,7 +33,6 @@ const formatEffect = (effect: UpgradeEffect): string => {
 
 export function UpgradesTab() {
   const {
-    upgrades,
     canAffordUpgrade,
     getUpgradeLevel,
     canUpgradeMore,
@@ -67,7 +42,6 @@ export function UpgradesTab() {
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
 
   const catalog = useMemo(() => getUpgradeCatalog(industryId), [industryId]);
-  const summary = useMemo(() => getUpgradeSummary(upgrades, industryId), [upgrades, industryId]);
 
   const handlePurchase = (upgradeId: string) => {
     const result = purchaseUpgrade(upgradeId);
@@ -78,41 +52,8 @@ export function UpgradesTab() {
     }
   };
 
-  const metricsOverview = (Object.keys(metricLabels) as MetricKey[]).map((metric) => {
-    const baseValue = summary.baseMetrics[metric as keyof typeof summary.baseMetrics];
-    const currentValue = summary.currentMetrics[metric as keyof typeof summary.currentMetrics];
-    const hasChanged = Math.abs(currentValue - baseValue) > 0.001;
-    return (
-      <div key={metric} className="bg-gray-800 rounded-lg p-3 border border-gray-700">
-        <div className="flex items-center justify-between text-xs text-gray-400">
-          <span>{metricLabels[metric]}</span>
-          {hasChanged && (
-            <span className="text-amber-300">Updated</span>
-          )}
-        </div>
-        <div className="text-lg font-semibold text-white">
-          {formatMetricValue(metric, currentValue)}
-        </div>
-        <div className="text-xs text-gray-500">
-          Base: {formatMetricValue(metric, baseValue)}
-        </div>
-      </div>
-    );
-  });
-
   return (
     <div className="space-y-6">
-      <section>
-        <h3 className="text-lg font-bold mb-3 text-white">Upgrade Overview</h3>
-        <p className="text-gray-300 text-sm mb-4">
-          Purchase upgrades once to permanently improve your clinic. Each upgrade deducts its cost immediately and adjusts
-          monthly expenses automatically.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {metricsOverview}
-        </div>
-      </section>
-
       <section>
         <h4 className="text-md font-semibold text-white mb-3">Available Upgrades</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
