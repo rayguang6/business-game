@@ -87,10 +87,6 @@ export function StaffTab() {
                   <span className="text-gray-200 text-xs sm:text-sm">💰 Salary</span>
                   <span className="text-white font-bold text-sm sm:text-base">${Math.round(member.salary)}/month</span>
                 </div>
-                <div className="flex justify-between items-center bg-white/10 px-2 py-1.5 sm:p-2 rounded-lg">
-                  <span className="text-gray-200 text-xs sm:text-sm">⚡ Speed Boost</span>
-                  <span className="text-yellow-400 font-bold text-sm sm:text-base">{Math.round(member.increaseServiceSpeed)}%</span>
-                </div>
               </div>
             </div>
           );
