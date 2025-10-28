@@ -42,7 +42,7 @@ const DEFAULT_BUSINESS_STATS: BusinessStats = {
   serviceRevenueScale: 10,
 } as const;
 
-const DEFAULT_MOVEMENT_CONFIG: MovementConfig = {
+export const DEFAULT_MOVEMENT_CONFIG: MovementConfig = {
   customerTilesPerTick: 0.25,
   animationReferenceTilesPerTick: 0.25,
   walkFrameDurationMs: 200,
