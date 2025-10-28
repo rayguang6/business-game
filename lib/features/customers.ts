@@ -10,9 +10,9 @@ import {
   getCustomerImagesForIndustry,
   getDefaultCustomerImageForIndustry,
   getLayoutConfig,
-  getMovementConfigForIndustry,
   secondsToTicks,
 } from '@/lib/game/config';
+import { DEFAULT_MOVEMENT_CONFIG } from '@/lib/game/industryConfigs';
 import { IndustryId, GridPosition } from '@/lib/game/types';
 
 // Types
@@ -92,7 +92,7 @@ export function spawnCustomer(
 /**
  * Movement speed (tiles per tick)
  */
-const MOVEMENT_SPEED = Math.max(0.01, getMovementConfigForIndustry(DEFAULT_INDUSTRY_ID).customerTilesPerTick);
+const MOVEMENT_SPEED = Math.max(0.01, DEFAULT_MOVEMENT_CONFIG.customerTilesPerTick);
 
 /**
  * Moves customer towards target position following an optional path.
