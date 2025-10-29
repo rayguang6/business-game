@@ -26,6 +26,8 @@ import type { StaffRoleConfig, StaffPreset } from '@/lib/game/staffConfig';
 import { fetchUpgradesForIndustry, upsertUpgradeForIndustry, deleteUpgradeById } from '@/lib/data/upgradeRepository';
 import type { UpgradeDefinition, UpgradeEffect } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
+import { fetchMarketingCampaigns, upsertMarketingCampaign, deleteMarketingCampaign } from '@/lib/data/marketingRepository';
+import type { MarketingCampaign } from '@/lib/store/slices/marketingSlice';
 
 interface FormState {
   id: string;
@@ -121,6 +123,17 @@ export default function AdminPage() {
   const [upgradeForm, setUpgradeForm] = useState<{ id: string; name: string; description: string; icon: string; cost: string; maxLevel: string }>({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1' });
   const [effectsForm, setEffectsForm] = useState<Array<{ metric: GameMetric; type: EffectType; value: string }>>([]);
 
+  // Marketing management state
+  const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([]);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string>('');
+  const [isCreatingCampaign, setIsCreatingCampaign] = useState<boolean>(false);
+  const [campaignSaving, setCampaignSaving] = useState<boolean>(false);
+  const [campaignDeleting, setCampaignDeleting] = useState<boolean>(false);
+  const [campaignsLoading, setCampaignsLoading] = useState<boolean>(false);
+  const [campaignStatus, setCampaignStatus] = useState<string | null>(null);
+  const [campaignForm, setCampaignForm] = useState<{ id: string; name: string; description: string; cost: string; durationSeconds: string }>({ id: '', name: '', description: '', cost: '0', durationSeconds: '10' });
+  const [campaignEffectsForm, setCampaignEffectsForm] = useState<Array<{ metric: GameMetric; type: EffectType; value: string }>>([]);
+
   const METRIC_OPTIONS: { value: GameMetric; label: string }[] = [
     { value: GameMetric.ServiceRooms, label: 'Service Rooms' },
     { value: GameMetric.MonthlyExpenses, label: 'Monthly Expenses' },
@@ -189,6 +202,7 @@ export default function AdminPage() {
     loadServicesForIndustry(industry.id);
     loadStaffForIndustry(industry.id);
     loadUpgradesForIndustry(industry.id);
+    loadMarketingCampaigns();
   };
 
   useEffect(() => {
@@ -349,6 +363,78 @@ export default function AdminPage() {
     setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1' });
     setEffectsForm([]);
     setUpgradeStatus('Upgrade deleted.');
+  };
+
+  const loadMarketingCampaigns = async () => {
+    setCampaignsLoading(true);
+    setCampaignStatus(null);
+    setCampaigns([]);
+    setSelectedCampaignId('');
+    setIsCreatingCampaign(false);
+    setCampaignForm({ id: '', name: '', description: '', cost: '0', durationSeconds: '10' });
+    setCampaignEffectsForm([]);
+    const result = await fetchMarketingCampaigns();
+    setCampaignsLoading(false);
+    if (!result) return;
+    setCampaigns(result);
+    if (result.length > 0) selectCampaign(result[0], false);
+  };
+
+  const selectCampaign = (campaign: MarketingCampaign, resetMsg = true) => {
+    setSelectedCampaignId(campaign.id);
+    setIsCreatingCampaign(false);
+    setCampaignForm({ id: campaign.id, name: campaign.name, description: campaign.description, cost: String(campaign.cost), durationSeconds: String(campaign.durationSeconds) });
+    setCampaignEffectsForm(campaign.effects.map((e) => ({ metric: e.metric, type: e.type, value: String(e.value) })));
+    if (resetMsg) setCampaignStatus(null);
+  };
+
+  const handleCreateCampaign = () => {
+    setIsCreatingCampaign(true);
+    setSelectedCampaignId('');
+    setCampaignForm({ id: '', name: '', description: '', cost: '0', durationSeconds: '10' });
+    setCampaignEffectsForm([]);
+    setCampaignStatus(null);
+  };
+
+  const handleSaveCampaign = async () => {
+    const id = campaignForm.id.trim();
+    const name = campaignForm.name.trim();
+    const description = campaignForm.description.trim();
+    const cost = Number(campaignForm.cost);
+    const durationSeconds = Number(campaignForm.durationSeconds);
+    if (!id || !name) { setCampaignStatus('Campaign id and name are required.'); return; }
+    if (!Number.isFinite(cost) || cost < 0 || !Number.isFinite(durationSeconds) || durationSeconds < 1) {
+      setCampaignStatus('Cost must be >= 0 and Duration >= 1 second.');
+      return;
+    }
+    const effects = campaignEffectsForm.map((ef) => ({ metric: ef.metric, type: ef.type, value: Number(ef.value) || 0 }));
+    setCampaignSaving(true);
+    const result = await upsertMarketingCampaign({ id, name, description, cost, durationSeconds, effects });
+    setCampaignSaving(false);
+    if (!result.success) { setCampaignStatus(result.message ?? 'Failed to save campaign.'); return; }
+    setCampaigns((prev) => {
+      const exists = prev.some((c) => c.id === id);
+      const nextItem: MarketingCampaign = { id, name, description, cost, durationSeconds, effects } as any;
+      const next = exists ? prev.map((c) => (c.id === id ? nextItem : c)) : [...prev, nextItem];
+      return next.sort((a, b) => a.name.localeCompare(b.name));
+    });
+    setCampaignStatus('Campaign saved.');
+    setIsCreatingCampaign(false);
+    setSelectedCampaignId(id);
+  };
+
+  const handleDeleteCampaign = async () => {
+    if (isCreatingCampaign || !selectedCampaignId) return;
+    if (!window.confirm(`Delete campaign "${campaignForm.name || selectedCampaignId}"?`)) return;
+    setCampaignDeleting(true);
+    const result = await deleteMarketingCampaign(selectedCampaignId);
+    setCampaignDeleting(false);
+    if (!result.success) { setCampaignStatus(result.message ?? 'Failed to delete campaign.'); return; }
+    setCampaigns((prev) => prev.filter((c) => c.id !== selectedCampaignId));
+    setSelectedCampaignId('');
+    setCampaignForm({ id: '', name: '', description: '', cost: '0', durationSeconds: '10' });
+    setCampaignEffectsForm([]);
+    setCampaignStatus('Campaign deleted.');
   };
 
   const selectRole = (role: StaffRoleConfig) => {
@@ -964,6 +1050,199 @@ export default function AdminPage() {
                 {globalSaving ? 'Saving…' : 'Save Global Config'}
               </button>
             </div>
+          </div>
+        </section>
+
+        <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
+          <div className="p-6 border-b border-slate-800">
+            <h2 className="text-2xl font-semibold">Marketing Campaigns</h2>
+            <p className="text-sm text-slate-400 mt-1">Create campaigns with cost, duration, and temporary effects.</p>
+          </div>
+          <div className="p-6 space-y-6">
+            <div className="flex items-center justify-between gap-3">
+              <button
+                onClick={handleCreateCampaign}
+                className="px-3 py-2 text-sm font-medium rounded-lg border border-pink-500 text-pink-200 hover:bg-pink-500/10"
+              >
+                + New Campaign
+              </button>
+              {campaignStatus && <span className="text-sm text-slate-300">{campaignStatus}</span>}
+            </div>
+
+            {campaignsLoading ? (
+              <div className="text-sm text-slate-400">Loading campaigns…</div>
+            ) : campaigns.length === 0 && !isCreatingCampaign ? (
+              <div className="text-sm text-slate-400">No campaigns yet.</div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {campaigns.map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => selectCampaign(c)}
+                      className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
+                        selectedCampaignId === c.id && !isCreatingCampaign
+                          ? 'border-pink-400 bg-pink-500/10 text-pink-200'
+                          : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
+                      }`}
+                    >
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+
+                {(selectedCampaignId || isCreatingCampaign) && (
+                  <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Campaign ID</label>
+                      <input
+                        value={campaignForm.id}
+                        onChange={(e) => setCampaignForm((p) => ({ ...p, id: e.target.value }))}
+                        disabled={!isCreatingCampaign && !!selectedCampaignId}
+                        className={`w-full rounded-lg border px-3 py-2 text-slate-200 ${
+                          isCreatingCampaign || !selectedCampaignId ? 'bg-slate-900 border-slate-600' : 'bg-slate-800 border-slate-700 cursor-not-allowed'
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Name</label>
+                      <input
+                        value={campaignForm.name}
+                        onChange={(e) => setCampaignForm((p) => ({ ...p, name: e.target.value }))}
+                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Description</label>
+                      <textarea
+                        rows={3}
+                        value={campaignForm.description}
+                        onChange={(e) => setCampaignForm((p) => ({ ...p, description: e.target.value }))}
+                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Cost</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={campaignForm.cost}
+                        onChange={(e) => setCampaignForm((p) => ({ ...p, cost: e.target.value }))}
+                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Duration (seconds)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={campaignForm.durationSeconds}
+                        onChange={(e) => setCampaignForm((p) => ({ ...p, durationSeconds: e.target.value }))}
+                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h4 className="text-sm font-semibold text-slate-300">Effects (temporary)</h4>
+                          <p className="text-xs text-slate-400 mt-1">Add = flat, Percent = +/-%, Multiply = × factor, Set = exact value.</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setCampaignEffectsForm((prev) => [...prev, { metric: GameMetric.SpawnIntervalSeconds, type: EffectType.Add, value: '0' }])}
+                          className="px-2 py-1 text-xs rounded-md border border-slate-600 text-slate-200 hover:bg-slate-800"
+                        >
+                          + Add Effect
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {campaignEffectsForm.map((ef, idx) => (
+                          <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center">
+                            <select
+                              value={ef.metric}
+                              onChange={(e) => setCampaignEffectsForm((prev) => prev.map((row, i) => i === idx ? { ...row, metric: e.target.value as GameMetric } : row))}
+                              className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                            >
+                              {METRIC_OPTIONS.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              ))}
+                            </select>
+                            <select
+                              value={ef.type}
+                              onChange={(e) => setCampaignEffectsForm((prev) => prev.map((row, i) => i === idx ? { ...row, type: e.target.value as EffectType } : row))}
+                              className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                            >
+                              {EFFECT_TYPE_OPTIONS.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              ))}
+                            </select>
+                            <input
+                              placeholder="value"
+                              type="number"
+                              value={ef.value}
+                              onChange={(e) => setCampaignEffectsForm((prev) => prev.map((row, i) => i === idx ? { ...row, value: e.target.value } : row))}
+                              className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setCampaignEffectsForm((prev) => prev.filter((_, i) => i !== idx))}
+                              className="px-2 py-2 text-xs rounded-md border border-rose-600 text-rose-200 hover:bg-rose-900"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-2 flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={handleSaveCampaign}
+                        disabled={campaignSaving || campaignDeleting}
+                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                          campaignSaving ? 'bg-pink-900 text-pink-200 cursor-wait' : 'bg-pink-600 hover:bg-pink-500 text-white'
+                        }`}
+                      >
+                        {campaignSaving ? 'Saving…' : 'Save Campaign'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (selectedCampaignId && !isCreatingCampaign) {
+                            const existing = campaigns.find((c) => c.id === selectedCampaignId);
+                            if (existing) selectCampaign(existing);
+                          } else {
+                            setIsCreatingCampaign(false);
+                            setSelectedCampaignId('');
+                            setCampaignForm({ id: '', name: '', description: '', cost: '0', durationSeconds: '10' });
+                            setCampaignEffectsForm([]);
+                          }
+                          setCampaignStatus(null);
+                        }}
+                        disabled={campaignSaving || campaignDeleting}
+                        className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800"
+                      >
+                        {isCreatingCampaign ? 'Cancel' : 'Reset'}
+                      </button>
+                      {!isCreatingCampaign && selectedCampaignId && (
+                        <button
+                          type="button"
+                          onClick={handleDeleteCampaign}
+                          disabled={campaignDeleting || campaignSaving}
+                          className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                            campaignDeleting ? 'bg-rose-900 text-rose-200 cursor-wait' : 'bg-rose-600 hover:bg-rose-500 text-white'
+                          }`}
+                        >
+                          {campaignDeleting ? 'Deleting…' : 'Delete'}
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
           </div>
         </section>
 

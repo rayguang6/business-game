@@ -50,7 +50,7 @@ export async function fetchMarketingCampaigns(): Promise<MarketingCampaign[] | n
   }
 
   const { data, error } = await supabase
-    .from<MarketingCampaignRow>('marketing_campaigns')
+    .from('marketing_campaigns')
     .select('id, name, description, cost, duration_seconds, effects')
     .order('name', { ascending: true });
 
@@ -70,7 +70,47 @@ export async function fetchMarketingCampaigns(): Promise<MarketingCampaign[] | n
       name: row.name,
       description: row.description ?? '',
       cost: parseNumber(row.cost),
-      durationSeconds: parseNumber(row.duration_seconds),
+      durationSeconds: parseNumber(row.duration_seconds, 1),
       effects: mapEffects(row.effects),
     }));
+}
+
+export async function upsertMarketingCampaign(campaign: MarketingCampaign): Promise<{ success: boolean; message?: string }>
+{
+  if (!supabase) {
+    return { success: false, message: 'Supabase client not configured.' };
+  }
+
+  const payload: MarketingCampaignRow = {
+    id: campaign.id,
+    name: campaign.name,
+    description: campaign.description,
+    cost: campaign.cost,
+    duration_seconds: campaign.durationSeconds,
+    effects: campaign.effects.map((e) => ({ metric: e.metric, type: e.type, value: e.value })),
+  };
+
+  const { error } = await supabase
+    .from('marketing_campaigns')
+    .upsert(payload, { onConflict: 'id' });
+
+  if (error) {
+    console.error('Failed to upsert marketing campaign', error);
+    return { success: false, message: error.message };
+  }
+
+  return { success: true };
+}
+
+export async function deleteMarketingCampaign(id: string): Promise<{ success: boolean; message?: string }>
+{
+  if (!supabase) {
+    return { success: false, message: 'Supabase client not configured.' };
+  }
+  const { error } = await supabase.from('marketing_campaigns').delete().eq('id', id);
+  if (error) {
+    console.error('Failed to delete marketing campaign', error);
+    return { success: false, message: error.message };
+  }
+  return { success: true };
 }
