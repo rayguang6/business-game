@@ -23,6 +23,9 @@ import {
   deleteStaffPreset,
 } from '@/lib/data/staffRepository';
 import type { StaffRoleConfig, StaffPreset } from '@/lib/game/staffConfig';
+import { fetchUpgradesForIndustry, upsertUpgradeForIndustry, deleteUpgradeById } from '@/lib/data/upgradeRepository';
+import type { UpgradeDefinition, UpgradeEffect } from '@/lib/game/types';
+import { GameMetric, EffectType } from '@/lib/game/effectManager';
 
 interface FormState {
   id: string;
@@ -107,6 +110,35 @@ export default function AdminPage() {
   const [presetDeleting, setPresetDeleting] = useState<boolean>(false);
   const [isCreatingPreset, setIsCreatingPreset] = useState<boolean>(false);
 
+  // Upgrades management state
+  const [upgrades, setUpgrades] = useState<UpgradeDefinition[]>([]);
+  const [selectedUpgradeId, setSelectedUpgradeId] = useState<string>('');
+  const [isCreatingUpgrade, setIsCreatingUpgrade] = useState<boolean>(false);
+  const [upgradeSaving, setUpgradeSaving] = useState<boolean>(false);
+  const [upgradeDeleting, setUpgradeDeleting] = useState<boolean>(false);
+  const [upgradesLoading, setUpgradesLoading] = useState<boolean>(false);
+  const [upgradeStatus, setUpgradeStatus] = useState<string | null>(null);
+  const [upgradeForm, setUpgradeForm] = useState<{ id: string; name: string; description: string; icon: string; cost: string; maxLevel: string }>({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1' });
+  const [effectsForm, setEffectsForm] = useState<Array<{ metric: GameMetric; type: EffectType; value: string }>>([]);
+
+  const METRIC_OPTIONS: { value: GameMetric; label: string }[] = [
+    { value: GameMetric.ServiceRooms, label: 'Service Rooms' },
+    { value: GameMetric.MonthlyExpenses, label: 'Monthly Expenses' },
+    { value: GameMetric.ServiceSpeedMultiplier, label: 'Service Speed Multiplier' },
+    { value: GameMetric.SpawnIntervalSeconds, label: 'Spawn Interval (seconds)' },
+    { value: GameMetric.ServiceRevenueFlatBonus, label: 'Service Revenue (flat bonus)' },
+    { value: GameMetric.ServiceRevenueMultiplier, label: 'Service Revenue Multiplier' },
+    { value: GameMetric.HappyProbability, label: 'Happy Probability' },
+    { value: GameMetric.ReputationMultiplier, label: 'Reputation Multiplier' },
+  ];
+
+  const EFFECT_TYPE_OPTIONS: { value: EffectType; label: string; hint: string }[] = [
+    { value: EffectType.Add, label: 'Add (flat)', hint: 'Add or subtract a flat amount, e.g. +1 room or +100 revenue' },
+    { value: EffectType.Percent, label: 'Percent (%)', hint: 'Increase/decrease by percentage, e.g. +15% speed' },
+    { value: EffectType.Multiply, label: 'Multiply (×)', hint: 'Multiply the value, e.g. ×1.5 for 50% boost' },
+    { value: EffectType.Set, label: 'Set (=)', hint: 'Force a value to a number, overwrites others' },
+  ];
+
   const selectService = (service: IndustryServiceDefinition, resetMessage: boolean = true) => {
     setSelectedServiceId(service.id);
     setIsCreatingService(false);
@@ -156,6 +188,7 @@ export default function AdminPage() {
     setStatusMessage(null);
     loadServicesForIndustry(industry.id);
     loadStaffForIndustry(industry.id);
+    loadUpgradesForIndustry(industry.id);
   };
 
   useEffect(() => {
@@ -236,6 +269,86 @@ export default function AdminPage() {
       setSelectedPresetId(firstP.id);
       setPresetForm({ id: firstP.id, roleId: firstP.roleId, name: firstP.name, salary: firstP.salary !== undefined ? String(firstP.salary) : undefined, serviceSpeed: firstP.serviceSpeed !== undefined ? String(firstP.serviceSpeed) : undefined, emoji: firstP.emoji });
     }
+  };
+
+  const loadUpgradesForIndustry = async (industryId: string) => {
+    setUpgradesLoading(true);
+    setUpgradeStatus(null);
+    setUpgrades([]);
+    setSelectedUpgradeId('');
+    setIsCreatingUpgrade(false);
+    setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1' });
+    setEffectsForm([]);
+    const result = await fetchUpgradesForIndustry(industryId);
+    setUpgradesLoading(false);
+    if (!result) return;
+    const sorted = result.slice().sort((a, b) => a.name.localeCompare(b.name));
+    setUpgrades(sorted);
+    if (sorted.length > 0) selectUpgrade(sorted[0], false);
+  };
+
+  const selectUpgrade = (upgrade: UpgradeDefinition, resetMsg = true) => {
+    setSelectedUpgradeId(upgrade.id);
+    setIsCreatingUpgrade(false);
+    setUpgradeForm({ id: upgrade.id, name: upgrade.name, description: upgrade.description, icon: upgrade.icon, cost: String(upgrade.cost), maxLevel: String(upgrade.maxLevel) });
+    setEffectsForm(upgrade.effects.map((e) => ({ metric: e.metric, type: e.type, value: String(e.value) })));
+    if (resetMsg) setUpgradeStatus(null);
+  };
+
+  const handleCreateUpgrade = () => {
+    if (!form.id) { setUpgradeStatus('Save the industry first.'); return; }
+    setIsCreatingUpgrade(true);
+    setSelectedUpgradeId('');
+    setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1' });
+    setEffectsForm([]);
+    setUpgradeStatus(null);
+  };
+
+  const handleSaveUpgrade = async () => {
+    if (!form.id) { setUpgradeStatus('Save the industry first.'); return; }
+    const id = upgradeForm.id.trim();
+    const name = upgradeForm.name.trim();
+    const description = upgradeForm.description.trim();
+    const icon = upgradeForm.icon.trim() || '⚙️';
+    const cost = Number(upgradeForm.cost);
+    const maxLevel = Number(upgradeForm.maxLevel);
+    if (!id || !name) { setUpgradeStatus('Upgrade id and name are required.'); return; }
+    if (!Number.isFinite(cost) || cost < 0 || !Number.isFinite(maxLevel) || maxLevel < 1) {
+      setUpgradeStatus('Cost must be >= 0 and Max Level >= 1.');
+      return;
+    }
+    const effects: UpgradeEffect[] = effectsForm.map((ef) => ({
+      metric: ef.metric,
+      type: ef.type,
+      value: Number(ef.value) || 0,
+    }));
+    setUpgradeSaving(true);
+    const result = await upsertUpgradeForIndustry(form.id, { id, name, description, icon, cost, maxLevel, effects });
+    setUpgradeSaving(false);
+    if (!result.success) { setUpgradeStatus(result.message ?? 'Failed to save upgrade.'); return; }
+    setUpgrades((prev) => {
+      const exists = prev.some((u) => u.id === id);
+      const nextItem: UpgradeDefinition = { id, name, description, icon, cost, maxLevel, effects } as any;
+      const next = exists ? prev.map((u) => (u.id === id ? nextItem : u)) : [...prev, nextItem];
+      return next.sort((a, b) => a.name.localeCompare(b.name));
+    });
+    setUpgradeStatus('Upgrade saved.');
+    setIsCreatingUpgrade(false);
+    setSelectedUpgradeId(id);
+  };
+
+  const handleDeleteUpgrade = async () => {
+    if (isCreatingUpgrade || !selectedUpgradeId) return;
+    if (!window.confirm(`Delete upgrade "${upgradeForm.name || selectedUpgradeId}"?`)) return;
+    setUpgradeDeleting(true);
+    const result = await deleteUpgradeById(selectedUpgradeId);
+    setUpgradeDeleting(false);
+    if (!result.success) { setUpgradeStatus(result.message ?? 'Failed to delete upgrade.'); return; }
+    setUpgrades((prev) => prev.filter((u) => u.id !== selectedUpgradeId));
+    setSelectedUpgradeId('');
+    setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1' });
+    setEffectsForm([]);
+    setUpgradeStatus('Upgrade deleted.');
   };
 
   const selectRole = (role: StaffRoleConfig) => {
@@ -851,6 +964,216 @@ export default function AdminPage() {
                 {globalSaving ? 'Saving…' : 'Save Global Config'}
               </button>
             </div>
+          </div>
+        </section>
+
+        <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
+          <div className="p-6 border-b border-slate-800">
+            <h2 className="text-2xl font-semibold">Upgrades</h2>
+            <p className="text-sm text-slate-400 mt-1">Manage upgrades and their effects for the selected industry.</p>
+          </div>
+          <div className="p-6 space-y-6">
+            {!form.id ? (
+              <div className="text-sm text-slate-400">Select or create an industry first.</div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    onClick={handleCreateUpgrade}
+                    className="px-3 py-2 text-sm font-medium rounded-lg border border-purple-500 text-purple-200 hover:bg-purple-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isCreating || !form.id}
+                  >
+                    + New Upgrade
+                  </button>
+                  {upgradeStatus && <span className="text-sm text-slate-300">{upgradeStatus}</span>}
+                </div>
+
+                {upgradesLoading ? (
+                  <div className="text-sm text-slate-400">Loading upgrades…</div>
+                ) : upgrades.length === 0 && !isCreatingUpgrade ? (
+                  <div className="text-sm text-slate-400">No upgrades configured yet.</div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                      {upgrades.map((u) => (
+                        <button
+                          key={u.id}
+                          onClick={() => selectUpgrade(u)}
+                          className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
+                            selectedUpgradeId === u.id && !isCreatingUpgrade
+                              ? 'border-purple-400 bg-purple-500/10 text-purple-200'
+                              : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
+                          }`}
+                        >
+                          {u.icon} {u.name}
+                        </button>
+                      ))}
+                    </div>
+
+                    {(selectedUpgradeId || isCreatingUpgrade) && (
+                      <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">Upgrade ID</label>
+                          <input
+                            value={upgradeForm.id}
+                            onChange={(e) => setUpgradeForm((p) => ({ ...p, id: e.target.value }))}
+                            disabled={!isCreatingUpgrade && !!selectedUpgradeId}
+                            className={`w-full rounded-lg border px-3 py-2 text-slate-200 ${
+                              isCreatingUpgrade || !selectedUpgradeId ? 'bg-slate-900 border-slate-600' : 'bg-slate-800 border-slate-700 cursor-not-allowed'
+                            }`}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">Name</label>
+                          <input
+                            value={upgradeForm.name}
+                            onChange={(e) => setUpgradeForm((p) => ({ ...p, name: e.target.value }))}
+                            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">Description</label>
+                          <textarea
+                            rows={3}
+                            value={upgradeForm.description}
+                            onChange={(e) => setUpgradeForm((p) => ({ ...p, description: e.target.value }))}
+                            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">Icon</label>
+                          <input
+                            value={upgradeForm.icon}
+                            onChange={(e) => setUpgradeForm((p) => ({ ...p, icon: e.target.value }))}
+                            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">Cost</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={upgradeForm.cost}
+                            onChange={(e) => setUpgradeForm((p) => ({ ...p, cost: e.target.value }))}
+                            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">Max Level</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={upgradeForm.maxLevel}
+                            onChange={(e) => setUpgradeForm((p) => ({ ...p, maxLevel: e.target.value }))}
+                            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                          />
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <h4 className="text-sm font-semibold text-slate-300">Effects</h4>
+                              <p className="text-xs text-slate-400 mt-1">
+                                Choose a metric and how to apply it. Add = flat amount, Percent = +/-%, Multiply = × factor, Set = exact value.
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setEffectsForm((prev) => [...prev, { metric: GameMetric.ServiceRooms, type: EffectType.Add, value: '0' }])}
+                              className="px-2 py-1 text-xs rounded-md border border-slate-600 text-slate-200 hover:bg-slate-800"
+                            >
+                              + Add Effect
+                            </button>
+                          </div>
+                          <div className="space-y-2">
+                            {effectsForm.map((ef, idx) => (
+                              <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center">
+                                <select
+                                  value={ef.metric}
+                                  onChange={(e) => setEffectsForm((prev) => prev.map((row, i) => i === idx ? { ...row, metric: e.target.value as GameMetric } : row))}
+                                  className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                                >
+                                  {METRIC_OPTIONS.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                  ))}
+                                </select>
+                                <select
+                                  value={ef.type}
+                                  onChange={(e) => setEffectsForm((prev) => prev.map((row, i) => i === idx ? { ...row, type: e.target.value as EffectType } : row))}
+                                  className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                                >
+                                  {EFFECT_TYPE_OPTIONS.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                  ))}
+                                </select>
+                                <input
+                                  placeholder="value"
+                                  type="number"
+                                  value={ef.value}
+                                  onChange={(e) => setEffectsForm((prev) => prev.map((row, i) => i === idx ? { ...row, value: e.target.value } : row))}
+                                  className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setEffectsForm((prev) => prev.filter((_, i) => i !== idx))}
+                                  className="px-2 py-2 text-xs rounded-md border border-rose-600 text-rose-200 hover:bg-rose-900"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="md:col-span-2 flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            onClick={handleSaveUpgrade}
+                            disabled={upgradeSaving || upgradeDeleting}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                              upgradeSaving ? 'bg-purple-900 text-purple-200 cursor-wait' : 'bg-purple-600 hover:bg-purple-500 text-white'
+                            }`}
+                          >
+                            {upgradeSaving ? 'Saving…' : 'Save Upgrade'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (selectedUpgradeId && !isCreatingUpgrade) {
+                                const existing = upgrades.find((u) => u.id === selectedUpgradeId);
+                                if (existing) selectUpgrade(existing);
+                              } else {
+                                setIsCreatingUpgrade(false);
+                                setSelectedUpgradeId('');
+                                setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1' });
+                                setEffectsForm([]);
+                              }
+                              setUpgradeStatus(null);
+                            }}
+                            disabled={upgradeSaving || upgradeDeleting}
+                            className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800"
+                          >
+                            {isCreatingUpgrade ? 'Cancel' : 'Reset'}
+                          </button>
+                          {!isCreatingUpgrade && selectedUpgradeId && (
+                            <button
+                              type="button"
+                              onClick={handleDeleteUpgrade}
+                              disabled={upgradeDeleting || upgradeSaving}
+                              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                                upgradeDeleting ? 'bg-rose-900 text-rose-200 cursor-wait' : 'bg-rose-600 hover:bg-rose-500 text-white'
+                              }`}
+                            >
+                              {upgradeDeleting ? 'Deleting…' : 'Delete'}
+                            </button>
+                          )}
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </section>
 
