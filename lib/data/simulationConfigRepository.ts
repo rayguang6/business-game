@@ -20,7 +20,7 @@ const mapBusinessMetrics = (raw: unknown): BusinessMetrics | undefined => {
   if (!isObject(raw)) {
     return undefined;
   }
-  const candidate = raw as BusinessMetrics;
+  const candidate = raw as unknown as BusinessMetrics;
   if (
     typeof candidate.startingCash === 'number' &&
     typeof candidate.monthlyExpenses === 'number' &&
@@ -39,7 +39,7 @@ const mapBusinessStats = (raw: unknown): BusinessStats | undefined => {
   if (!isObject(raw)) {
     return undefined;
   }
-  const candidate = raw as BusinessStats;
+  const candidate = raw as unknown as BusinessStats;
   if (
     typeof candidate.ticksPerSecond === 'number' &&
     typeof candidate.monthDurationSeconds === 'number' &&
@@ -57,7 +57,7 @@ const mapMovementConfig = (raw: unknown): MovementConfig | undefined => {
   if (!isObject(raw)) {
     return undefined;
   }
-  const candidate = raw as MovementConfig;
+  const candidate = raw as unknown as MovementConfig;
   if (
     typeof candidate.customerTilesPerTick === 'number' &&
     typeof candidate.animationReferenceTilesPerTick === 'number' &&
@@ -75,7 +75,7 @@ export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationCon
   }
 
   const { data, error } = await supabase
-    .from<GlobalSimulationConfigRow>('global_simulation_config')
+    .from('global_simulation_config')
     .select('business_metrics, business_stats, movement')
     .limit(1)
     .maybeSingle();
@@ -109,4 +109,47 @@ export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationCon
   }
 
   return result;
+}
+
+export async function upsertGlobalSimulationConfig(config: {
+  businessMetrics?: BusinessMetrics;
+  businessStats?: BusinessStats;
+  movement?: MovementConfig;
+}): Promise<{ success: boolean; message?: string }>
+{
+  if (!supabase) {
+    return { success: false, message: 'Supabase client not configured.' };
+  }
+
+  // Determine a stable id to upsert to. If a row exists, reuse its id; otherwise use 'global'.
+  const { data: existing, error: selectError } = await supabase
+    .from('global_simulation_config')
+    .select('id')
+    .limit(1)
+    .maybeSingle();
+
+  if (selectError) {
+    console.error('Failed to check existing global config row', selectError);
+    // Continue with default id to avoid blocking saves entirely
+  }
+
+  const idToUse = existing?.id ?? 'global';
+
+  const payload: GlobalSimulationConfigRow & { id: string } = {
+    id: idToUse,
+    business_metrics: config.businessMetrics ?? null,
+    business_stats: config.businessStats ?? null,
+    movement: config.movement ?? null,
+  };
+
+  const { error: upsertError } = await supabase
+    .from('global_simulation_config')
+    .upsert(payload, { onConflict: 'id' });
+
+  if (upsertError) {
+    console.error('Failed to upsert global simulation config', upsertError);
+    return { success: false, message: upsertError.message };
+  }
+
+  return { success: true };
 }
