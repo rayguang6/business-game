@@ -80,7 +80,10 @@ export function getServicesForIndustry(
 }
 
 export function getUpgradesForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
-  return getSimulationConfig(industryId).upgrades;
+  return getSimulationConfig(industryId).upgrades.map((upgrade) => ({
+    ...upgrade,
+    effects: upgrade.effects.map((effect) => ({ ...effect })),
+  }));
 }
 
 export function getEventsForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
