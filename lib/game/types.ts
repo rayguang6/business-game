@@ -16,11 +16,10 @@ export interface BusinessStats {
   customerSpawnIntervalSeconds: number;
   customerPatienceSeconds: number;
   leavingAngryDurationTicks: number;
-  customerSpawnArea: {
-    x: { min: number; max: number };
-    y: { min: number; max: number };
+  customerSpawnPosition: {
+    x: number;
+    y: number;
   };
-  waitingChairs: number;
   treatmentRooms: number;
   reputationGainPerHappyCustomer: number;
   reputationLossPerAngryCustomer: number;

@@ -19,11 +19,17 @@ import EventPopup from '@/app/game/components/ui/EventPopup';
 import GameOverPopup from '@/app/game/components/ui/GameOverPopup';
 import { useRandomEventTrigger } from '@/hooks/useRandomEventTrigger';
 import Image from 'next/image';
+import { fetchGlobalSimulationConfig } from '@/lib/data/simulationConfigRepository';
 import { fetchServicesForIndustry } from '@/lib/data/serviceRepository';
 import { fetchUpgradesForIndustry } from '@/lib/data/upgradeRepository';
 import { fetchEventsForIndustry } from '@/lib/data/eventRepository';
 import { fetchStaffDataForIndustry } from '@/lib/data/staffRepository';
-import { setIndustryServices, setIndustryUpgrades, setIndustryEvents } from '@/lib/game/industryConfigs';
+import {
+  setIndustryServices,
+  setIndustryUpgrades,
+  setIndustryEvents,
+  setGlobalSimulationConfigValues,
+} from '@/lib/game/industryConfigs';
 import {
   setStaffRolesForIndustry,
   setStaffNamePoolForIndustry,
@@ -43,6 +49,7 @@ export default function GamePage() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { audioState, setVolume, toggleMute } = useAudioControls();
+  const [globalConfigReady, setGlobalConfigReady] = useState(false);
   const [dataLoadState, setDataLoadState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const initializeStaffForIndustry = useGameStore((state) => state.initializeStaffForIndustry);
   
@@ -53,7 +60,34 @@ export default function GamePage() {
   useEffect(() => {
     let isMounted = true;
 
-    if (!selectedIndustry) {
+    (async () => {
+      try {
+        const globalConfig = await fetchGlobalSimulationConfig();
+        if (!isMounted) {
+          return;
+        }
+
+        if (globalConfig) {
+          setGlobalSimulationConfigValues(globalConfig);
+        }
+      } catch (error) {
+        console.error('Failed to load global simulation config', error);
+      } finally {
+        if (isMounted) {
+          setGlobalConfigReady(true);
+        }
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!selectedIndustry || !globalConfigReady) {
       setDataLoadState('idle');
       return () => {
         isMounted = false;
@@ -132,7 +166,7 @@ export default function GamePage() {
     return () => {
       isMounted = false;
     };
-  }, [selectedIndustry, initializeStaffForIndustry]);
+  }, [selectedIndustry, initializeStaffForIndustry, globalConfigReady]);
 
   // Guard to check if industry exists; otherwise redirect. If game is selected but not started, kick it off.
   useEffect(() => {
