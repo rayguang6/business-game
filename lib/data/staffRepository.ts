@@ -63,7 +63,7 @@ const mapPresetRows = (rows: StaffPresetRow[] | null | undefined): StaffPreset[]
     .filter((row) => row.id && row.role_id)
     .map((row) => ({
       id: row.id,
-      name: row.name ?? undefined,
+      name: row.name ?? 'Staff',
       roleId: row.role_id,
       salary: row.salary_override !== null ? parseNumber(row.salary_override) : undefined,
       serviceSpeed:
@@ -84,11 +84,11 @@ export async function fetchStaffDataForIndustry(
 
   const [rolesResponse, presetsResponse] = await Promise.all([
     supabase
-      .from<StaffRoleRow>('staff_roles')
+      .from('staff_roles')
       .select('id, industry_id, name, salary, service_speed, emoji')
       .eq('industry_id', industryId),
     supabase
-      .from<StaffPresetRow>('staff_presets')
+      .from('staff_presets')
       .select('id, industry_id, role_id, name, salary_override, service_speed_override, emoji_override')
       .eq('industry_id', industryId),
   ]);
@@ -115,4 +115,102 @@ export async function fetchStaffDataForIndustry(
     initialStaff,
     namePool: [],
   };
+}
+
+export async function upsertStaffRole(role: {
+  id: string;
+  industryId: IndustryId;
+  name: string;
+  salary: number;
+  serviceSpeed: number;
+  emoji?: string;
+}): Promise<{ success: boolean; message?: string }>
+{
+  if (!supabase) {
+    return { success: false, message: 'Supabase client not configured.' };
+  }
+
+  const payload: StaffRoleRow = {
+    id: role.id,
+    industry_id: role.industryId,
+    name: role.name,
+    salary: role.salary,
+    service_speed: role.serviceSpeed,
+    emoji: role.emoji ?? null,
+  };
+
+  const { error } = await supabase
+    .from('staff_roles')
+    .upsert(payload, { onConflict: 'industry_id,id' });
+
+  if (error) {
+    console.error('Failed to upsert staff role', error);
+    return { success: false, message: error.message };
+  }
+
+  return { success: true };
+}
+
+export async function deleteStaffRole(id: string): Promise<{ success: boolean; message?: string }>
+{
+  if (!supabase) {
+    return { success: false, message: 'Supabase client not configured.' };
+  }
+
+  const { error } = await supabase.from('staff_roles').delete().eq('id', id);
+  if (error) {
+    console.error('Failed to delete staff role', error);
+    return { success: false, message: error.message };
+  }
+  return { success: true };
+}
+
+export async function upsertStaffPreset(preset: {
+  id: string;
+  industryId: IndustryId;
+  roleId: string;
+  name?: string;
+  salary?: number;
+  serviceSpeed?: number;
+  emoji?: string;
+}): Promise<{ success: boolean; message?: string }>
+{
+  if (!supabase) {
+    return { success: false, message: 'Supabase client not configured.' };
+  }
+
+  const payload: StaffPresetRow = {
+    id: preset.id,
+    industry_id: preset.industryId,
+    role_id: preset.roleId,
+    name: preset.name ?? null,
+    salary_override: preset.salary ?? null,
+    service_speed_override: preset.serviceSpeed ?? null,
+    emoji_override: preset.emoji ?? null,
+  };
+
+  const { error } = await supabase
+    .from('staff_presets')
+    .upsert(payload, { onConflict: 'industry_id,id' });
+
+  if (error) {
+    console.error('Failed to upsert staff preset', error);
+    return { success: false, message: error.message };
+  }
+
+  return { success: true };
+}
+
+export async function deleteStaffPreset(id: string): Promise<{ success: boolean; message?: string }>
+{
+  if (!supabase) {
+    return { success: false, message: 'Supabase client not configured.' };
+  }
+
+  const { error } = await supabase.from('staff_presets').delete().eq('id', id);
+  if (error) {
+    console.error('Failed to delete staff preset', error);
+    return { success: false, message: error.message };
+  }
+  return { success: true };
 }
