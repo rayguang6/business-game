@@ -11,6 +11,7 @@ import {
   IndustrySimulationConfig,
   IndustryId,
   BaseUpgradeMetrics,
+  IndustryServiceDefinition,
   DEFAULT_INDUSTRY_ID,
 } from './types';
 
@@ -25,6 +26,7 @@ export type {
   UpgradeId,
   IndustrySimulationConfig,
   BaseUpgradeMetrics,
+  IndustryServiceDefinition,
 } from './types';
 
 export { DEFAULT_INDUSTRY_ID } from './types';
@@ -70,8 +72,11 @@ export function getLayoutConfig(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
   return getSimulationConfig(industryId).layout;
 }
 
-export function getServicesForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
-  return getSimulationConfig(industryId).services;
+export function getServicesForIndustry(
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+): IndustryServiceDefinition[] {
+  const config = getSimulationConfig(industryId);
+  return config.services.map((service) => ({ ...service }));
 }
 
 export function getUpgradesForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {

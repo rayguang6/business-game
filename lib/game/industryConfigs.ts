@@ -101,23 +101,27 @@ const DEFAULT_CUSTOMER_IMAGES = [
 // -----------------------------------------------------------------------------
 // Industry Specific
 // -----------------------------------------------------------------------------
-const DENTAL_SERVICES: IndustryServiceDefinition[] = [
+// NOTE: legacy service definitions retained for reference/seeding.
+/*
+const SERVICE_DEFINITIONS: IndustryServiceDefinition[] = [
   { id: 'dental_cleaning', industryId: 'dental', name: 'Teeth Cleaning', duration: 5, price: 500 },
   { id: 'dental_filling', industryId: 'dental', name: 'Cavity Filling', duration: 5, price: 700 },
   { id: 'dental_root_canal', industryId: 'dental', name: 'Root Canal', duration: 5, price: 1000 },
-];
-
-const RESTAURANT_SERVICES: IndustryServiceDefinition[] = [
   { id: 'restaurant_fast_meal', industryId: 'restaurant', name: 'Express Meal', duration: 5, price: 60 },
   { id: 'restaurant_full_course', industryId: 'restaurant', name: 'Full Course Dinner', duration: 9, price: 90 },
   { id: 'restaurant_family_combo', industryId: 'restaurant', name: 'Family Combo', duration: 12, price: 130 },
-];
-
-const GYM_SERVICES: IndustryServiceDefinition[] = [
   { id: 'gym_quick_session', industryId: 'gym', name: 'Quick Training Session', duration: 5, price: 65 },
   { id: 'gym_group_class', industryId: 'gym', name: 'Group Fitness Class', duration: 8, price: 95 },
   { id: 'gym_personal_training', industryId: 'gym', name: 'Personal Training', duration: 11, price: 140 },
 ];
+*/
+
+const SERVICES_BY_INDUSTRY: Record<string, IndustryServiceDefinition[]> = {};
+
+function getStaticServicesForIndustry(industryId: IndustryId): IndustryServiceDefinition[] {
+  const services = SERVICES_BY_INDUSTRY[industryId] ?? [];
+  return services.map((service) => ({ ...service }));
+}
 
 const DENTAL_UPGRADES: UpgradeDefinition[] = [
   {
@@ -590,21 +594,21 @@ const INDUSTRY_SIMULATION_CONFIGS: Record<string, IndustrySimulationConfig> = {
   [DEFAULT_INDUSTRY_ID]: {
     id: DEFAULT_INDUSTRY_ID,
     ...SHARED_BASE,
-    services: DENTAL_SERVICES,
+    services: getStaticServicesForIndustry(DEFAULT_INDUSTRY_ID),
     upgrades: DENTAL_UPGRADES,
     events: DENTAL_EVENTS,
   },
   restaurant: {
     id: 'restaurant',
     ...SHARED_BASE,
-    services: RESTAURANT_SERVICES,
+    services: getStaticServicesForIndustry('restaurant'),
     upgrades: RESTAURANT_UPGRADES,
     events: RESTAURANT_EVENTS,
   },
   gym: {
     id: 'gym',
     ...SHARED_BASE,
-    services: GYM_SERVICES,
+    services: getStaticServicesForIndustry('gym'),
     upgrades: GYM_UPGRADES,
     events: GYM_EVENTS,
   },
@@ -616,4 +620,26 @@ export function getIndustrySimulationConfig(industryId: IndustryId): IndustrySim
 
 export function getAllSimulationConfigs(): IndustrySimulationConfig[] {
   return Object.values(INDUSTRY_SIMULATION_CONFIGS);
+}
+
+export function setIndustryServices(
+  industryId: IndustryId,
+  services: IndustryServiceDefinition[],
+): void {
+  const nextServices = services.map((service) => ({ ...service }));
+  SERVICES_BY_INDUSTRY[industryId] = nextServices.map((service) => ({ ...service }));
+
+  const config = INDUSTRY_SIMULATION_CONFIGS[industryId];
+  if (config) {
+    config.services = nextServices;
+    return;
+  }
+
+  INDUSTRY_SIMULATION_CONFIGS[industryId] = {
+    id: industryId,
+    ...SHARED_BASE,
+    services: nextServices,
+    upgrades: [],
+    events: [],
+  };
 }

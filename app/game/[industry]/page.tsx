@@ -19,6 +19,9 @@ import EventPopup from '@/app/game/components/ui/EventPopup';
 import GameOverPopup from '@/app/game/components/ui/GameOverPopup';
 import { useRandomEventTrigger } from '@/hooks/useRandomEventTrigger';
 import Image from 'next/image';
+import { fetchServicesForIndustry } from '@/lib/data/serviceRepository';
+import { setIndustryServices } from '@/lib/game/industryConfigs';
+import { IndustryId } from '@/lib/game/types';
 
 export default function GamePage() {
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
@@ -32,10 +35,44 @@ export default function GamePage() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { audioState, setVolume, toggleMute } = useAudioControls();
+  const [serviceLoadState, setServiceLoadState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   
 
   // Play game music when component mounts
   useAudio('game', true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!selectedIndustry) {
+      setServiceLoadState('idle');
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    setServiceLoadState('loading');
+
+    (async () => {
+      const services = await fetchServicesForIndustry(selectedIndustry.id as IndustryId);
+
+      if (!isMounted) {
+        return;
+      }
+
+      if (services && services.length > 0) {
+        setIndustryServices(selectedIndustry.id as IndustryId, services);
+        setServiceLoadState('ready');
+      } else {
+        console.error('No services found for industry', selectedIndustry?.id);
+        setServiceLoadState('error');
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedIndustry]);
 
   // Guard to check if industry exists; otherwise redirect. If game is selected but not started, kick it off.
   useEffect(() => {
@@ -43,11 +80,11 @@ export default function GamePage() {
       if (pathname !== '/') {
         router.push('/');
       }
-    } else if (!isGameStarted) {
+    } else if (!isGameStarted && serviceLoadState === 'ready') {
       // Auto-start the game when page loads
       startGame();
     }
-  }, [selectedIndustry, isGameStarted, startGame, pathname, router]);
+  }, [selectedIndustry, isGameStarted, startGame, pathname, router, serviceLoadState]);
 
   // Initialize game loop
   useGameLoop();
@@ -73,6 +110,31 @@ export default function GamePage() {
 
   if (!selectedIndustry) {
     return null; // Return null while redirecting
+  }
+
+  if (serviceLoadState === 'loading' || serviceLoadState === 'idle') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white text-lg font-semibold">
+        Loading services...
+      </div>
+    );
+  }
+
+  if (serviceLoadState === 'error') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gray-900 text-white text-center px-6">
+        <p className="text-2xl font-semibold">Services unavailable</p>
+        <p className="text-base max-w-md text-gray-300">
+          We couldn&apos;t load services for this industry. Please check your Supabase data and try again.
+        </p>
+        <button
+          onClick={() => router.push('/select-industry')}
+          className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 transition-colors"
+        >
+          Back to industry selection
+        </button>
+      </div>
+    );
   }
 
   if (!audioState) {

@@ -3,9 +3,6 @@
  * Handles all industry-related types, configs, and registry
  */
 
-import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
-
-// Types
 export interface Industry {
   id: string;
   name: string;
@@ -15,10 +12,11 @@ export interface Industry {
   mapImage?: string; // Optional map image path for industry map
 }
 
-// Industry Definitions
-//TODO: Extract to Config, and later Database
+// NOTE: legacy static definitions are retained below for future reference/seeding.
+// They are intentionally commented out so runtime data must come from Supabase.
+/*
 export const DentalIndustry: Industry = {
-  id: DEFAULT_INDUSTRY_ID,
+  id: 'dental',
   name: 'Dental Clinic',
   icon: '🦷',
   description: 'Keep your patients smiling with clean teeth!',
@@ -43,25 +41,18 @@ export const GymIndustry: Industry = {
   image: '/images/industries/gym.jpg',
   mapImage: '/images/maps/gym-map.png',
 };
+*/
 
-// Industry Registry
-export const INDUSTRIES: Record<string, Industry> = {
-  dental: DentalIndustry,
-  restaurant: RestaurantIndustry,
-  gym: GymIndustry,
-} as const;
+let cachedIndustries: Industry[] = [];
 
-
-/**
- * Gets all available industries
- */
-export function getAllIndustries(): Industry[] {
-  return Object.values(INDUSTRIES);
+export function cacheIndustries(industries: Industry[]): void {
+  cachedIndustries = industries.slice();
 }
 
-/**
- * Finds an industry by ID
- */
-export function getIndustryById(id: string): Industry | undefined {
-  return INDUSTRIES[id];
+export function getCachedIndustries(): Industry[] {
+  return cachedIndustries.slice();
+}
+
+export function getCachedIndustryById(id: string): Industry | undefined {
+  return cachedIndustries.find((industry) => industry.id === id);
 }
