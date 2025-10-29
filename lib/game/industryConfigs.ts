@@ -29,11 +29,10 @@ const DEFAULT_BUSINESS_STATS: BusinessStats = {
   customerSpawnIntervalSeconds: 3,
   customerPatienceSeconds: 10,
   leavingAngryDurationTicks: 10,
-  customerSpawnArea: {
-    x: { min: 0, max: 2 },
-    y: { min: 7, max: 9 },
+  customerSpawnPosition: {
+    x: 4,
+    y: 9,
   },
-  waitingChairs: 4,
   treatmentRooms: 2,
   reputationGainPerHappyCustomer: 1,
   reputationLossPerAngryCustomer: 1,
@@ -51,6 +50,10 @@ export const DEFAULT_MOVEMENT_CONFIG: MovementConfig = {
   maxWalkFrameDurationMs: 320,
   celebrationFrameDurationMs: 200,
 } as const;
+
+let GLOBAL_BUSINESS_METRICS: BusinessMetrics = { ...DEFAULT_BUSINESS_METRICS };
+let GLOBAL_BUSINESS_STATS: BusinessStats = { ...DEFAULT_BUSINESS_STATS };
+let GLOBAL_MOVEMENT_CONFIG: MovementConfig = { ...DEFAULT_MOVEMENT_CONFIG };
 
 const DEFAULT_MAP_CONFIG: MapConfig = {
   width: 10,
@@ -421,19 +424,25 @@ const GYM_EVENTS: GameEvent[] = [
 ];
 */
 
-const SHARED_BASE = {
-  businessMetrics: DEFAULT_BUSINESS_METRICS,
-  businessStats: DEFAULT_BUSINESS_STATS,
-  movement: DEFAULT_MOVEMENT_CONFIG,
-  map: DEFAULT_MAP_CONFIG,
-  layout: DEFAULT_LAYOUT,
-  customerImages: DEFAULT_CUSTOMER_IMAGES,
-  defaultCustomerImage: DEFAULT_CUSTOMER_IMAGES[0],
-} as const;
-
 const SERVICES_BY_INDUSTRY: Record<string, IndustryServiceDefinition[]> = {};
 const UPGRADES_BY_INDUSTRY: Record<string, UpgradeDefinition[]> = {};
 const EVENTS_BY_INDUSTRY: Record<string, GameEvent[]> = {};
+
+function createSharedBase(): Omit<IndustrySimulationConfig, 'id' | 'services' | 'upgrades' | 'events'> {
+  return {
+    businessMetrics: { ...GLOBAL_BUSINESS_METRICS },
+    businessStats: { ...GLOBAL_BUSINESS_STATS },
+    movement: { ...GLOBAL_MOVEMENT_CONFIG },
+    map: { ...DEFAULT_MAP_CONFIG, walls: [...DEFAULT_MAP_CONFIG.walls] },
+    layout: {
+      entryPosition: { ...DEFAULT_LAYOUT.entryPosition },
+      waitingPositions: DEFAULT_LAYOUT.waitingPositions.map((pos) => ({ ...pos })),
+      serviceRoomPositions: DEFAULT_LAYOUT.serviceRoomPositions.map((pos) => ({ ...pos })),
+    },
+    customerImages: [...DEFAULT_CUSTOMER_IMAGES],
+    defaultCustomerImage: DEFAULT_CUSTOMER_IMAGES[0],
+  };
+}
 
 function getStaticServicesForIndustry(industryId: IndustryId): IndustryServiceDefinition[] {
   const services = SERVICES_BY_INDUSTRY[industryId] ?? [];
@@ -463,24 +472,66 @@ function getStaticEventsForIndustry(industryId: IndustryId): GameEvent[] {
   }));
 }
 
+export function getGlobalSimulationConfigValues(): {
+  businessMetrics: BusinessMetrics;
+  businessStats: BusinessStats;
+  movement: MovementConfig;
+} {
+  return {
+    businessMetrics: { ...GLOBAL_BUSINESS_METRICS },
+    businessStats: { ...GLOBAL_BUSINESS_STATS },
+    movement: { ...GLOBAL_MOVEMENT_CONFIG },
+  };
+}
+
+export function setGlobalSimulationConfigValues(
+  config: Partial<{
+    businessMetrics: BusinessMetrics;
+    businessStats: BusinessStats;
+    movement: MovementConfig;
+  }>,
+): void {
+  if (config.businessMetrics) {
+    GLOBAL_BUSINESS_METRICS = { ...config.businessMetrics };
+  }
+
+  if (config.businessStats) {
+    GLOBAL_BUSINESS_STATS = { ...config.businessStats };
+  }
+
+  if (config.movement) {
+    GLOBAL_MOVEMENT_CONFIG = { ...config.movement };
+  }
+
+  Object.values(INDUSTRY_SIMULATION_CONFIGS).forEach((entry) => {
+    entry.businessMetrics = { ...GLOBAL_BUSINESS_METRICS };
+    entry.businessStats = { ...GLOBAL_BUSINESS_STATS };
+    entry.movement = { ...GLOBAL_MOVEMENT_CONFIG };
+  });
+}
+
+export function getGlobalMovementConfig(): MovementConfig {
+  return { ...GLOBAL_MOVEMENT_CONFIG };
+}
+
 const INDUSTRY_SIMULATION_CONFIGS: Record<string, IndustrySimulationConfig> = {
   [DEFAULT_INDUSTRY_ID]: {
     id: DEFAULT_INDUSTRY_ID,
-    ...SHARED_BASE,
+    ...createSharedBase(),
     services: getStaticServicesForIndustry(DEFAULT_INDUSTRY_ID),
     upgrades: getStaticUpgradesForIndustry(DEFAULT_INDUSTRY_ID),
     events: getStaticEventsForIndustry(DEFAULT_INDUSTRY_ID),
   },
   restaurant: {
     id: 'restaurant',
-    ...SHARED_BASE,
+    ...createSharedBase(),
     services: getStaticServicesForIndustry('restaurant'),
     upgrades: getStaticUpgradesForIndustry('restaurant'),
     events: getStaticEventsForIndustry('restaurant'),
   },
   gym: {
     id: 'gym',
-    ...SHARED_BASE,
+    ...createSharedBase(),
     services: getStaticServicesForIndustry('gym'),
     upgrades: getStaticUpgradesForIndustry('gym'),
     events: getStaticEventsForIndustry('gym'),
@@ -510,7 +561,7 @@ export function setIndustryServices(
 
   INDUSTRY_SIMULATION_CONFIGS[industryId] = {
     id: industryId,
-    ...SHARED_BASE,
+    ...createSharedBase(),
     services: nextServices,
     upgrades: getStaticUpgradesForIndustry(industryId),
     events: getStaticEventsForIndustry(industryId),
@@ -539,7 +590,7 @@ export function setIndustryUpgrades(
 
   INDUSTRY_SIMULATION_CONFIGS[industryId] = {
     id: industryId,
-    ...SHARED_BASE,
+    ...createSharedBase(),
     services: getStaticServicesForIndustry(industryId),
     upgrades: nextUpgrades,
     events: getStaticEventsForIndustry(industryId),
@@ -579,7 +630,7 @@ export function setIndustryEvents(industryId: IndustryId, events: GameEvent[]): 
 
   INDUSTRY_SIMULATION_CONFIGS[industryId] = {
     id: industryId,
-    ...SHARED_BASE,
+    ...createSharedBase(),
     services: getStaticServicesForIndustry(industryId),
     upgrades: getStaticUpgradesForIndustry(industryId),
     events: nextEvents,

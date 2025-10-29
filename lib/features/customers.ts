@@ -12,7 +12,7 @@ import {
   getLayoutConfig,
   secondsToTicks,
 } from '@/lib/game/config';
-import { DEFAULT_MOVEMENT_CONFIG } from '@/lib/game/industryConfigs';
+import { getGlobalMovementConfig } from '@/lib/game/industryConfigs';
 import { IndustryId, GridPosition } from '@/lib/game/types';
 
 // Types
@@ -71,6 +71,7 @@ export function spawnCustomer(
   const stats = getBusinessStats(industryId);
   const layout = getLayoutConfig(industryId);
   const patience = secondsToTicks(stats.customerPatienceSeconds, industryId);
+  const spawnPosition = stats.customerSpawnPosition ?? layout.entryPosition;
   
   // Convert the aggregated speed multiplier into a shorter duration (higher speed = shorter time)
   const effectiveDuration = service.duration / Math.max(serviceSpeedMultiplier, 0.1);
@@ -78,8 +79,8 @@ export function spawnCustomer(
   return {
     id: Math.random().toString(36).substr(2, 9),
     imageSrc,
-    x: layout.entryPosition.x, // Spawn at entry position
-    y: layout.entryPosition.y,
+    x: spawnPosition.x,
+    y: spawnPosition.y,
     facingDirection: 'down',
     service: service,
     status: CustomerStatus.Spawning, // Start at door!
@@ -92,13 +93,14 @@ export function spawnCustomer(
 /**
  * Movement speed (tiles per tick)
  */
-const MOVEMENT_SPEED = Math.max(0.01, DEFAULT_MOVEMENT_CONFIG.customerTilesPerTick);
+const getMovementSpeed = () => Math.max(0.01, getGlobalMovementConfig().customerTilesPerTick);
 
 /**
  * Moves customer towards target position following an optional path.
  * Movement is restricted to horizontal/vertical steps.
  */
 function moveTowardsTarget(customer: Customer): Customer {
+  const movementSpeed = getMovementSpeed();
   if (customer.targetX === undefined || customer.targetY === undefined) {
     return customer;
   }
@@ -112,7 +114,7 @@ function moveTowardsTarget(customer: Customer): Customer {
   const dy = nextWaypoint.y - customer.y;
 
   // Close enough to waypoint - snap to position and advance path
-  if (Math.abs(dx) <= MOVEMENT_SPEED && Math.abs(dy) <= MOVEMENT_SPEED) {
+  if (Math.abs(dx) <= movementSpeed && Math.abs(dy) <= movementSpeed) {
     let facingDirection = customer.facingDirection;
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 0) {
       facingDirection = dx > 0 ? 'right' : 'left';
@@ -145,11 +147,11 @@ function moveTowardsTarget(customer: Customer): Customer {
   const prioritizeHorizontal = Math.abs(dx) >= Math.abs(dy);
 
   if (prioritizeHorizontal && Math.abs(dx) > 0) {
-    const step = Math.sign(dx) * Math.min(MOVEMENT_SPEED, Math.abs(dx));
+    const step = Math.sign(dx) * Math.min(movementSpeed, Math.abs(dx));
     newX = customer.x + step;
     facingDirection = step > 0 ? 'right' : 'left';
   } else if (Math.abs(dy) > 0) {
-    const step = Math.sign(dy) * Math.min(MOVEMENT_SPEED, Math.abs(dy));
+    const step = Math.sign(dy) * Math.min(movementSpeed, Math.abs(dy));
     newY = customer.y + step;
     facingDirection = step > 0 ? 'down' : 'up';
   }
