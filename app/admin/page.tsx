@@ -15,6 +15,14 @@ import type { Industry } from '@/lib/features/industries';
 import type { IndustryServiceDefinition, BusinessMetrics, BusinessStats, MovementConfig } from '@/lib/game/types';
 import { fetchGlobalSimulationConfig, upsertGlobalSimulationConfig } from '@/lib/data/simulationConfigRepository';
 import { getGlobalSimulationConfigValues, setGlobalSimulationConfigValues } from '@/lib/game/industryConfigs';
+import {
+  fetchStaffDataForIndustry,
+  upsertStaffRole,
+  deleteStaffRole,
+  upsertStaffPreset,
+  deleteStaffPreset,
+} from '@/lib/data/staffRepository';
+import type { StaffRoleConfig, StaffPreset } from '@/lib/game/staffConfig';
 
 interface FormState {
   id: string;
@@ -81,6 +89,24 @@ export default function AdminPage() {
   const [globalLoading, setGlobalLoading] = useState<boolean>(false);
   const [globalSaving, setGlobalSaving] = useState<boolean>(false);
 
+  // Staff management state
+  const [staffRoles, setStaffRoles] = useState<StaffRoleConfig[]>([]);
+  const [staffPresets, setStaffPresets] = useState<StaffPreset[]>([]);
+  const [staffLoading, setStaffLoading] = useState<boolean>(false);
+  const [staffStatus, setStaffStatus] = useState<string | null>(null);
+
+  const [roleForm, setRoleForm] = useState<{ id: string; name: string; salary: string; serviceSpeed: string; emoji: string }>({ id: '', name: '', salary: '0', serviceSpeed: '0', emoji: '🧑‍💼' });
+  const [selectedRoleId, setSelectedRoleId] = useState<string>('');
+  const [roleSaving, setRoleSaving] = useState<boolean>(false);
+  const [roleDeleting, setRoleDeleting] = useState<boolean>(false);
+  const [isCreatingRole, setIsCreatingRole] = useState<boolean>(false);
+
+  const [presetForm, setPresetForm] = useState<{ id: string; roleId: string; name: string; salary?: string; serviceSpeed?: string; emoji?: string }>({ id: '', roleId: '', name: '' });
+  const [selectedPresetId, setSelectedPresetId] = useState<string>('');
+  const [presetSaving, setPresetSaving] = useState<boolean>(false);
+  const [presetDeleting, setPresetDeleting] = useState<boolean>(false);
+  const [isCreatingPreset, setIsCreatingPreset] = useState<boolean>(false);
+
   const selectService = (service: IndustryServiceDefinition, resetMessage: boolean = true) => {
     setSelectedServiceId(service.id);
     setIsCreatingService(false);
@@ -129,6 +155,7 @@ export default function AdminPage() {
     });
     setStatusMessage(null);
     loadServicesForIndustry(industry.id);
+    loadStaffForIndustry(industry.id);
   };
 
   useEffect(() => {
@@ -179,6 +206,183 @@ export default function AdminPage() {
       isMounted = false;
     };
   }, []);
+
+  const loadStaffForIndustry = async (industryId: string) => {
+    setStaffLoading(true);
+    setStaffStatus(null);
+    setStaffRoles([]);
+    setStaffPresets([]);
+    setSelectedRoleId('');
+    setSelectedPresetId('');
+    setIsCreatingRole(false);
+    setIsCreatingPreset(false);
+
+    const data = await fetchStaffDataForIndustry(industryId);
+    setStaffLoading(false);
+    if (!data) {
+      return;
+    }
+    const rolesSorted = data.roles.slice().sort((a, b) => a.name.localeCompare(b.name));
+    const presetsSorted = data.initialStaff.slice().sort((a, b) => a.name.localeCompare(b.name));
+    setStaffRoles(rolesSorted);
+    setStaffPresets(presetsSorted);
+    if (rolesSorted.length > 0) {
+      const first = rolesSorted[0];
+      setSelectedRoleId(first.id);
+      setRoleForm({ id: first.id, name: first.name, salary: String(first.salary), serviceSpeed: String(first.serviceSpeed), emoji: first.emoji });
+    }
+    if (presetsSorted.length > 0) {
+      const firstP = presetsSorted[0];
+      setSelectedPresetId(firstP.id);
+      setPresetForm({ id: firstP.id, roleId: firstP.roleId, name: firstP.name, salary: firstP.salary !== undefined ? String(firstP.salary) : undefined, serviceSpeed: firstP.serviceSpeed !== undefined ? String(firstP.serviceSpeed) : undefined, emoji: firstP.emoji });
+    }
+  };
+
+  const selectRole = (role: StaffRoleConfig) => {
+    setIsCreatingRole(false);
+    setSelectedRoleId(role.id);
+    setRoleForm({ id: role.id, name: role.name, salary: String(role.salary), serviceSpeed: String(role.serviceSpeed), emoji: role.emoji });
+    setStaffStatus(null);
+  };
+
+  const handleCreateRole = () => {
+    if (!form.id) {
+      setStaffStatus('Save the industry first.');
+      return;
+    }
+    setIsCreatingRole(true);
+    setSelectedRoleId('');
+    setRoleForm({ id: '', name: '', salary: '0', serviceSpeed: '0', emoji: '🧑‍💼' });
+    setStaffStatus(null);
+  };
+
+  const handleSaveRole = async () => {
+    if (!form.id) {
+      setStaffStatus('Save the industry first.');
+      return;
+    }
+    const id = roleForm.id.trim();
+    const name = roleForm.name.trim();
+    const salary = Number(roleForm.salary);
+    const serviceSpeed = Number(roleForm.serviceSpeed);
+    if (!id || !name) {
+      setStaffStatus('Role id and name are required.');
+      return;
+    }
+    if (!Number.isFinite(salary) || salary < 0 || !Number.isFinite(serviceSpeed) || serviceSpeed < 0) {
+      setStaffStatus('Salary and service speed must be non-negative.');
+      return;
+    }
+    setRoleSaving(true);
+    const result = await upsertStaffRole({ id, industryId: form.id, name, salary, serviceSpeed, emoji: roleForm.emoji.trim() || undefined });
+    setRoleSaving(false);
+    if (!result.success) {
+      setStaffStatus(result.message ?? 'Failed to save role.');
+      return;
+    }
+    setStaffRoles((prev) => {
+      const exists = prev.some((r) => r.id === id);
+      const next = exists ? prev.map((r) => (r.id === id ? { id, name, salary, serviceSpeed, emoji: roleForm.emoji.trim() || '🧑‍💼' } : r)) : [...prev, { id, name, salary, serviceSpeed, emoji: roleForm.emoji.trim() || '🧑‍💼' }];
+      return next.sort((a, b) => a.name.localeCompare(b.name));
+    });
+    setStaffStatus('Role saved.');
+    setIsCreatingRole(false);
+    setSelectedRoleId(id);
+  };
+
+  const handleDeleteRole = async () => {
+    if (isCreatingRole || !selectedRoleId) return;
+    const hasPresets = staffPresets.some((p) => p.roleId === selectedRoleId);
+    if (hasPresets) {
+      setStaffStatus('Delete presets using this role first.');
+      return;
+    }
+    if (!window.confirm(`Delete role "${roleForm.name || selectedRoleId}"?`)) return;
+    setRoleDeleting(true);
+    const result = await deleteStaffRole(selectedRoleId);
+    setRoleDeleting(false);
+    if (!result.success) {
+      setStaffStatus(result.message ?? 'Failed to delete role.');
+      return;
+    }
+    setStaffRoles((prev) => prev.filter((r) => r.id !== selectedRoleId));
+    setSelectedRoleId('');
+    setRoleForm({ id: '', name: '', salary: '0', serviceSpeed: '0', emoji: '🧑‍💼' });
+    setStaffStatus('Role deleted.');
+  };
+
+  const selectPreset = (preset: StaffPreset) => {
+    setIsCreatingPreset(false);
+    setSelectedPresetId(preset.id);
+    setPresetForm({ id: preset.id, roleId: preset.roleId, name: preset.name, salary: preset.salary !== undefined ? String(preset.salary) : undefined, serviceSpeed: preset.serviceSpeed !== undefined ? String(preset.serviceSpeed) : undefined, emoji: preset.emoji });
+    setStaffStatus(null);
+  };
+
+  const handleCreatePreset = () => {
+    if (!form.id) {
+      setStaffStatus('Save the industry first.');
+      return;
+    }
+    setIsCreatingPreset(true);
+    setSelectedPresetId('');
+    setPresetForm({ id: '', roleId: staffRoles[0]?.id ?? '', name: '' });
+    setStaffStatus(null);
+  };
+
+  const handleSavePreset = async () => {
+    if (!form.id) {
+      setStaffStatus('Save the industry first.');
+      return;
+    }
+    const id = presetForm.id.trim();
+    const roleId = presetForm.roleId.trim();
+    const name = presetForm.name.trim();
+    if (!id || !roleId) {
+      setStaffStatus('Preset id and role are required.');
+      return;
+    }
+    const salary = presetForm.salary !== undefined && presetForm.salary !== '' ? Number(presetForm.salary) : undefined;
+    const serviceSpeed = presetForm.serviceSpeed !== undefined && presetForm.serviceSpeed !== '' ? Number(presetForm.serviceSpeed) : undefined;
+    if ((salary !== undefined && (!Number.isFinite(salary) || salary < 0)) || (serviceSpeed !== undefined && (!Number.isFinite(serviceSpeed) || serviceSpeed < 0))) {
+      setStaffStatus('Overrides must be non-negative numbers.');
+      return;
+    }
+    setPresetSaving(true);
+    const result = await upsertStaffPreset({ id, industryId: form.id, roleId, name: name || undefined, salary, serviceSpeed, emoji: presetForm.emoji?.trim() || undefined });
+    setPresetSaving(false);
+    if (!result.success) {
+      setStaffStatus(result.message ?? 'Failed to save preset.');
+      return;
+    }
+    setStaffPresets((prev) => {
+      const exists = prev.some((p) => p.id === id);
+      const nextItem: StaffPreset = { id, roleId, name: name || 'Staff' };
+      if (salary !== undefined) (nextItem as any).salary = salary;
+      if (serviceSpeed !== undefined) (nextItem as any).serviceSpeed = serviceSpeed;
+      if (presetForm.emoji?.trim()) (nextItem as any).emoji = presetForm.emoji.trim();
+      const next = exists ? prev.map((p) => (p.id === id ? nextItem : p)) : [...prev, nextItem];
+      return next.sort((a, b) => a.name.localeCompare(b.name));
+    });
+    setStaffStatus('Preset saved.');
+    setIsCreatingPreset(false);
+    setSelectedPresetId(id);
+  };
+
+  const handleDeletePreset = async () => {
+    if (isCreatingPreset || !selectedPresetId) return;
+    if (!window.confirm(`Delete preset "${presetForm.name || selectedPresetId}"?`)) return;
+    setPresetDeleting(true);
+    const result = await deleteStaffPreset(selectedPresetId);
+    setPresetDeleting(false);
+    if (!result.success) {
+      setStaffStatus(result.message ?? 'Failed to delete preset.');
+      return;
+    }
+    setStaffPresets((prev) => prev.filter((p) => p.id !== selectedPresetId));
+    setSelectedPresetId('');
+    setPresetForm({ id: '', roleId: staffRoles[0]?.id ?? '', name: '' });
+    setStaffStatus('Preset deleted.');
+  };
 
   const handleGlobalSave = async () => {
     setGlobalStatus(null);
@@ -1013,6 +1217,284 @@ export default function AdminPage() {
                         </div>
                       </form>
                     )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
+          <div className="p-6 border-b border-slate-800">
+            <h2 className="text-2xl font-semibold">Staff</h2>
+            <p className="text-sm text-slate-400 mt-1">Manage staff roles and initial presets for this industry.</p>
+          </div>
+          <div className="p-6 space-y-6">
+            {!form.id ? (
+              <div className="text-sm text-slate-400">Select or create an industry first.</div>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    onClick={handleCreateRole}
+                    className="px-3 py-2 text-sm font-medium rounded-lg border border-indigo-500 text-indigo-200 hover:bg-indigo-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isCreating || !form.id}
+                  >
+                    + New Role
+                  </button>
+                  {staffStatus && <span className="text-sm text-slate-300">{staffStatus}</span>}
+                </div>
+
+                {staffLoading ? (
+                  <div className="text-sm text-slate-400">Loading staff…</div>
+                ) : (
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">Roles</h3>
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {staffRoles.map((role) => (
+                          <button
+                            key={role.id}
+                            onClick={() => selectRole(role)}
+                            className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
+                              selectedRoleId === role.id && !isCreatingRole
+                                ? 'border-indigo-400 bg-indigo-500/10 text-indigo-200'
+                                : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
+                            }`}
+                          >
+                            {role.emoji} {role.name}
+                          </button>
+                        ))}
+                      </div>
+
+                      {(selectedRoleId || isCreatingRole) && (
+                        <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-300 mb-1">Role ID</label>
+                            <input
+                              value={roleForm.id}
+                              onChange={(e) => setRoleForm((p) => ({ ...p, id: e.target.value }))}
+                              disabled={!isCreatingRole && !!selectedRoleId}
+                              className={`w-full rounded-lg border px-3 py-2 text-slate-200 ${
+                                isCreatingRole || !selectedRoleId ? 'bg-slate-900 border-slate-600' : 'bg-slate-800 border-slate-700 cursor-not-allowed'
+                              }`}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-300 mb-1">Name</label>
+                            <input
+                              value={roleForm.name}
+                              onChange={(e) => setRoleForm((p) => ({ ...p, name: e.target.value }))}
+                              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-300 mb-1">Salary</label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={roleForm.salary}
+                              onChange={(e) => setRoleForm((p) => ({ ...p, salary: e.target.value }))}
+                              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-300 mb-1">Service Speed</label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={roleForm.serviceSpeed}
+                              onChange={(e) => setRoleForm((p) => ({ ...p, serviceSpeed: e.target.value }))}
+                              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-semibold text-slate-300 mb-1">Emoji</label>
+                            <input
+                              value={roleForm.emoji}
+                              onChange={(e) => setRoleForm((p) => ({ ...p, emoji: e.target.value }))}
+                              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                            />
+                          </div>
+                          <div className="md:col-span-2 flex flex-wrap gap-3">
+                            <button
+                              type="button"
+                              onClick={handleSaveRole}
+                              disabled={roleSaving || roleDeleting}
+                              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                                roleSaving ? 'bg-indigo-900 text-indigo-200 cursor-wait' : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                              }`}
+                            >
+                              {roleSaving ? 'Saving…' : 'Save Role'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (selectedRoleId && !isCreatingRole) {
+                                  const existing = staffRoles.find((r) => r.id === selectedRoleId);
+                                  if (existing) selectRole(existing);
+                                } else {
+                                  setIsCreatingRole(false);
+                                  setSelectedRoleId('');
+                                  setRoleForm({ id: '', name: '', salary: '0', serviceSpeed: '0', emoji: '🧑‍💼' });
+                                }
+                                setStaffStatus(null);
+                              }}
+                              disabled={roleSaving || roleDeleting}
+                              className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800"
+                            >
+                              {isCreatingRole ? 'Cancel' : 'Reset'}
+                            </button>
+                            {!isCreatingRole && selectedRoleId && (
+                              <button
+                                type="button"
+                                onClick={handleDeleteRole}
+                                disabled={roleDeleting || roleSaving}
+                                className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                                  roleDeleting ? 'bg-rose-900 text-rose-200 cursor-wait' : 'bg-rose-600 hover:bg-rose-500 text-white'
+                                }`}
+                              >
+                                {roleDeleting ? 'Deleting…' : 'Delete'}
+                              </button>
+                            )}
+                          </div>
+                        </form>
+                      )}
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-lg font-semibold">Initial Presets</h3>
+                        <button
+                          onClick={handleCreatePreset}
+                          className="px-3 py-2 text-sm font-medium rounded-lg border border-emerald-500 text-emerald-200 hover:bg-emerald-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={!form.id}
+                        >
+                          + New Preset
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {staffPresets.map((preset) => (
+                          <button
+                            key={preset.id}
+                            onClick={() => selectPreset(preset)}
+                            className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
+                              selectedPresetId === preset.id && !isCreatingPreset
+                                ? 'border-emerald-400 bg-emerald-500/10 text-emerald-200'
+                                : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
+                            }`}
+                          >
+                            {preset.name}
+                          </button>
+                        ))}
+                      </div>
+
+                      {(selectedPresetId || isCreatingPreset) && (
+                        <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-300 mb-1">Preset ID</label>
+                            <input
+                              value={presetForm.id}
+                              onChange={(e) => setPresetForm((p) => ({ ...p, id: e.target.value }))}
+                              disabled={!isCreatingPreset && !!selectedPresetId}
+                              className={`w-full rounded-lg border px-3 py-2 text-slate-200 ${
+                                isCreatingPreset || !selectedPresetId ? 'bg-slate-900 border-slate-600' : 'bg-slate-800 border-slate-700 cursor-not-allowed'
+                              }`}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-300 mb-1">Name (optional)</label>
+                            <input
+                              value={presetForm.name}
+                              onChange={(e) => setPresetForm((p) => ({ ...p, name: e.target.value }))}
+                              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-300 mb-1">Role</label>
+                            <select
+                              value={presetForm.roleId}
+                              onChange={(e) => setPresetForm((p) => ({ ...p, roleId: e.target.value }))}
+                              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                            >
+                              {staffRoles.map((role) => (
+                                <option key={role.id} value={role.id}>{role.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-300 mb-1">Salary Override</label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={presetForm.salary ?? ''}
+                              onChange={(e) => setPresetForm((p) => ({ ...p, salary: e.target.value }))}
+                              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-300 mb-1">Service Speed Override</label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={presetForm.serviceSpeed ?? ''}
+                              onChange={(e) => setPresetForm((p) => ({ ...p, serviceSpeed: e.target.value }))}
+                              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-semibold text-slate-300 mb-1">Emoji (optional)</label>
+                            <input
+                              value={presetForm.emoji ?? ''}
+                              onChange={(e) => setPresetForm((p) => ({ ...p, emoji: e.target.value }))}
+                              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                            />
+                          </div>
+                          <div className="md:col-span-2 flex flex-wrap gap-3">
+                            <button
+                              type="button"
+                              onClick={handleSavePreset}
+                              disabled={presetSaving || presetDeleting}
+                              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                                presetSaving ? 'bg-emerald-900 text-emerald-200 cursor-wait' : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                              }`}
+                            >
+                              {presetSaving ? 'Saving…' : 'Save Preset'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (selectedPresetId && !isCreatingPreset) {
+                                  const existing = staffPresets.find((p) => p.id === selectedPresetId);
+                                  if (existing) selectPreset(existing);
+                                } else {
+                                  setIsCreatingPreset(false);
+                                  setSelectedPresetId('');
+                                  setPresetForm({ id: '', roleId: staffRoles[0]?.id ?? '', name: '' });
+                                }
+                                setStaffStatus(null);
+                              }}
+                              disabled={presetSaving || presetDeleting}
+                              className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800"
+                            >
+                              {isCreatingPreset ? 'Cancel' : 'Reset'}
+                            </button>
+                            {!isCreatingPreset && selectedPresetId && (
+                              <button
+                                type="button"
+                                onClick={handleDeletePreset}
+                                disabled={presetDeleting || presetSaving}
+                                className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                                  presetDeleting ? 'bg-rose-900 text-rose-200 cursor-wait' : 'bg-rose-600 hover:bg-rose-500 text-white'
+                                }`}
+                              >
+                                {presetDeleting ? 'Deleting…' : 'Delete'}
+                              </button>
+                            )}
+                          </div>
+                        </form>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
