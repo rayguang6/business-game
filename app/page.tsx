@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import Image from 'next/image';
 import GameButton from '@/app/components/ui/GameButton';
 import { useAudio } from '@/hooks/useAudio';

@@ -3,31 +3,17 @@
  * Handles all service-related types and mechanics
  */
 
-// Types
-export interface Service {
-  id: string;
-  industryId: IndustryId;
-  name: string;
-  duration: number; // in seconds
-  price: number; // in dollars
-}
+import { getServicesForIndustry as getServiceDefinitionsForIndustry } from '@/lib/game/config';
+import { IndustryId, IndustryServiceDefinition } from '@/lib/game/types';
 
-// Mechanics
-import {
-  getServicesForIndustry as getIndustryServices,
-  DEFAULT_INDUSTRY_ID,
-} from '@/lib/game/config';
-import { IndustryId } from '@/lib/game/types';
+// Types
+export type Service = IndustryServiceDefinition;
 
 /**
  * Returns the available services for a given industry
  */
 export function getServicesForIndustry(industryId: IndustryId): Service[] {
-  const services = getIndustryServices(industryId);
-  if (!services || services.length === 0) {
-    return getIndustryServices(DEFAULT_INDUSTRY_ID).map((service) => ({ ...service }));
-  }
-  return services.map((service) => ({ ...service }));
+  return getServiceDefinitionsForIndustry(industryId);
 }
 /**
  * Gets a random service from the available services
@@ -35,6 +21,9 @@ export function getServicesForIndustry(industryId: IndustryId): Service[] {
  */
 export function getRandomService(industryId: IndustryId): Service {
   const services = getServicesForIndustry(industryId);
+  if (services.length === 0) {
+    throw new Error(`No services configured for industry "${industryId}".`);
+  }
   const randomIndex = Math.floor(Math.random() * services.length);
   return services[randomIndex];
 }
