@@ -28,6 +28,7 @@ export interface MarketingSlice {
   stopCampaign: () => void;
   tickMarketing: (currentGameTime: number) => void;
   resetMarketing: () => void;
+  setAvailableCampaigns: (campaigns: MarketingCampaign[]) => void;
 }
 
 /**
@@ -68,7 +69,7 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
       {
         metric: GameMetric.SpawnIntervalSeconds,
         type: EffectType.Add,
-        value: -1, // -1s spawn = faster customer flow
+        value: -1, // reduce spawn interval by 1 second
       },
     ],
   },
@@ -96,7 +97,7 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
       {
         metric: GameMetric.SpawnIntervalSeconds,
         type: EffectType.Percent,
-        value: 100, // +100% spawn speed = 2x customer flow
+        value: 100, // double the spawn speed (interval ÷ 2)
       },
       {
         metric: GameMetric.MonthlyExpenses,
@@ -115,7 +116,7 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
       {
         metric: GameMetric.ServiceRevenueFlatBonus,
         type: EffectType.Add,
-        value: 80, // +$80 per completed service
+        value: 80, // add $80 to each service
       },
     ],
   },
@@ -129,7 +130,7 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
       {
         metric: GameMetric.ServiceRevenueMultiplier,
         type: EffectType.Multiply,
-        value: 1.5, // +50% service revenue
+        value: 1.5, // multiply service revenue by 1.5
       },
     ],
   },
@@ -143,16 +144,21 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
       {
         metric: GameMetric.ServiceSpeedMultiplier,
         type: EffectType.Multiply,
-        value: 1.25, // ×1.25 service speed
+        value: 1.25, // speed up service by 25%
       },
       {
         metric: GameMetric.ServiceRooms,
         type: EffectType.Add,
-        value: 1, // +1 temporary service room
+        value: 1, // add one temporary service room
       },
     ],
   },
 ];
+
+const cloneCampaign = (campaign: MarketingCampaign): MarketingCampaign => ({
+  ...campaign,
+  effects: campaign.effects.map((effect) => ({ ...effect })),
+});
 
 export const getInitialMarketingState = (): Pick<
   MarketingSlice,
@@ -161,14 +167,28 @@ export const getInitialMarketingState = (): Pick<
   activeCampaign: null,
   campaignStartedAt: null,
   campaignEndsAt: null,
-  availableCampaigns: DEFAULT_CAMPAIGNS.map((campaign) => ({
-    ...campaign,
-    effects: campaign.effects.map((effect) => ({ ...effect })),
-  })),
+  availableCampaigns: DEFAULT_CAMPAIGNS.map(cloneCampaign),
 });
 
 export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlice> = (set, get) => ({
   ...getInitialMarketingState(),
+  setAvailableCampaigns: (campaigns: MarketingCampaign[]) => {
+    const { activeCampaign } = get();
+    if (activeCampaign) {
+      removeMarketingEffects(activeCampaign.id);
+    }
+    effectManager.clearCategory('marketing');
+
+    const nextBlueprints = campaigns.length > 0 ? campaigns : DEFAULT_CAMPAIGNS;
+    const cloned = nextBlueprints.map(cloneCampaign);
+
+    set({
+      activeCampaign: null,
+      campaignStartedAt: null,
+      campaignEndsAt: null,
+      availableCampaigns: cloned,
+    });
+  },
 
   startCampaign: (campaignId: string) => {
     const campaign = get().availableCampaigns.find((item) => item.id === campaignId);
@@ -255,6 +275,14 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       removeMarketingEffects(activeCampaign.id);
     }
     effectManager.clearCategory('marketing');
-    set(getInitialMarketingState());
+    set((state) => ({
+      activeCampaign: null,
+      campaignStartedAt: null,
+      campaignEndsAt: null,
+      availableCampaigns:
+        state.availableCampaigns.length > 0
+          ? state.availableCampaigns.map(cloneCampaign)
+          : DEFAULT_CAMPAIGNS.map(cloneCampaign),
+    }));
   },
 });
