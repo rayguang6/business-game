@@ -1,4 +1,4 @@
-import { sampleEvents } from './events';
+// import { sampleEvents } from './events';
 import type { GameEvent } from '@/lib/types/gameEvents';
 import {
   BusinessMetrics,
@@ -101,8 +101,8 @@ const DEFAULT_CUSTOMER_IMAGES = [
 // -----------------------------------------------------------------------------
 // Industry Specific
 // -----------------------------------------------------------------------------
-// NOTE: legacy service definitions retained for reference/seeding.
 /*
+// NOTE: legacy service definitions retained for reference/seeding.
 const SERVICE_DEFINITIONS: IndustryServiceDefinition[] = [
   { id: 'dental_cleaning', industryId: 'dental', name: 'Teeth Cleaning', duration: 5, price: 500 },
   { id: 'dental_filling', industryId: 'dental', name: 'Cavity Filling', duration: 5, price: 700 },
@@ -114,22 +114,21 @@ const SERVICE_DEFINITIONS: IndustryServiceDefinition[] = [
   { id: 'gym_group_class', industryId: 'gym', name: 'Group Fitness Class', duration: 8, price: 95 },
   { id: 'gym_personal_training', industryId: 'gym', name: 'Personal Training', duration: 11, price: 140 },
 ];
-*/
 
 // NOTE: legacy upgrade definitions retained below for reference/seeding.
-/*
 const DENTAL_UPGRADES: UpgradeDefinition[] = [
   ...
 ];
-*/
 
-const DENTAL_EVENTS: GameEvent[] = [...sampleEvents];
-
-/*
 const RESTAURANT_UPGRADES: UpgradeDefinition[] = [
   ...
 ];
-*/
+
+const GYM_UPGRADES: UpgradeDefinition[] = [
+  ...
+];
+
+const DENTAL_EVENTS: GameEvent[] = [...sampleEvents];
 
 const RESTAURANT_EVENTS: GameEvent[] = [
   {
@@ -276,12 +275,6 @@ const RESTAURANT_EVENTS: GameEvent[] = [
   },
 ];
 
-/*
-const GYM_UPGRADES: UpgradeDefinition[] = [
-  ...
-];
-*/
-
 const GYM_EVENTS: GameEvent[] = [
   {
     id: 'gym-equipment-upgrade',
@@ -426,6 +419,7 @@ const GYM_EVENTS: GameEvent[] = [
     ],
   },
 ];
+*/
 
 const SHARED_BASE = {
   businessMetrics: DEFAULT_BUSINESS_METRICS,
@@ -439,6 +433,7 @@ const SHARED_BASE = {
 
 const SERVICES_BY_INDUSTRY: Record<string, IndustryServiceDefinition[]> = {};
 const UPGRADES_BY_INDUSTRY: Record<string, UpgradeDefinition[]> = {};
+const EVENTS_BY_INDUSTRY: Record<string, GameEvent[]> = {};
 
 function getStaticServicesForIndustry(industryId: IndustryId): IndustryServiceDefinition[] {
   const services = SERVICES_BY_INDUSTRY[industryId] ?? [];
@@ -453,27 +448,42 @@ function getStaticUpgradesForIndustry(industryId: IndustryId): UpgradeDefinition
   }));
 }
 
+function getStaticEventsForIndustry(industryId: IndustryId): GameEvent[] {
+  const events = EVENTS_BY_INDUSTRY[industryId] ?? [];
+  return events.map((event) => ({
+    ...event,
+    choices: event.choices.map((choice) => ({
+      ...choice,
+      consequences: choice.consequences.map((consequence) => ({
+        ...consequence,
+        effects: consequence.effects.map((effect) => ({ ...effect })),
+        temporaryEffects: (consequence.temporaryEffects ?? []).map((effect) => ({ ...effect })),
+      })),
+    })),
+  }));
+}
+
 const INDUSTRY_SIMULATION_CONFIGS: Record<string, IndustrySimulationConfig> = {
   [DEFAULT_INDUSTRY_ID]: {
     id: DEFAULT_INDUSTRY_ID,
     ...SHARED_BASE,
     services: getStaticServicesForIndustry(DEFAULT_INDUSTRY_ID),
     upgrades: getStaticUpgradesForIndustry(DEFAULT_INDUSTRY_ID),
-    events: DENTAL_EVENTS,
+    events: getStaticEventsForIndustry(DEFAULT_INDUSTRY_ID),
   },
   restaurant: {
     id: 'restaurant',
     ...SHARED_BASE,
     services: getStaticServicesForIndustry('restaurant'),
     upgrades: getStaticUpgradesForIndustry('restaurant'),
-    events: RESTAURANT_EVENTS,
+    events: getStaticEventsForIndustry('restaurant'),
   },
   gym: {
     id: 'gym',
     ...SHARED_BASE,
     services: getStaticServicesForIndustry('gym'),
     upgrades: getStaticUpgradesForIndustry('gym'),
-    events: GYM_EVENTS,
+    events: getStaticEventsForIndustry('gym'),
   },
 };
 
@@ -503,7 +513,7 @@ export function setIndustryServices(
     ...SHARED_BASE,
     services: nextServices,
     upgrades: getStaticUpgradesForIndustry(industryId),
-    events: [],
+    events: getStaticEventsForIndustry(industryId),
   };
 }
 
@@ -532,6 +542,46 @@ export function setIndustryUpgrades(
     ...SHARED_BASE,
     services: getStaticServicesForIndustry(industryId),
     upgrades: nextUpgrades,
-    events: [],
+    events: getStaticEventsForIndustry(industryId),
+  };
+}
+
+export function setIndustryEvents(industryId: IndustryId, events: GameEvent[]): void {
+  const nextEvents = events.map((event) => ({
+    ...event,
+    choices: event.choices.map((choice) => ({
+      ...choice,
+      consequences: choice.consequences.map((consequence) => ({
+        ...consequence,
+        effects: consequence.effects.map((effect) => ({ ...effect })),
+        temporaryEffects: (consequence.temporaryEffects ?? []).map((effect) => ({ ...effect })),
+      })),
+    })),
+  }));
+
+  EVENTS_BY_INDUSTRY[industryId] = nextEvents.map((event) => ({
+    ...event,
+    choices: event.choices.map((choice) => ({
+      ...choice,
+      consequences: choice.consequences.map((consequence) => ({
+        ...consequence,
+        effects: consequence.effects.map((effect) => ({ ...effect })),
+        temporaryEffects: (consequence.temporaryEffects ?? []).map((effect) => ({ ...effect })),
+      })),
+    })),
+  }));
+
+  const config = INDUSTRY_SIMULATION_CONFIGS[industryId];
+  if (config) {
+    config.events = nextEvents;
+    return;
+  }
+
+  INDUSTRY_SIMULATION_CONFIGS[industryId] = {
+    id: industryId,
+    ...SHARED_BASE,
+    services: getStaticServicesForIndustry(industryId),
+    upgrades: getStaticUpgradesForIndustry(industryId),
+    events: nextEvents,
   };
 }

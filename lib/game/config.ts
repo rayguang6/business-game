@@ -87,7 +87,17 @@ export function getUpgradesForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY
 }
 
 export function getEventsForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
-  return getSimulationConfig(industryId).events;
+  return getSimulationConfig(industryId).events.map((event) => ({
+    ...event,
+    choices: event.choices.map((choice) => ({
+      ...choice,
+      consequences: choice.consequences.map((consequence) => ({
+        ...consequence,
+        effects: consequence.effects.map((effect) => ({ ...effect })),
+        temporaryEffects: (consequence.temporaryEffects ?? []).map((effect) => ({ ...effect })),
+      })),
+    })),
+  }));
 }
 
 export function getCustomerImagesForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
