@@ -12,7 +12,9 @@ import {
   deleteServiceById,
 } from '@/lib/data/serviceRepository';
 import type { Industry } from '@/lib/features/industries';
-import type { IndustryServiceDefinition } from '@/lib/game/types';
+import type { IndustryServiceDefinition, BusinessMetrics, BusinessStats, MovementConfig } from '@/lib/game/types';
+import { fetchGlobalSimulationConfig, upsertGlobalSimulationConfig } from '@/lib/data/simulationConfigRepository';
+import { getGlobalSimulationConfigValues, setGlobalSimulationConfigValues } from '@/lib/game/industryConfigs';
 
 interface FormState {
   id: string;
@@ -66,6 +68,18 @@ export default function AdminPage() {
   const [serviceSaving, setServiceSaving] = useState(false);
   const [serviceDeleting, setServiceDeleting] = useState(false);
   const [isCreatingService, setIsCreatingService] = useState(false);
+
+  // Global simulation config state (JSON textareas for careful, incremental rollout)
+  const initialGlobal = getGlobalSimulationConfigValues();
+  const [metrics, setMetrics] = useState<BusinessMetrics>({ ...initialGlobal.businessMetrics });
+  const [stats, setStats] = useState<BusinessStats>({ ...initialGlobal.businessStats });
+  const [eventSecondsInput, setEventSecondsInput] = useState<string>(
+    (initialGlobal.businessStats.eventTriggerSeconds || []).join(',')
+  );
+  const [movementJSON, setMovementJSON] = useState<string>(JSON.stringify(initialGlobal.movement, null, 2));
+  const [globalStatus, setGlobalStatus] = useState<string | null>(null);
+  const [globalLoading, setGlobalLoading] = useState<boolean>(false);
+  const [globalSaving, setGlobalSaving] = useState<boolean>(false);
 
   const selectService = (service: IndustryServiceDefinition, resetMessage: boolean = true) => {
     setSelectedServiceId(service.id);
@@ -125,6 +139,19 @@ export default function AdminPage() {
       setError(null);
 
       try {
+        // Load global simulation config first
+        setGlobalLoading(true);
+        const global = await fetchGlobalSimulationConfig();
+        if (isMounted && global) {
+          if (global.businessMetrics) setMetrics(global.businessMetrics);
+          if (global.businessStats) {
+            setStats(global.businessStats);
+            setEventSecondsInput((global.businessStats.eventTriggerSeconds || []).join(','));
+          }
+          if (global.movement) setMovementJSON(JSON.stringify(global.movement, null, 2));
+        }
+        setGlobalLoading(false);
+
         const data = await fetchIndustriesFromSupabase();
         if (!isMounted) {
           return;
@@ -152,6 +179,46 @@ export default function AdminPage() {
       isMounted = false;
     };
   }, []);
+
+  const handleGlobalSave = async () => {
+    setGlobalStatus(null);
+    let businessMetrics: BusinessMetrics = metrics;
+    let businessStats: BusinessStats = { ...stats };
+    let movement: any;
+
+    // Normalize Business Stats derived inputs
+    const parsedEventSeconds = eventSecondsInput
+      .split(',')
+      .map((s) => Number(s.trim()))
+      .filter((n) => Number.isFinite(n) && n >= 0);
+    businessStats.eventTriggerSeconds = parsedEventSeconds;
+    try {
+      movement = JSON.parse(movementJSON);
+    } catch (e) {
+      setGlobalStatus('Invalid JSON in Movement.');
+      return;
+    }
+
+    setGlobalSaving(true);
+    const result = await upsertGlobalSimulationConfig({
+      businessMetrics,
+      businessStats,
+      movement,
+    });
+    setGlobalSaving(false);
+
+    if (!result.success) {
+      setGlobalStatus(result.message ?? 'Failed to save global config.');
+      return;
+    }
+
+    setGlobalSimulationConfigValues({
+      businessMetrics,
+      businessStats,
+      movement,
+    });
+    setGlobalStatus('Global config saved.');
+  };
 
   const handleSelect = (industryId: string) => {
     const selected = industries.find((item) => item.id === industryId);
@@ -366,6 +433,225 @@ export default function AdminPage() {
 
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
+            <h2 className="text-2xl font-semibold">Global Simulation Config</h2>
+            <p className="text-sm text-slate-400 mt-1">Edit core defaults used by all industries.</p>
+          </div>
+          <div className="p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-400">{globalLoading ? 'Loading…' : ' '}</span>
+              {globalStatus && <span className="text-sm text-slate-300">{globalStatus}</span>}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-slate-300">Business Metrics</label>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Starting Cash</label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      value={metrics.startingCash}
+                      onChange={(e) => setMetrics((prev) => ({ ...prev, startingCash: Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Monthly Expenses</label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      value={metrics.monthlyExpenses}
+                      onChange={(e) => setMetrics((prev) => ({ ...prev, monthlyExpenses: Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Starting Reputation</label>
+                    <input
+                      type="number"
+                      className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      value={metrics.startingReputation}
+                      onChange={(e) => setMetrics((prev) => ({ ...prev, startingReputation: Number(e.target.value) }))}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-slate-300">Business Stats</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Ticks Per Second</label>
+                    <input
+                      type="number"
+                      min="1"
+                      className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      value={stats.ticksPerSecond}
+                      onChange={(e) => setStats((p) => ({ ...p, ticksPerSecond: Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Month Duration (sec)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      value={stats.monthDurationSeconds}
+                      onChange={(e) => setStats((p) => ({ ...p, monthDurationSeconds: Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Customer Spawn Interval (sec)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      value={stats.customerSpawnIntervalSeconds}
+                      onChange={(e) => setStats((p) => ({ ...p, customerSpawnIntervalSeconds: Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Customer Patience (sec)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      value={stats.customerPatienceSeconds}
+                      onChange={(e) => setStats((p) => ({ ...p, customerPatienceSeconds: Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Leaving Angry Duration (ticks)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      value={stats.leavingAngryDurationTicks}
+                      onChange={(e) => setStats((p) => ({ ...p, leavingAngryDurationTicks: Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Treatment Rooms</label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      value={stats.treatmentRooms}
+                      onChange={(e) => setStats((p) => ({ ...p, treatmentRooms: Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Rep Gain per Happy</label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      value={stats.reputationGainPerHappyCustomer}
+                      onChange={(e) => setStats((p) => ({ ...p, reputationGainPerHappyCustomer: Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Rep Loss per Angry</label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      value={stats.reputationLossPerAngryCustomer}
+                      onChange={(e) => setStats((p) => ({ ...p, reputationLossPerAngryCustomer: Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Base Happy Probability</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="1"
+                      className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      value={stats.baseHappyProbability}
+                      onChange={(e) => setStats((p) => ({ ...p, baseHappyProbability: Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs text-slate-400 mb-1">Event Trigger Seconds (comma-separated)</label>
+                    <input
+                      type="text"
+                      className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      value={eventSecondsInput}
+                      onChange={(e) => setEventSecondsInput(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Service Revenue Multiplier</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      value={stats.serviceRevenueMultiplier}
+                      onChange={(e) => setStats((p) => ({ ...p, serviceRevenueMultiplier: Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Service Revenue Scale</label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      value={stats.serviceRevenueScale}
+                      onChange={(e) => setStats((p) => ({ ...p, serviceRevenueScale: Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Spawn Position X</label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      value={stats.customerSpawnPosition.x}
+                      onChange={(e) => setStats((p) => ({ ...p, customerSpawnPosition: { ...p.customerSpawnPosition, x: Number(e.target.value) } }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Spawn Position Y</label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      value={stats.customerSpawnPosition.y}
+                      onChange={(e) => setStats((p) => ({ ...p, customerSpawnPosition: { ...p.customerSpawnPosition, y: Number(e.target.value) } }))}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-slate-300">Movement</label>
+                <textarea
+                  rows={10}
+                  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200 font-mono text-xs"
+                  value={movementJSON}
+                  onChange={(e) => setMovementJSON(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleGlobalSave}
+                disabled={globalSaving}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                  globalSaving ? 'bg-amber-900 text-amber-200 cursor-wait' : 'bg-amber-600 hover:bg-amber-500 text-white'
+                }`}
+              >
+                {globalSaving ? 'Saving…' : 'Save Global Config'}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
+          <div className="p-6 border-b border-slate-800">
             <h2 className="text-2xl font-semibold">Industries</h2>
             <p className="text-sm text-slate-400 mt-1">
               Select an industry and edit its basic metadata. Changes persist immediately to Supabase.
@@ -518,6 +804,7 @@ export default function AdminPage() {
                                   description: current.description,
                                   image: current.image ?? '',
                                   mapImage: current.mapImage ?? '',
+                                  isAvailable: current.isAvailable ?? true,
                                 });
                               }
                             } else {
