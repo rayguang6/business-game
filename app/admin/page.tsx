@@ -28,6 +28,8 @@ import type { UpgradeDefinition, UpgradeEffect } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import { fetchMarketingCampaigns, upsertMarketingCampaign, deleteMarketingCampaign } from '@/lib/data/marketingRepository';
 import type { MarketingCampaign } from '@/lib/store/slices/marketingSlice';
+import { fetchEventsForIndustry, upsertEventForIndustry, deleteEventById } from '@/lib/data/eventRepository';
+import type { GameEvent, GameEventChoice, GameEventConsequence, GameEventEffect, GameEventTemporaryEffect } from '@/lib/types/gameEvents';
 
 interface FormState {
   id: string;
@@ -134,6 +136,63 @@ export default function AdminPage() {
   const [campaignForm, setCampaignForm] = useState<{ id: string; name: string; description: string; cost: string; durationSeconds: string }>({ id: '', name: '', description: '', cost: '0', durationSeconds: '10' });
   const [campaignEffectsForm, setCampaignEffectsForm] = useState<Array<{ metric: GameMetric; type: EffectType; value: string }>>([]);
 
+  // Events management state (base only for now)
+  const [events, setEvents] = useState<GameEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState<boolean>(false);
+  const [eventStatus, setEventStatus] = useState<string | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<string>('');
+  const [isCreatingEvent, setIsCreatingEvent] = useState<boolean>(false);
+  const [eventSaving, setEventSaving] = useState<boolean>(false);
+  const [eventDeleting, setEventDeleting] = useState<boolean>(false);
+  const [eventForm, setEventForm] = useState<{ id: string; title: string; category: 'opportunity' | 'risk'; summary: string }>({ id: '', title: '', category: 'opportunity', summary: '' });
+  const [eventChoices, setEventChoices] = useState<GameEventChoice[]>([]);
+  const [selectedChoiceId, setSelectedChoiceId] = useState<string>('');
+  const [isCreatingChoice, setIsCreatingChoice] = useState<boolean>(false);
+  const [choiceForm, setChoiceForm] = useState<{ id: string; label: string; description: string; cost: string }>({ id: '', label: '', description: '', cost: '' });
+
+  // Consequences editor state for the selected choice
+  const [selectedConsequenceId, setSelectedConsequenceId] = useState<string>('');
+  const [isCreatingConsequence, setIsCreatingConsequence] = useState<boolean>(false);
+  const [consequenceForm, setConsequenceForm] = useState<{
+    id: string;
+    label: string;
+    description: string;
+    weight: string;
+    effects: Array<{ type: 'cash' | 'reputation'; amount: string; label?: string }>;
+    temporaryEffects: Array<{ metric: GameMetric; type: EffectType; value: string; durationSeconds: string; priority?: string }>;
+  }>({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+
+  // Persist helper: upserts the current event with provided choices
+  const persistEventWithChoices = async (nextChoices: GameEventChoice[], successMessage: string = 'Event saved.') => {
+    if (!form.id || !eventForm.id) {
+      setEventStatus('Saved locally. Save Event to persist.');
+      return;
+    }
+    const id = eventForm.id.trim();
+    const title = eventForm.title.trim();
+    const summary = eventForm.summary.trim();
+    const category = eventForm.category;
+    if (!id || !title || !summary) {
+      setEventStatus('Saved locally. Fill required fields to persist.');
+      return;
+    }
+    const payload: GameEvent = { id, title, category, summary, choices: nextChoices } as GameEvent;
+    setEventSaving(true);
+    const result = await upsertEventForIndustry(form.id, payload);
+    setEventSaving(false);
+    if (!result.success) {
+      setEventStatus(result.message ?? 'Failed to save event.');
+      return;
+    }
+    setEvents((prev) => {
+      const exists = prev.some((e) => e.id === id);
+      const nextItem: GameEvent = payload;
+      const next = exists ? prev.map((e) => (e.id === id ? nextItem : e)) : [...prev, nextItem];
+      return next.sort((a, b) => a.title.localeCompare(b.title));
+    });
+    setEventStatus(successMessage);
+  };
+
   const METRIC_OPTIONS: { value: GameMetric; label: string }[] = [
     { value: GameMetric.ServiceRooms, label: 'Service Rooms' },
     { value: GameMetric.MonthlyExpenses, label: 'Monthly Expenses' },
@@ -151,6 +210,15 @@ export default function AdminPage() {
     { value: EffectType.Multiply, label: 'Multiply (×)', hint: 'Multiply the value, e.g. ×1.5 for 50% boost' },
     { value: EffectType.Set, label: 'Set (=)', hint: 'Force a value to a number, overwrites others' },
   ];
+
+  const makeUniqueId = (base: string, existingIds: Set<string>): string => {
+    let candidate = base;
+    let counter = 2;
+    while (existingIds.has(candidate)) {
+      candidate = `${base}-${counter++}`;
+    }
+    return candidate;
+  };
 
   const selectService = (service: IndustryServiceDefinition, resetMessage: boolean = true) => {
     setSelectedServiceId(service.id);
@@ -203,6 +271,7 @@ export default function AdminPage() {
     loadStaffForIndustry(industry.id);
     loadUpgradesForIndustry(industry.id);
     loadMarketingCampaigns();
+    loadEventsForIndustry(industry.id);
   };
 
   useEffect(() => {
@@ -435,6 +504,236 @@ export default function AdminPage() {
     setCampaignForm({ id: '', name: '', description: '', cost: '0', durationSeconds: '10' });
     setCampaignEffectsForm([]);
     setCampaignStatus('Campaign deleted.');
+  };
+
+  const loadEventsForIndustry = async (industryId: string) => {
+    setEventsLoading(true);
+    setEventStatus(null);
+    setEvents([]);
+    setSelectedEventId('');
+    setIsCreatingEvent(false);
+    setEventForm({ id: '', title: '', category: 'opportunity', summary: '' });
+    setEventChoices([]);
+    const result = await fetchEventsForIndustry(industryId);
+    setEventsLoading(false);
+    if (!result) return;
+    const sorted = result.slice().sort((a, b) => a.title.localeCompare(b.title));
+    setEvents(sorted);
+    if (sorted.length > 0) selectEvent(sorted[0], false);
+  };
+
+  const selectEvent = (event: GameEvent, resetMsg = true) => {
+    setSelectedEventId(event.id);
+    setIsCreatingEvent(false);
+    setEventForm({ id: event.id, title: event.title, category: event.category, summary: event.summary });
+    setEventChoices(event.choices);
+    setSelectedChoiceId('');
+    setIsCreatingChoice(false);
+    setChoiceForm({ id: '', label: '', description: '', cost: '' });
+    setSelectedConsequenceId('');
+    setIsCreatingConsequence(false);
+    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+    if (resetMsg) setEventStatus(null);
+  };
+
+  const handleCreateEvent = () => {
+    if (!form.id) { setEventStatus('Save the industry first.'); return; }
+    setIsCreatingEvent(true);
+    setSelectedEventId('');
+    setEventForm({ id: '', title: '', category: 'opportunity', summary: '' });
+    setEventChoices([]);
+    setSelectedChoiceId('');
+    setIsCreatingChoice(false);
+    setChoiceForm({ id: '', label: '', description: '', cost: '' });
+    setSelectedConsequenceId('');
+    setIsCreatingConsequence(false);
+    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+    setEventStatus(null);
+  };
+
+  const handleSaveEvent = async () => {
+    if (!form.id) { setEventStatus('Save the industry first.'); return; }
+    const id = eventForm.id.trim();
+    const title = eventForm.title.trim();
+    const summary = eventForm.summary.trim();
+    const category = eventForm.category;
+    if (!id || !title || !summary) { setEventStatus('Event id, title and summary are required.'); return; }
+    const payload: GameEvent = { id, title, category, summary, choices: eventChoices } as GameEvent;
+    setEventSaving(true);
+    const result = await upsertEventForIndustry(form.id, payload);
+    setEventSaving(false);
+    if (!result.success) { setEventStatus(result.message ?? 'Failed to save event.'); return; }
+    setEvents((prev) => {
+      const exists = prev.some((e) => e.id === id);
+      const nextItem: GameEvent = payload;
+      const next = exists ? prev.map((e) => (e.id === id ? nextItem : e)) : [...prev, nextItem];
+      return next.sort((a, b) => a.title.localeCompare(b.title));
+    });
+    setEventStatus('Event saved.');
+    setIsCreatingEvent(false);
+    setSelectedEventId(id);
+  };
+
+  const handleDeleteEvent = async () => {
+    if (isCreatingEvent || !selectedEventId) return;
+    if (!window.confirm(`Delete event "${eventForm.title || selectedEventId}"?`)) return;
+    setEventDeleting(true);
+    const result = await deleteEventById(selectedEventId);
+    setEventDeleting(false);
+    if (!result.success) { setEventStatus(result.message ?? 'Failed to delete event.'); return; }
+    setEvents((prev) => prev.filter((e) => e.id !== selectedEventId));
+    setSelectedEventId('');
+    setEventForm({ id: '', title: '', category: 'opportunity', summary: '' });
+    setEventChoices([]);
+    setSelectedChoiceId('');
+    setIsCreatingChoice(false);
+    setChoiceForm({ id: '', label: '', description: '', cost: '' });
+    setSelectedConsequenceId('');
+    setIsCreatingConsequence(false);
+    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+    setEventStatus('Event deleted.');
+  };
+
+  const selectChoice = (choice: GameEventChoice) => {
+    setIsCreatingChoice(false);
+    setSelectedChoiceId(choice.id);
+    setChoiceForm({ id: choice.id, label: choice.label, description: choice.description ?? '', cost: choice.cost !== undefined ? String(choice.cost) : '' });
+    setSelectedConsequenceId('');
+    setIsCreatingConsequence(false);
+    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+  };
+
+  const handleCreateChoice = () => {
+    if (!selectedEventId && !isCreatingEvent) { setEventStatus('Create or select an event first.'); return; }
+    setIsCreatingChoice(true);
+    setSelectedChoiceId('');
+    setChoiceForm({ id: '', label: '', description: '', cost: '' });
+    setSelectedConsequenceId('');
+    setIsCreatingConsequence(false);
+    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+  };
+
+  const handleSaveChoice = () => {
+    const id = choiceForm.id.trim();
+    const label = choiceForm.label.trim();
+    const description = choiceForm.description.trim();
+    const cost = choiceForm.cost.trim() === '' ? undefined : Number(choiceForm.cost);
+    if (!id || !label) { setEventStatus('Choice id and label are required.'); return; }
+    if (cost !== undefined && (!Number.isFinite(cost) || cost < 0)) { setEventStatus('Choice cost must be a non-negative number.'); return; }
+
+    const exists = eventChoices.some((c) => c.id === id);
+    const nextItem: GameEventChoice = { id, label, description: description || undefined, cost, consequences: exists ? eventChoices.find(c => c.id === id)!.consequences : [] };
+    const next = (exists ? eventChoices.map((c) => (c.id === id ? nextItem : c)) : [...eventChoices, nextItem])
+      .sort((a, b) => a.label.localeCompare(b.label));
+    setEventChoices(next);
+    setIsCreatingChoice(false);
+    setSelectedChoiceId(id);
+    void persistEventWithChoices(next, 'Choice saved.');
+  };
+
+  const handleDeleteChoice = () => {
+    if (isCreatingChoice || !selectedChoiceId) return;
+    const next = eventChoices.filter((c) => c.id !== selectedChoiceId);
+    setEventChoices(next);
+    setSelectedChoiceId('');
+    setChoiceForm({ id: '', label: '', description: '', cost: '' });
+    setSelectedConsequenceId('');
+    setIsCreatingConsequence(false);
+    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+    void persistEventWithChoices(next, 'Choice deleted.');
+  };
+
+  const selectConsequence = (consequence: GameEventConsequence) => {
+    setIsCreatingConsequence(false);
+    setSelectedConsequenceId(consequence.id);
+    setConsequenceForm({
+      id: consequence.id,
+      label: consequence.label ?? '',
+      description: consequence.description ?? '',
+      weight: String(consequence.weight),
+      effects: consequence.effects.map((ef: GameEventEffect) =>
+        ef.type === 'cash'
+          ? { type: 'cash', amount: String(ef.amount), label: ef.label }
+          : { type: 'reputation', amount: String(ef.amount) }
+      ),
+      temporaryEffects: (consequence.temporaryEffects ?? []).map((t: GameEventTemporaryEffect) => ({
+        metric: t.metric,
+        type: t.type,
+        value: String(t.value),
+        durationSeconds: String(t.durationSeconds),
+        priority: t.priority !== undefined ? String(t.priority) : undefined,
+      })),
+    });
+  };
+
+  const handleCreateConsequence = () => {
+    if (!selectedChoiceId && !isCreatingChoice) { setEventStatus('Create or select a choice first.'); return; }
+    setIsCreatingConsequence(true);
+    setSelectedConsequenceId('');
+    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+  };
+
+  const handleSaveConsequence = () => {
+    if (!selectedChoiceId && !isCreatingChoice) { setEventStatus('Create or select a choice first.'); return; }
+    const id = consequenceForm.id.trim();
+    const label = consequenceForm.label.trim();
+    const description = consequenceForm.description.trim();
+    const weightNum = Number(consequenceForm.weight);
+    if (!id || !Number.isInteger(weightNum) || weightNum <= 0) { setEventStatus('Consequence id and positive integer weight are required.'); return; }
+
+    const normalizedEffects = consequenceForm.effects.map((ef) => ({
+      type: ef.type,
+      amount: Number(ef.amount) || 0,
+      ...(ef.type === 'cash' && ef.label ? { label: ef.label } : {}),
+    })) as GameEventEffect[];
+
+    const normalizedTemps = consequenceForm.temporaryEffects.map((t) => ({
+      metric: t.metric,
+      type: t.type,
+      value: Number(t.value) || 0,
+      durationSeconds: Number(t.durationSeconds) || 0,
+      priority: t.priority !== undefined && t.priority !== '' ? Number(t.priority) : undefined,
+    }));
+
+    const idx = eventChoices.findIndex((c) => c.id === selectedChoiceId);
+    if (idx === -1) return;
+    const choice = eventChoices[idx];
+    const exists = choice.consequences.some((cs) => cs.id === id);
+    const nextConsequence: GameEventConsequence = {
+      id,
+      label: label || undefined,
+      description: description || undefined,
+      weight: weightNum,
+      effects: normalizedEffects,
+      temporaryEffects: normalizedTemps.length ? normalizedTemps : undefined,
+    };
+    const nextConsequences = exists
+      ? choice.consequences.map((cs) => (cs.id === id ? nextConsequence : cs))
+      : [...choice.consequences, nextConsequence];
+    const nextChoice: GameEventChoice = { ...choice, consequences: nextConsequences };
+    const next = [...eventChoices];
+    next[idx] = nextChoice;
+    setEventChoices(next);
+    setIsCreatingConsequence(false);
+    setSelectedConsequenceId(id);
+    void persistEventWithChoices(next, 'Consequence saved.');
+  };
+
+  const handleDeleteConsequence = () => {
+    if (isCreatingConsequence || !selectedConsequenceId) return;
+    const idx = eventChoices.findIndex((c) => c.id === selectedChoiceId);
+    if (idx === -1) return;
+    const choice = eventChoices[idx];
+    const nextChoice: GameEventChoice = {
+      ...choice,
+      consequences: choice.consequences.filter((cs) => cs.id !== selectedConsequenceId),
+    };
+    const next = [...eventChoices];
+    next[idx] = nextChoice;
+    setEventChoices(next);
+    setSelectedConsequenceId('');
+    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+    void persistEventWithChoices(next, 'Consequence deleted.');
   };
 
   const selectRole = (role: StaffRoleConfig) => {
@@ -1055,6 +1354,783 @@ export default function AdminPage() {
 
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
+            <h2 className="text-2xl font-semibold">Industries</h2>
+            <p className="text-sm text-slate-400 mt-1">
+              Select an industry and edit its basic metadata. Changes persist immediately to Supabase.
+            </p>
+          </div>
+
+          <div className="p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <button
+                onClick={handleCreateNew}
+                className="px-3 py-2 text-sm font-medium rounded-lg border border-sky-500 text-sky-200 hover:bg-sky-500/10"
+              >
+                + New Industry
+              </button>
+              {statusMessage && (
+                <span className="text-sm text-slate-300">{statusMessage}</span>
+              )}
+            </div>
+
+            {isLoading ? (
+              <div className="text-sm text-slate-400">Loading industries...</div>
+            ) : error ? (
+              <div className="text-sm text-rose-400">{error}</div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {industries.map((industry) => (
+                    <button
+                      key={industry.id}
+                      onClick={() => handleSelect(industry.id)}
+                      className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
+                        form.id === industry.id
+                          ? 'border-sky-400 bg-sky-500/10 text-sky-200'
+                          : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
+                      }`}
+                    >
+                      {industry.icon} {industry.name}
+                    </button>
+                  ))}
+                </div>
+
+                {form.id || isCreating ? (
+                  <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">
+                        Industry ID
+                      </label>
+                      <input
+                        value={form.id}
+                        onChange={(event) =>
+                          setForm((prev) => ({ ...prev, id: event.target.value }))
+                        }
+                        disabled={!isCreating}
+                        className={`w-full rounded-lg border px-3 py-2 text-slate-200 ${
+                          isCreating
+                            ? 'bg-slate-900 border-slate-600'
+                            : 'bg-slate-800 border-slate-700 cursor-not-allowed'
+                        }`}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Name</label>
+                      <input
+                        value={form.name}
+                        onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+                        onBlur={() => {
+                          if (isCreating && !form.id && form.name.trim()) {
+                            const base = slugify(form.name.trim());
+                            const unique = makeUniqueId(base, new Set(industries.map((i) => i.id)));
+                            setForm((prev) => ({ ...prev, id: unique }));
+                          }
+                        }}
+                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Icon</label>
+                      <input
+                        value={form.icon}
+                        onChange={(event) => setForm((prev) => ({ ...prev, icon: event.target.value }))}
+                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">
+                        Short Description
+                      </label>
+                      <textarea
+                        value={form.description}
+                        onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
+                        rows={3}
+                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Image URL</label>
+                      <input
+                        value={form.image}
+                        onChange={(event) => setForm((prev) => ({ ...prev, image: event.target.value }))}
+                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Map Image URL</label>
+                      <input
+                        value={form.mapImage}
+                        onChange={(event) => setForm((prev) => ({ ...prev, mapImage: event.target.value }))}
+                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2 flex items-center gap-2">
+                      <input
+                        id="industry-available"
+                        type="checkbox"
+                        checked={form.isAvailable}
+                        onChange={(event) =>
+                          setForm((prev) => ({ ...prev, isAvailable: event.target.checked }))
+                        }
+                        className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-sky-500 focus:ring-sky-400"
+                      />
+                      <label htmlFor="industry-available" className="text-sm font-semibold text-slate-300">
+                        Available for selection
+                      </label>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          onClick={handleSave}
+                          disabled={isSaving || isDeleting}
+                          className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                            isSaving
+                              ? 'bg-sky-900 text-sky-300 cursor-wait'
+                              : 'bg-sky-600 hover:bg-sky-500 text-white'
+                          }`}
+                        >
+                          {isSaving ? 'Saving…' : 'Save Changes'}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!isCreating) {
+                              const current = industries.find((item) => item.id === form.id);
+                              if (current) {
+                                setForm({
+                                  id: current.id,
+                                  name: current.name,
+                                  icon: current.icon,
+                                  description: current.description,
+                                  image: current.image ?? '',
+                                  mapImage: current.mapImage ?? '',
+                                  isAvailable: current.isAvailable ?? true,
+                                });
+                              }
+                            } else {
+                              setForm(emptyForm);
+                              setIsCreating(false);
+                            }
+                            setStatusMessage(null);
+                          }}
+                          disabled={isSaving || isDeleting}
+                          className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800"
+                        >
+                          {isCreating ? 'Cancel' : 'Reset'}
+                        </button>
+
+                        {!isCreating && (
+                          <button
+                            type="button"
+                            onClick={handleDelete}
+                            disabled={isDeleting || isSaving}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                              isDeleting
+                                ? 'bg-rose-900 text-rose-200 cursor-wait'
+                                : 'bg-rose-600 hover:bg-rose-500 text-white'
+                            }`}
+                          >
+                            {isDeleting ? 'Deleting…' : 'Delete'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="text-sm text-slate-400">
+                    Select an industry above to view its current details.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
+          <div className="p-6 border-b border-slate-800">
+            <h2 className="text-2xl font-semibold">Events</h2>
+            <p className="text-sm text-slate-400 mt-1">Create events with title, summary, and category. Choices and consequences coming next.</p>
+          </div>
+          <div className="p-6 space-y-6">
+            {!form.id ? (
+              <div className="text-sm text-slate-400">Select or create an industry first.</div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    onClick={handleCreateEvent}
+                    className="px-3 py-2 text-sm font-medium rounded-lg border border-fuchsia-500 text-fuchsia-200 hover:bg-fuchsia-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isCreating || !form.id}
+                  >
+                    + New Event
+                  </button>
+                  {eventStatus && <span className="text-sm text-slate-300">{eventStatus}</span>}
+                </div>
+
+                {eventsLoading ? (
+                  <div className="text-sm text-slate-400">Loading events…</div>
+                ) : events.length === 0 && !isCreatingEvent ? (
+                  <div className="text-sm text-slate-400">No events configured yet.</div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                      {events.map((ev) => (
+                        <button
+                          key={ev.id}
+                          onClick={() => selectEvent(ev)}
+                          className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
+                            selectedEventId === ev.id && !isCreatingEvent
+                              ? 'border-fuchsia-400 bg-fuchsia-500/10 text-fuchsia-200'
+                              : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
+                          }`}
+                        >
+                          {ev.title}
+                        </button>
+                      ))}
+                    </div>
+
+                    {(selectedEventId || isCreatingEvent) && (
+                      <div>
+                      <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">Event ID</label>
+                          <input
+                            value={eventForm.id}
+                            onChange={(e) => setEventForm((p) => ({ ...p, id: e.target.value }))}
+                            disabled={!isCreatingEvent && !!selectedEventId}
+                            className={`w-full rounded-lg border px-3 py-2 text-slate-200 ${
+                              isCreatingEvent || !selectedEventId ? 'bg-slate-900 border-slate-600' : 'bg-slate-800 border-slate-700 cursor-not-allowed'
+                            }`}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">Category</label>
+                          <select
+                            value={eventForm.category}
+                            onChange={(e) => setEventForm((p) => ({ ...p, category: e.target.value as 'opportunity' | 'risk' }))}
+                            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                          >
+                            <option value="opportunity">Opportunity</option>
+                            <option value="risk">Risk</option>
+                          </select>
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">Title</label>
+                          <input
+                            value={eventForm.title}
+                            onChange={(e) => {
+                              const nextTitle = e.target.value;
+                              setEventForm((p) => ({ ...p, title: nextTitle }));
+                            }}
+                            onBlur={() => {
+                              setEventForm((p) => {
+                                if (!p.id && p.title.trim()) {
+                                  const nextId = makeUniqueId(slugify(p.title.trim()), new Set(events.map((ev) => ev.id)));
+                                  return { ...p, id: nextId };
+                                }
+                                return p;
+                              });
+                            }}
+                            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">Summary</label>
+                          <textarea
+                            rows={3}
+                            value={eventForm.summary}
+                            onChange={(e) => setEventForm((p) => ({ ...p, summary: e.target.value }))}
+                            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                          />
+                        </div>
+                        <div className="md:col-span-2 flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            onClick={handleSaveEvent}
+                            disabled={eventSaving || eventDeleting}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                              eventSaving ? 'bg-fuchsia-900 text-fuchsia-200 cursor-wait' : 'bg-fuchsia-600 hover:bg-fuchsia-500 text-white'
+                            }`}
+                          >
+                            {eventSaving ? 'Saving…' : 'Save Event'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (selectedEventId && !isCreatingEvent) {
+                                const existing = events.find((e) => e.id === selectedEventId);
+                                if (existing) selectEvent(existing);
+                              } else {
+                                setIsCreatingEvent(false);
+                                setSelectedEventId('');
+                                setEventForm({ id: '', title: '', category: 'opportunity', summary: '' });
+                                setEventChoices([]);
+                              }
+                              setEventStatus(null);
+                            }}
+                            disabled={eventSaving || eventDeleting}
+                            className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800"
+                          >
+                            {isCreatingEvent ? 'Cancel' : 'Reset'}
+                          </button>
+                          {!isCreatingEvent && selectedEventId && (
+                            <button
+                              type="button"
+                              onClick={handleDeleteEvent}
+                              disabled={eventDeleting || eventSaving}
+                              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                                eventDeleting ? 'bg-rose-900 text-rose-200 cursor-wait' : 'bg-rose-600 hover:bg-rose-500 text-white'
+                              }`}
+                            >
+                              {eventDeleting ? 'Deleting…' : 'Delete'}
+                            </button>
+                          )}
+                        </div>
+                      </form>
+
+                      <div className="pt-4 mt-4 border-t border-slate-800">
+                          <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-lg font-semibold text-fuchsia-300">Choices</h3>
+                            <button
+                              type="button"
+                              onClick={handleCreateChoice}
+                              className="px-3 py-2 text-sm font-medium rounded-lg border border-fuchsia-500 text-fuchsia-200 hover:bg-fuchsia-500/10"
+                            >
+                              + Add Choice
+                            </button>
+                          </div>
+                          {eventChoices.length === 0 && !isCreatingChoice ? (
+                            <div className="text-sm text-slate-400">No choices added yet.</div>
+                          ) : (
+                            <div className="space-y-4">
+                              <div className="flex flex-wrap gap-2">
+                                {eventChoices.map((ch) => (
+                                  <button
+                                    key={ch.id}
+                                    type="button"
+                                    onClick={() => selectChoice(ch)}
+                                    className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
+                                      selectedChoiceId === ch.id && !isCreatingChoice
+                                        ? 'border-fuchsia-400 bg-fuchsia-500/10 text-fuchsia-200'
+                                        : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
+                                    }`}
+                                  >
+                                    {ch.label}
+                                  </button>
+                                ))}
+                              </div>
+
+                              {(selectedChoiceId || isCreatingChoice) && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                                  <div>
+                                    <label className="block text-sm font-semibold text-slate-300 mb-1">Choice ID</label>
+                                    <input
+                                      value={choiceForm.id}
+                                      onChange={(e) => setChoiceForm((p) => ({ ...p, id: e.target.value }))}
+                                      disabled={!isCreatingChoice && !!selectedChoiceId}
+                                      className={`w-full rounded-lg border px-3 py-2 text-slate-200 ${
+                                        isCreatingChoice || !selectedChoiceId ? 'bg-slate-900 border-slate-600' : 'bg-slate-800 border-slate-700 cursor-not-allowed'
+                                      }`}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-semibold text-slate-300 mb-1">Label</label>
+                                    <input
+                                      value={choiceForm.label}
+                                      onChange={(e) => {
+                                        const nextLabel = e.target.value;
+                                        setChoiceForm((p) => ({ ...p, label: nextLabel }));
+                                      }}
+                                      onBlur={() => {
+                                        setChoiceForm((p) => {
+                                          if (!p.id && p.label.trim()) {
+                                            const nextId = makeUniqueId(slugify(p.label.trim()), new Set(eventChoices.map((c) => c.id)));
+                                            return { ...p, id: nextId };
+                                          }
+                                          return p;
+                                        });
+                                      }}
+                                      className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                                    />
+                                  </div>
+                                  <div className="md:col-span-2">
+                                    <label className="block text-sm font-semibold text-slate-300 mb-1">Description (optional)</label>
+                                    <textarea
+                                      rows={2}
+                                      value={choiceForm.description}
+                                      onChange={(e) => setChoiceForm((p) => ({ ...p, description: e.target.value }))}
+                                      className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-semibold text-slate-300 mb-1">Cost (optional)</label>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      value={choiceForm.cost}
+                                      onChange={(e) => setChoiceForm((p) => ({ ...p, cost: e.target.value }))}
+                                      className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                                    />
+                                  </div>
+                                  <div className="md:col-span-2 flex flex-wrap gap-3">
+                                    <button
+                                      type="button"
+                                      onClick={handleSaveChoice}
+                                      className="px-4 py-2 rounded-lg text-sm font-semibold transition bg-fuchsia-600 hover:bg-fuchsia-500 text-white"
+                                    >
+                                      Save Choice
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (selectedChoiceId && !isCreatingChoice) {
+                                          const existing = eventChoices.find((c) => c.id === selectedChoiceId);
+                                          if (existing) selectChoice(existing);
+                                        } else {
+                                          setIsCreatingChoice(false);
+                                          setSelectedChoiceId('');
+                                          setChoiceForm({ id: '', label: '', description: '', cost: '' });
+                                        }
+                                        setEventStatus(null);
+                                      }}
+                                      className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800"
+                                    >
+                                      {isCreatingChoice ? 'Cancel' : 'Reset'}
+                                    </button>
+                                    {!isCreatingChoice && selectedChoiceId && (
+                                      <button
+                                        type="button"
+                                        onClick={handleDeleteChoice}
+                                        className="px-4 py-2 rounded-lg text-sm font-semibold transition bg-rose-600 hover:bg-rose-500 text-white"
+                                      >
+                                        Delete Choice
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              {(selectedChoiceId || isCreatingChoice) && (
+                                <div className="mt-6">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <h4 className="text-md font-semibold">Consequences</h4>
+                                    <button
+                                      type="button"
+                                      onClick={handleCreateConsequence}
+                                      className="px-3 py-2 text-sm font-medium rounded-lg border border-amber-500 text-amber-200 hover:bg-amber-500/10"
+                                    >
+                                      + Add Consequence
+                                    </button>
+                                  </div>
+                                  {/* List of consequences */}
+                                  <div className="flex flex-wrap gap-2 mb-3">
+                                    {(() => {
+                                      const current = eventChoices.find((c) => c.id === selectedChoiceId);
+                                      return (current?.consequences ?? []).map((cs) => (
+                                        <button
+                                          key={cs.id}
+                                          type="button"
+                                          onClick={() => selectConsequence(cs)}
+                                          className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
+                                            selectedConsequenceId === cs.id && !isCreatingConsequence
+                                              ? 'border-amber-400 bg-amber-500/10 text-amber-200'
+                                              : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
+                                          }`}
+                                        >
+                                          {cs.label || cs.id}
+                                        </button>
+                                      ));
+                                    })()}
+                                  </div>
+
+                                  {(selectedConsequenceId || isCreatingConsequence) && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-900/60 rounded-lg border border-slate-700">
+                                      <div>
+                                        <label className="block text-sm font-semibold text-slate-300 mb-1">Consequence ID</label>
+                                        <input
+                                          value={consequenceForm.id}
+                                          onChange={(e) => setConsequenceForm((p) => ({ ...p, id: e.target.value }))}
+                                          disabled={!isCreatingConsequence && !!selectedConsequenceId}
+                                          className={`w-full rounded-lg border px-3 py-2 text-slate-200 ${
+                                            isCreatingConsequence || !selectedConsequenceId ? 'bg-slate-900 border-slate-600' : 'bg-slate-800 border-slate-700 cursor-not-allowed'
+                                          }`}
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-sm font-semibold text-slate-300 mb-1">Weight</label>
+                                        <input
+                                          type="number"
+                                          min="1"
+                                          value={consequenceForm.weight}
+                                          onChange={(e) => setConsequenceForm((p) => ({ ...p, weight: e.target.value }))}
+                                          className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-sm font-semibold text-slate-300 mb-1">Label (optional)</label>
+                                        <input
+                                          value={consequenceForm.label}
+                                          onChange={(e) => {
+                                            const nextLabel = e.target.value;
+                                            setConsequenceForm((p) => ({ ...p, label: nextLabel }));
+                                          }}
+                                          onBlur={() => {
+                                            setConsequenceForm((p) => {
+                                              if (!p.id && p.label.trim()) {
+                                                const current = eventChoices.find((c) => c.id === selectedChoiceId);
+                                                const existingIds = new Set((current?.consequences ?? []).map((cs) => cs.id));
+                                                const nextId = makeUniqueId(slugify(p.label.trim()), existingIds);
+                                                return { ...p, id: nextId };
+                                              }
+                                              return p;
+                                            });
+                                          }}
+                                          className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                                        />
+                                      </div>
+                                      <div className="md:col-span-2">
+                                        <label className="block text-sm font-semibold text-slate-300 mb-1">Description (optional)</label>
+                                        <textarea
+                                          rows={2}
+                                          value={consequenceForm.description}
+                                          onChange={(e) => setConsequenceForm((p) => ({ ...p, description: e.target.value }))}
+                                          className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                                        />
+                                      </div>
+
+                                      {/* Effects editor */}
+                                      <div className="md:col-span-2">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <span className="text-sm font-semibold text-slate-300">Effects</span>
+                                          <div className="flex gap-2">
+                                            <button
+                                              type="button"
+                                              onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: 'cash', amount: '0', label: '' }] }))}
+                                              className="px-2 py-1 text-xs rounded border border-emerald-500 text-emerald-200 hover:bg-emerald-500/10"
+                                            >
+                                              + Cash
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: 'reputation', amount: '0' }] }))}
+                                              className="px-2 py-1 text-xs rounded border border-emerald-500 text-emerald-200 hover:bg-emerald-500/10"
+                                            >
+                                              + Reputation
+                                            </button>
+                                          </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                          {consequenceForm.effects.map((ef, idx) => (
+                                            <div key={idx} className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
+                                              <div>
+                                                <label className="block text-xs text-slate-400 mb-1">Type</label>
+                                                <select
+                                                  value={ef.type}
+                                                  onChange={(e) => setConsequenceForm((p) => ({
+                                                    ...p,
+                                                    effects: p.effects.map((row, i) => i === idx ? { ...row, type: e.target.value as 'cash' | 'reputation' } : row),
+                                                  }))}
+                                                  className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                >
+                                                  <option value="cash">Cash</option>
+                                                  <option value="reputation">Reputation</option>
+                                                </select>
+                                              </div>
+                                              <div>
+                                                <label className="block text-xs text-slate-400 mb-1">Amount</label>
+                                                <input
+                                                  type="number"
+                                                  value={ef.amount}
+                                                  onChange={(e) => setConsequenceForm((p) => ({
+                                                    ...p,
+                                                    effects: p.effects.map((row, i) => i === idx ? { ...row, amount: e.target.value } : row),
+                                                  }))}
+                                                  className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                />
+                                              </div>
+                                              {ef.type === 'cash' && (
+                                                <div>
+                                                  <label className="block text-xs text-slate-400 mb-1">Label (optional)</label>
+                                                  <input
+                                                    value={ef.label ?? ''}
+                                                    onChange={(e) => setConsequenceForm((p) => ({
+                                                      ...p,
+                                                      effects: p.effects.map((row, i) => i === idx ? { ...row, label: e.target.value } : row),
+                                                    }))}
+                                                    className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                  />
+                                                </div>
+                                              )}
+                                              <div className="sm:col-span-3">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => setConsequenceForm((p) => ({
+                                                    ...p,
+                                                    effects: p.effects.filter((_, i) => i !== idx),
+                                                  }))}
+                                                  className="text-xs text-rose-300 hover:text-rose-200"
+                                                >
+                                                  Remove
+                                                </button>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+
+                                      {/* Temporary Effects editor */}
+                                      <div className="md:col-span-2">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <span className="text-sm font-semibold text-slate-300">Temporary Effects</span>
+                                          <button
+                                            type="button"
+                                            onClick={() => setConsequenceForm((p) => ({ ...p, temporaryEffects: [...p.temporaryEffects, { metric: METRIC_OPTIONS[0].value, type: EFFECT_TYPE_OPTIONS[0].value, value: '0', durationSeconds: '10' }] }))}
+                                            className="px-2 py-1 text-xs rounded border border-indigo-500 text-indigo-200 hover:bg-indigo-500/10"
+                                          >
+                                            + Add Temporary Effect
+                                          </button>
+                                        </div>
+                                        <div className="space-y-2">
+                                          {consequenceForm.temporaryEffects.map((t, idx) => (
+                                            <div key={idx} className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-center">
+                                              <div>
+                                                <label className="block text-xs text-slate-400 mb-1">Metric</label>
+                                                <select
+                                                  value={t.metric}
+                                                  onChange={(e) => setConsequenceForm((p) => ({
+                                                    ...p,
+                                                    temporaryEffects: p.temporaryEffects.map((row, i) => i === idx ? { ...row, metric: e.target.value as GameMetric } : row),
+                                                  }))}
+                                                  className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                >
+                                                  {METRIC_OPTIONS.map((opt) => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                  ))}
+                                                </select>
+                                              </div>
+                                              <div>
+                                                <label className="block text-xs text-slate-400 mb-1">Type</label>
+                                                <select
+                                                  value={t.type}
+                                                  onChange={(e) => setConsequenceForm((p) => ({
+                                                    ...p,
+                                                    temporaryEffects: p.temporaryEffects.map((row, i) => i === idx ? { ...row, type: e.target.value as EffectType } : row),
+                                                  }))}
+                                                  className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                >
+                                                  {EFFECT_TYPE_OPTIONS.map((opt) => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                  ))}
+                                                </select>
+                                              </div>
+                                              <div>
+                                                <label className="block text-xs text-slate-400 mb-1">Value</label>
+                                                <input
+                                                  type="number"
+                                                  value={t.value}
+                                                  onChange={(e) => setConsequenceForm((p) => ({
+                                                    ...p,
+                                                    temporaryEffects: p.temporaryEffects.map((row, i) => i === idx ? { ...row, value: e.target.value } : row),
+                                                  }))}
+                                                  className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block text-xs text-slate-400 mb-1">Duration (s)</label>
+                                                <input
+                                                  type="number"
+                                                  min="1"
+                                                  value={t.durationSeconds}
+                                                  onChange={(e) => setConsequenceForm((p) => ({
+                                                    ...p,
+                                                    temporaryEffects: p.temporaryEffects.map((row, i) => i === idx ? { ...row, durationSeconds: e.target.value } : row),
+                                                  }))}
+                                                  className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block text-xs text-slate-400 mb-1">Priority (opt)</label>
+                                                <input
+                                                  type="number"
+                                                  value={t.priority ?? ''}
+                                                  onChange={(e) => setConsequenceForm((p) => ({
+                                                    ...p,
+                                                    temporaryEffects: p.temporaryEffects.map((row, i) => i === idx ? { ...row, priority: e.target.value } : row),
+                                                  }))}
+                                                  className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                />
+                                              </div>
+                                              <div className="sm:col-span-5">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => setConsequenceForm((p) => ({
+                                                    ...p,
+                                                    temporaryEffects: p.temporaryEffects.filter((_, i) => i !== idx),
+                                                  }))}
+                                                  className="text-xs text-rose-300 hover:text-rose-200"
+                                                >
+                                                  Remove Temporary Effect
+                                                </button>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+
+                                      <div className="md:col-span-2 flex flex-wrap gap-3">
+                                        <button type="button" onClick={handleSaveConsequence} className="px-4 py-2 rounded-lg text-sm font-semibold transition bg-amber-600 hover:bg-amber-500 text-white">
+                                          Save Consequence
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            if (selectedConsequenceId && !isCreatingConsequence) {
+                                              const current = eventChoices.find((c) => c.id === selectedChoiceId);
+                                              const existing = current?.consequences.find((cs) => cs.id === selectedConsequenceId);
+                                              if (existing) selectConsequence(existing);
+                                            } else {
+                                              setIsCreatingConsequence(false);
+                                              setSelectedConsequenceId('');
+                                              setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+                                            }
+                                            setEventStatus(null);
+                                          }}
+                                          className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800"
+                                        >
+                                          {isCreatingConsequence ? 'Cancel' : 'Reset'}
+                                        </button>
+                                        {!isCreatingConsequence && selectedConsequenceId && (
+                                          <button type="button" onClick={handleDeleteConsequence} className="px-4 py-2 rounded-lg text-sm font-semibold transition bg-rose-600 hover:bg-rose-500 text-white">
+                                            Delete Consequence
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
+          <div className="p-6 border-b border-slate-800">
             <h2 className="text-2xl font-semibold">Marketing Campaigns</h2>
             <p className="text-sm text-slate-400 mt-1">Create campaigns with cost, duration, and temporary effects.</p>
           </div>
@@ -1109,6 +2185,13 @@ export default function AdminPage() {
                       <input
                         value={campaignForm.name}
                         onChange={(e) => setCampaignForm((p) => ({ ...p, name: e.target.value }))}
+                        onBlur={() => {
+                          if (!campaignForm.id && campaignForm.name.trim()) {
+                            const base = slugify(campaignForm.name.trim());
+                            const unique = makeUniqueId(base, new Set(campaigns.map((c) => c.id)));
+                            setCampaignForm((prev) => ({ ...prev, id: unique }));
+                          }
+                        }}
                         className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                       />
                     </div>
@@ -1307,6 +2390,13 @@ export default function AdminPage() {
                           <input
                             value={upgradeForm.name}
                             onChange={(e) => setUpgradeForm((p) => ({ ...p, name: e.target.value }))}
+                            onBlur={() => {
+                              if (!upgradeForm.id && upgradeForm.name.trim()) {
+                                const base = slugify(upgradeForm.name.trim());
+                                const unique = makeUniqueId(base, new Set(upgrades.map((u) => u.id)));
+                                setUpgradeForm((prev) => ({ ...prev, id: unique }));
+                              }
+                            }}
                             className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                           />
                         </div>
@@ -1456,201 +2546,7 @@ export default function AdminPage() {
           </div>
         </section>
 
-        <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
-          <div className="p-6 border-b border-slate-800">
-            <h2 className="text-2xl font-semibold">Industries</h2>
-            <p className="text-sm text-slate-400 mt-1">
-              Select an industry and edit its basic metadata. Changes persist immediately to Supabase.
-            </p>
-          </div>
-
-          <div className="p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <button
-                onClick={handleCreateNew}
-                className="px-3 py-2 text-sm font-medium rounded-lg border border-sky-500 text-sky-200 hover:bg-sky-500/10"
-              >
-                + New Industry
-              </button>
-              {statusMessage && (
-                <span className="text-sm text-slate-300">{statusMessage}</span>
-              )}
-            </div>
-
-            {isLoading ? (
-              <div className="text-sm text-slate-400">Loading industries...</div>
-            ) : error ? (
-              <div className="text-sm text-rose-400">{error}</div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex flex-wrap gap-2">
-                  {industries.map((industry) => (
-                    <button
-                      key={industry.id}
-                      onClick={() => handleSelect(industry.id)}
-                      className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
-                        form.id === industry.id
-                          ? 'border-sky-400 bg-sky-500/10 text-sky-200'
-                          : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
-                      }`}
-                    >
-                      {industry.icon} {industry.name}
-                    </button>
-                  ))}
-                </div>
-
-                {form.id || isCreating ? (
-                  <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-slate-300 mb-1">
-                        Industry ID
-                      </label>
-                      <input
-                        value={form.id}
-                        onChange={(event) =>
-                          setForm((prev) => ({ ...prev, id: event.target.value }))
-                        }
-                        disabled={!isCreating}
-                        className={`w-full rounded-lg border px-3 py-2 text-slate-200 ${
-                          isCreating
-                            ? 'bg-slate-900 border-slate-600'
-                            : 'bg-slate-800 border-slate-700 cursor-not-allowed'
-                        }`}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-300 mb-1">Name</label>
-                      <input
-                        value={form.name}
-                        onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
-                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-300 mb-1">Icon</label>
-                      <input
-                        value={form.icon}
-                        onChange={(event) => setForm((prev) => ({ ...prev, icon: event.target.value }))}
-                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-slate-300 mb-1">
-                        Short Description
-                      </label>
-                      <textarea
-                        value={form.description}
-                        onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
-                        rows={3}
-                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-300 mb-1">Image URL</label>
-                      <input
-                        value={form.image}
-                        onChange={(event) => setForm((prev) => ({ ...prev, image: event.target.value }))}
-                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-300 mb-1">Map Image URL</label>
-                      <input
-                        value={form.mapImage}
-                        onChange={(event) => setForm((prev) => ({ ...prev, mapImage: event.target.value }))}
-                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                      />
-                    </div>
-
-                    <div className="md:col-span-2 flex items-center gap-2">
-                      <input
-                        id="industry-available"
-                        type="checkbox"
-                        checked={form.isAvailable}
-                        onChange={(event) =>
-                          setForm((prev) => ({ ...prev, isAvailable: event.target.checked }))
-                        }
-                        className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-sky-500 focus:ring-sky-400"
-                      />
-                      <label htmlFor="industry-available" className="text-sm font-semibold text-slate-300">
-                        Available for selection
-                      </label>
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <div className="flex flex-wrap gap-3">
-                        <button
-                          type="button"
-                          onClick={handleSave}
-                          disabled={isSaving || isDeleting}
-                          className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                            isSaving
-                              ? 'bg-sky-900 text-sky-300 cursor-wait'
-                              : 'bg-sky-600 hover:bg-sky-500 text-white'
-                          }`}
-                        >
-                          {isSaving ? 'Saving…' : 'Save Changes'}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!isCreating) {
-                              const current = industries.find((item) => item.id === form.id);
-                              if (current) {
-                                setForm({
-                                  id: current.id,
-                                  name: current.name,
-                                  icon: current.icon,
-                                  description: current.description,
-                                  image: current.image ?? '',
-                                  mapImage: current.mapImage ?? '',
-                                  isAvailable: current.isAvailable ?? true,
-                                });
-                              }
-                            } else {
-                              setForm(emptyForm);
-                              setIsCreating(false);
-                            }
-                            setStatusMessage(null);
-                          }}
-                          disabled={isSaving || isDeleting}
-                          className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800"
-                        >
-                          {isCreating ? 'Cancel' : 'Reset'}
-                        </button>
-
-                        {!isCreating && (
-                          <button
-                            type="button"
-                            onClick={handleDelete}
-                            disabled={isDeleting || isSaving}
-                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                              isDeleting
-                                ? 'bg-rose-900 text-rose-200 cursor-wait'
-                                : 'bg-rose-600 hover:bg-rose-500 text-white'
-                            }`}
-                          >
-                            {isDeleting ? 'Deleting…' : 'Delete'}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </form>
-                ) : (
-                  <div className="text-sm text-slate-400">
-                    Select an industry above to view its current details.
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </section>
+        
 
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
@@ -1733,6 +2629,13 @@ export default function AdminPage() {
                             onChange={(event) =>
                               setServiceForm((prev) => ({ ...prev, name: event.target.value }))
                             }
+                            onBlur={() => {
+                              if (!serviceForm.id && serviceForm.name.trim()) {
+                                const base = slugify(`${form.id}-${serviceForm.name.trim()}`);
+                                const unique = makeUniqueId(base, new Set(services.map((s) => s.id)));
+                                setServiceForm((prev) => ({ ...prev, id: unique }));
+                              }
+                            }}
                             className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                           />
                         </div>
@@ -1884,11 +2787,18 @@ export default function AdminPage() {
                           </div>
                           <div>
                             <label className="block text-sm font-semibold text-slate-300 mb-1">Name</label>
-                            <input
-                              value={roleForm.name}
-                              onChange={(e) => setRoleForm((p) => ({ ...p, name: e.target.value }))}
-                              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                            />
+                          <input
+                            value={roleForm.name}
+                            onChange={(e) => setRoleForm((p) => ({ ...p, name: e.target.value }))}
+                            onBlur={() => {
+                              if (!roleForm.id && roleForm.name.trim()) {
+                                const base = slugify(roleForm.name.trim());
+                                const unique = makeUniqueId(base, new Set(staffRoles.map((r) => r.id)));
+                                setRoleForm((prev) => ({ ...prev, id: unique }));
+                              }
+                            }}
+                            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                          />
                           </div>
                           <div>
                             <label className="block text-sm font-semibold text-slate-300 mb-1">Salary</label>
@@ -2006,11 +2916,18 @@ export default function AdminPage() {
                           </div>
                           <div>
                             <label className="block text-sm font-semibold text-slate-300 mb-1">Name (optional)</label>
-                            <input
-                              value={presetForm.name}
-                              onChange={(e) => setPresetForm((p) => ({ ...p, name: e.target.value }))}
-                              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                            />
+                          <input
+                            value={presetForm.name}
+                            onChange={(e) => setPresetForm((p) => ({ ...p, name: e.target.value }))}
+                            onBlur={() => {
+                              if (!presetForm.id && presetForm.name.trim()) {
+                                const base = slugify(presetForm.name.trim());
+                                const unique = makeUniqueId(base, new Set(staffPresets.map((p) => p.id)));
+                                setPresetForm((prev) => ({ ...prev, id: unique }));
+                              }
+                            }}
+                            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                          />
                           </div>
                           <div>
                             <label className="block text-sm font-semibold text-slate-300 mb-1">Role</label>
