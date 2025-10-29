@@ -22,7 +22,13 @@ import Image from 'next/image';
 import { fetchServicesForIndustry } from '@/lib/data/serviceRepository';
 import { fetchUpgradesForIndustry } from '@/lib/data/upgradeRepository';
 import { fetchEventsForIndustry } from '@/lib/data/eventRepository';
+import { fetchStaffDataForIndustry } from '@/lib/data/staffRepository';
 import { setIndustryServices, setIndustryUpgrades, setIndustryEvents } from '@/lib/game/industryConfigs';
+import {
+  setStaffRolesForIndustry,
+  setStaffNamePoolForIndustry,
+  setInitialStaffForIndustry,
+} from '@/lib/game/staffConfig';
 import { IndustryId } from '@/lib/game/types';
 
 export default function GamePage() {
@@ -38,6 +44,7 @@ export default function GamePage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { audioState, setVolume, toggleMute } = useAudioControls();
   const [dataLoadState, setDataLoadState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const initializeStaffForIndustry = useGameStore((state) => state.initializeStaffForIndustry);
   
 
   // Play game music when component mounts
@@ -57,53 +64,75 @@ export default function GamePage() {
 
     (async () => {
       const industryId = selectedIndustry.id as IndustryId;
-      const [servicesResult, upgradesResult, eventsResult] = await Promise.all([
-        fetchServicesForIndustry(industryId),
-        fetchUpgradesForIndustry(industryId),
-        fetchEventsForIndustry(industryId),
-      ]);
+      try {
+        const [servicesResult, upgradesResult, eventsResult, staffResult] = await Promise.all([
+          fetchServicesForIndustry(industryId),
+          fetchUpgradesForIndustry(industryId),
+          fetchEventsForIndustry(industryId),
+          fetchStaffDataForIndustry(industryId),
+        ]);
 
-      if (!isMounted) {
-        return;
-      }
+        if (!isMounted) {
+          return;
+        }
 
-      const services = Array.isArray(servicesResult) ? servicesResult : [];
-      const upgrades = Array.isArray(upgradesResult) ? upgradesResult : [];
-      const events = Array.isArray(eventsResult) ? eventsResult : [];
+        const services = Array.isArray(servicesResult) ? servicesResult : [];
+        const upgrades = Array.isArray(upgradesResult) ? upgradesResult : [];
+        const events = Array.isArray(eventsResult) ? eventsResult : [];
+        const staffData = staffResult ?? null;
 
-      const hasServices = services.length > 0;
-      const hasUpgrades = upgrades.length > 0;
-      const hasEvents = events.length > 0;
+        const hasServices = services.length > 0;
+        const hasUpgrades = upgrades.length > 0;
+        const hasEvents = events.length > 0;
+        const hasStaff =
+          staffData === null ||
+          (Array.isArray(staffData.roles) && staffData.roles.length > 0);
 
-      if (hasServices) {
-        setIndustryServices(industryId, services);
-      }
+        if (hasServices) {
+          setIndustryServices(industryId, services);
+        }
 
-      if (hasUpgrades) {
-        setIndustryUpgrades(industryId, upgrades);
-      }
+        if (hasUpgrades) {
+          setIndustryUpgrades(industryId, upgrades);
+        }
 
-      if (hasEvents) {
-        setIndustryEvents(industryId, events);
-      }
+        if (hasEvents) {
+          setIndustryEvents(industryId, events);
+        }
 
-      if (hasServices && hasUpgrades && hasEvents) {
-        setDataLoadState('ready');
-      } else {
-        console.error('Missing industry data', {
-          industry: industryId,
-          hasServices,
-          hasUpgrades,
-          hasEvents,
-        });
-        setDataLoadState('error');
+        if (staffData && staffData.roles.length > 0) {
+          setStaffRolesForIndustry(industryId, staffData.roles);
+          setStaffNamePoolForIndustry(industryId, staffData.namePool);
+          setInitialStaffForIndustry(industryId, staffData.initialStaff);
+          initializeStaffForIndustry(industryId);
+        } else if (!staffData) {
+          initializeStaffForIndustry(industryId);
+        }
+
+        if (hasServices && hasUpgrades && hasEvents && hasStaff) {
+          setDataLoadState('ready');
+        } else {
+          console.error('Missing industry data', {
+            industry: industryId,
+            hasServices,
+            hasUpgrades,
+            hasEvents,
+            hasStaff,
+          });
+          setDataLoadState('error');
+        }
+      } catch (err) {
+        console.error('Failed to load industry data', err);
+        if (isMounted) {
+          setDataLoadState('error');
+        }
       }
     })();
 
     return () => {
       isMounted = false;
     };
-  }, [selectedIndustry]);
+  }, [selectedIndustry, initializeStaffForIndustry]);
 
   // Guard to check if industry exists; otherwise redirect. If game is selected but not started, kick it off.
   useEffect(() => {
