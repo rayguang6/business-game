@@ -128,7 +128,7 @@ export async function fetchEventsForIndustry(industryId: IndustryId): Promise<Ga
   }
 
   const { data, error } = await supabase
-    .from<EventRow>('events')
+    .from('events')
     .select('id, industry_id, title, category, summary, choices')
     .eq('industry_id', industryId);
 
@@ -150,4 +150,69 @@ export async function fetchEventsForIndustry(industryId: IndustryId): Promise<Ga
       summary: row.summary,
       choices: mapChoices(Array.isArray(row.choices) ? (row.choices as RawChoice[]) : undefined),
     }));
+}
+
+function serializeChoices(choices: GameEventChoice[]): RawChoice[] {
+  return choices.map((choice) => ({
+    id: choice.id,
+    label: choice.label,
+    description: choice.description,
+    cost: choice.cost,
+    consequences: choice.consequences.map((consequence) => ({
+      id: consequence.id,
+      label: consequence.label,
+      description: consequence.description,
+      weight: consequence.weight,
+      effects: consequence.effects.map((e) => ({ ...(e as RawEffect) })),
+      temporaryEffects: (consequence.temporaryEffects ?? []).map((t) => ({
+        metric: t.metric,
+        type: t.type,
+        value: t.value,
+        durationSeconds: t.durationSeconds,
+        priority: t.priority,
+      })),
+    })),
+  }));
+}
+
+export async function upsertEventForIndustry(
+  industryId: IndustryId,
+  event: GameEvent,
+): Promise<{ success: boolean; message?: string }>
+{
+  if (!supabase) {
+    return { success: false, message: 'Supabase client not configured.' };
+  }
+
+  const payload: EventRow = {
+    id: event.id,
+    industry_id: industryId,
+    title: event.title,
+    category: event.category,
+    summary: event.summary,
+    choices: serializeChoices(event.choices),
+  };
+
+  const { error } = await supabase
+    .from('events')
+    .upsert(payload, { onConflict: 'industry_id,id' });
+
+  if (error) {
+    console.error('Failed to upsert event', error);
+    return { success: false, message: error.message };
+  }
+  return { success: true };
+}
+
+export async function deleteEventById(id: string): Promise<{ success: boolean; message?: string }>
+{
+  if (!supabase) {
+    return { success: false, message: 'Supabase client not configured.' };
+  }
+  const { error } = await supabase.from('events').delete().eq('id', id);
+  if (error) {
+    console.error('Failed to delete event', error);
+    return { success: false, message: error.message };
+  }
+  return { success: true };
 }
