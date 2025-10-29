@@ -6,7 +6,13 @@ import {
   upsertIndustryToSupabase,
   deleteIndustryFromSupabase,
 } from '@/lib/data/industryRepository';
+import {
+  fetchServicesForIndustry,
+  upsertServiceForIndustry,
+  deleteServiceById,
+} from '@/lib/data/serviceRepository';
 import type { Industry } from '@/lib/features/industries';
+import type { IndustryServiceDefinition } from '@/lib/game/types';
 
 interface FormState {
   id: string;
@@ -15,6 +21,7 @@ interface FormState {
   description: string;
   image: string;
   mapImage: string;
+  isAvailable: boolean;
 }
 
 const emptyForm: FormState = {
@@ -24,6 +31,22 @@ const emptyForm: FormState = {
   description: '',
   image: '',
   mapImage: '',
+  isAvailable: true,
+};
+
+
+interface ServiceFormState {
+  id: string;
+  name: string;
+  duration: string;
+  price: string;
+}
+
+const emptyServiceForm: ServiceFormState = {
+  id: '',
+  name: '',
+  duration: '0',
+  price: '0',
 };
 
 export default function AdminPage() {
@@ -35,6 +58,64 @@ export default function AdminPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [services, setServices] = useState<IndustryServiceDefinition[]>([]);
+  const [serviceForm, setServiceForm] = useState<ServiceFormState>(emptyServiceForm);
+  const [selectedServiceId, setSelectedServiceId] = useState<string>('');
+  const [serviceStatus, setServiceStatus] = useState<string | null>(null);
+  const [serviceLoading, setServiceLoading] = useState(false);
+  const [serviceSaving, setServiceSaving] = useState(false);
+  const [serviceDeleting, setServiceDeleting] = useState(false);
+  const [isCreatingService, setIsCreatingService] = useState(false);
+
+  const selectService = (service: IndustryServiceDefinition, resetMessage: boolean = true) => {
+    setSelectedServiceId(service.id);
+    setIsCreatingService(false);
+    setServiceForm({
+      id: service.id,
+      name: service.name,
+      duration: service.duration.toString(),
+      price: service.price.toString(),
+    });
+    if (resetMessage) {
+      setServiceStatus(null);
+    }
+  };
+
+  const loadServicesForIndustry = async (industryId: string) => {
+    setServiceLoading(true);
+    setServiceStatus(null);
+    setServices([]);
+    setSelectedServiceId('');
+    setServiceForm(emptyServiceForm);
+    setIsCreatingService(false);
+
+    const result = await fetchServicesForIndustry(industryId);
+    setServiceLoading(false);
+
+    if (!result || result.length === 0) {
+      setServices([]);
+      return;
+    }
+
+    const sorted = result.slice().sort((a, b) => a.name.localeCompare(b.name));
+    setServices(sorted);
+    selectService(sorted[0], false);
+  };
+
+  const selectIndustry = (industry: Industry) => {
+    setIsCreating(false);
+    setForm({
+      id: industry.id,
+      name: industry.name,
+      icon: industry.icon,
+      description: industry.description,
+      image: industry.image ?? '',
+      mapImage: industry.mapImage ?? '',
+      isAvailable: industry.isAvailable ?? true,
+    });
+    setStatusMessage(null);
+    loadServicesForIndustry(industry.id);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -52,15 +133,7 @@ export default function AdminPage() {
         if (data) {
           setIndustries(data);
           if (data.length > 0) {
-            const first = data[0];
-            setForm({
-              id: first.id,
-              name: first.name,
-              icon: first.icon,
-              description: first.description,
-              image: first.image ?? '',
-              mapImage: first.mapImage ?? '',
-            });
+            selectIndustry(data[0]);
           }
         }
       } catch (err) {
@@ -86,22 +159,18 @@ export default function AdminPage() {
       return;
     }
 
-    setIsCreating(false);
-    setForm({
-      id: selected.id,
-      name: selected.name,
-      icon: selected.icon,
-      description: selected.description,
-      image: selected.image ?? '',
-      mapImage: selected.mapImage ?? '',
-    });
-    setStatusMessage(null);
+    selectIndustry(selected);
   };
 
   const handleCreateNew = () => {
     setIsCreating(true);
     setForm({ ...emptyForm, icon: '🏢' });
+    setServices([]);
+    setServiceForm(emptyServiceForm);
+    setSelectedServiceId('');
+    setIsCreatingService(false);
     setStatusMessage(null);
+    setServiceStatus(null);
   };
 
   const handleSave = async () => {
@@ -131,6 +200,7 @@ export default function AdminPage() {
       description: form.description.trim(),
       image: form.image.trim() || undefined,
       mapImage: form.mapImage.trim() || undefined,
+      isAvailable: form.isAvailable,
     };
 
     const result = await upsertIndustryToSupabase(payload);
@@ -150,16 +220,7 @@ export default function AdminPage() {
       return next.sort((a, b) => a.name.localeCompare(b.name));
     });
 
-    setForm({
-      id: result.data.id,
-      name: result.data.name,
-      icon: result.data.icon,
-      description: result.data.description,
-      image: result.data.image ?? '',
-      mapImage: result.data.mapImage ?? '',
-    });
-
-    setIsCreating(false);
+    selectIndustry(result.data);
     setStatusMessage('Industry saved successfully.');
   };
 
@@ -186,7 +247,113 @@ export default function AdminPage() {
     setIndustries((prev) => prev.filter((item) => item.id !== form.id));
     setForm(emptyForm);
     setIsCreating(false);
+    setServices([]);
+    setServiceForm(emptyServiceForm);
+    setSelectedServiceId('');
+    setIsCreatingService(false);
     setStatusMessage('Industry deleted.');
+  };
+
+  const handleCreateService = () => {
+    if (!form.id) {
+      setServiceStatus('Save the industry before adding services.');
+      return;
+    }
+
+    setIsCreatingService(true);
+    setSelectedServiceId('');
+    setServiceForm({ ...emptyServiceForm });
+    setServiceStatus(null);
+  };
+
+  const handleServiceSave = async () => {
+    if (!form.id) {
+      setServiceStatus('Save the industry before adding services.');
+      return;
+    }
+
+    const name = serviceForm.name.trim();
+    let serviceId = serviceForm.id.trim();
+
+    if (!name) {
+      setServiceStatus('Service name is required.');
+      return;
+    }
+
+    if (!serviceId) {
+      serviceId = slugify(`${form.id}-${name}`);
+    }
+
+    const durationValue = Number(serviceForm.duration);
+    const priceValue = Number(serviceForm.price);
+
+    if (!Number.isFinite(durationValue) || durationValue < 0) {
+      setServiceStatus('Duration must be a non-negative number.');
+      return;
+    }
+
+    if (!Number.isFinite(priceValue) || priceValue < 0) {
+      setServiceStatus('Price must be a non-negative number.');
+      return;
+    }
+
+    setServiceSaving(true);
+    setServiceStatus(null);
+
+    const payload: IndustryServiceDefinition = {
+      id: serviceId,
+      industryId: form.id,
+      name,
+      duration: durationValue,
+      price: priceValue,
+    };
+
+    const result = await upsertServiceForIndustry(payload);
+    setServiceSaving(false);
+
+    if (!result.success || !result.data) {
+      setServiceStatus(result.message ?? 'Failed to save service.');
+      return;
+    }
+
+    setServices((prev) => {
+      const exists = prev.some((item) => item.id === result.data!.id);
+      const next = exists
+        ? prev.map((item) => (item.id === result.data!.id ? result.data! : item))
+        : [...prev, result.data!];
+
+      return next.sort((a, b) => a.name.localeCompare(b.name));
+    });
+
+    selectService(result.data);
+    setServiceStatus('Service saved.');
+  };
+
+  const handleServiceDelete = async () => {
+    if (isCreatingService || !serviceForm.id) {
+      return;
+    }
+
+    if (!window.confirm(`Delete service "${serviceForm.name || serviceForm.id}"?`)) {
+      return;
+    }
+
+    setServiceDeleting(true);
+    setServiceStatus(null);
+
+    const result = await deleteServiceById(serviceForm.id);
+    setServiceDeleting(false);
+
+    if (!result.success) {
+      setServiceStatus(result.message ?? 'Failed to delete service.');
+      return;
+    }
+
+    setServices((prev) => prev.filter((item) => item.id !== serviceForm.id));
+    setServiceForm(emptyServiceForm);
+    setSelectedServiceId('');
+    setIsCreatingService(false);
+    setServiceStatus('Service deleted.');
   };
 
   return (
@@ -201,7 +368,7 @@ export default function AdminPage() {
           <div className="p-6 border-b border-slate-800">
             <h2 className="text-2xl font-semibold">Industries</h2>
             <p className="text-sm text-slate-400 mt-1">
-              Select an industry and edit its basic metadata. Saving will be available in the next step.
+              Select an industry and edit its basic metadata. Changes persist immediately to Supabase.
             </p>
           </div>
 
@@ -308,6 +475,21 @@ export default function AdminPage() {
                       />
                     </div>
 
+                    <div className="md:col-span-2 flex items-center gap-2">
+                      <input
+                        id="industry-available"
+                        type="checkbox"
+                        checked={form.isAvailable}
+                        onChange={(event) =>
+                          setForm((prev) => ({ ...prev, isAvailable: event.target.checked }))
+                        }
+                        className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-sky-500 focus:ring-sky-400"
+                      />
+                      <label htmlFor="industry-available" className="text-sm font-semibold text-slate-300">
+                        Available for selection
+                      </label>
+                    </div>
+
                     <div className="md:col-span-2">
                       <div className="flex flex-wrap gap-3">
                         <button
@@ -370,6 +552,180 @@ export default function AdminPage() {
                 ) : (
                   <div className="text-sm text-slate-400">
                     Select an industry above to view its current details.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
+          <div className="p-6 border-b border-slate-800">
+            <h2 className="text-2xl font-semibold">Services</h2>
+            <p className="text-sm text-slate-400 mt-1">
+              Manage the services offered for the selected industry.
+            </p>
+          </div>
+
+          <div className="p-6 space-y-6">
+            {!form.id ? (
+              <div className="text-sm text-slate-400">
+                Select or create an industry first.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    onClick={handleCreateService}
+                    className="px-3 py-2 text-sm font-medium rounded-lg border border-emerald-500 text-emerald-200 hover:bg-emerald-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isCreating || !form.id}
+                  >
+                    + New Service
+                  </button>
+                  {serviceStatus && (
+                    <span className="text-sm text-slate-300">{serviceStatus}</span>
+                  )}
+                </div>
+
+                {serviceLoading ? (
+                  <div className="text-sm text-slate-400">Loading services...</div>
+                ) : services.length === 0 && !isCreatingService ? (
+                  <div className="text-sm text-slate-400">
+                    No services configured yet.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                      {services.map((service) => (
+                        <button
+                          key={service.id}
+                          onClick={() => selectService(service)}
+                          className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
+                            selectedServiceId === service.id && !isCreatingService
+                              ? 'border-emerald-400 bg-emerald-500/10 text-emerald-200'
+                              : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
+                          }`}
+                        >
+                          {service.name}
+                        </button>
+                      ))}
+                    </div>
+
+                    {(selectedServiceId || isCreatingService) && (
+                      <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">
+                            Service ID
+                          </label>
+                          <input
+                            value={serviceForm.id}
+                            onChange={(event) =>
+                              setServiceForm((prev) => ({ ...prev, id: event.target.value }))
+                            }
+                            disabled={!isCreatingService && !!selectedServiceId}
+                            className={`w-full rounded-lg border px-3 py-2 text-slate-200 ${
+                              isCreatingService || !selectedServiceId
+                                ? 'bg-slate-900 border-slate-600'
+                                : 'bg-slate-800 border-slate-700 cursor-not-allowed'
+                            }`}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">
+                            Name
+                          </label>
+                          <input
+                            value={serviceForm.name}
+                            onChange={(event) =>
+                              setServiceForm((prev) => ({ ...prev, name: event.target.value }))
+                            }
+                            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">
+                            Duration (seconds)
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={serviceForm.duration}
+                            onChange={(event) =>
+                              setServiceForm((prev) => ({ ...prev, duration: event.target.value }))
+                            }
+                            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">
+                            Price
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={serviceForm.price}
+                            onChange={(event) =>
+                              setServiceForm((prev) => ({ ...prev, price: event.target.value }))
+                            }
+                            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                          />
+                        </div>
+
+                        <div className="md:col-span-2 flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            onClick={handleServiceSave}
+                            disabled={serviceSaving || serviceDeleting}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                              serviceSaving
+                                ? 'bg-emerald-900 text-emerald-200 cursor-wait'
+                                : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                            }`}
+                          >
+                            {serviceSaving ? 'Saving…' : 'Save Service'}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (selectedServiceId && !isCreatingService) {
+                                const existing = services.find((item) => item.id === selectedServiceId);
+                                if (existing) {
+                                  selectService(existing);
+                                }
+                              } else {
+                                setServiceForm(emptyServiceForm);
+                                setIsCreatingService(false);
+                                setSelectedServiceId('');
+                              }
+                              setServiceStatus(null);
+                            }}
+                            disabled={serviceSaving || serviceDeleting}
+                            className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800"
+                          >
+                            {isCreatingService ? 'Cancel' : 'Reset'}
+                          </button>
+
+                          {!isCreatingService && selectedServiceId && (
+                            <button
+                              type="button"
+                              onClick={handleServiceDelete}
+                              disabled={serviceDeleting || serviceSaving}
+                              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                                serviceDeleting
+                                  ? 'bg-rose-900 text-rose-200 cursor-wait'
+                                  : 'bg-rose-600 hover:bg-rose-500 text-white'
+                              }`}
+                            >
+                              {serviceDeleting ? 'Deleting…' : 'Delete'}
+                            </button>
+                          )}
+                        </div>
+                      </form>
+                    )}
                   </div>
                 )}
               </div>

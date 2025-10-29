@@ -10,6 +10,7 @@ export interface Industry {
   description: string;
   image?: string; // Optional image path for industry cards
   mapImage?: string; // Optional map image path for industry map
+  isAvailable?: boolean;
 }
 
 // NOTE: legacy static definitions are retained below for future reference/seeding.
