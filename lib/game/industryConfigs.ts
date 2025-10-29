@@ -116,152 +116,20 @@ const SERVICE_DEFINITIONS: IndustryServiceDefinition[] = [
 ];
 */
 
-const SERVICES_BY_INDUSTRY: Record<string, IndustryServiceDefinition[]> = {};
-
-function getStaticServicesForIndustry(industryId: IndustryId): IndustryServiceDefinition[] {
-  const services = SERVICES_BY_INDUSTRY[industryId] ?? [];
-  return services.map((service) => ({ ...service }));
-}
-
+// NOTE: legacy upgrade definitions retained below for reference/seeding.
+/*
 const DENTAL_UPGRADES: UpgradeDefinition[] = [
-  {
-    id: 'extra_treatment_room',
-    name: 'Extra Service Room',
-    description: 'Add another service room so more patients can be helped at once.',
-    icon: '🦷',
-    cost: 1200,
-    maxLevel: 3,
-    effects: [
-      { metric: GameMetric.ServiceRooms, type: EffectType.Add, value: 1 },
-      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 150 },
-    ],
-  },
-  {
-    id: 'modern_equipment',
-    name: 'Modern Equipment',
-    description: 'Speed up service time with modern dental equipment.',
-    icon: '⚡',
-    cost: 900,
-    maxLevel: 2,
-    effects: [
-      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 20 }, // +20% service speed
-      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 90 },
-    ],
-  },
-  {
-    id: 'staff_training',
-    name: 'Staff Training Program',
-    description: 'Improve customer experience and keep service times tight with staff coaching.',
-    icon: '👩‍⚕️',
-    cost: 700,
-    maxLevel: 3,
-    effects: [
-      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 10 }, // +10% service speed
-      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 80 },
-    ],
-  },
-  {
-    id: 'priority_booking',
-    name: 'Priority Booking Software',
-    description: 'Digital scheduling that packs the day and keeps the chairs full.',
-    icon: '🗓️',
-    cost: 800,
-    maxLevel: 2,
-    effects: [
-      { metric: GameMetric.SpawnIntervalSeconds, type: EffectType.Percent, value: 25 }, // +25% customer spawn speed
-      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 110 },
-    ],
-  },
-  {
-    id: 'marketing_blitz',
-    name: 'Local Marketing Blitz',
-    description: 'Bring patients in faster with a short marketing campaign.',
-    icon: '📣',
-    cost: 600,
-    maxLevel: 2,
-    effects: [
-      { metric: GameMetric.SpawnIntervalSeconds, type: EffectType.Percent, value: 15 }, // +15% customer spawn speed
-      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 70 },
-    ],
-  },
-  {
-    id: 'spa_waiting_area',
-    name: 'Spa Waiting Area',
-    description: 'Create a relaxing environment that streamlines the customer flow.',
-    icon: '🛋️',
-    cost: 450,
-    maxLevel: 1,
-    effects: [
-      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 5 }, // +5% service speed
-      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 60 },
-    ],
-  },
-  {
-    id: 'premium_patient_packages',
-    name: 'Premium Patient Packages',
-    description: 'Bundle deluxe add-ons into every visit to raise average ticket size.',
-    icon: '💎',
-    cost: 650,
-    maxLevel: 3,
-    effects: [
-      { metric: GameMetric.ServiceRevenueFlatBonus, type: EffectType.Add, value: 100 }, // +$100 per service
-      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 80 },
-    ],
-  },
-  {
-    id: 'dynamic_pricing_ai',
-    name: 'Dynamic Pricing AI',
-    description: 'Use AI-assisted pricing to automatically adjust fees for peak demand.',
-    icon: '🤖',
-    cost: 900,
-    maxLevel: 2,
-    effects: [
-      { metric: GameMetric.ServiceRevenueMultiplier, type: EffectType.Percent, value: 15 }, // +15% price multiplier
-      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 120 },
-    ],
-  },
-  {
-    id: 'concierge_experience',
-    name: 'Concierge Experience Program',
-    description: 'Offer concierge-level amenities that dramatically increase willingness to pay.',
-    icon: '🛎️',
-    cost: 1200,
-    maxLevel: 1,
-    effects: [
-      { metric: GameMetric.ServiceRevenueMultiplier, type: EffectType.Multiply, value: 1.5 }, // ×1.5 price multiplier
-      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 200 },
-    ],
-  },
+  ...
 ];
+*/
 
 const DENTAL_EVENTS: GameEvent[] = [...sampleEvents];
 
+/*
 const RESTAURANT_UPGRADES: UpgradeDefinition[] = [
-  {
-    id: 'restaurant_extra_table',
-    name: 'Expanded Seating',
-    description: 'Add a few extra tables to welcome more guests during peak hours.',
-    icon: '🪑',
-    cost: 800,
-    maxLevel: 2,
-    effects: [
-      { metric: GameMetric.ServiceRooms, type: EffectType.Add, value: 1 },
-      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 90 },
-    ],
-  },
-  {
-    id: 'restaurant_kitchen_upgrade',
-    name: 'Kitchen Line Upgrade',
-    description: 'Streamline the kitchen line to serve dishes a bit faster.',
-    icon: '👨‍🍳',
-    cost: 950,
-    maxLevel: 2,
-    effects: [
-      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 15 }, // +15% service speed
-      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 110 },
-    ],
-  },
+  ...
 ];
+*/
 
 const RESTAURANT_EVENTS: GameEvent[] = [
   {
@@ -408,32 +276,11 @@ const RESTAURANT_EVENTS: GameEvent[] = [
   },
 ];
 
+/*
 const GYM_UPGRADES: UpgradeDefinition[] = [
-  {
-    id: 'gym_new_equipment',
-    name: 'New Training Equipment',
-    description: 'Invest in a new set of training gear to reduce customer wait times.',
-    icon: '🏋️',
-    cost: 850,
-    maxLevel: 2,
-    effects: [
-      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 10 }, // +10% service speed
-      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 95 },
-    ],
-  },
-  {
-    id: 'gym_recovery_lounge',
-    name: 'Recovery Lounge',
-    description: 'Create a recovery lounge that keeps members energized between sessions.',
-    icon: '🧘',
-    cost: 600,
-    maxLevel: 1,
-    effects: [
-      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 8 }, // +8% service speed
-      { metric: GameMetric.MonthlyExpenses, type: EffectType.Add, value: 70 },
-    ],
-  },
+  ...
 ];
+*/
 
 const GYM_EVENTS: GameEvent[] = [
   {
@@ -590,26 +437,42 @@ const SHARED_BASE = {
   defaultCustomerImage: DEFAULT_CUSTOMER_IMAGES[0],
 } as const;
 
+const SERVICES_BY_INDUSTRY: Record<string, IndustryServiceDefinition[]> = {};
+const UPGRADES_BY_INDUSTRY: Record<string, UpgradeDefinition[]> = {};
+
+function getStaticServicesForIndustry(industryId: IndustryId): IndustryServiceDefinition[] {
+  const services = SERVICES_BY_INDUSTRY[industryId] ?? [];
+  return services.map((service) => ({ ...service }));
+}
+
+function getStaticUpgradesForIndustry(industryId: IndustryId): UpgradeDefinition[] {
+  const upgrades = UPGRADES_BY_INDUSTRY[industryId] ?? [];
+  return upgrades.map((upgrade) => ({
+    ...upgrade,
+    effects: upgrade.effects.map((effect) => ({ ...effect })),
+  }));
+}
+
 const INDUSTRY_SIMULATION_CONFIGS: Record<string, IndustrySimulationConfig> = {
   [DEFAULT_INDUSTRY_ID]: {
     id: DEFAULT_INDUSTRY_ID,
     ...SHARED_BASE,
     services: getStaticServicesForIndustry(DEFAULT_INDUSTRY_ID),
-    upgrades: DENTAL_UPGRADES,
+    upgrades: getStaticUpgradesForIndustry(DEFAULT_INDUSTRY_ID),
     events: DENTAL_EVENTS,
   },
   restaurant: {
     id: 'restaurant',
     ...SHARED_BASE,
     services: getStaticServicesForIndustry('restaurant'),
-    upgrades: RESTAURANT_UPGRADES,
+    upgrades: getStaticUpgradesForIndustry('restaurant'),
     events: RESTAURANT_EVENTS,
   },
   gym: {
     id: 'gym',
     ...SHARED_BASE,
     services: getStaticServicesForIndustry('gym'),
-    upgrades: GYM_UPGRADES,
+    upgrades: getStaticUpgradesForIndustry('gym'),
     events: GYM_EVENTS,
   },
 };
@@ -639,7 +502,36 @@ export function setIndustryServices(
     id: industryId,
     ...SHARED_BASE,
     services: nextServices,
-    upgrades: [],
+    upgrades: getStaticUpgradesForIndustry(industryId),
+    events: [],
+  };
+}
+
+export function setIndustryUpgrades(
+  industryId: IndustryId,
+  upgrades: UpgradeDefinition[],
+): void {
+  const nextUpgrades = upgrades.map((upgrade) => ({
+    ...upgrade,
+    effects: upgrade.effects.map((effect) => ({ ...effect })),
+  }));
+
+  UPGRADES_BY_INDUSTRY[industryId] = nextUpgrades.map((upgrade) => ({
+    ...upgrade,
+    effects: upgrade.effects.map((effect) => ({ ...effect })),
+  }));
+
+  const config = INDUSTRY_SIMULATION_CONFIGS[industryId];
+  if (config) {
+    config.upgrades = nextUpgrades;
+    return;
+  }
+
+  INDUSTRY_SIMULATION_CONFIGS[industryId] = {
+    id: industryId,
+    ...SHARED_BASE,
+    services: getStaticServicesForIndustry(industryId),
+    upgrades: nextUpgrades,
     events: [],
   };
 }

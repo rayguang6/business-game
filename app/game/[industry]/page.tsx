@@ -20,7 +20,8 @@ import GameOverPopup from '@/app/game/components/ui/GameOverPopup';
 import { useRandomEventTrigger } from '@/hooks/useRandomEventTrigger';
 import Image from 'next/image';
 import { fetchServicesForIndustry } from '@/lib/data/serviceRepository';
-import { setIndustryServices } from '@/lib/game/industryConfigs';
+import { fetchUpgradesForIndustry } from '@/lib/data/upgradeRepository';
+import { setIndustryServices, setIndustryUpgrades } from '@/lib/game/industryConfigs';
 import { IndustryId } from '@/lib/game/types';
 
 export default function GamePage() {
@@ -35,7 +36,7 @@ export default function GamePage() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { audioState, setVolume, toggleMute } = useAudioControls();
-  const [serviceLoadState, setServiceLoadState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [dataLoadState, setDataLoadState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   
 
   // Play game music when component mounts
@@ -45,27 +46,48 @@ export default function GamePage() {
     let isMounted = true;
 
     if (!selectedIndustry) {
-      setServiceLoadState('idle');
+      setDataLoadState('idle');
       return () => {
         isMounted = false;
       };
     }
 
-    setServiceLoadState('loading');
+    setDataLoadState('loading');
 
     (async () => {
-      const services = await fetchServicesForIndustry(selectedIndustry.id as IndustryId);
+      const industryId = selectedIndustry.id as IndustryId;
+      const [servicesResult, upgradesResult] = await Promise.all([
+        fetchServicesForIndustry(industryId),
+        fetchUpgradesForIndustry(industryId),
+      ]);
 
       if (!isMounted) {
         return;
       }
 
-      if (services && services.length > 0) {
-        setIndustryServices(selectedIndustry.id as IndustryId, services);
-        setServiceLoadState('ready');
+      const services = Array.isArray(servicesResult) ? servicesResult : [];
+      const upgrades = Array.isArray(upgradesResult) ? upgradesResult : [];
+
+      const hasServices = services.length > 0;
+      const hasUpgrades = upgrades.length > 0;
+
+      if (hasServices) {
+        setIndustryServices(industryId, services);
+      }
+
+      if (hasUpgrades) {
+        setIndustryUpgrades(industryId, upgrades);
+      }
+
+      if (hasServices && hasUpgrades) {
+        setDataLoadState('ready');
       } else {
-        console.error('No services found for industry', selectedIndustry?.id);
-        setServiceLoadState('error');
+        console.error('Missing industry data', {
+          industry: industryId,
+          hasServices,
+          hasUpgrades,
+        });
+        setDataLoadState('error');
       }
     })();
 
@@ -80,11 +102,11 @@ export default function GamePage() {
       if (pathname !== '/') {
         router.push('/');
       }
-    } else if (!isGameStarted && serviceLoadState === 'ready') {
+    } else if (!isGameStarted && dataLoadState === 'ready') {
       // Auto-start the game when page loads
       startGame();
     }
-  }, [selectedIndustry, isGameStarted, startGame, pathname, router, serviceLoadState]);
+  }, [selectedIndustry, isGameStarted, startGame, pathname, router, dataLoadState]);
 
   // Initialize game loop
   useGameLoop();
@@ -112,20 +134,20 @@ export default function GamePage() {
     return null; // Return null while redirecting
   }
 
-  if (serviceLoadState === 'loading' || serviceLoadState === 'idle') {
+  if (dataLoadState === 'loading' || dataLoadState === 'idle') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white text-lg font-semibold">
-        Loading services...
+        Loading industry data...
       </div>
     );
   }
 
-  if (serviceLoadState === 'error') {
+  if (dataLoadState === 'error') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gray-900 text-white text-center px-6">
-        <p className="text-2xl font-semibold">Services unavailable</p>
+        <p className="text-2xl font-semibold">Industry data unavailable</p>
         <p className="text-base max-w-md text-gray-300">
-          We couldn&apos;t load services for this industry. Please check your Supabase data and try again.
+          We couldn&apos;t load the required data for this industry. Please check your Supabase data and try again.
         </p>
         <button
           onClick={() => router.push('/select-industry')}
