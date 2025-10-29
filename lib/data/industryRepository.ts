@@ -8,6 +8,7 @@ interface IndustryRow {
   description: string;
   image: string | null;
   map_image: string | null;
+  is_available: boolean | null;
 }
 
 export async function fetchIndustriesFromSupabase(): Promise<Industry[] | null> {
@@ -15,7 +16,7 @@ export async function fetchIndustriesFromSupabase(): Promise<Industry[] | null> 
 
   const { data, error } = await supabase
     .from('industries')
-    .select('id,name,icon,description,image,map_image');
+    .select('id,name,icon,description,image,map_image,is_available');
 
   if (error || !data) {
     return null;
@@ -31,6 +32,7 @@ const mapRowToIndustry = (row: IndustryRow): Industry => ({
   description: row.description,
   image: row.image ?? undefined,
   mapImage: row.map_image ?? undefined,
+  isAvailable: row.is_available ?? undefined,
 });
 
 export async function upsertIndustryToSupabase(industry: Industry): Promise<{ success: boolean; data?: Industry; message?: string }>
@@ -46,6 +48,7 @@ export async function upsertIndustryToSupabase(industry: Industry): Promise<{ su
     description: industry.description,
     image: industry.image ?? null,
     map_image: industry.mapImage ?? null,
+    is_available: industry.isAvailable ?? true,
   };
 
   const { data, error } = await supabase

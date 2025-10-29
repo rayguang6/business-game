@@ -11,7 +11,9 @@ import { fetchIndustriesFromSupabase } from '@/lib/data/industryRepository';
 export default function SelectIndustryPage() {
   const router = useRouter();
   const setSelectedIndustry = useGameStore((state) => state.setSelectedIndustry);
-  const [industries, setIndustries] = useState<Industry[]>(getCachedIndustries());
+  const [industries, setIndustries] = useState<Industry[]>(
+    getCachedIndustries().filter((industry) => industry.isAvailable ?? true),
+  );
   const [isLoading, setIsLoading] = useState(industries.length === 0);
   const [loadError, setLoadError] = useState(false);
 
@@ -29,9 +31,10 @@ export default function SelectIndustryPage() {
       }
 
       if (remote) {
-        cacheIndustries(remote);
-        setIndustries(remote);
-        setLoadError(remote.length === 0);
+        const filtered = remote.filter((industry) => industry.isAvailable ?? true);
+        cacheIndustries(filtered);
+        setIndustries(filtered);
+        setLoadError(filtered.length === 0);
       } else {
         cacheIndustries([]);
         setIndustries([]);
