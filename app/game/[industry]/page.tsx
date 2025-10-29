@@ -20,6 +20,7 @@ import GameOverPopup from '@/app/game/components/ui/GameOverPopup';
 import { useRandomEventTrigger } from '@/hooks/useRandomEventTrigger';
 import Image from 'next/image';
 import { fetchGlobalSimulationConfig } from '@/lib/data/simulationConfigRepository';
+import { fetchMarketingCampaigns } from '@/lib/data/marketingRepository';
 import { fetchServicesForIndustry } from '@/lib/data/serviceRepository';
 import { fetchUpgradesForIndustry } from '@/lib/data/upgradeRepository';
 import { fetchEventsForIndustry } from '@/lib/data/eventRepository';
@@ -52,6 +53,7 @@ export default function GamePage() {
   const [globalConfigReady, setGlobalConfigReady] = useState(false);
   const [dataLoadState, setDataLoadState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const initializeStaffForIndustry = useGameStore((state) => state.initializeStaffForIndustry);
+  const setMarketingCampaigns = useGameStore((state) => state.setAvailableCampaigns);
   
 
   // Play game music when component mounts
@@ -62,13 +64,20 @@ export default function GamePage() {
 
     (async () => {
       try {
-        const globalConfig = await fetchGlobalSimulationConfig();
+        const [globalConfig, marketingCampaigns] = await Promise.all([
+          fetchGlobalSimulationConfig(),
+          fetchMarketingCampaigns(),
+        ]);
         if (!isMounted) {
           return;
         }
 
         if (globalConfig) {
           setGlobalSimulationConfigValues(globalConfig);
+        }
+
+        if (marketingCampaigns && marketingCampaigns.length > 0) {
+          setMarketingCampaigns(marketingCampaigns);
         }
       } catch (error) {
         console.error('Failed to load global simulation config', error);
@@ -82,7 +91,7 @@ export default function GamePage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [setMarketingCampaigns]);
 
   useEffect(() => {
     let isMounted = true;
