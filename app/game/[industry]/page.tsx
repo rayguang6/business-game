@@ -21,7 +21,8 @@ import { useRandomEventTrigger } from '@/hooks/useRandomEventTrigger';
 import Image from 'next/image';
 import { fetchServicesForIndustry } from '@/lib/data/serviceRepository';
 import { fetchUpgradesForIndustry } from '@/lib/data/upgradeRepository';
-import { setIndustryServices, setIndustryUpgrades } from '@/lib/game/industryConfigs';
+import { fetchEventsForIndustry } from '@/lib/data/eventRepository';
+import { setIndustryServices, setIndustryUpgrades, setIndustryEvents } from '@/lib/game/industryConfigs';
 import { IndustryId } from '@/lib/game/types';
 
 export default function GamePage() {
@@ -56,9 +57,10 @@ export default function GamePage() {
 
     (async () => {
       const industryId = selectedIndustry.id as IndustryId;
-      const [servicesResult, upgradesResult] = await Promise.all([
+      const [servicesResult, upgradesResult, eventsResult] = await Promise.all([
         fetchServicesForIndustry(industryId),
         fetchUpgradesForIndustry(industryId),
+        fetchEventsForIndustry(industryId),
       ]);
 
       if (!isMounted) {
@@ -67,9 +69,11 @@ export default function GamePage() {
 
       const services = Array.isArray(servicesResult) ? servicesResult : [];
       const upgrades = Array.isArray(upgradesResult) ? upgradesResult : [];
+      const events = Array.isArray(eventsResult) ? eventsResult : [];
 
       const hasServices = services.length > 0;
       const hasUpgrades = upgrades.length > 0;
+      const hasEvents = events.length > 0;
 
       if (hasServices) {
         setIndustryServices(industryId, services);
@@ -79,13 +83,18 @@ export default function GamePage() {
         setIndustryUpgrades(industryId, upgrades);
       }
 
-      if (hasServices && hasUpgrades) {
+      if (hasEvents) {
+        setIndustryEvents(industryId, events);
+      }
+
+      if (hasServices && hasUpgrades && hasEvents) {
         setDataLoadState('ready');
       } else {
         console.error('Missing industry data', {
           industry: industryId,
           hasServices,
           hasUpgrades,
+          hasEvents,
         });
         setDataLoadState('error');
       }
