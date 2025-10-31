@@ -11,6 +11,7 @@ export interface Metrics {
   totalRevenue: number;
   totalExpenses: number;
   reputation: number;
+  founderWorkingHours: number;
 }
 
 // Map of upgrade ID to current level
@@ -57,6 +58,7 @@ export interface MonthlyHistoryEntry {
   profit: number;
   reputation: number;
   reputationChange: number;
+  founderWorkingHours: number;
   revenueBreakdown?: RevenueEntry[];
 }
 

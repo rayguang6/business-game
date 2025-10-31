@@ -15,7 +15,8 @@ import {
 } from '@/lib/game/config';
 import { Upgrades } from '@/lib/store/types';
 import { IndustryId } from '@/lib/game/types';
-import { applyUpgradeEffectsToMetrics, UpgradeLevelDefinition } from '@/lib/game/effects/upgradeEffects';
+import { effectManager, GameMetric } from '@/lib/game/effectManager';
+import { UpgradeLevelDefinition } from '@/lib/game/effects/upgradeEffects';
 
 export type ActiveUpgradeIds = UpgradeId[]; // Legacy type for compatibility
 
@@ -31,10 +32,6 @@ export interface UpgradeEffects {
   serviceRevenueFlatBonus: number;
 }
 
-export interface UpgradeMetricsSummary {
-  baseMetrics: BaseUpgradeMetrics;
-  currentMetrics: BaseUpgradeMetrics;
-}
 
 function resolveActiveUpgrades(
   upgrades: Upgrades,
@@ -52,38 +49,28 @@ function resolveActiveUpgrades(
     .filter((item): item is UpgradeLevelDefinition => item !== null);
 }
 
-export function calculateActiveUpgradeMetrics(
-  upgrades: Upgrades,
-  industryId: IndustryId,
-): UpgradeMetricsSummary {
-  const baseMetrics = getBaseUpgradeMetricsForIndustry(industryId);
-  const activeUpgrades = resolveActiveUpgrades(upgrades, industryId);
-
-  return {
-    baseMetrics,
-    currentMetrics: applyUpgradeEffectsToMetrics(baseMetrics, activeUpgrades),
-  };
-}
 
 export function getUpgradeEffects(
   upgrades: Upgrades,
   industryId: IndustryId,
 ): UpgradeEffects {
-  const { currentMetrics } = calculateActiveUpgradeMetrics(upgrades, industryId);
+  const baseMetrics = getBaseUpgradeMetricsForIndustry(industryId);
 
-  const spawnIntervalSeconds = Math.max(0.5, currentMetrics.spawnIntervalSeconds);
+  // Use effectManager for consistent calculation (includes all effects: upgrades, staff, etc.)
+  const spawnIntervalSeconds = Math.max(0.5, effectManager.calculate(GameMetric.SpawnIntervalSeconds, baseMetrics.spawnIntervalSeconds));
   const spawnIntervalTicks = Math.max(1, secondsToTicks(spawnIntervalSeconds, industryId));
 
   return {
     spawnIntervalSeconds,
     spawnIntervalTicks,
-    serviceSpeedMultiplier: Math.max(0.1, currentMetrics.serviceSpeedMultiplier),
-    reputationMultiplier: Math.max(0, currentMetrics.reputationMultiplier),
-    treatmentRooms: Math.max(1, Math.round(currentMetrics.treatmentRooms)),
-    monthlyExpenses: currentMetrics.monthlyExpenses,
-    happyProbability: Math.min(1, Math.max(0, currentMetrics.happyProbability)),
-    serviceRevenueMultiplier: Math.max(0, currentMetrics.serviceRevenueMultiplier),
-    serviceRevenueFlatBonus: currentMetrics.serviceRevenueFlatBonus,
+    serviceSpeedMultiplier: Math.max(0.1, effectManager.calculate(GameMetric.ServiceSpeedMultiplier, baseMetrics.serviceSpeedMultiplier)),
+    reputationMultiplier: Math.max(0, effectManager.calculate(GameMetric.ReputationMultiplier, baseMetrics.reputationMultiplier)),
+    treatmentRooms: Math.max(1, Math.round(effectManager.calculate(GameMetric.ServiceRooms, baseMetrics.treatmentRooms))),
+    monthlyExpenses: effectManager.calculate(GameMetric.MonthlyExpenses, baseMetrics.monthlyExpenses),
+    happyProbability: Math.min(1, Math.max(0, effectManager.calculate(GameMetric.HappyProbability, baseMetrics.happyProbability))),
+    serviceRevenueMultiplier: Math.max(0, effectManager.calculate(GameMetric.ServiceRevenueMultiplier, baseMetrics.serviceRevenueMultiplier)),
+    serviceRevenueFlatBonus: effectManager.calculate(GameMetric.ServiceRevenueFlatBonus, baseMetrics.serviceRevenueFlatBonus),
+    founderWorkingHours: Math.max(0, Math.round(effectManager.calculate(GameMetric.FounderWorkingHours, baseMetrics.founderWorkingHours))),
   };
 }
 
@@ -129,12 +116,6 @@ export function getUpgradeCatalog(industryId: IndustryId): UpgradeDefinition[] {
   return getAllUpgrades(industryId);
 }
 
-export function getUpgradeSummary(
-  upgrades: Upgrades,
-  industryId: IndustryId,
-): UpgradeMetricsSummary {
-  return calculateActiveUpgradeMetrics(upgrades, industryId);
-}
 
 export function getUpgradeLevel(upgrades: Upgrades, upgradeId: UpgradeId): number {
   return upgrades[upgradeId] || 0;

@@ -102,7 +102,7 @@ export default function AdminPage() {
   const [staffLoading, setStaffLoading] = useState<boolean>(false);
   const [staffStatus, setStaffStatus] = useState<string | null>(null);
 
-  const [roleForm, setRoleForm] = useState<{ id: string; name: string; salary: string; serviceSpeed: string; emoji: string }>({ id: '', name: '', salary: '0', serviceSpeed: '0', emoji: '🧑‍💼' });
+  const [roleForm, setRoleForm] = useState<{ id: string; name: string; salary: string; effects: Array<{ metric: GameMetric; type: EffectType; value: string }>; emoji: string }>({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼' });
   const [selectedRoleId, setSelectedRoleId] = useState<string>('');
   const [roleSaving, setRoleSaving] = useState<boolean>(false);
   const [roleDeleting, setRoleDeleting] = useState<boolean>(false);
@@ -161,6 +161,12 @@ export default function AdminPage() {
     effects: Array<{ type: 'cash' | 'reputation'; amount: string; label?: string }>;
     temporaryEffects: Array<{ metric: GameMetric; type: EffectType; value: string; durationSeconds: string; priority?: string }>;
   }>({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+
+  // JSON import/export state
+  const [showJsonImport, setShowJsonImport] = useState<boolean>(false);
+  const [jsonImportText, setJsonImportText] = useState<string>('');
+  const [jsonImportErrors, setJsonImportErrors] = useState<string[]>([]);
+  const [jsonImporting, setJsonImporting] = useState<boolean>(false);
 
   // Persist helper: upserts the current event with provided choices
   const persistEventWithChoices = async (nextChoices: GameEventChoice[], successMessage: string = 'Event saved.') => {
@@ -345,7 +351,21 @@ export default function AdminPage() {
     if (rolesSorted.length > 0) {
       const first = rolesSorted[0];
       setSelectedRoleId(first.id);
-      setRoleForm({ id: first.id, name: first.name, salary: String(first.salary), serviceSpeed: String(first.serviceSpeed), emoji: first.emoji });
+      // Convert effects array to form format (handle both old and new formats)
+      const effects = first.effects || [];
+      // If no effects but old format properties exist, convert them
+      if (effects.length === 0 && ('serviceSpeed' in first || 'workloadReduction' in first)) {
+        const legacyEffects: Array<{ metric: GameMetric; type: EffectType; value: string }> = [];
+        if ('serviceSpeed' in first && (first as any).serviceSpeed > 0) {
+          legacyEffects.push({ metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: String((first as any).serviceSpeed) });
+        }
+        if ('workloadReduction' in first && (first as any).workloadReduction > 0) {
+          legacyEffects.push({ metric: GameMetric.FounderWorkingHours, type: EffectType.Add, value: String(-(first as any).workloadReduction) });
+        }
+        setRoleForm({ id: first.id, name: first.name, salary: String(first.salary), effects: legacyEffects, emoji: first.emoji });
+      } else {
+        setRoleForm({ id: first.id, name: first.name, salary: String(first.salary), effects: effects.map(e => ({ metric: e.metric, type: e.type, value: String(e.value) })), emoji: first.emoji });
+      }
     }
     if (presetsSorted.length > 0) {
       const firstP = presetsSorted[0];
@@ -736,10 +756,354 @@ export default function AdminPage() {
     void persistEventWithChoices(next, 'Consequence deleted.');
   };
 
+  // JSON import/export functions for events
+  const isValidGameMetric = (value: any): value is GameMetric => {
+    return typeof value === 'string' && Object.values(GameMetric).includes(value as GameMetric);
+  };
+
+  const isValidEffectType = (value: any): value is EffectType => {
+    return typeof value === 'string' && Object.values(EffectType).includes(value as EffectType);
+  };
+
+  const validateGameEvent = (data: any): data is GameEvent => {
+    if (!data || typeof data !== 'object') return false;
+    if (typeof data.id !== 'string' || !data.id.trim()) return false;
+    if (typeof data.title !== 'string' || !data.title.trim()) return false;
+    if (data.category !== 'opportunity' && data.category !== 'risk') return false;
+    if (typeof data.summary !== 'string' || !data.summary.trim()) return false;
+    if (!Array.isArray(data.choices)) return false;
+
+    for (const choice of data.choices) {
+      if (!choice || typeof choice !== 'object') return false;
+      if (typeof choice.id !== 'string' || !choice.id.trim()) return false;
+      if (typeof choice.label !== 'string' || !choice.label.trim()) return false;
+      if (choice.description !== undefined && typeof choice.description !== 'string') return false;
+      if (choice.cost !== undefined && (typeof choice.cost !== 'number' || choice.cost < 0)) return false;
+      if (!Array.isArray(choice.consequences)) return false;
+
+      for (const consequence of choice.consequences) {
+        if (!consequence || typeof consequence !== 'object') return false;
+        if (typeof consequence.id !== 'string' || !consequence.id.trim()) return false;
+        if (consequence.label !== undefined && typeof consequence.label !== 'string') return false;
+        if (consequence.description !== undefined && typeof consequence.description !== 'string') return false;
+        if (typeof consequence.weight !== 'number' || consequence.weight < 1) return false;
+
+        if (!Array.isArray(consequence.effects)) return false;
+        for (const effect of consequence.effects) {
+          if (effect.type === 'cash' || effect.type === 'reputation') {
+            if (typeof effect.amount !== 'number') return false;
+          } else {
+            return false;
+          }
+        }
+
+        if (consequence.temporaryEffects !== undefined) {
+          if (!Array.isArray(consequence.temporaryEffects)) return false;
+          for (const tempEffect of consequence.temporaryEffects) {
+            if (!tempEffect || typeof tempEffect !== 'object') return false;
+            if (!isValidGameMetric(tempEffect.metric)) return false;
+            if (!isValidEffectType(tempEffect.type)) return false;
+            if (typeof tempEffect.value !== 'number') return false;
+            if (typeof tempEffect.durationSeconds !== 'number' || tempEffect.durationSeconds <= 0) return false;
+            if (tempEffect.priority !== undefined && typeof tempEffect.priority !== 'number') return false;
+          }
+        }
+      }
+    }
+    return true;
+  };
+
+  const validateAndGetErrors = (data: any, path = ''): string[] => {
+    const errors: string[] = [];
+
+    if (!data || typeof data !== 'object') {
+      errors.push(`${path}: must be an object`);
+      return errors;
+    }
+
+    if (typeof data.id !== 'string' || !data.id.trim()) {
+      errors.push(`${path}.id: required string, cannot be empty`);
+    }
+
+    if (typeof data.title !== 'string' || !data.title.trim()) {
+      errors.push(`${path}.title: required string, cannot be empty`);
+    }
+
+    if (data.category !== 'opportunity' && data.category !== 'risk') {
+      errors.push(`${path}.category: must be "opportunity" or "risk"`);
+    }
+
+    if (typeof data.summary !== 'string' || !data.summary.trim()) {
+      errors.push(`${path}.summary: required string, cannot be empty`);
+    }
+
+    if (!Array.isArray(data.choices)) {
+      errors.push(`${path}.choices: must be an array`);
+    } else {
+      data.choices.forEach((choice: any, choiceIndex: number) => {
+        const choicePath = `${path}.choices[${choiceIndex}]`;
+
+        if (!choice || typeof choice !== 'object') {
+          errors.push(`${choicePath}: must be an object`);
+          return;
+        }
+
+        if (typeof choice.id !== 'string' || !choice.id.trim()) {
+          errors.push(`${choicePath}.id: required string, cannot be empty`);
+        }
+
+        if (typeof choice.label !== 'string' || !choice.label.trim()) {
+          errors.push(`${choicePath}.label: required string, cannot be empty`);
+        }
+
+        if (choice.description !== undefined && typeof choice.description !== 'string') {
+          errors.push(`${choicePath}.description: must be a string if provided`);
+        }
+
+        if (choice.cost !== undefined && (typeof choice.cost !== 'number' || choice.cost < 0)) {
+          errors.push(`${choicePath}.cost: must be a non-negative number if provided`);
+        }
+
+        if (!Array.isArray(choice.consequences)) {
+          errors.push(`${choicePath}.consequences: must be an array`);
+        } else {
+          choice.consequences.forEach((consequence: any, consIndex: number) => {
+            const consPath = `${choicePath}.consequences[${consIndex}]`;
+
+            if (!consequence || typeof consequence !== 'object') {
+              errors.push(`${consPath}: must be an object`);
+              return;
+            }
+
+            if (typeof consequence.id !== 'string' || !consequence.id.trim()) {
+              errors.push(`${consPath}.id: required string, cannot be empty`);
+            }
+
+            if (consequence.label !== undefined && typeof consequence.label !== 'string') {
+              errors.push(`${consPath}.label: must be a string if provided`);
+            }
+
+            if (consequence.description !== undefined && typeof consequence.description !== 'string') {
+              errors.push(`${consPath}.description: must be a string if provided`);
+            }
+
+            if (typeof consequence.weight !== 'number' || consequence.weight < 1) {
+              errors.push(`${consPath}.weight: must be a number >= 1`);
+            }
+
+            if (!Array.isArray(consequence.effects)) {
+              errors.push(`${consPath}.effects: must be an array`);
+            } else {
+              consequence.effects.forEach((effect: any, effectIndex: number) => {
+                const effectPath = `${consPath}.effects[${effectIndex}]`;
+                if (effect?.type === 'cash' || effect?.type === 'reputation') {
+                  if (typeof effect.amount !== 'number') {
+                    errors.push(`${effectPath}.amount: must be a number`);
+                  }
+                  if (effect.type === 'cash' && effect.label !== undefined && typeof effect.label !== 'string') {
+                    errors.push(`${effectPath}.label: must be a string if provided`);
+                  }
+                } else {
+                  errors.push(`${effectPath}.type: must be "cash" or "reputation"`);
+                }
+              });
+            }
+
+            if (consequence.temporaryEffects !== undefined) {
+              if (!Array.isArray(consequence.temporaryEffects)) {
+                errors.push(`${consPath}.temporaryEffects: must be an array if provided`);
+              } else {
+                consequence.temporaryEffects.forEach((tempEffect: any, tempIndex: number) => {
+                  const tempPath = `${consPath}.temporaryEffects[${tempIndex}]`;
+
+                  if (!tempEffect || typeof tempEffect !== 'object') {
+                    errors.push(`${tempPath}: must be an object`);
+                    return;
+                  }
+
+                  if (!isValidGameMetric(tempEffect.metric)) {
+                    errors.push(`${tempPath}.metric: must be one of: ${Object.values(GameMetric).join(', ')}`);
+                  }
+
+                  if (!isValidEffectType(tempEffect.type)) {
+                    errors.push(`${tempPath}.type: must be one of: ${Object.values(EffectType).join(', ')}`);
+                  }
+
+                  if (typeof tempEffect.value !== 'number') {
+                    errors.push(`${tempPath}.value: must be a number`);
+                  }
+
+                  if (typeof tempEffect.durationSeconds !== 'number' || tempEffect.durationSeconds <= 0) {
+                    errors.push(`${tempPath}.durationSeconds: must be a number > 0`);
+                  }
+
+                  if (tempEffect.priority !== undefined && typeof tempEffect.priority !== 'number') {
+                    errors.push(`${tempPath}.priority: must be a number if provided`);
+                  }
+                });
+              }
+            }
+          });
+        }
+      });
+    }
+
+    return errors;
+  };
+
+  const handleJsonImport = async () => {
+    if (!form.id) {
+      setJsonImportErrors(['Save the industry first.']);
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(jsonImportText);
+      const eventsToImport: GameEvent[] = [];
+      const allErrors: string[] = [];
+
+      if (Array.isArray(parsed)) {
+        for (let i = 0; i < parsed.length; i++) {
+          const errors = validateAndGetErrors(parsed[i], `Event ${i}`);
+          if (errors.length > 0) {
+            allErrors.push(...errors);
+          } else if (validateGameEvent(parsed[i])) {
+            eventsToImport.push(parsed[i]);
+          }
+        }
+      } else {
+        const errors = validateAndGetErrors(parsed, 'Event');
+        if (errors.length > 0) {
+          allErrors.push(...errors);
+        } else if (validateGameEvent(parsed)) {
+          eventsToImport.push(parsed);
+        }
+      }
+
+      if (allErrors.length > 0) {
+        setJsonImportErrors(allErrors);
+        return;
+      }
+
+      if (eventsToImport.length === 0) {
+        setJsonImportErrors(['No valid events found to import.']);
+        return;
+      }
+
+      setJsonImportErrors([]);
+      setJsonImporting(true);
+
+      let successCount = 0;
+      let errorMessages: string[] = [];
+
+      for (const event of eventsToImport) {
+        try {
+          const result = await upsertEventForIndustry(form.id, event);
+          if (result.success) {
+            successCount++;
+            // Update local state
+            setEvents((prev) => {
+              const exists = prev.some((e) => e.id === event.id);
+              const next = exists ? prev.map((e) => (e.id === event.id ? event : e)) : [...prev, event];
+              return next.sort((a, b) => a.title.localeCompare(b.title));
+            });
+          } else {
+            errorMessages.push(`Failed to import "${event.title}": ${result.message}`);
+          }
+        } catch (error) {
+          errorMessages.push(`Failed to import "${event.title}": ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+
+      setJsonImporting(false);
+      if (successCount > 0) {
+        setEventStatus(`Successfully imported ${successCount} event(s).`);
+        setShowJsonImport(false);
+        setJsonImportText('');
+      }
+      if (errorMessages.length > 0) {
+        setJsonImportErrors(errorMessages);
+      }
+    } catch (error) {
+      setJsonImportErrors([`Invalid JSON: ${error instanceof Error ? error.message : 'Unknown parsing error'}`]);
+    }
+  };
+
+  const handleJsonExport = () => {
+    const exportData = JSON.stringify(events, null, 2);
+    navigator.clipboard.writeText(exportData).then(() => {
+      setEventStatus('Events JSON copied to clipboard!');
+    }).catch(() => {
+      // Fallback: show in textarea
+      setJsonImportText(exportData);
+      setShowJsonImport(true);
+      setEventStatus('Events JSON shown below. Copy manually.');
+    });
+  };
+
+  const handleJsonAutoFill = () => {
+    if (!form.id) {
+      setJsonImportErrors(['Save the industry first.']);
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(jsonImportText);
+      const errors = validateAndGetErrors(parsed, 'Event');
+      if (errors.length > 0) {
+        setJsonImportErrors(errors);
+        return;
+      }
+
+      if (!validateGameEvent(parsed)) {
+        setJsonImportErrors(['Validation failed despite passing error checks. This is a bug.']);
+        return;
+      }
+
+      // Auto-fill the form
+      setEventForm({
+        id: parsed.id,
+        title: parsed.title,
+        category: parsed.category,
+        summary: parsed.summary
+      });
+      setEventChoices(parsed.choices);
+      setSelectedChoiceId('');
+      setIsCreatingChoice(false);
+      setChoiceForm({ id: '', label: '', description: '', cost: '' });
+      setSelectedConsequenceId('');
+      setIsCreatingConsequence(false);
+      setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+      setIsCreatingEvent(true);
+      setSelectedEventId('');
+
+      setJsonImportErrors([]);
+      setShowJsonImport(false);
+      setJsonImportText('');
+      setEventStatus('Event form auto-filled. Make any changes and save.');
+    } catch (error) {
+      setJsonImportErrors([`Invalid JSON: ${error instanceof Error ? error.message : 'Unknown parsing error'}`]);
+    }
+  };
+
   const selectRole = (role: StaffRoleConfig) => {
     setIsCreatingRole(false);
     setSelectedRoleId(role.id);
-    setRoleForm({ id: role.id, name: role.name, salary: String(role.salary), serviceSpeed: String(role.serviceSpeed), emoji: role.emoji });
+    // Convert effects array to form format (handle both old and new formats)
+    const effects = role.effects || [];
+    // If no effects but old format properties exist, convert them
+    if (effects.length === 0 && ('serviceSpeed' in role || 'workloadReduction' in role)) {
+      const legacyEffects: Array<{ metric: GameMetric; type: EffectType; value: string }> = [];
+      if ('serviceSpeed' in role && (role as any).serviceSpeed > 0) {
+        legacyEffects.push({ metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: String((role as any).serviceSpeed) });
+      }
+      if ('workloadReduction' in role && (role as any).workloadReduction > 0) {
+        legacyEffects.push({ metric: GameMetric.FounderWorkingHours, type: EffectType.Add, value: String(-(role as any).workloadReduction) });
+      }
+      setRoleForm({ id: role.id, name: role.name, salary: String(role.salary), effects: legacyEffects, emoji: role.emoji });
+    } else {
+      setRoleForm({ id: role.id, name: role.name, salary: String(role.salary), effects: effects.map(e => ({ metric: e.metric, type: e.type, value: String(e.value) })), emoji: role.emoji });
+    }
     setStaffStatus(null);
   };
 
@@ -750,7 +1114,7 @@ export default function AdminPage() {
     }
     setIsCreatingRole(true);
     setSelectedRoleId('');
-    setRoleForm({ id: '', name: '', salary: '0', serviceSpeed: '0', emoji: '🧑‍💼' });
+                                  setRoleForm({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼' });
     setStaffStatus(null);
   };
 
@@ -762,17 +1126,32 @@ export default function AdminPage() {
     const id = roleForm.id.trim();
     const name = roleForm.name.trim();
     const salary = Number(roleForm.salary);
-    const serviceSpeed = Number(roleForm.serviceSpeed);
+
     if (!id || !name) {
       setStaffStatus('Role id and name are required.');
       return;
     }
-    if (!Number.isFinite(salary) || salary < 0 || !Number.isFinite(serviceSpeed) || serviceSpeed < 0) {
-      setStaffStatus('Salary and service speed must be non-negative.');
+    if (!Number.isFinite(salary) || salary < 0) {
+      setStaffStatus('Salary must be non-negative.');
       return;
     }
+
+    // Validate effects from form
+    const effects: UpgradeEffect[] = [];
+    for (const effect of roleForm.effects) {
+      const value = Number(effect.value);
+      if (!Number.isFinite(value)) {
+        setStaffStatus(`Effect value must be a valid number: ${effect.value}`);
+        return;
+      }
+      effects.push({
+        metric: effect.metric,
+        type: effect.type,
+        value: value,
+      });
+    }
     setRoleSaving(true);
-    const result = await upsertStaffRole({ id, industryId: form.id, name, salary, serviceSpeed, emoji: roleForm.emoji.trim() || undefined });
+    const result = await upsertStaffRole({ id, industryId: form.id, name, salary, effects, emoji: roleForm.emoji.trim() || undefined });
     setRoleSaving(false);
     if (!result.success) {
       setStaffStatus(result.message ?? 'Failed to save role.');
@@ -780,7 +1159,7 @@ export default function AdminPage() {
     }
     setStaffRoles((prev) => {
       const exists = prev.some((r) => r.id === id);
-      const next = exists ? prev.map((r) => (r.id === id ? { id, name, salary, serviceSpeed, emoji: roleForm.emoji.trim() || '🧑‍💼' } : r)) : [...prev, { id, name, salary, serviceSpeed, emoji: roleForm.emoji.trim() || '🧑‍💼' }];
+      const next = exists ? prev.map((r) => (r.id === id ? { id, name, salary, effects, emoji: roleForm.emoji.trim() || '🧑‍💼' } : r)) : [...prev, { id, name, salary, effects, emoji: roleForm.emoji.trim() || '🧑‍💼' }];
       return next.sort((a, b) => a.name.localeCompare(b.name));
     });
     setStaffStatus('Role saved.');
@@ -805,7 +1184,7 @@ export default function AdminPage() {
     }
     setStaffRoles((prev) => prev.filter((r) => r.id !== selectedRoleId));
     setSelectedRoleId('');
-    setRoleForm({ id: '', name: '', salary: '0', serviceSpeed: '0', emoji: '🧑‍💼' });
+                                  setRoleForm({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼' });
     setStaffStatus('Role deleted.');
   };
 
@@ -1175,6 +1554,16 @@ export default function AdminPage() {
                       className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                       value={metrics.startingReputation}
                       onChange={(e) => setMetrics((prev) => ({ ...prev, startingReputation: Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Founder Work Hours (per month)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      value={metrics.founderWorkHours}
+                      onChange={(e) => setMetrics((prev) => ({ ...prev, founderWorkHours: Number(e.target.value) }))}
                     />
                   </div>
                 </div>
@@ -1566,13 +1955,31 @@ export default function AdminPage() {
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center justify-between gap-3">
-                  <button
-                    onClick={handleCreateEvent}
-                    className="px-3 py-2 text-sm font-medium rounded-lg border border-fuchsia-500 text-fuchsia-200 hover:bg-fuchsia-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={isCreating || !form.id}
-                  >
-                    + New Event
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleCreateEvent}
+                      className="px-3 py-2 text-sm font-medium rounded-lg border border-fuchsia-500 text-fuchsia-200 hover:bg-fuchsia-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={isCreating || !form.id}
+                    >
+                      + New Event
+                    </button>
+                    <button
+                      onClick={() => setShowJsonImport(true)}
+                      className="px-3 py-2 text-sm font-medium rounded-lg border border-blue-500 text-blue-200 hover:bg-blue-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={!form.id}
+                      title="Import events from JSON"
+                    >
+                      📋 Import JSON
+                    </button>
+                    <button
+                      onClick={handleJsonExport}
+                      className="px-3 py-2 text-sm font-medium rounded-lg border border-green-500 text-green-200 hover:bg-green-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={events.length === 0}
+                      title="Export events to JSON"
+                    >
+                      📤 Export JSON
+                    </button>
+                  </div>
                   {eventStatus && <span className="text-sm text-slate-300">{eventStatus}</span>}
                 </div>
 
@@ -2128,6 +2535,145 @@ export default function AdminPage() {
             )}
           </div>
         </section>
+
+        {/* JSON Import Modal for Events */}
+        {showJsonImport && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+              <div className="p-6 border-b border-slate-700">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-semibold text-slate-100">Import Events from JSON</h3>
+                  <button
+                    onClick={() => {
+                      setShowJsonImport(false);
+                      setJsonImportText('');
+                      setJsonImportErrors([]);
+                    }}
+                    className="text-slate-400 hover:text-slate-200 text-2xl leading-none"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="text-sm text-slate-400 mt-2 space-y-1">
+                  <p>Paste JSON for a single event to auto-fill the form, or an array of events for bulk import.</p>
+                  <p><strong>Valid metrics:</strong> {Object.values(GameMetric).join(', ')}</p>
+                  <p><strong>Valid effect types:</strong> {Object.values(EffectType).join(', ')}</p>
+                  <p><strong>Immediate effects:</strong> "cash", "reputation"</p>
+                </div>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">JSON Data</label>
+                  <textarea
+                    value={jsonImportText}
+                    onChange={(e) => setJsonImportText(e.target.value)}
+                    placeholder="Paste your JSON here, or click 'Load Sample' to get started with an example..."
+                    rows={20}
+                    className="w-full rounded-lg bg-slate-800 border border-slate-600 px-3 py-2 text-slate-200 font-mono text-sm"
+                  />
+                </div>
+
+                {jsonImportErrors.length > 0 && (
+                  <div className="bg-red-900/20 border border-red-700 rounded-lg p-4">
+                    <h4 className="text-red-300 font-semibold mb-2">Import Errors:</h4>
+                    <ul className="text-red-200 text-sm space-y-1">
+                      {jsonImportErrors.map((error, index) => (
+                        <li key={index}>• {error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    onClick={() => {
+                      setJsonImportText(`{
+  "id": "sample-equipment-upgrade",
+  "title": "Equipment Upgrade Available",
+  "category": "opportunity",
+  "summary": "A vendor offers premium equipment at a discounted price. This could improve service quality and attract more customers.",
+  "choices": [
+    {
+      "id": "upgrade-equipment",
+      "label": "Purchase Upgrade",
+      "cost": 2500,
+      "description": "Invest in better equipment to improve service quality",
+      "consequences": [
+        {
+          "id": "successful-upgrade",
+          "label": "Upgrade Successful",
+          "weight": 85,
+          "effects": [
+            {
+              "type": "reputation",
+              "amount": 3
+            }
+          ],
+          "temporaryEffects": [
+            {
+              "metric": "serviceSpeedMultiplier",
+              "type": "percent",
+              "value": 15,
+              "durationSeconds": 45
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "decline-offer",
+      "label": "Decline for Now",
+      "consequences": [
+        {
+          "id": "status-quo",
+          "label": "Continue as Usual",
+          "weight": 100,
+          "effects": []
+        }
+      ]
+    }
+  ]
+}`);
+                      setJsonImportErrors([]);
+                    }}
+                    className="px-3 py-2 rounded-lg text-sm font-semibold border border-purple-500 text-purple-200 hover:bg-purple-500/10"
+                    title="Load a sample event JSON to get started"
+                  >
+                    📄 Load Sample
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setShowJsonImport(false);
+                        setJsonImportText('');
+                        setJsonImportErrors([]);
+                      }}
+                      className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleJsonAutoFill}
+                      disabled={!jsonImportText.trim()}
+                      className="px-4 py-2 rounded-lg text-sm font-semibold bg-green-600 hover:bg-green-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Auto-fill form with single event JSON"
+                    >
+                      Auto-fill Form
+                    </button>
+                    <button
+                      onClick={handleJsonImport}
+                      disabled={jsonImporting || !jsonImportText.trim()}
+                      className="px-4 py-2 rounded-lg text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {jsonImporting ? 'Importing…' : 'Bulk Import'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
@@ -2810,15 +3356,74 @@ export default function AdminPage() {
                               className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                             />
                           </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-slate-300 mb-1">Service Speed</label>
-                            <input
-                              type="number"
-                              min="0"
-                              value={roleForm.serviceSpeed}
-                              onChange={(e) => setRoleForm((p) => ({ ...p, serviceSpeed: e.target.value }))}
-                              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                            />
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-semibold text-slate-300 mb-1">Effects</label>
+                            <div className="space-y-2">
+                              {roleForm.effects.map((effect, index) => (
+                                <div key={index} className="flex items-center gap-2 p-2 bg-slate-800 rounded border">
+                                  <select
+                                    value={effect.metric}
+                                    onChange={(e) => {
+                                      const newEffects = [...roleForm.effects];
+                                      newEffects[index] = { ...newEffects[index], metric: e.target.value as GameMetric };
+                                      setRoleForm(p => ({ ...p, effects: newEffects }));
+                                    }}
+                                    className="flex-1 rounded bg-slate-700 border border-slate-600 px-2 py-1 text-sm"
+                                  >
+                                    <option value={GameMetric.ServiceSpeedMultiplier}>Service Speed</option>
+                                    <option value={GameMetric.FounderWorkingHours}>Founder Workload</option>
+                                    <option value={GameMetric.MonthlyExpenses}>Monthly Expenses</option>
+                                    <option value={GameMetric.ReputationMultiplier}>Reputation</option>
+                                    <option value={GameMetric.ServiceRevenueMultiplier}>Revenue Multiplier</option>
+                                    <option value={GameMetric.ServiceRevenueFlatBonus}>Revenue Bonus</option>
+                                  </select>
+                                  <select
+                                    value={effect.type}
+                                    onChange={(e) => {
+                                      const newEffects = [...roleForm.effects];
+                                      newEffects[index] = { ...newEffects[index], type: e.target.value as EffectType };
+                                      setRoleForm(p => ({ ...p, effects: newEffects }));
+                                    }}
+                                    className="w-20 rounded bg-slate-700 border border-slate-600 px-2 py-1 text-sm"
+                                  >
+                                    <option value={EffectType.Add}>Add</option>
+                                    <option value={EffectType.Percent}>%</option>
+                                    <option value={EffectType.Multiply}>×</option>
+                                  </select>
+                                  <input
+                                    type="number"
+                                    value={effect.value}
+                                    onChange={(e) => {
+                                      const newEffects = [...roleForm.effects];
+                                      newEffects[index] = { ...newEffects[index], value: e.target.value };
+                                      setRoleForm(p => ({ ...p, effects: newEffects }));
+                                    }}
+                                    className="w-20 rounded bg-slate-700 border border-slate-600 px-2 py-1 text-sm"
+                                    placeholder="Value"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newEffects = roleForm.effects.filter((_, i) => i !== index);
+                                      setRoleForm(p => ({ ...p, effects: newEffects }));
+                                    }}
+                                    className="text-red-400 hover:text-red-300"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newEffect = { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: '20' };
+                                  setRoleForm(p => ({ ...p, effects: [...p.effects, newEffect] }));
+                                }}
+                                className="w-full py-1 px-3 bg-slate-700 hover:bg-slate-600 rounded text-sm text-slate-300"
+                              >
+                                + Add Effect
+                              </button>
+                            </div>
                           </div>
                           <div className="md:col-span-2">
                             <label className="block text-sm font-semibold text-slate-300 mb-1">Emoji</label>
@@ -2848,7 +3453,7 @@ export default function AdminPage() {
                                 } else {
                                   setIsCreatingRole(false);
                                   setSelectedRoleId('');
-                                  setRoleForm({ id: '', name: '', salary: '0', serviceSpeed: '0', emoji: '🧑‍💼' });
+                                  setRoleForm({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼' });
                                 }
                                 setStaffStatus(null);
                               }}

@@ -1,13 +1,15 @@
 import { supabase } from '@/lib/supabase/client';
 import type { IndustryId } from '@/lib/game/types';
 import type { StaffRoleConfig, StaffPreset } from '@/lib/game/staffConfig';
+import { GameMetric, EffectType } from '@/lib/game/effectManager';
+import type { UpgradeEffect } from '@/lib/game/types';
 
 interface StaffRoleRow {
   id: string;
   industry_id: string;
   name: string;
   salary: number | string | null;
-  service_speed: number | string | null;
+  effects: any; // JSONB column for effects array
   emoji: string | null;
 }
 
@@ -45,13 +47,26 @@ const mapRoleRows = (rows: StaffRoleRow[] | null | undefined): StaffRoleConfig[]
 
   return rows
     .filter((row) => row.id && row.name)
-    .map((row) => ({
-      id: row.id,
-      name: row.name,
-      salary: parseNumber(row.salary),
-      serviceSpeed: parseNumber(row.service_speed),
-      emoji: row.emoji && row.emoji.trim() ? row.emoji.trim() : '🧑‍💼',
-    }));
+    .map((row) => {
+      // Parse effects from JSON column
+      let effects: UpgradeEffect[] = [];
+      if (row.effects && Array.isArray(row.effects)) {
+        effects = row.effects.map((effect: any) => ({
+          metric: effect.metric,
+          type: effect.type,
+          value: Number(effect.value),
+          priority: effect.priority,
+        }));
+      }
+
+      return {
+        id: row.id,
+        name: row.name,
+        salary: parseNumber(row.salary),
+        effects,
+        emoji: row.emoji && row.emoji.trim() ? row.emoji.trim() : '🧑‍💼',
+      };
+    });
 };
 
 const mapPresetRows = (rows: StaffPresetRow[] | null | undefined): StaffPreset[] => {
@@ -85,7 +100,7 @@ export async function fetchStaffDataForIndustry(
   const [rolesResponse, presetsResponse] = await Promise.all([
     supabase
       .from('staff_roles')
-      .select('id, industry_id, name, salary, service_speed, emoji')
+      .select('id, industry_id, name, salary, effects, emoji')
       .eq('industry_id', industryId),
     supabase
       .from('staff_presets')
@@ -122,7 +137,7 @@ export async function upsertStaffRole(role: {
   industryId: IndustryId;
   name: string;
   salary: number;
-  serviceSpeed: number;
+  effects: UpgradeEffect[];
   emoji?: string;
 }): Promise<{ success: boolean; message?: string }>
 {
@@ -130,12 +145,20 @@ export async function upsertStaffRole(role: {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
+  // Convert effects array to JSON
+  const effectsJson = role.effects.map(effect => ({
+    metric: effect.metric,
+    type: effect.type,
+    value: effect.value,
+    priority: effect.priority,
+  }));
+
   const payload: StaffRoleRow = {
     id: role.id,
     industry_id: role.industryId,
     name: role.name,
     salary: role.salary,
-    service_speed: role.serviceSpeed,
+    effects: effectsJson,
     emoji: role.emoji ?? null,
   };
 

@@ -6,15 +6,17 @@ export interface MetricChange {
   reputation?: number;
   revenue?: number;
   expenses?: number;
+  founderWorkingHours?: number;
 }
 
 export function useMetricChanges() {
   const { metrics, monthlyRevenue, monthlyExpenses } = useGameStore();
-  const prevMetrics = useRef({ 
-    cash: metrics.cash, 
+  const prevMetrics = useRef({
+    cash: metrics.cash,
     reputation: metrics.reputation,
     revenue: monthlyRevenue,
     expenses: monthlyExpenses,
+    founderWorkingHours: metrics.founderWorkingHours,
   });
   const [changes, setChanges] = useState<MetricChange>({});
 
@@ -41,12 +43,18 @@ export function useMetricChanges() {
       newChanges.expenses = monthlyExpenses - prevMetrics.current.expenses;
     }
 
+    // Track founder hours required changes
+    if (metrics.founderWorkingHours !== prevMetrics.current.founderWorkingHours) {
+      newChanges.founderWorkingHours = metrics.founderWorkingHours - prevMetrics.current.founderWorkingHours;
+    }
+
     // Update previous values
     prevMetrics.current = {
       cash: metrics.cash,
       reputation: metrics.reputation,
       revenue: monthlyRevenue,
       expenses: monthlyExpenses,
+      founderWorkingHours: metrics.founderWorkingHours,
     };
 
     // Only set changes if there are actual changes
@@ -60,7 +68,7 @@ export function useMetricChanges() {
 
       return () => clearTimeout(timer);
     }
-  }, [metrics.cash, metrics.reputation, monthlyRevenue, monthlyExpenses]);
+  }, [metrics.cash, metrics.reputation, metrics.founderWorkingHours, monthlyRevenue, monthlyExpenses]);
 
   return changes;
 }

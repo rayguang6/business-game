@@ -12,7 +12,7 @@ import {
   UpgradeDefinition,
 } from '@/lib/game/config';
 import { IndustryId, UpgradeId } from '@/lib/game/types';
-import { calculateActiveUpgradeMetrics, getUpgradeLevel } from './upgrades';
+import { getUpgradeLevel } from './upgrades';
 import { Upgrades } from '@/lib/store/types';
 import { EffectType, GameMetric } from '@/lib/game/effectManager';
 import { Staff } from '@/lib/features/staff';
@@ -111,9 +111,9 @@ export function calculateUpgradeMonthlyExpenses(
   upgrades: Upgrades,
   industryId: IndustryId,
 ): number {
-  const { currentMetrics } = calculateActiveUpgradeMetrics(upgrades, industryId);
   const baseMetrics = getBaseUpgradeMetricsForIndustry(industryId);
-  return Math.max(0, currentMetrics.monthlyExpenses - baseMetrics.monthlyExpenses);
+  const currentExpenses = effectManager.calculate(GameMetric.MonthlyExpenses, baseMetrics.monthlyExpenses);
+  return Math.max(0, currentExpenses - baseMetrics.monthlyExpenses);
 }
 
 /**

@@ -8,6 +8,7 @@ export interface BusinessMetrics {
   startingCash: number;
   monthlyExpenses: number;
   startingReputation: number;
+  founderWorkHours: number;
 }
 
 export interface BusinessStats {
