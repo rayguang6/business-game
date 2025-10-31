@@ -14,6 +14,7 @@ import {
   isNewMonth,
   UpgradeEffect,
   DEFAULT_INDUSTRY_ID,
+  getFounderWorkingHoursBase,
 } from '@/lib/game/config';
 import type { IndustryId } from '@/lib/game/types';
 
@@ -170,6 +171,7 @@ function processMonthTransition({
       profit: monthResult.profit,
       reputation: updatedMetrics.reputation,
       reputationChange: updatedMetrics.reputation - previousReputation,
+      founderWorkingHours: metrics.founderWorkingHours,
     },
   ];
 
@@ -483,6 +485,10 @@ export function tickOnce(state: TickSnapshot): TickResult {
       GameMetric.MonthlyExpenses,
       getMonthlyBaseExpenses(industryId),
     ),
+    founderWorkingHours: effectManager.calculate(
+      GameMetric.FounderWorkingHours,
+      getFounderWorkingHoursBase(industryId),
+    ),
   };
   monthlyExpenses = gameMetrics.monthlyExpenses;
 
@@ -510,6 +516,12 @@ export function tickOnce(state: TickSnapshot): TickResult {
   metrics = processedCustomersForTick.metrics;
   monthlyRevenue = processedCustomersForTick.monthlyRevenue;
   monthlyRevenueDetails = processedCustomersForTick.monthlyRevenueDetails;
+
+  // Update founder working hours with calculated value (includes staff/upgrade effects)
+  metrics = {
+    ...metrics,
+    founderWorkingHours: gameMetrics.founderWorkingHours,
+  };
 
   return {
     gameTick: nextTick,

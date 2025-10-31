@@ -1,0 +1,108 @@
+[
+  {
+    "id": "broken-sterilizer-machine",
+    "title": "Broken Sterilizer Machine",
+    "category": "risk",
+    "summary": "Your main sterilizer suddenly malfunctions in the middle of a busy day. You must decide how to handle the delay and the repair.",
+    "choices": [
+      {
+        "id": "delay-the-repair",
+        "label": "Delay the Repair",
+        "consequences": [
+          {
+            "id": "customers-notice",
+            "label": "Customers Notice",
+            "weight": 70,
+            "effects": [
+              {
+                "type": "reputation",
+                "amount": -2
+              }
+            ],
+            "temporaryEffects": [
+              {
+                "type": "percent",
+                "value": -25,
+                "metric": "serviceSpeedMultiplier",
+                "durationSeconds": 15
+              }
+            ]
+          },
+          {
+            "id": "health-inspector-arrives",
+            "label": "Health Inspector Arrives",
+            "weight": 27,
+            "effects": [
+              {
+                "type": "cash",
+                "amount": -1200
+              },
+              {
+                "type": "reputation",
+                "amount": -4
+              }
+            ],
+            "temporaryEffects": [
+              {
+                "type": "add",
+                "value": -1,
+                "metric": "serviceRooms",
+                "durationSeconds": 15
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "repair-immediately",
+        "cost": 1000,
+        "label": "Repair Immediately",
+        "description": "Pay full repair cost to restore operations fast.",
+        "consequences": [
+          {
+            "id": "machine-fixed-quickly-temporary-cash-loss",
+            "label": "Repaired Quickly",
+            "weight": 80,
+            "effects": [
+              {
+                "type": "reputation",
+                "amount": 1
+              }
+            ],
+            "temporaryEffects": [
+              {
+                "type": "percent",
+                "value": 10,
+                "metric": "serviceSpeedMultiplier",
+                "durationSeconds": 15
+              }
+            ]
+          },
+          {
+            "id": "technician-delay",
+            "label": "Technician Delay",
+            "weight": 20,
+            "effects": [
+              {
+                "type": "reputation",
+                "amount": -1
+              },
+              {
+                "type": "cash",
+                "amount": -800
+              }
+            ],
+            "temporaryEffects": [
+              {
+                "type": "percent",
+                "value": -20,
+                "metric": "serviceSpeedMultiplier",
+                "durationSeconds": 15
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

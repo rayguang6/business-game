@@ -14,6 +14,7 @@ export function KeyMetrics() {
     revenue: [],
     reputation: [],
     expenses: [],
+    founderWorkingHours: [],
   });
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export function KeyMetrics() {
         revenue: [...prev.revenue],
         reputation: [...prev.reputation],
         expenses: [...prev.expenses],
+        founderWorkingHours: [...prev.founderWorkingHours],
       };
 
       // Add cash change feedback
@@ -61,6 +63,15 @@ export function KeyMetrics() {
           id: `expenses-${Date.now()}`,
           value: changes.expenses,
           color: 'red',
+        });
+      }
+
+      // Add founder hours required change feedback
+      if (changes.founderWorkingHours !== undefined && changes.founderWorkingHours !== 0) {
+        newFeedback.founderWorkingHours.push({
+          id: `founderWorkingHours-${Date.now()}`,
+          value: changes.founderWorkingHours,
+          color: changes.founderWorkingHours < 0 ? 'green' : 'red', // Green when reduced, red when increased
         });
       }
 
@@ -111,11 +122,20 @@ export function KeyMetrics() {
       label: 'Monthly Expenses',
       color: 'text-red-400',
       feedback: feedbackByMetric.expenses,
+    },
+    {
+      key: 'founderWorkingHours',
+      icon: '⏰',
+      image: '/images/icons/upgrades.png',
+      value: `${metrics.founderWorkingHours}h`,
+      label: 'Founder Workload',
+      color: 'text-purple-400',
+      feedback: feedbackByMetric.founderWorkingHours,
     }
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-y-1 md:gap-y-2 gap-x-2 md:gap-x-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-y-1 md:gap-y-2 gap-x-2 md:gap-x-4">
       {metricsData.map((metric, index) => (
         <div key={index} className="flex items-center bg-black/65 py-0.5 md:py-0.5 px-0.5 md:px-1 rounded relative w-full">
           {/* Icon positioned outside from the left */}

@@ -24,6 +24,7 @@ export enum GameMetric {
   MonthlyExpenses = 'monthlyExpenses',
   ServiceRevenueMultiplier = 'serviceRevenueMultiplier',
   ServiceRevenueFlatBonus = 'serviceRevenueFlatBonus',
+  FounderWorkingHours = 'founderWorkingHours',
 }
 
 // How effects are applied
@@ -62,7 +63,6 @@ export interface MetricConstraints {
 export const METRIC_CONSTRAINTS: Record<GameMetric, MetricConstraints> = {
   [GameMetric.SpawnIntervalSeconds]: { 
     min: 0.1, 
-    max: 60,
   },
   [GameMetric.ServiceSpeedMultiplier]: { 
     min: 0.1, 
@@ -89,6 +89,11 @@ export const METRIC_CONSTRAINTS: Record<GameMetric, MetricConstraints> = {
   },
   [GameMetric.ServiceRevenueFlatBonus]: {
     min: -100000,
+  },
+  [GameMetric.FounderWorkingHours]: {
+    min: 0,
+    max: 500,
+    roundToInt: true,
   },
 };
 

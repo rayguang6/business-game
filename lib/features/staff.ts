@@ -1,12 +1,14 @@
 import { effectManager, GameMetric, EffectType } from '@/lib/game/effectManager';
+import type { UpgradeEffect } from '@/lib/game/types';
 
 export interface Staff {
   id: string;
   name: string;
   salary: number;
-  increaseServiceSpeed: number; // Percentage: 10 = 10% speed boost (1.1x faster service)
+  effects: UpgradeEffect[]; // Flexible effects array like upgrades
   emoji: string; // To represent the staff member
   role: string;
+  roleId: string; // Reference to the role configuration
 }
 
 /**
@@ -14,23 +16,7 @@ export interface Staff {
  * This should be called when a staff member is hired
  */
 export function addStaffEffects(staff: Staff): void {
-  // Service speed boost (stored as percentage)
-  // e.g., 10 = +10% speed boost, which means duration ÷ 1.10
-  if (staff.increaseServiceSpeed > 0) {
-    effectManager.add({
-      id: `staff_${staff.id}_speed`,
-      source: {
-        category: 'staff',
-        id: staff.id,
-        name: staff.name,
-      },
-      metric: GameMetric.ServiceSpeedMultiplier,
-      type: EffectType.Percent,
-      value: staff.increaseServiceSpeed,
-    });
-  }
-
-  // Monthly salary expense
+  // Monthly salary expense (always applied)
   if (staff.salary > 0) {
     effectManager.add({
       id: `staff_${staff.id}_salary`,
@@ -44,6 +30,22 @@ export function addStaffEffects(staff: Staff): void {
       value: staff.salary,
     });
   }
+
+  // Apply all staff effects (flexible system like upgrades)
+  staff.effects.forEach((effect, index) => {
+    effectManager.add({
+      id: `staff_${staff.id}_${index}`,
+      source: {
+        category: 'staff',
+        id: staff.id,
+        name: staff.name,
+      },
+      metric: effect.metric,
+      type: effect.type,
+      value: effect.value,
+      priority: effect.priority,
+    });
+  });
 }
 
 /**

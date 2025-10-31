@@ -1,0 +1,69 @@
+{
+  "id": "equipment-upgrade-opportunity",
+  "title": "Equipment Upgrade Available",
+  "category": "opportunity",
+  "summary": "A vendor offers premium dental chairs at a discounted price. This could improve patient comfort and attract more customers.",
+  "choices": [
+    {
+      "id": "upgrade-equipment",
+      "label": "Purchase Upgrade",
+      "cost": 2500,
+      "description": "Invest in better equipment to improve service quality",
+      "consequences": [
+        {
+          "id": "successful-upgrade",
+          "label": "Upgrade Successful",
+          "weight": 85,
+          "effects": [
+            {
+              "type": "reputation",
+              "amount": 3
+            }
+          ],
+          "temporaryEffects": [
+            {
+              "metric": "serviceSpeedMultiplier",
+              "type": "percent",
+              "value": 15,
+              "durationSeconds": 45
+            },
+            {
+              "metric": "happyProbability",
+              "type": "add",
+              "value": 0.1,
+              "durationSeconds": 45
+            }
+          ]
+        },
+        {
+          "id": "minor-issues",
+          "label": "Minor Setup Issues",
+          "weight": 15,
+          "effects": [
+            {
+              "type": "cash",
+              "amount": -300,
+              "label": "Extra setup costs"
+            },
+            {
+              "type": "reputation",
+              "amount": -1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "decline-offer",
+      "label": "Decline for Now",
+      "consequences": [
+        {
+          "id": "status-quo",
+          "label": "Continue as Usual",
+          "weight": 100,
+          "effects": []
+        }
+      ]
+    }
+  ]
+}

@@ -52,7 +52,7 @@ export async function upsertIndustryToSupabase(industry: Industry): Promise<{ su
   };
 
   const { data, error } = await supabase
-    .from<IndustryRow>('industries')
+    .from('industries')
     .upsert(payload, { onConflict: 'id' })
     .select()
     .single();

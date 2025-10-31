@@ -24,12 +24,14 @@ const mapBusinessMetrics = (raw: unknown): BusinessMetrics | undefined => {
   if (
     typeof candidate.startingCash === 'number' &&
     typeof candidate.monthlyExpenses === 'number' &&
-    typeof candidate.startingReputation === 'number'
+    typeof candidate.startingReputation === 'number' &&
+    typeof candidate.founderWorkHours === 'number'
   ) {
     return {
       startingCash: candidate.startingCash,
       monthlyExpenses: candidate.monthlyExpenses,
       startingReputation: candidate.startingReputation,
+      founderWorkHours: candidate.founderWorkHours,
     };
   }
   return undefined;

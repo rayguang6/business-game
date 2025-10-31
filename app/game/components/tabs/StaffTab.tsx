@@ -3,6 +3,7 @@
 import React from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
 import type { Staff } from '@/lib/features/staff';
+import { GameMetric, EffectType } from '@/lib/game/effectManager';
 
 const ROLE_STYLE_MAP: Record<
   string,
@@ -46,6 +47,32 @@ const FALLBACK_STYLE = {
 };
 
 const getRoleStyles = (role: string) => ROLE_STYLE_MAP[role] ?? FALLBACK_STYLE;
+
+// Format effect for display
+const formatEffect = (effect: { metric: GameMetric; type: EffectType; value: number }) => {
+  const getMetricLabel = (metric: GameMetric) => {
+    switch (metric) {
+      case GameMetric.ServiceSpeedMultiplier: return 'Service Speed';
+      case GameMetric.FounderWorkingHours: return 'Founder Workload';
+      case GameMetric.MonthlyExpenses: return 'Monthly Expenses';
+      case GameMetric.ReputationMultiplier: return 'Reputation';
+      case GameMetric.ServiceRevenueMultiplier: return 'Revenue';
+      case GameMetric.ServiceRevenueFlatBonus: return 'Revenue Bonus';
+      default: return metric;
+    }
+  };
+
+  const getTypeSymbol = (type: EffectType, value: number) => {
+    switch (type) {
+      case EffectType.Add: return value >= 0 ? `+${value}` : value.toString();
+      case EffectType.Percent: return `${value >= 0 ? '+' : ''}${value}%`;
+      case EffectType.Multiply: return `×${value}`;
+      default: return value.toString();
+    }
+  };
+
+  return `${getTypeSymbol(effect.type, effect.value)} ${getMetricLabel(effect.metric)}`;
+};
 
 export function StaffTab() {
   const hiredStaff = useGameStore((state) => state.hiredStaff);
@@ -109,6 +136,22 @@ export function StaffTab() {
                       ${Math.round(member.salary).toLocaleString()}/month
                     </span>
                   </div>
+
+                  {/* Staff Effects */}
+                  {member.effects.length > 0 && (
+                    <div className="w-full bg-black/20 border border-white/10 rounded-xl px-2 py-1.5 sm:px-3 sm:py-2">
+                      <span className="block text-[9px] sm:text-[11px] text-white/70 uppercase tracking-[0.22em] mb-1">
+                        Effects
+                      </span>
+                      <div className="space-y-0.5">
+                        {member.effects.map((effect, index) => (
+                          <div key={index} className="text-[9px] sm:text-[10px] text-green-300 font-medium leading-tight">
+                            {formatEffect(effect)}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -160,6 +203,22 @@ export function StaffTab() {
                     ${Math.round(candidate.salary).toLocaleString()}/m
                   </span>
                 </div>
+
+                {/* Staff Effects */}
+                {candidate.effects.length > 0 && (
+                  <div className="w-full bg-black/20 border border-white/10 rounded-xl px-2 py-1.5 sm:px-3 sm:py-2">
+                    <span className="block text-[9px] sm:text-[11px] text-white/60 uppercase tracking-[0.22em] mb-1">
+                      Effects
+                    </span>
+                    <div className="space-y-0.5">
+                      {candidate.effects.map((effect, index) => (
+                        <div key={index} className="text-[9px] sm:text-[10px] text-green-300 font-medium leading-tight">
+                          {formatEffect(effect)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <button
                   onClick={() => handleHireStaff(candidate)}

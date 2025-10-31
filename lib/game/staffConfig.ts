@@ -1,12 +1,15 @@
 import type { Staff } from '@/lib/features/staff';
 import type { IndustryId } from '@/lib/game/types';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/types';
+import { GameMetric, EffectType } from '@/lib/game/effectManager';
+
+import type { UpgradeEffect } from '@/lib/game/types';
 
 export interface StaffRoleConfig {
   id: string;
   name: string;
   salary: number;
-  serviceSpeed: number;
+  effects: UpgradeEffect[]; // Flexible effects like upgrades
   emoji: string;
 }
 
@@ -16,6 +19,7 @@ export interface StaffPreset {
   roleId: string;
   salary?: number;
   serviceSpeed?: number;
+  workloadReduction?: number;
   emoji?: string;
 }
 
@@ -93,7 +97,7 @@ function buildStaffFromRole(
     role: overrides.role ?? role.name,
     roleId: role.id,
     salary: overrides.salary ?? role.salary,
-    increaseServiceSpeed: overrides.increaseServiceSpeed ?? role.serviceSpeed,
+    effects: overrides.effects ?? role.effects.map(effect => ({ ...effect })), // Deep copy effects
     emoji: overrides.emoji ?? role.emoji,
   };
 }
@@ -146,7 +150,6 @@ export function setInitialStaffForIndustry(
       id: preset.id,
       name,
       salary: preset.salary,
-      increaseServiceSpeed: preset.serviceSpeed,
       emoji: preset.emoji,
     });
   });
@@ -181,7 +184,7 @@ export function createRandomStaffForIndustry(
     role: role.name,
     roleId: role.id,
     salary: role.salary,
-    increaseServiceSpeed: role.serviceSpeed,
+    effects: role.effects.map(effect => ({ ...effect })), // Deep copy effects
     emoji: role.emoji,
   };
 }
@@ -206,21 +209,30 @@ const DEFAULT_ROLES: StaffRoleConfig[] = [
     id: 'assistant',
     name: 'Assistant',
     salary: 2600,
-    serviceSpeed: 8,
+    effects: [
+      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 8 },
+      { metric: GameMetric.FounderWorkingHours, type: EffectType.Add, value: -8 },
+    ],
     emoji: '👩‍⚕️',
   },
   {
     id: 'technician',
     name: 'Technician',
     salary: 3000,
-    serviceSpeed: 10,
+    effects: [
+      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 10 },
+      { metric: GameMetric.FounderWorkingHours, type: EffectType.Add, value: -10 },
+    ],
     emoji: '👨‍🔧',
   },
   {
     id: 'specialist',
     name: 'Specialist',
     salary: 3600,
-    serviceSpeed: 14,
+    effects: [
+      { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 14 },
+      { metric: GameMetric.FounderWorkingHours, type: EffectType.Add, value: -14 },
+    ],
     emoji: '👨‍🔬',
   },
 ];
@@ -231,7 +243,6 @@ const DEFAULT_INITIAL_STAFF: StaffPreset[] = [
     name: 'Alice',
     roleId: 'assistant',
     salary: 2600,
-    serviceSpeed: 8,
     emoji: '👩‍⚕️',
   },
   {
@@ -239,7 +250,6 @@ const DEFAULT_INITIAL_STAFF: StaffPreset[] = [
     name: 'Bob',
     roleId: 'specialist',
     salary: 3600,
-    serviceSpeed: 14,
     emoji: '👨‍🔬',
   },
 ];

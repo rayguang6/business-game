@@ -18,7 +18,7 @@ export async function fetchServicesForIndustry(
   }
 
   const { data, error } = await supabase
-    .from<ServiceRow>('services')
+    .from('services')
     .select('id, industry_id, name, duration, price')
     .eq('industry_id', industryId);
 
@@ -53,7 +53,7 @@ export async function upsertServiceForIndustry(
   };
 
   const { data, error } = await supabase
-    .from<ServiceRow>('services')
+    .from('services')
     .upsert(payload, { onConflict: 'id' })
     .select()
     .single();

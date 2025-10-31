@@ -98,13 +98,16 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
       return { success: false, message: `Need $${upgrade.cost} to purchase ${upgrade.name}.` };
     }
 
-    const previousUpgradeExpenses = calculateUpgradeMonthlyExpenses(store.upgrades, industryId);
-    const nextUpgrades: Upgrades = {
-      ...store.upgrades,
-      [upgradeId]: currentLevel + 1,
-    };
-    const newUpgradeExpenses = calculateUpgradeMonthlyExpenses(nextUpgrades, industryId);
-    const monthlyExpenseDelta = newUpgradeExpenses - previousUpgradeExpenses;
+    // Calculate expense delta by temporarily adding the new upgrade effect
+    const baseExpenses = getMonthlyBaseExpenses(industryId);
+    const currentExpenses = effectManager.calculate(GameMetric.MonthlyExpenses, baseExpenses);
+
+    // Temporarily add the new upgrade effect to calculate new expenses
+    addUpgradeEffects(upgrade, currentLevel + 1);
+    const newExpenses = effectManager.calculate(GameMetric.MonthlyExpenses, baseExpenses);
+    removeUpgradeEffects(upgradeId); // Remove the temporary effect
+
+    const monthlyExpenseDelta = newExpenses - currentExpenses;
 
     const newLevel = currentLevel + 1;
     const upgradeLabel = upgrade.maxLevel > 1 
@@ -130,8 +133,7 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
           ...state.metrics,
           totalExpenses: state.metrics.totalExpenses + Math.max(0, monthlyExpenseDelta),
         },
-        monthlyExpenses:
-          getMonthlyBaseExpenses(industryId) + newUpgradeExpenses,
+        monthlyExpenses: effectManager.calculate(GameMetric.MonthlyExpenses, getMonthlyBaseExpenses(industryId)),
         monthlyExpenseAdjustments: state.monthlyExpenseAdjustments + Math.max(0, monthlyExpenseDelta),
       };
     });

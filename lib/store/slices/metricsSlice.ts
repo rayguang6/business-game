@@ -1,7 +1,8 @@
 import { StateCreator } from 'zustand';
 import { Metrics } from '../types';
 import { GameState } from '../types';
-import { DEFAULT_INDUSTRY_ID, getBusinessMetrics, type IndustryId } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getBusinessMetrics } from '@/lib/game/config';
+import type { IndustryId } from '@/lib/game/types';
 
 // Shared initial metrics state - single source of truth
 export const getInitialMetrics = (industryId: IndustryId = DEFAULT_INDUSTRY_ID): Metrics => {
@@ -9,8 +10,9 @@ export const getInitialMetrics = (industryId: IndustryId = DEFAULT_INDUSTRY_ID):
   return {
     cash: metrics.startingCash,
     totalRevenue: 0,
-    totalExpenses: 0, 
+    totalExpenses: 0,
     reputation: metrics.startingReputation,
+    founderWorkingHours: metrics.founderWorkHours, // Start with full monthly requirement
   };
 };
 

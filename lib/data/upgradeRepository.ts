@@ -52,7 +52,7 @@ export async function fetchUpgradesForIndustry(
   }
 
   const { data, error } = await supabase
-    .from<UpgradeRow>('upgrades')
+    .from('upgrades')
     .select('id, industry_id, name, description, icon, cost, max_level, upgrade_effects(id, metric, type, value, priority)')
     .eq('industry_id', industryId);
 

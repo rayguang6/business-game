@@ -140,6 +140,10 @@ export function getRoundDurationSecondsForIndustry(
   return getBusinessStats(industryId).monthDurationSeconds;
 }
 
+export function getFounderWorkingHoursBase(industryId: IndustryId = DEFAULT_INDUSTRY_ID): number {
+  return getBusinessMetrics(industryId).founderWorkHours;
+}
+
 export function getEventTriggerSecondsForIndustry(
   industryId: IndustryId = DEFAULT_INDUSTRY_ID,
 ): number[] {

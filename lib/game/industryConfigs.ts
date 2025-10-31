@@ -21,6 +21,7 @@ const DEFAULT_BUSINESS_METRICS: BusinessMetrics = {
   startingCash: 15000,
   monthlyExpenses: 5000,
   startingReputation: 10,
+  founderWorkHours: 360, // 12 hours * 30 days
 } as const;
 
 const DEFAULT_BUSINESS_STATS: BusinessStats = {
