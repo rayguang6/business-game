@@ -12,7 +12,7 @@ export interface GameEventTemporaryEffect {
   metric: GameMetric;
   type: EffectType;
   value: number;
-  durationSeconds: number;
+  durationSeconds: number | null; // null = permanent effect
   priority?: number;
 }
 
