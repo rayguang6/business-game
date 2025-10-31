@@ -42,7 +42,7 @@ type RawTemporaryEffect = {
   metric?: string;
   type?: string;
   value?: number;
-  durationSeconds?: number;
+  durationSeconds?: number | null;
   priority?: number;
 };
 
@@ -79,13 +79,13 @@ const mapTemporaryEffects = (raw: RawTemporaryEffect[] | undefined): GameEventTe
         typeof item.metric === 'string' &&
         typeof item.type === 'string' &&
         Number.isFinite(item.value) &&
-        Number.isFinite(item.durationSeconds),
+        (item.durationSeconds === null || Number.isFinite(item.durationSeconds)),
     )
-    .map((item) => ({
+    .map((item): GameEventTemporaryEffect => ({
       metric: item.metric as GameMetric,
       type: item.type as EffectType,
       value: item.value ?? 0,
-      durationSeconds: item.durationSeconds ?? 0,
+      durationSeconds: item.durationSeconds ?? null,
       priority: item.priority ?? undefined,
     }));
 };

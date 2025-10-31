@@ -25,7 +25,7 @@ export interface ResolvedEventOutcome {
     metric: GameEventTemporaryEffect['metric'];
     type: GameEventTemporaryEffect['type'];
     value: number;
-    durationSeconds: number;
+    durationSeconds: number | null;
     expiresAt: number | null;
     priority?: number;
   }[];

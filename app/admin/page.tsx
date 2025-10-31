@@ -708,11 +708,11 @@ export default function AdminPage() {
       ...(ef.type === 'cash' && ef.label ? { label: ef.label } : {}),
     })) as GameEventEffect[];
 
-    const normalizedTemps = consequenceForm.temporaryEffects.map((t) => ({
+    const normalizedTemps = consequenceForm.temporaryEffects.map((t): GameEventTemporaryEffect => ({
       metric: t.metric,
       type: t.type,
       value: Number(t.value) || 0,
-      durationSeconds: Number(t.durationSeconds) || 0,
+      durationSeconds: t.durationSeconds === '' ? null : Number(t.durationSeconds) || 0,
       priority: t.priority !== undefined && t.priority !== '' ? Number(t.priority) : undefined,
     }));
 
@@ -934,8 +934,8 @@ export default function AdminPage() {
                     errors.push(`${tempPath}.value: must be a number`);
                   }
 
-                  if (typeof tempEffect.durationSeconds !== 'number' || tempEffect.durationSeconds <= 0) {
-                    errors.push(`${tempPath}.durationSeconds: must be a number > 0`);
+                  if (tempEffect.durationSeconds !== null && (typeof tempEffect.durationSeconds !== 'number' || tempEffect.durationSeconds <= 0)) {
+                    errors.push(`${tempPath}.durationSeconds: must be a number > 0 or null for permanent effects`);
                   }
 
                   if (tempEffect.priority !== undefined && typeof tempEffect.priority !== 'number') {
@@ -2400,7 +2400,7 @@ export default function AdminPage() {
                                           <span className="text-sm font-semibold text-slate-300">Temporary Effects</span>
                                           <button
                                             type="button"
-                                            onClick={() => setConsequenceForm((p) => ({ ...p, temporaryEffects: [...p.temporaryEffects, { metric: METRIC_OPTIONS[0].value, type: EFFECT_TYPE_OPTIONS[0].value, value: '0', durationSeconds: '10' }] }))}
+                                            onClick={() => setConsequenceForm((p) => ({ ...p, temporaryEffects: [...p.temporaryEffects, { metric: METRIC_OPTIONS[0].value, type: EFFECT_TYPE_OPTIONS[0].value, value: '0', durationSeconds: '' }] }))}
                                             className="px-2 py-1 text-xs rounded border border-indigo-500 text-indigo-200 hover:bg-indigo-500/10"
                                           >
                                             + Add Temporary Effect
@@ -2455,7 +2455,9 @@ export default function AdminPage() {
                                                 <label className="block text-xs text-slate-400 mb-1">Duration (s)</label>
                                                 <input
                                                   type="number"
-                                                  min="1"
+                                                  min="0"
+                                                  step="1"
+                                                  placeholder="Leave empty for permanent"
                                                   value={t.durationSeconds}
                                                   onChange={(e) => setConsequenceForm((p) => ({
                                                     ...p,

@@ -25,7 +25,7 @@
               "metric": "serviceSpeedMultiplier",
               "type": "percent",
               "value": 15,
-              "durationSeconds": 45
+              "durationSeconds": null
             },
             {
               "metric": "happyProbability",

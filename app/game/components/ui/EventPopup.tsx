@@ -42,8 +42,8 @@ const TEMPORARY_METRIC_LABELS: Record<GameMetric, string> = {
   [GameMetric.ServiceRevenueFlatBonus]: 'Service Revenue Bonus',
 };
 
-const formatDurationLabel = (durationSeconds: number) => {
-  if (!Number.isFinite(durationSeconds)) {
+const formatDurationLabel = (durationSeconds: number | null) => {
+  if (durationSeconds === null || !Number.isFinite(durationSeconds)) {
     return ' (Permanent)';
   }
   if (durationSeconds <= 0) {
