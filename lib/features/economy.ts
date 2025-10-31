@@ -14,7 +14,7 @@ import {
 import { IndustryId, UpgradeId } from '@/lib/game/types';
 import { getUpgradeLevel } from './upgrades';
 import { Upgrades } from '@/lib/store/types';
-import { EffectType, GameMetric } from '@/lib/game/effectManager';
+import { EffectType, GameMetric, effectManager } from '@/lib/game/effectManager';
 import { Staff } from '@/lib/features/staff';
 
 export interface ExpenseBreakdownItem {

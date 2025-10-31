@@ -208,6 +208,7 @@ export default function AdminPage() {
     { value: GameMetric.ServiceRevenueMultiplier, label: 'Service Revenue Multiplier' },
     { value: GameMetric.HappyProbability, label: 'Happy Probability' },
     { value: GameMetric.ReputationMultiplier, label: 'Reputation Multiplier' },
+    { value: GameMetric.FounderWorkingHours, label: 'Founder Working Hours' },
   ];
 
   const EFFECT_TYPE_OPTIONS: { value: EffectType; label: string; hint: string }[] = [

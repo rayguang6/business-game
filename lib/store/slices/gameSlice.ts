@@ -7,6 +7,9 @@ import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import { GameStore } from '../gameStore';
 import { IndustryId } from '@/lib/game/types';
 import { effectManager } from '@/lib/game/effectManager';
+import { addStaffEffects } from '@/lib/features/staff';
+import { addUpgradeEffects } from './upgradesSlice';
+import { getUpgradeById } from '@/lib/game/config';
 
 // Shared initial game state - DRY principle
 const getInitialGameState = (
@@ -77,6 +80,26 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       isGameStarted: true, // Override to start the game
       monthlyExpenses: baseMonthlyExpenses,
       monthlyExpenseAdjustments: 0,
+    });
+
+    // Restore effects for purchased upgrades and hired staff
+    const gameState = get();
+    const upgrades = gameState.upgrades;
+    const hiredStaff = gameState.hiredStaff;
+
+    // Re-register upgrade effects
+    Object.entries(upgrades).forEach(([upgradeId, level]) => {
+      if (level > 0) {
+        const upgrade = getUpgradeById(upgradeId, industryId);
+        if (upgrade) {
+          addUpgradeEffects(upgrade, level);
+        }
+      }
+    });
+
+    // Re-register staff effects
+    hiredStaff.forEach((staff) => {
+      addStaffEffects(staff);
     });
   },
   

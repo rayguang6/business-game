@@ -11,7 +11,7 @@ import { calculateUpgradeMonthlyExpenses, getMonthlyBaseExpenses } from '@/lib/f
 import { getUpgradeLevel, canUpgradeMore } from '@/lib/features/upgrades';
 import { GameStore } from '../gameStore';
 import type { IndustryId } from '@/lib/game/types';
-import { effectManager } from '@/lib/game/effectManager';
+import { effectManager, GameMetric } from '@/lib/game/effectManager';
 
 export interface UpgradesSlice {
   upgrades: Upgrades;
@@ -29,7 +29,7 @@ export interface UpgradesSlice {
  * @param upgrade - The upgrade definition
  * @param level - The level of the upgrade (effects are multiplied by level)
  */
-function addUpgradeEffects(upgrade: UpgradeDefinition, level: number): void {
+export function addUpgradeEffects(upgrade: UpgradeDefinition, level: number): void {
   upgrade.effects.forEach((effect, index) => {
     effectManager.add({
       id: `upgrade_${upgrade.id}_${index}`,
@@ -97,6 +97,12 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
     if (!store.canAffordUpgrade(upgrade.cost)) {
       return { success: false, message: `Need $${upgrade.cost} to purchase ${upgrade.name}.` };
     }
+
+    // Define next upgrades state
+    const nextUpgrades: Upgrades = {
+      ...store.upgrades,
+      [upgradeId]: currentLevel + 1,
+    };
 
     // Calculate expense delta by temporarily adding the new upgrade effect
     const baseExpenses = getMonthlyBaseExpenses(industryId);

@@ -9,7 +9,9 @@ interface StaffRoleRow {
   industry_id: string;
   name: string;
   salary: number | string | null;
-  effects: any; // JSONB column for effects array
+  effects?: any; // JSONB column for effects array (new format)
+  service_speed?: number | string | null; // Legacy columns for backward compatibility
+  workload_reduction?: number | string | null;
   emoji: string | null;
 }
 
@@ -48,8 +50,10 @@ const mapRoleRows = (rows: StaffRoleRow[] | null | undefined): StaffRoleConfig[]
   return rows
     .filter((row) => row.id && row.name)
     .map((row) => {
-      // Parse effects from JSON column
+      // Parse effects - support both new JSON format and legacy columns
       let effects: UpgradeEffect[] = [];
+
+      // Try new JSON format first
       if (row.effects && Array.isArray(row.effects)) {
         effects = row.effects.map((effect: any) => ({
           metric: effect.metric,
@@ -57,6 +61,27 @@ const mapRoleRows = (rows: StaffRoleRow[] | null | undefined): StaffRoleConfig[]
           value: Number(effect.value),
           priority: effect.priority,
         }));
+      }
+      // Fall back to legacy columns
+      else if (row.service_speed !== undefined || row.workload_reduction !== undefined) {
+        const serviceSpeed = parseNumber(row.service_speed);
+        const workloadReduction = parseNumber(row.workload_reduction);
+
+        if (serviceSpeed > 0) {
+          effects.push({
+            metric: GameMetric.ServiceSpeedMultiplier,
+            type: EffectType.Percent,
+            value: serviceSpeed,
+          });
+        }
+
+        if (workloadReduction > 0) {
+          effects.push({
+            metric: GameMetric.FounderWorkingHours,
+            type: EffectType.Add,
+            value: -workloadReduction, // Negative because it reduces hours
+          });
+        }
       }
 
       return {
@@ -100,7 +125,7 @@ export async function fetchStaffDataForIndustry(
   const [rolesResponse, presetsResponse] = await Promise.all([
     supabase
       .from('staff_roles')
-      .select('id, industry_id, name, salary, effects, emoji')
+      .select('id, industry_id, name, salary, effects, service_speed, workload_reduction, emoji')
       .eq('industry_id', industryId),
     supabase
       .from('staff_presets')
@@ -153,12 +178,18 @@ export async function upsertStaffRole(role: {
     priority: effect.priority,
   }));
 
+  // Also provide legacy columns for backward compatibility
+  const serviceSpeed = role.effects.find(e => e.metric === 'serviceSpeedMultiplier')?.value ?? 0;
+  const workloadReduction = Math.abs(role.effects.find(e => e.metric === 'founderWorkingHours')?.value ?? 0);
+
   const payload: StaffRoleRow = {
     id: role.id,
     industry_id: role.industryId,
     name: role.name,
     salary: role.salary,
-    effects: effectsJson,
+    effects: effectsJson, // New JSON format
+    service_speed: serviceSpeed, // Legacy compatibility
+    workload_reduction: workloadReduction, // Legacy compatibility
     emoji: role.emoji ?? null,
   };
 

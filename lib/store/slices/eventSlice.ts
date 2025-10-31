@@ -1,5 +1,6 @@
 import { StateCreator } from 'zustand';
 import { GameEvent, GameEventChoice, GameEventConsequence, GameEventEffect, GameEventTemporaryEffect } from '../../types/gameEvents';
+import { GameMetric, EffectType } from '../../game/effectManager';
 import type { GameStore } from '../gameStore';
 import { effectManager } from '@/lib/game/effectManager';
 
@@ -42,28 +43,52 @@ export interface EventSlice {
   clearEventEffects: () => void;
 }
 
+// Convert legacy event effects to effectManager system
 const applyEventEffect = (
   effect: GameEventEffect,
   event: GameEvent,
   choice: GameEventChoice,
   store: GameStore,
 ): void => {
+  // Convert legacy event effect types to GameMetric effects
+  let gameMetricEffect: { metric: GameMetric; type: EffectType; value: number } | null = null;
+
   switch (effect.type) {
     case 'cash': {
+      // Cash effects should be handled by the game's revenue system
       const { recordEventRevenue, recordEventExpense } = store;
       if (effect.amount >= 0) {
         recordEventRevenue(effect.amount, effect.label ?? `${event.title} - ${choice.label}`);
       } else {
         recordEventExpense(Math.abs(effect.amount), effect.label ?? `${event.title} - ${choice.label}`);
       }
-      break;
+      return; // Don't use effectManager for cash (handled by revenue system)
     }
     case 'reputation': {
-      store.applyReputationChange(effect.amount);
+      gameMetricEffect = {
+        metric: GameMetric.ReputationMultiplier,
+        type: EffectType.Add,
+        value: effect.amount,
+      };
       break;
     }
     default:
-      break;
+      return;
+  }
+
+  // Apply the effect using effectManager
+  if (gameMetricEffect) {
+    effectManager.add({
+      id: `event_${event.id}_${choice.id}_${Date.now()}`,
+      source: {
+        category: 'event',
+        id: event.id,
+        name: event.title,
+      },
+      metric: gameMetricEffect.metric,
+      type: gameMetricEffect.type,
+      value: gameMetricEffect.value,
+    });
   }
 };
 
