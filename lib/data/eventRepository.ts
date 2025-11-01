@@ -3,7 +3,7 @@ import type {
   GameEvent,
   GameEventChoice,
   GameEventConsequence,
-  GameEventTemporaryEffect,
+  GameEventEffect,
 } from '@/lib/types/gameEvents';
 import type { IndustryId } from '@/lib/game/types';
 import { EffectType, GameMetric } from '@/lib/game/effectManager';
@@ -31,21 +31,12 @@ type RawConsequence = {
   description?: string;
   weight?: number;
   effects?: RawEffect[];
-  temporaryEffects?: RawTemporaryEffect[]; // For backward compatibility with old data
 };
 
 type RawEffect =
   | { type: 'cash'; amount: number; label?: string }
   | { type: 'reputation'; amount: number; label?: string }
   | { type: 'metric'; metric?: string; effectType?: string; value?: number; durationSeconds?: number | null; priority?: number };
-
-type RawTemporaryEffect = {
-  metric?: string;
-  type?: string;
-  value?: number;
-  durationSeconds?: number | null;
-  priority?: number;
-};
 
 const toNumber = (value: unknown, fallback = 0): number => {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -68,38 +59,20 @@ const isRawEffect = (value: unknown): value is RawEffect => {
   return record.type === 'cash' || record.type === 'reputation' || record.type === 'metric';
 };
 
-
 const mapConsequences = (raw: RawConsequence[] | undefined): GameEventConsequence[] => {
   if (!Array.isArray(raw)) {
     return [];
   }
 
-  return raw.map((consequence) => {
-    // Handle backward compatibility: convert temporaryEffects to metric effects if they exist
-    const regularEffects = Array.isArray(consequence.effects)
-      ? consequence.effects.filter(isRawEffect).map((effect) => ({ ...effect }))
-      : [];
-
-    // For backward compatibility with old data that still has temporaryEffects
-    const temporaryEffects = Array.isArray((consequence as any).temporaryEffects)
-      ? (consequence as any).temporaryEffects.map((temp: any): RawEffect => ({
-          type: 'metric',
-          metric: temp.metric,
-          effectType: temp.type,
-          value: temp.value,
-          durationSeconds: temp.durationSeconds,
-          priority: temp.priority,
-        }))
-      : [];
-
-    return {
-      id: String(consequence.id ?? ''),
-      label: consequence.label,
-      description: consequence.description,
-      weight: Math.max(0, toNumber(consequence.weight, 0)),
-      effects: [...regularEffects, ...temporaryEffects],
-    };
-  });
+  return raw.map((consequence) => ({
+    id: String(consequence.id ?? ''),
+    label: consequence.label,
+    description: consequence.description,
+    weight: Math.max(0, toNumber(consequence.weight, 0)),
+    effects: Array.isArray(consequence.effects)
+      ? consequence.effects.filter(isRawEffect).map(convertRawEffectToGameEventEffect)
+      : [],
+  }));
 };
 
 const mapChoices = (raw: RawChoice[] | undefined): GameEventChoice[] => {
@@ -147,6 +120,58 @@ export async function fetchEventsForIndustry(industryId: IndustryId): Promise<Ga
     }));
 }
 
+const convertRawEffectToGameEventEffect = (rawEffect: RawEffect): GameEventEffect => {
+  switch (rawEffect.type) {
+    case 'cash':
+      return {
+        type: 'cash',
+        amount: rawEffect.amount ?? 0,
+        label: rawEffect.label,
+      };
+    case 'reputation':
+      return {
+        type: 'reputation',
+        amount: rawEffect.amount ?? 0,
+      };
+    case 'metric':
+      return {
+        type: 'metric',
+        metric: rawEffect.metric as GameMetric,
+        effectType: rawEffect.effectType as EffectType,
+        value: rawEffect.value ?? 0,
+        durationSeconds: rawEffect.durationSeconds ?? null,
+        priority: rawEffect.priority,
+      };
+  }
+};
+
+const convertGameEventEffectToRawEffect = (effect: GameEventEffect): RawEffect => {
+  switch (effect.type) {
+    case 'cash':
+      return {
+        type: 'cash',
+        amount: effect.amount,
+        label: effect.label,
+      };
+    case 'reputation':
+      return {
+        type: 'reputation',
+        amount: effect.amount,
+      };
+    case 'metric':
+      return {
+        type: 'metric',
+        metric: effect.metric,
+        effectType: effect.effectType,
+        value: effect.value,
+        durationSeconds: effect.durationSeconds,
+        priority: effect.priority,
+      };
+    default:
+      throw new Error(`Unknown effect type: ${(effect as any).type}`);
+  }
+};
+
 function serializeChoices(choices: GameEventChoice[]): RawChoice[] {
   return choices.map((choice) => ({
     id: choice.id,
@@ -158,7 +183,7 @@ function serializeChoices(choices: GameEventChoice[]): RawChoice[] {
       label: consequence.label,
       description: consequence.description,
       weight: consequence.weight,
-      effects: consequence.effects.map((e) => ({ ...(e as RawEffect) })),
+      effects: consequence.effects.map(convertGameEventEffectToRawEffect),
     })),
   }));
 }
