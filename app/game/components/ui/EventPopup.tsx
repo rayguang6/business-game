@@ -23,15 +23,16 @@ const getEffectColorClass = (type: GameEventEffect['type'], amount: number) => {
 };
 
 const formatEffect = (effect: GameEventEffect) => {
-  const prefix = effect.type === 'cash' ? '$' : '';
-  const sign = effect.amount > 0 ? '+' : effect.amount < 0 ? '-' : '';
-  const value = Math.abs(effect.amount);
-  return `${getEffectIcon(effect.type)} ${sign}${prefix}${value}`;
+  if (effect.type === 'cash' || effect.type === 'reputation') {
+    const prefix = effect.type === 'cash' ? '$' : '';
+    const sign = effect.amount > 0 ? '+' : effect.amount < 0 ? '-' : '';
+    const value = Math.abs(effect.amount);
+    return `${getEffectIcon(effect.type)} ${sign}${prefix}${value}`;
+  }
+  return ''; // Metric effects are handled separately
 };
 
-type TemporaryEffectSummary = NonNullable<ResolvedEventOutcome['temporaryEffects']>[number];
-
-const TEMPORARY_METRIC_LABELS: Record<GameMetric, string> = {
+const METRIC_LABELS: Record<GameMetric, string> = {
   [GameMetric.SpawnIntervalSeconds]: 'Customer Spawn Speed',
   [GameMetric.ServiceSpeedMultiplier]: 'Service Speed',
   [GameMetric.ServiceRooms]: 'Service Rooms',
@@ -40,10 +41,11 @@ const TEMPORARY_METRIC_LABELS: Record<GameMetric, string> = {
   [GameMetric.MonthlyExpenses]: 'Monthly Expenses',
   [GameMetric.ServiceRevenueMultiplier]: 'Service Revenue Multiplier',
   [GameMetric.ServiceRevenueFlatBonus]: 'Service Revenue Bonus',
+  [GameMetric.FounderWorkingHours]: 'Founder Working Hours',
 };
 
-const formatDurationLabel = (durationSeconds: number | null) => {
-  if (durationSeconds === null || !Number.isFinite(durationSeconds)) {
+const formatDurationLabel = (durationSeconds: number | null | undefined) => {
+  if (durationSeconds === null || durationSeconds === undefined || !Number.isFinite(durationSeconds)) {
     return ' (Permanent)';
   }
   if (durationSeconds <= 0) {
@@ -52,10 +54,10 @@ const formatDurationLabel = (durationSeconds: number | null) => {
   return ` for ${durationSeconds}s`;
 };
 
-const formatTemporaryEffect = (effect: TemporaryEffectSummary) => {
-  const label = TEMPORARY_METRIC_LABELS[effect.metric] ?? effect.metric;
+const formatMetricEffect = (effect: GameEventEffect & { type: 'metric' }) => {
+  const label = METRIC_LABELS[effect.metric] ?? effect.metric;
   const durationLabel = formatDurationLabel(effect.durationSeconds);
-  switch (effect.type) {
+  switch (effect.effectType) {
     case EffectType.Add:
       return `${label}: ${effect.value >= 0 ? '+' : ''}${effect.value}${durationLabel}`;
     case EffectType.Percent:
@@ -161,23 +163,31 @@ const EventPopup: React.FC = () => {
               <h4 className="text-sm sm:text-base font-semibold text-gray-800 mb-2">Effects</h4>
               {lastEventOutcome.appliedEffects.length > 0 ? (
                 <ul className="space-y-1.5 text-xs sm:text-sm">
-                  {lastEventOutcome.appliedEffects.map((effect, index) => (
-                    <li key={index} className={getEffectColorClass(effect.type, effect.amount)}>
-                      {formatEffect(effect)}
-                    </li>
-                  ))}
+                  {lastEventOutcome.appliedEffects.map((effect, index) => {
+                    if (effect.type === 'cash' || effect.type === 'reputation') {
+                      return (
+                        <li key={index} className={getEffectColorClass(effect.type, effect.amount)}>
+                          {formatEffect(effect)}
+                        </li>
+                      );
+                    }
+                    // Metric effects are shown in the separate section below
+                    return null;
+                  }).filter(Boolean)}
                 </ul>
               ) : (
                 <p className="text-xs sm:text-sm text-gray-600">No additional changes.</p>
               )}
             </div>
-            {lastEventOutcome.temporaryEffects && lastEventOutcome.temporaryEffects.length > 0 && (
+            {lastEventOutcome.appliedEffects.some(effect => effect.type === 'metric') && (
               <div className="bg-blue-50 rounded-lg p-3 sm:p-4 mt-3 sm:mt-4 border border-blue-200">
-                <h4 className="text-sm sm:text-base font-semibold text-blue-800 mb-2">Temporary Buffs</h4>
+                <h4 className="text-sm sm:text-base font-semibold text-blue-800 mb-2">Active Effects</h4>
                 <ul className="space-y-1.5 text-xs sm:text-sm text-blue-800">
-                  {lastEventOutcome.temporaryEffects.map((effect, index) => (
-                    <li key={index}>{formatTemporaryEffect(effect)}</li>
-                  ))}
+                  {lastEventOutcome.appliedEffects
+                    .filter((effect): effect is Extract<GameEventEffect, { type: 'metric' }> => effect.type === 'metric')
+                    .map((effect, index) => (
+                      <li key={index}>{formatMetricEffect(effect)}</li>
+                    ))}
                 </ul>
               </div>
             )}
