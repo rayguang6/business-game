@@ -29,7 +29,7 @@ import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import { fetchMarketingCampaigns, upsertMarketingCampaign, deleteMarketingCampaign } from '@/lib/data/marketingRepository';
 import type { MarketingCampaign } from '@/lib/store/slices/marketingSlice';
 import { fetchEventsForIndustry, upsertEventForIndustry, deleteEventById } from '@/lib/data/eventRepository';
-import type { GameEvent, GameEventChoice, GameEventConsequence, GameEventEffect, GameEventTemporaryEffect } from '@/lib/types/gameEvents';
+import type { GameEvent, GameEventChoice, GameEventConsequence, GameEventEffect } from '@/lib/types/gameEvents';
 
 interface FormState {
   id: string;
@@ -2369,14 +2369,11 @@ export default function AdminPage() {
                                                   value={ef.type}
                                                   onChange={(e) => setConsequenceForm((p) => ({
                                                     ...p,
-                                                    effects: p.effects.map((row, i) => i === idx ? {
-                                                      ...row,
-                                                      type: e.target.value as 'cash' | 'reputation' | 'metric',
-                                                      // Reset fields when changing type
-                                                      ...(e.target.value === 'cash' ? { amount: '0', label: '' } :
-                                                        e.target.value === 'reputation' ? { amount: '0' } :
-                                                        { metric: METRIC_OPTIONS[0].value, effectType: EFFECT_TYPE_OPTIONS[0].value, value: '0', durationSeconds: '' })
-                                                    } : row),
+                                                    effects: p.effects.map((row, i) => i === idx ? (
+                                                      e.target.value === 'cash' ? { type: 'cash' as const, amount: '0', label: '' } :
+                                                      e.target.value === 'reputation' ? { type: 'reputation' as const, amount: '0' } :
+                                                      { type: 'metric' as const, metric: METRIC_OPTIONS[0].value, effectType: EFFECT_TYPE_OPTIONS[0].value, value: '0', durationSeconds: '', priority: '' }
+                                                    ) : row),
                                                   }))}
                                                   className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
                                                 >

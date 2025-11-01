@@ -35,20 +35,31 @@ const formatSigned = (value: number): string => {
   return `${sign}${formatValue(value)}`;
 };
 
+const formatDurationLabel = (durationSeconds: number | null | undefined): string => {
+  if (durationSeconds === null || durationSeconds === undefined || !Number.isFinite(durationSeconds)) {
+    return ' (Permanent)';
+  }
+  if (durationSeconds <= 0) {
+    return ' (Instant)';
+  }
+  return ` for ${durationSeconds}s`;
+};
+
 const describeEffect = (effect: CampaignEffect): string => {
   const label = METRIC_LABELS[effect.metric] ?? effect.metric;
+  const durationLabel = formatDurationLabel(effect.durationSeconds);
 
   switch (effect.type) {
     case EffectType.Add:
-      return `${label} ${formatSigned(effect.value)}`;
+      return `${label} ${formatSigned(effect.value)}${durationLabel}`;
     case EffectType.Percent:
-      return `${label} ${formatSigned(effect.value)}%`;
+      return `${label} ${formatSigned(effect.value)}%${durationLabel}`;
     case EffectType.Multiply:
-      return `${label} ×${formatValue(effect.value)}`;
+      return `${label} ×${formatValue(effect.value)}${durationLabel}`;
     case EffectType.Set:
-      return `${label} = ${formatValue(effect.value)}`;
+      return `${label} = ${formatValue(effect.value)}${durationLabel}`;
     default:
-      return `${label} ${effect.type} ${formatValue(effect.value)}`;
+      return `${label} ${effect.type} ${formatValue(effect.value)}${durationLabel}`;
   }
 };
 
@@ -120,9 +131,6 @@ export function MarketingTab() {
                 </div>
                 <div className="text-right text-sm">
                   <div className="text-yellow-300 font-semibold">${campaign.cost}</div>
-                  <div className="text-gray-400 text-xs">
-                    Duration: {formatSeconds(campaign.durationSeconds)}
-                  </div>
                 </div>
               </div>
 
