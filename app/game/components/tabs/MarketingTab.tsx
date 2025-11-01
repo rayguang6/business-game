@@ -24,6 +24,7 @@ const METRIC_LABELS: Record<GameMetric, string> = {
   [GameMetric.MonthlyExpenses]: 'Monthly expenses',
   [GameMetric.ServiceRevenueMultiplier]: 'Service revenue',
   [GameMetric.ServiceRevenueFlatBonus]: 'Average ticket',
+  [GameMetric.FounderWorkingHours]: 'Founder working hours',
 };
 
 const formatValue = (value: number): string => {
@@ -111,7 +112,7 @@ export function MarketingTab() {
         {availableCampaigns.map((campaign) => {
           const canAfford = metrics.cash >= campaign.cost;
           const cooldownEnd = campaignCooldowns[campaign.id];
-          const isOnCooldown = cooldownEnd && gameTime < cooldownEnd;
+          const isOnCooldown = !!(cooldownEnd && gameTime < cooldownEnd);
           const cooldownRemaining = isOnCooldown ? Math.max(0, cooldownEnd - gameTime) : 0;
 
           const descriptions = campaign.effects.map((effect) => ({
