@@ -150,6 +150,12 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
     // Add new effects with multiplied values based on new level
     addUpgradeEffects(upgrade, newLevel);
 
+    // Set flag if upgrade sets one
+    if (upgrade.setsFlag) {
+      get().setFlag(upgrade.setsFlag, true);
+      console.log(`[Flag System] Flag "${upgrade.setsFlag}" set to true by purchasing upgrade "${upgrade.name}"`);
+    }
+
     const levelText = upgrade.maxLevel > 1 ? ` Level ${newLevel}` : '';
     return { success: true, message: `${upgrade.name}${levelText} unlocked! Cost: $${upgrade.cost}` };
   },

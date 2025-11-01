@@ -11,6 +11,7 @@ export interface StaffRoleConfig {
   salary: number;
   effects: UpgradeEffect[]; // Flexible effects like upgrades
   emoji: string;
+  setsFlag?: string; // Optional flag to set when this staff role is hired
 }
 
 export interface StaffPreset {
@@ -186,6 +187,7 @@ export function createRandomStaffForIndustry(
     salary: role.salary,
     effects: role.effects.map(effect => ({ ...effect })), // Deep copy effects
     emoji: role.emoji,
+    setsFlag: role.setsFlag,
   };
 }
 

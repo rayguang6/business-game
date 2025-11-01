@@ -35,6 +35,7 @@ const getInitialGameState = (
     customers: [],
     metrics: getInitialMetrics(industryId),
     upgrades: {},
+    flags: {},
     monthlyExpenseAdjustments: 0,
     ...(keepIndustry ? {} : { selectedIndustry: null }),
   };
@@ -49,6 +50,9 @@ export interface GameSlice {
   isGameOver: boolean;
   gameOverReason: 'cash' | 'reputation' | null;
   
+  // Flag management
+  flags: Record<string, boolean>;
+  
   startGame: () => void;
   pauseGame: () => void;
   unpauseGame: () => void;
@@ -59,6 +63,11 @@ export interface GameSlice {
   recordEventRevenue: (amount: number, label?: string) => void;
   recordEventExpense: (amount: number, label: string) => void;
   checkGameOver: () => void;
+  
+  // Flag management methods
+  setFlag: (flagId: string, value: boolean) => void;
+  hasFlag: (flagId: string) => boolean;
+  resetFlags: () => void;
 }
 
 export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set, get) => {
@@ -70,6 +79,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     currentMonth: 1,
     isGameOver: false,
     gameOverReason: null,
+    flags: {},
   
   startGame: () => {
     // Reset to initial state but keep industry selection and start the game
@@ -140,6 +150,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       ...getInitialGameState(DEFAULT_INDUSTRY_ID, false), // keepIndustry = false
       monthlyExpenses: getMonthlyBaseExpenses(DEFAULT_INDUSTRY_ID),
       monthlyExpenseAdjustments: 0,
+      flags: {}, // Reset flags
     });
   },
   
@@ -172,14 +183,14 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     });
     
     // Check for game over after tick updates
-    const { checkGameOver, checkCampaignEnd, gameTime } = get();
+    const { checkGameOver, tickMarketing, gameTime } = get();
 
     // Handle effect expiration through unified effect manager
     effectManager.tick(gameTime);
 
     // Check if marketing campaigns have ended
-    if (checkCampaignEnd) {
-      checkCampaignEnd();
+    if (tickMarketing) {
+      tickMarketing(gameTime);
     }
 
     checkGameOver();
@@ -247,6 +258,21 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     } else if (reputation <= 0) {
       set({ isGameOver: true, gameOverReason: 'reputation', isPaused: true });
     }
+  },
+
+  // Flag management methods
+  setFlag: (flagId, value) => {
+    set((state) => ({
+      flags: { ...state.flags, [flagId]: value }
+    }));
+  },
+
+  hasFlag: (flagId) => {
+    return get().flags[flagId] === true;
+  },
+
+  resetFlags: () => {
+    set({ flags: {} });
   },
 });
 };

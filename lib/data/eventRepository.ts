@@ -23,6 +23,7 @@ type RawChoice = {
   description?: string;
   cost?: number;
   consequences?: RawConsequence[];
+  setsFlag?: string;
 };
 
 type RawConsequence = {
@@ -85,6 +86,7 @@ const mapChoices = (raw: RawChoice[] | undefined): GameEventChoice[] => {
     label: choice.label ?? '',
     description: choice.description,
     cost: choice.cost !== undefined ? toNumber(choice.cost, 0) : undefined,
+    setsFlag: choice.setsFlag,
     consequences: mapConsequences(choice.consequences),
   }));
 };
@@ -178,6 +180,7 @@ function serializeChoices(choices: GameEventChoice[]): RawChoice[] {
     label: choice.label,
     description: choice.description,
     cost: choice.cost,
+    setsFlag: choice.setsFlag,
     consequences: choice.consequences.map((consequence) => ({
       id: consequence.id,
       label: consequence.label,

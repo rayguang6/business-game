@@ -9,6 +9,7 @@ export interface Staff {
   emoji: string; // To represent the staff member
   role: string;
   roleId: string; // Reference to the role configuration
+  setsFlag?: string; // Optional flag to set when this staff member is hired
 }
 
 /**

@@ -23,6 +23,7 @@ export interface GameEventChoice {
   description?: string;
   cost?: number; // upfront cash cost (positive number) shown before selection
   consequences: GameEventConsequence[];
+  setsFlag?: string; // Optional flag to set when this choice is selected
 }
 
 export interface GameEvent {

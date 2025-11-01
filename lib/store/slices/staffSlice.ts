@@ -38,6 +38,12 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
 
         addStaffEffects(candidate);
 
+        // Set flag if staff role sets one
+        if (candidate.setsFlag) {
+          get().setFlag(candidate.setsFlag, true);
+          console.log(`[Flag System] Flag "${candidate.setsFlag}" set to true by hiring staff "${candidate.name}" (${candidate.role})`);
+        }
+
         const replacement = createRandomStaffForIndustry(industryId, candidate.roleId);
 
         const updatedAvailable = state.availableStaff.map((member) =>

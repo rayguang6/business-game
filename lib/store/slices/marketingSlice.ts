@@ -18,6 +18,7 @@ export interface MarketingCampaign {
   cost: number;
   cooldownSeconds: number; // How long before this campaign can be run again
   effects: CampaignEffect[];
+  setsFlag?: string; // Optional flag to set when campaign is launched
 }
 
 export interface MarketingSlice {
@@ -223,6 +224,12 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
 
     // Register effects to effectManager (expiration handled automatically)
     addMarketingEffects(campaign);
+
+    // Set flag if campaign sets one
+    if (campaign.setsFlag) {
+      get().setFlag(campaign.setsFlag, true);
+      console.log(`[Flag System] Flag "${campaign.setsFlag}" set to true by marketing campaign "${campaign.name}"`);
+    }
 
     // Start cooldown immediately
     const cooldownEnd = gameTime + campaign.cooldownSeconds;

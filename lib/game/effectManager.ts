@@ -57,49 +57,31 @@ export interface Effect {
 // Input for creating new effects (without createdAt)
 export interface EffectInput extends Omit<Effect, 'createdAt'> {}
 
-// Constraints for each metric
+// Constraints for each metric (optional - only add when needed)
 export interface MetricConstraints {
-  min: number;
+  min?: number;
   max?: number;
   roundToInt?: boolean;
 }
 
-// Constraints definition
-export const METRIC_CONSTRAINTS: Record<GameMetric, MetricConstraints> = {
-  [GameMetric.SpawnIntervalSeconds]: { 
-    min: 0.1, 
-  },
-  [GameMetric.ServiceSpeedMultiplier]: { 
-    min: 0.1, 
-    max: 5,
-  },
+// Constraints definition (optional - metrics without constraints will work fine)
+export const METRIC_CONSTRAINTS: Partial<Record<GameMetric, MetricConstraints>> = {
+  // Only add constraints where they're actually needed
   [GameMetric.ServiceRooms]: { 
-    min: 1, 
-    max: 20,
-    roundToInt: true,
-  },
-  [GameMetric.ReputationMultiplier]: { 
-    min: 0, 
-    max: 10,
+    min: 1,           // Can't have negative rooms
+    max: 20,          // Reasonable upper limit
+    roundToInt: true, // Must be whole number
   },
   [GameMetric.HappyProbability]: { 
     min: 0, 
-    max: 1,
-  },
-  [GameMetric.MonthlyExpenses]: { 
-    min: 0,
-  },
-  [GameMetric.ServiceRevenueMultiplier]: {
-    min: 0,
-  },
-  [GameMetric.ServiceRevenueFlatBonus]: {
-    min: -100000,
+    max: 1,           // Probability must be 0-1
   },
   [GameMetric.FounderWorkingHours]: {
-    min: 0,
-    max: 500,
-    roundToInt: true,
+    min: 0,           // Can't have negative hours
+    roundToInt: true, // Must be whole number
   },
+  // Add more constraints here only when needed
+  // Metrics without constraints will work fine (no validation)
 };
 
 // Result of a metric calculation with audit trail
@@ -143,13 +125,25 @@ const partitionEffectsByType = (
 
 const applyConstraints = (value: number, metric: GameMetric): number => {
   const constraints = METRIC_CONSTRAINTS[metric];
+  
+  // If no constraints defined, return value as-is (completely optional)
+  if (!constraints) {
+    return value;
+  }
+  
   let result = value;
 
-  result = Math.max(constraints.min, result);
+  // Apply min constraint if defined
+  if (constraints.min !== undefined) {
+    result = Math.max(constraints.min, result);
+  }
+  
+  // Apply max constraint if defined
   if (constraints.max !== undefined) {
     result = Math.min(constraints.max, result);
   }
 
+  // Round to integer if needed (e.g., for ServiceRooms, FounderWorkingHours)
   if (constraints.roundToInt) {
     result = Math.round(result);
   }
