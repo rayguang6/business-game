@@ -133,8 +133,8 @@ export default function AdminPage() {
   const [campaignDeleting, setCampaignDeleting] = useState<boolean>(false);
   const [campaignsLoading, setCampaignsLoading] = useState<boolean>(false);
   const [campaignStatus, setCampaignStatus] = useState<string | null>(null);
-  const [campaignForm, setCampaignForm] = useState<{ id: string; name: string; description: string; cost: string; durationSeconds: string }>({ id: '', name: '', description: '', cost: '0', durationSeconds: '10' });
-  const [campaignEffectsForm, setCampaignEffectsForm] = useState<Array<{ metric: GameMetric; type: EffectType; value: string }>>([]);
+  const [campaignForm, setCampaignForm] = useState<{ id: string; name: string; description: string; cost: string; cooldownSeconds: string }>({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15' });
+  const [campaignEffectsForm, setCampaignEffectsForm] = useState<Array<{ metric: GameMetric; type: EffectType; value: string; durationSeconds: string }>>([]);
 
   // Events management state (base only for now)
   const [events, setEvents] = useState<GameEvent[]>([]);
@@ -158,9 +158,12 @@ export default function AdminPage() {
     label: string;
     description: string;
     weight: string;
-    effects: Array<{ type: 'cash' | 'reputation'; amount: string; label?: string }>;
-    temporaryEffects: Array<{ metric: GameMetric; type: EffectType; value: string; durationSeconds: string; priority?: string }>;
-  }>({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+    effects: Array<
+      | { type: 'cash'; amount: string; label?: string }
+      | { type: 'reputation'; amount: string }
+      | { type: 'metric'; metric: GameMetric; effectType: EffectType; value: string; durationSeconds: string; priority?: string }
+    >;
+  }>({ id: '', label: '', description: '', weight: '1', effects: [] });
 
   // JSON import/export state
   const [showJsonImport, setShowJsonImport] = useState<boolean>(false);
@@ -461,7 +464,7 @@ export default function AdminPage() {
     setCampaigns([]);
     setSelectedCampaignId('');
     setIsCreatingCampaign(false);
-    setCampaignForm({ id: '', name: '', description: '', cost: '0', durationSeconds: '10' });
+    setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15' });
     setCampaignEffectsForm([]);
     const result = await fetchMarketingCampaigns();
     setCampaignsLoading(false);
@@ -473,15 +476,15 @@ export default function AdminPage() {
   const selectCampaign = (campaign: MarketingCampaign, resetMsg = true) => {
     setSelectedCampaignId(campaign.id);
     setIsCreatingCampaign(false);
-    setCampaignForm({ id: campaign.id, name: campaign.name, description: campaign.description, cost: String(campaign.cost), durationSeconds: String(campaign.durationSeconds) });
-    setCampaignEffectsForm(campaign.effects.map((e) => ({ metric: e.metric, type: e.type, value: String(e.value) })));
+    setCampaignForm({ id: campaign.id, name: campaign.name, description: campaign.description, cost: String(campaign.cost), cooldownSeconds: String(campaign.cooldownSeconds) });
+    setCampaignEffectsForm(campaign.effects.map((e) => ({ metric: e.metric, type: e.type, value: String(e.value), durationSeconds: String(e.durationSeconds ?? '') })));
     if (resetMsg) setCampaignStatus(null);
   };
 
   const handleCreateCampaign = () => {
     setIsCreatingCampaign(true);
     setSelectedCampaignId('');
-    setCampaignForm({ id: '', name: '', description: '', cost: '0', durationSeconds: '10' });
+    setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15' });
     setCampaignEffectsForm([]);
     setCampaignStatus(null);
   };
@@ -491,20 +494,25 @@ export default function AdminPage() {
     const name = campaignForm.name.trim();
     const description = campaignForm.description.trim();
     const cost = Number(campaignForm.cost);
-    const durationSeconds = Number(campaignForm.durationSeconds);
+    const cooldownSeconds = Number(campaignForm.cooldownSeconds);
     if (!id || !name) { setCampaignStatus('Campaign id and name are required.'); return; }
-    if (!Number.isFinite(cost) || cost < 0 || !Number.isFinite(durationSeconds) || durationSeconds < 1) {
-      setCampaignStatus('Cost must be >= 0 and Duration >= 1 second.');
+    if (!Number.isFinite(cost) || cost < 0 || !Number.isFinite(cooldownSeconds) || cooldownSeconds < 0) {
+      setCampaignStatus('Cost must be >= 0 and Cooldown >= 0 seconds (recommended: 10-30 seconds).');
       return;
     }
-    const effects = campaignEffectsForm.map((ef) => ({ metric: ef.metric, type: ef.type, value: Number(ef.value) || 0 }));
+    const effects = campaignEffectsForm.map((ef) => ({
+      metric: ef.metric,
+      type: ef.type,
+      value: Number(ef.value) || 0,
+      durationSeconds: ef.durationSeconds === '' ? null : Number(ef.durationSeconds) || null
+    }));
     setCampaignSaving(true);
-    const result = await upsertMarketingCampaign({ id, name, description, cost, durationSeconds, effects });
+    const result = await upsertMarketingCampaign({ id, name, description, cost, cooldownSeconds, effects });
     setCampaignSaving(false);
     if (!result.success) { setCampaignStatus(result.message ?? 'Failed to save campaign.'); return; }
     setCampaigns((prev) => {
       const exists = prev.some((c) => c.id === id);
-      const nextItem: MarketingCampaign = { id, name, description, cost, durationSeconds, effects } as any;
+      const nextItem: MarketingCampaign = { id, name, description, cost, cooldownSeconds, effects };
       const next = exists ? prev.map((c) => (c.id === id ? nextItem : c)) : [...prev, nextItem];
       return next.sort((a, b) => a.name.localeCompare(b.name));
     });
@@ -522,7 +530,7 @@ export default function AdminPage() {
     if (!result.success) { setCampaignStatus(result.message ?? 'Failed to delete campaign.'); return; }
     setCampaigns((prev) => prev.filter((c) => c.id !== selectedCampaignId));
     setSelectedCampaignId('');
-    setCampaignForm({ id: '', name: '', description: '', cost: '0', durationSeconds: '10' });
+    setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15' });
     setCampaignEffectsForm([]);
     setCampaignStatus('Campaign deleted.');
   };
@@ -553,7 +561,7 @@ export default function AdminPage() {
     setChoiceForm({ id: '', label: '', description: '', cost: '' });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
-    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
     if (resetMsg) setEventStatus(null);
   };
 
@@ -568,7 +576,7 @@ export default function AdminPage() {
     setChoiceForm({ id: '', label: '', description: '', cost: '' });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
-    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
     setEventStatus(null);
   };
 
@@ -611,7 +619,7 @@ export default function AdminPage() {
     setChoiceForm({ id: '', label: '', description: '', cost: '' });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
-    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
     setEventStatus('Event deleted.');
   };
 
@@ -621,7 +629,7 @@ export default function AdminPage() {
     setChoiceForm({ id: choice.id, label: choice.label, description: choice.description ?? '', cost: choice.cost !== undefined ? String(choice.cost) : '' });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
-    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
   };
 
   const handleCreateChoice = () => {
@@ -631,7 +639,7 @@ export default function AdminPage() {
     setChoiceForm({ id: '', label: '', description: '', cost: '' });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
-    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
   };
 
   const handleSaveChoice = () => {
@@ -660,30 +668,37 @@ export default function AdminPage() {
     setChoiceForm({ id: '', label: '', description: '', cost: '' });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
-    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
     void persistEventWithChoices(next, 'Choice deleted.');
   };
 
   const selectConsequence = (consequence: GameEventConsequence) => {
+    if (!consequence) return;
+
     setIsCreatingConsequence(false);
     setSelectedConsequenceId(consequence.id);
     setConsequenceForm({
-      id: consequence.id,
+      id: consequence.id || '',
       label: consequence.label ?? '',
       description: consequence.description ?? '',
-      weight: String(consequence.weight),
-      effects: consequence.effects.map((ef: GameEventEffect) =>
-        ef.type === 'cash'
-          ? { type: 'cash', amount: String(ef.amount), label: ef.label }
-          : { type: 'reputation', amount: String(ef.amount) }
-      ),
-      temporaryEffects: (consequence.temporaryEffects ?? []).map((t: GameEventTemporaryEffect) => ({
-        metric: t.metric,
-        type: t.type,
-        value: String(t.value),
-        durationSeconds: String(t.durationSeconds),
-        priority: t.priority !== undefined ? String(t.priority) : undefined,
-      })),
+      weight: String(consequence.weight || 1),
+      effects: (consequence.effects || []).map((ef: GameEventEffect) => {
+        if (ef.type === 'cash') {
+          return { type: 'cash', amount: String(ef.amount || 0), label: ef.label };
+        } else if (ef.type === 'reputation') {
+          return { type: 'reputation', amount: String(ef.amount || 0) };
+        } else if (ef.type === 'metric') {
+          return {
+            type: 'metric',
+            metric: ef.metric,
+            effectType: ef.effectType,
+            value: String(ef.value || 0),
+            durationSeconds: String(ef.durationSeconds ?? ''),
+            priority: ef.priority !== undefined ? String(ef.priority) : undefined,
+          };
+        }
+        return ef; // fallback
+      }),
     });
   };
 
@@ -691,7 +706,7 @@ export default function AdminPage() {
     if (!selectedChoiceId && !isCreatingChoice) { setEventStatus('Create or select a choice first.'); return; }
     setIsCreatingConsequence(true);
     setSelectedConsequenceId('');
-    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
   };
 
   const handleSaveConsequence = () => {
@@ -702,19 +717,30 @@ export default function AdminPage() {
     const weightNum = Number(consequenceForm.weight);
     if (!id || !Number.isInteger(weightNum) || weightNum <= 0) { setEventStatus('Consequence id and positive integer weight are required.'); return; }
 
-    const normalizedEffects = consequenceForm.effects.map((ef) => ({
-      type: ef.type,
-      amount: Number(ef.amount) || 0,
-      ...(ef.type === 'cash' && ef.label ? { label: ef.label } : {}),
-    })) as GameEventEffect[];
-
-    const normalizedTemps = consequenceForm.temporaryEffects.map((t): GameEventTemporaryEffect => ({
-      metric: t.metric,
-      type: t.type,
-      value: Number(t.value) || 0,
-      durationSeconds: t.durationSeconds === '' ? null : Number(t.durationSeconds) || 0,
-      priority: t.priority !== undefined && t.priority !== '' ? Number(t.priority) : undefined,
-    }));
+    const normalizedEffects = consequenceForm.effects.map((ef) => {
+      if (ef.type === 'cash') {
+        return {
+          type: 'cash' as const,
+          amount: Number(ef.amount) || 0,
+          ...(ef.label ? { label: ef.label } : {}),
+        };
+      } else if (ef.type === 'reputation') {
+        return {
+          type: 'reputation' as const,
+          amount: Number(ef.amount) || 0,
+        };
+      } else if (ef.type === 'metric') {
+        return {
+          type: 'metric' as const,
+          metric: ef.metric,
+          effectType: ef.effectType,
+          value: Number(ef.value) || 0,
+          durationSeconds: ef.durationSeconds === '' ? null : Number(ef.durationSeconds) || null,
+          priority: ef.priority !== undefined && ef.priority !== '' ? Number(ef.priority) : undefined,
+        };
+      }
+      return ef; // fallback
+    }) as GameEventEffect[];
 
     const idx = eventChoices.findIndex((c) => c.id === selectedChoiceId);
     if (idx === -1) return;
@@ -726,7 +752,6 @@ export default function AdminPage() {
       description: description || undefined,
       weight: weightNum,
       effects: normalizedEffects,
-      temporaryEffects: normalizedTemps.length ? normalizedTemps : undefined,
     };
     const nextConsequences = exists
       ? choice.consequences.map((cs) => (cs.id === id ? nextConsequence : cs))
@@ -753,7 +778,7 @@ export default function AdminPage() {
     next[idx] = nextChoice;
     setEventChoices(next);
     setSelectedConsequenceId('');
-    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
     void persistEventWithChoices(next, 'Consequence deleted.');
   };
 
@@ -798,15 +823,23 @@ export default function AdminPage() {
           }
         }
 
-        if (consequence.temporaryEffects !== undefined) {
-          if (!Array.isArray(consequence.temporaryEffects)) return false;
-          for (const tempEffect of consequence.temporaryEffects) {
-            if (!tempEffect || typeof tempEffect !== 'object') return false;
-            if (!isValidGameMetric(tempEffect.metric)) return false;
-            if (!isValidEffectType(tempEffect.type)) return false;
-            if (typeof tempEffect.value !== 'number') return false;
-            if (typeof tempEffect.durationSeconds !== 'number' || tempEffect.durationSeconds <= 0) return false;
-            if (tempEffect.priority !== undefined && typeof tempEffect.priority !== 'number') return false;
+        // Validate effects (now unified - includes metric effects with duration)
+        if (!Array.isArray(consequence.effects)) return false;
+        for (const effect of consequence.effects) {
+          if (!effect || typeof effect !== 'object') return false;
+          if (effect.type === 'metric') {
+            if (!isValidGameMetric(effect.metric)) return false;
+            if (!isValidEffectType(effect.effectType)) return false;
+            if (typeof effect.value !== 'number') return false;
+            if (effect.durationSeconds !== null && typeof effect.durationSeconds !== 'number') return false;
+            if (effect.priority !== undefined && typeof effect.priority !== 'number') return false;
+          } else if (effect.type === 'cash') {
+            if (typeof effect.amount !== 'number') return false;
+            if (effect.label !== undefined && typeof effect.label !== 'string') return false;
+          } else if (effect.type === 'reputation') {
+            if (typeof effect.amount !== 'number') return false;
+          } else {
+            return false; // invalid effect type
           }
         }
       }
@@ -897,52 +930,37 @@ export default function AdminPage() {
             } else {
               consequence.effects.forEach((effect: any, effectIndex: number) => {
                 const effectPath = `${consPath}.effects[${effectIndex}]`;
-                if (effect?.type === 'cash' || effect?.type === 'reputation') {
+                if (effect?.type === 'cash') {
                   if (typeof effect.amount !== 'number') {
                     errors.push(`${effectPath}.amount: must be a number`);
                   }
-                  if (effect.type === 'cash' && effect.label !== undefined && typeof effect.label !== 'string') {
+                  if (effect.label !== undefined && typeof effect.label !== 'string') {
                     errors.push(`${effectPath}.label: must be a string if provided`);
                   }
+                } else if (effect?.type === 'reputation') {
+                  if (typeof effect.amount !== 'number') {
+                    errors.push(`${effectPath}.amount: must be a number`);
+                  }
+                } else if (effect?.type === 'metric') {
+                  if (!isValidGameMetric(effect.metric)) {
+                    errors.push(`${effectPath}.metric: must be a valid GameMetric`);
+                  }
+                  if (!isValidEffectType(effect.effectType)) {
+                    errors.push(`${effectPath}.effectType: must be a valid EffectType`);
+                  }
+                  if (typeof effect.value !== 'number') {
+                    errors.push(`${effectPath}.value: must be a number`);
+                  }
+                  if (effect.durationSeconds !== null && typeof effect.durationSeconds !== 'number') {
+                    errors.push(`${effectPath}.durationSeconds: must be a number or null`);
+                  }
+                  if (effect.priority !== undefined && typeof effect.priority !== 'number') {
+                    errors.push(`${effectPath}.priority: must be a number if provided`);
+                  }
                 } else {
-                  errors.push(`${effectPath}.type: must be "cash" or "reputation"`);
+                  errors.push(`${effectPath}.type: must be "cash", "reputation", or "metric"`);
                 }
               });
-            }
-
-            if (consequence.temporaryEffects !== undefined) {
-              if (!Array.isArray(consequence.temporaryEffects)) {
-                errors.push(`${consPath}.temporaryEffects: must be an array if provided`);
-              } else {
-                consequence.temporaryEffects.forEach((tempEffect: any, tempIndex: number) => {
-                  const tempPath = `${consPath}.temporaryEffects[${tempIndex}]`;
-
-                  if (!tempEffect || typeof tempEffect !== 'object') {
-                    errors.push(`${tempPath}: must be an object`);
-                    return;
-                  }
-
-                  if (!isValidGameMetric(tempEffect.metric)) {
-                    errors.push(`${tempPath}.metric: must be one of: ${Object.values(GameMetric).join(', ')}`);
-                  }
-
-                  if (!isValidEffectType(tempEffect.type)) {
-                    errors.push(`${tempPath}.type: must be one of: ${Object.values(EffectType).join(', ')}`);
-                  }
-
-                  if (typeof tempEffect.value !== 'number') {
-                    errors.push(`${tempPath}.value: must be a number`);
-                  }
-
-                  if (tempEffect.durationSeconds !== null && (typeof tempEffect.durationSeconds !== 'number' || tempEffect.durationSeconds <= 0)) {
-                    errors.push(`${tempPath}.durationSeconds: must be a number > 0 or null for permanent effects`);
-                  }
-
-                  if (tempEffect.priority !== undefined && typeof tempEffect.priority !== 'number') {
-                    errors.push(`${tempPath}.priority: must be a number if provided`);
-                  }
-                });
-              }
             }
           });
         }
@@ -1074,7 +1092,7 @@ export default function AdminPage() {
       setChoiceForm({ id: '', label: '', description: '', cost: '' });
       setSelectedConsequenceId('');
       setIsCreatingConsequence(false);
-      setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+      setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
       setIsCreatingEvent(true);
       setSelectedEventId('');
 
@@ -2318,7 +2336,7 @@ export default function AdminPage() {
                                       <div className="md:col-span-2">
                                         <div className="flex items-center justify-between mb-2">
                                           <span className="text-sm font-semibold text-slate-300">Effects</span>
-                                          <div className="flex gap-2">
+                                          <div className="flex gap-2 flex-wrap">
                                             <button
                                               type="button"
                                               onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: 'cash', amount: '0', label: '' }] }))}
@@ -2333,58 +2351,139 @@ export default function AdminPage() {
                                             >
                                               + Reputation
                                             </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: 'metric', metric: METRIC_OPTIONS[0].value, effectType: EFFECT_TYPE_OPTIONS[0].value, value: '0', durationSeconds: '' }] }))}
+                                              className="px-2 py-1 text-xs rounded border border-indigo-500 text-indigo-200 hover:bg-indigo-500/10"
+                                            >
+                                              + Metric Effect
+                                            </button>
                                           </div>
                                         </div>
                                         <div className="space-y-2">
                                           {consequenceForm.effects.map((ef, idx) => (
-                                            <div key={idx} className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
+                                            <div key={idx} className={`grid gap-2 items-end ${ef.type === 'metric' ? 'grid-cols-1 sm:grid-cols-6' : 'grid-cols-1 sm:grid-cols-3'}`}>
                                               <div>
                                                 <label className="block text-xs text-slate-400 mb-1">Type</label>
                                                 <select
                                                   value={ef.type}
                                                   onChange={(e) => setConsequenceForm((p) => ({
                                                     ...p,
-                                                    effects: p.effects.map((row, i) => i === idx ? { ...row, type: e.target.value as 'cash' | 'reputation' } : row),
+                                                    effects: p.effects.map((row, i) => i === idx ? {
+                                                      ...row,
+                                                      type: e.target.value as 'cash' | 'reputation' | 'metric',
+                                                      // Reset fields when changing type
+                                                      ...(e.target.value === 'cash' ? { amount: '0', label: '' } :
+                                                        e.target.value === 'reputation' ? { amount: '0' } :
+                                                        { metric: METRIC_OPTIONS[0].value, effectType: EFFECT_TYPE_OPTIONS[0].value, value: '0', durationSeconds: '' })
+                                                    } : row),
                                                   }))}
                                                   className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
                                                 >
                                                   <option value="cash">Cash</option>
                                                   <option value="reputation">Reputation</option>
+                                                  <option value="metric">Metric Effect</option>
                                                 </select>
                                               </div>
-                                              <div>
-                                                <label className="block text-xs text-slate-400 mb-1">Amount</label>
-                                                <input
-                                                  type="number"
-                                                  value={ef.amount}
-                                                  onChange={(e) => setConsequenceForm((p) => ({
-                                                    ...p,
-                                                    effects: p.effects.map((row, i) => i === idx ? { ...row, amount: e.target.value } : row),
-                                                  }))}
-                                                  className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
-                                                />
-                                              </div>
-                                              {ef.type === 'cash' && (
-                                                <div>
-                                                  <label className="block text-xs text-slate-400 mb-1">Label (optional)</label>
-                                                  <input
-                                                    value={ef.label ?? ''}
-                                                    onChange={(e) => setConsequenceForm((p) => ({
-                                                      ...p,
-                                                      effects: p.effects.map((row, i) => i === idx ? { ...row, label: e.target.value } : row),
-                                                    }))}
-                                                    className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
-                                                  />
-                                                </div>
-                                              )}
-                                              <div className="sm:col-span-3">
+
+                                              {ef.type === 'cash' || ef.type === 'reputation' ? (
+                                                <>
+                                                  <div>
+                                                    <label className="block text-xs text-slate-400 mb-1">Amount</label>
+                                                    <input
+                                                      type="number"
+                                                      value={ef.amount}
+                                                      onChange={(e) => setConsequenceForm((p) => ({
+                                                        ...p,
+                                                        effects: p.effects.map((row, i) => i === idx ? { ...row, amount: e.target.value } : row),
+                                                      }))}
+                                                      className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                    />
+                                                  </div>
+                                                  {ef.type === 'cash' && (
+                                                    <div>
+                                                      <label className="block text-xs text-slate-400 mb-1">Label (optional)</label>
+                                                      <input
+                                                        value={ef.label ?? ''}
+                                                        onChange={(e) => setConsequenceForm((p) => ({
+                                                          ...p,
+                                                          effects: p.effects.map((row, i) => i === idx ? { ...row, label: e.target.value } : row),
+                                                        }))}
+                                                        className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                      />
+                                                    </div>
+                                                  )}
+                                                </>
+                                              ) : ef.type === 'metric' ? (
+                                                <>
+                                                  <div>
+                                                    <label className="block text-xs text-slate-400 mb-1">Metric</label>
+                                                    <select
+                                                      value={ef.metric}
+                                                      onChange={(e) => setConsequenceForm((p) => ({
+                                                        ...p,
+                                                        effects: p.effects.map((row, i) => i === idx ? { ...row, metric: e.target.value as GameMetric } : row),
+                                                      }))}
+                                                      className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                    >
+                                                      {METRIC_OPTIONS.map((opt) => (
+                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                      ))}
+                                                    </select>
+                                                  </div>
+                                                  <div>
+                                                    <label className="block text-xs text-slate-400 mb-1">Effect Type</label>
+                                                    <select
+                                                      value={ef.effectType}
+                                                      onChange={(e) => setConsequenceForm((p) => ({
+                                                        ...p,
+                                                        effects: p.effects.map((row, i) => i === idx ? { ...row, effectType: e.target.value as EffectType } : row),
+                                                      }))}
+                                                      className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                    >
+                                                      {EFFECT_TYPE_OPTIONS.map((opt) => (
+                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                      ))}
+                                                    </select>
+                                                  </div>
+                                                  <div>
+                                                    <label className="block text-xs text-slate-400 mb-1">Value</label>
+                                                    <input
+                                                      type="number"
+                                                      value={ef.value}
+                                                      onChange={(e) => setConsequenceForm((p) => ({
+                                                        ...p,
+                                                        effects: p.effects.map((row, i) => i === idx ? { ...row, value: e.target.value } : row),
+                                                      }))}
+                                                      className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                    />
+                                                  </div>
+                                                  <div>
+                                                    <label className="block text-xs text-slate-400 mb-1">Duration (s)</label>
+                                                    <input
+                                                      type="number"
+                                                      min="0"
+                                                      step="1"
+                                                      placeholder="Empty = permanent"
+                                                      value={ef.durationSeconds}
+                                                      onChange={(e) => setConsequenceForm((p) => ({
+                                                        ...p,
+                                                        effects: p.effects.map((row, i) => i === idx ? { ...row, durationSeconds: e.target.value } : row),
+                                                      }))}
+                                                      className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                    />
+                                                  </div>
+                                                </>
+                                              ) : null}
+
+                                              <div className="flex items-center gap-2">
                                                 <button
                                                   type="button"
                                                   onClick={() => setConsequenceForm((p) => ({
                                                     ...p,
                                                     effects: p.effects.filter((_, i) => i !== idx),
                                                   }))}
-                                                  className="text-xs text-rose-300 hover:text-rose-200"
+                                                  className="text-xs text-rose-300 hover:text-rose-200 px-2 py-1 rounded"
                                                 >
                                                   Remove
                                                 </button>
@@ -2394,106 +2493,6 @@ export default function AdminPage() {
                                         </div>
                                       </div>
 
-                                      {/* Temporary Effects editor */}
-                                      <div className="md:col-span-2">
-                                        <div className="flex items-center justify-between mb-2">
-                                          <span className="text-sm font-semibold text-slate-300">Temporary Effects</span>
-                                          <button
-                                            type="button"
-                                            onClick={() => setConsequenceForm((p) => ({ ...p, temporaryEffects: [...p.temporaryEffects, { metric: METRIC_OPTIONS[0].value, type: EFFECT_TYPE_OPTIONS[0].value, value: '0', durationSeconds: '' }] }))}
-                                            className="px-2 py-1 text-xs rounded border border-indigo-500 text-indigo-200 hover:bg-indigo-500/10"
-                                          >
-                                            + Add Temporary Effect
-                                          </button>
-                                        </div>
-                                        <div className="space-y-2">
-                                          {consequenceForm.temporaryEffects.map((t, idx) => (
-                                            <div key={idx} className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-center">
-                                              <div>
-                                                <label className="block text-xs text-slate-400 mb-1">Metric</label>
-                                                <select
-                                                  value={t.metric}
-                                                  onChange={(e) => setConsequenceForm((p) => ({
-                                                    ...p,
-                                                    temporaryEffects: p.temporaryEffects.map((row, i) => i === idx ? { ...row, metric: e.target.value as GameMetric } : row),
-                                                  }))}
-                                                  className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
-                                                >
-                                                  {METRIC_OPTIONS.map((opt) => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                  ))}
-                                                </select>
-                                              </div>
-                                              <div>
-                                                <label className="block text-xs text-slate-400 mb-1">Type</label>
-                                                <select
-                                                  value={t.type}
-                                                  onChange={(e) => setConsequenceForm((p) => ({
-                                                    ...p,
-                                                    temporaryEffects: p.temporaryEffects.map((row, i) => i === idx ? { ...row, type: e.target.value as EffectType } : row),
-                                                  }))}
-                                                  className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
-                                                >
-                                                  {EFFECT_TYPE_OPTIONS.map((opt) => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                  ))}
-                                                </select>
-                                              </div>
-                                              <div>
-                                                <label className="block text-xs text-slate-400 mb-1">Value</label>
-                                                <input
-                                                  type="number"
-                                                  value={t.value}
-                                                  onChange={(e) => setConsequenceForm((p) => ({
-                                                    ...p,
-                                                    temporaryEffects: p.temporaryEffects.map((row, i) => i === idx ? { ...row, value: e.target.value } : row),
-                                                  }))}
-                                                  className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
-                                                />
-                                              </div>
-                                              <div>
-                                                <label className="block text-xs text-slate-400 mb-1">Duration (s)</label>
-                                                <input
-                                                  type="number"
-                                                  min="0"
-                                                  step="1"
-                                                  placeholder="Leave empty for permanent"
-                                                  value={t.durationSeconds}
-                                                  onChange={(e) => setConsequenceForm((p) => ({
-                                                    ...p,
-                                                    temporaryEffects: p.temporaryEffects.map((row, i) => i === idx ? { ...row, durationSeconds: e.target.value } : row),
-                                                  }))}
-                                                  className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
-                                                />
-                                              </div>
-                                              <div>
-                                                <label className="block text-xs text-slate-400 mb-1">Priority (opt)</label>
-                                                <input
-                                                  type="number"
-                                                  value={t.priority ?? ''}
-                                                  onChange={(e) => setConsequenceForm((p) => ({
-                                                    ...p,
-                                                    temporaryEffects: p.temporaryEffects.map((row, i) => i === idx ? { ...row, priority: e.target.value } : row),
-                                                  }))}
-                                                  className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
-                                                />
-                                              </div>
-                                              <div className="sm:col-span-5">
-                                                <button
-                                                  type="button"
-                                                  onClick={() => setConsequenceForm((p) => ({
-                                                    ...p,
-                                                    temporaryEffects: p.temporaryEffects.filter((_, i) => i !== idx),
-                                                  }))}
-                                                  className="text-xs text-rose-300 hover:text-rose-200"
-                                                >
-                                                  Remove Temporary Effect
-                                                </button>
-                                              </div>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
 
                                       <div className="md:col-span-2 flex flex-wrap gap-3">
                                         <button type="button" onClick={handleSaveConsequence} className="px-4 py-2 rounded-lg text-sm font-semibold transition bg-amber-600 hover:bg-amber-500 text-white">
@@ -2509,7 +2508,7 @@ export default function AdminPage() {
                                             } else {
                                               setIsCreatingConsequence(false);
                                               setSelectedConsequenceId('');
-                                              setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], temporaryEffects: [] });
+                                              setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
                                             }
                                             setEventStatus(null);
                                           }}
@@ -2610,12 +2609,11 @@ export default function AdminPage() {
             {
               "type": "reputation",
               "amount": 3
-            }
-          ],
-          "temporaryEffects": [
+            },
             {
+              "type": "metric",
               "metric": "serviceSpeedMultiplier",
-              "type": "percent",
+              "effectType": "percent",
               "value": 15,
               "durationSeconds": 45
             }
@@ -2764,12 +2762,12 @@ export default function AdminPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-300 mb-1">Duration (seconds)</label>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Cooldown (seconds)</label>
                       <input
                         type="number"
-                        min="1"
-                        value={campaignForm.durationSeconds}
-                        onChange={(e) => setCampaignForm((p) => ({ ...p, durationSeconds: e.target.value }))}
+                        min="0"
+                        value={campaignForm.cooldownSeconds}
+                        onChange={(e) => setCampaignForm((p) => ({ ...p, cooldownSeconds: e.target.value }))}
                         className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                       />
                     </div>
@@ -2782,7 +2780,7 @@ export default function AdminPage() {
                         </div>
                         <button
                           type="button"
-                          onClick={() => setCampaignEffectsForm((prev) => [...prev, { metric: GameMetric.SpawnIntervalSeconds, type: EffectType.Add, value: '0' }])}
+                          onClick={() => setCampaignEffectsForm((prev) => [...prev, { metric: GameMetric.SpawnIntervalSeconds, type: EffectType.Add, value: '0', durationSeconds: '30' }])}
                           className="px-2 py-1 text-xs rounded-md border border-slate-600 text-slate-200 hover:bg-slate-800"
                         >
                           + Add Effect
@@ -2790,7 +2788,7 @@ export default function AdminPage() {
                       </div>
                       <div className="space-y-2">
                         {campaignEffectsForm.map((ef, idx) => (
-                          <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center">
+                          <div key={idx} className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-center">
                             <select
                               value={ef.metric}
                               onChange={(e) => setCampaignEffectsForm((prev) => prev.map((row, i) => i === idx ? { ...row, metric: e.target.value as GameMetric } : row))}
@@ -2814,6 +2812,13 @@ export default function AdminPage() {
                               type="number"
                               value={ef.value}
                               onChange={(e) => setCampaignEffectsForm((prev) => prev.map((row, i) => i === idx ? { ...row, value: e.target.value } : row))}
+                              className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                            />
+                            <input
+                              placeholder="duration (sec)"
+                              type="number"
+                              value={ef.durationSeconds}
+                              onChange={(e) => setCampaignEffectsForm((prev) => prev.map((row, i) => i === idx ? { ...row, durationSeconds: e.target.value } : row))}
                               className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                             />
                             <button
@@ -2848,7 +2853,7 @@ export default function AdminPage() {
                           } else {
                             setIsCreatingCampaign(false);
                             setSelectedCampaignId('');
-                            setCampaignForm({ id: '', name: '', description: '', cost: '0', durationSeconds: '10' });
+                            setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15' });
                             setCampaignEffectsForm([]);
                           }
                           setCampaignStatus(null);

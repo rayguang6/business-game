@@ -36,11 +36,10 @@ export const sampleEvents: GameEvent[] = [
             effects: [
               { type: 'cash', amount: 320 },
               { type: 'reputation', amount: 4 },
-            ],
-            temporaryEffects: [
               {
+                type: 'metric',
                 metric: GameMetric.ServiceRevenueMultiplier,
-                type: EffectType.Percent,
+                effectType: EffectType.Percent,
                 value: 20,
                 durationSeconds: 45,
               },
@@ -95,11 +94,10 @@ export const sampleEvents: GameEvent[] = [
             weight: 60,
             effects: [
               { type: 'reputation', amount: 3 },
-            ],
-            temporaryEffects: [
               {
+                type: 'metric',
                 metric: GameMetric.ServiceSpeedMultiplier,
-                type: EffectType.Percent,
+                effectType: EffectType.Percent,
                 value: 20,
                 durationSeconds: 45,
               },
@@ -139,11 +137,10 @@ export const sampleEvents: GameEvent[] = [
             weight: 40,
             effects: [
               { type: 'reputation', amount: 2 },
-            ],
-            temporaryEffects: [
               {
+                type: 'metric',
                 metric: GameMetric.MonthlyExpenses,
-                type: EffectType.Add,
+                effectType: EffectType.Add,
                 value: 50,
                 durationSeconds: 60,
               },
@@ -166,11 +163,10 @@ export const sampleEvents: GameEvent[] = [
             effects: [
               { type: 'reputation', amount: -3 },
               { type: 'cash', amount: -120 },
-            ],
-            temporaryEffects: [
               {
+                type: 'metric',
                 metric: GameMetric.ReputationMultiplier,
-                type: EffectType.Percent,
+                effectType: EffectType.Percent,
                 value: -10,
                 durationSeconds: 45,
               },

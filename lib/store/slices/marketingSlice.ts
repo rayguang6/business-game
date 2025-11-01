@@ -8,6 +8,7 @@ export interface CampaignEffect {
   metric: GameMetric;
   type: EffectType;
   value: number;
+  durationSeconds?: number | null; // null = permanent, number = expires after seconds
 }
 
 export interface MarketingCampaign {
@@ -15,17 +16,14 @@ export interface MarketingCampaign {
   name: string;
   description: string;
   cost: number;
-  durationSeconds: number;
+  cooldownSeconds: number; // How long before this campaign can be run again
   effects: CampaignEffect[];
 }
 
 export interface MarketingSlice {
-  activeCampaign: MarketingCampaign | null;
-  campaignStartedAt: number | null;
-  campaignEndsAt: number | null;
+  campaignCooldowns: Record<string, number>; // campaignId -> cooldownEndTime
   availableCampaigns: MarketingCampaign[];
   startCampaign: (campaignId: string) => { success: boolean; message: string };
-  stopCampaign: () => void;
   tickMarketing: (currentGameTime: number) => void;
   resetMarketing: () => void;
   setAvailableCampaigns: (campaigns: MarketingCampaign[]) => void;
@@ -46,6 +44,7 @@ function addMarketingEffects(campaign: MarketingCampaign): void {
       metric: effect.metric,
       type: effect.type,
       value: effect.value,
+      durationSeconds: effect.durationSeconds,
     });
   });
 }
@@ -64,12 +63,13 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
     name: 'Neighborhood Flyers',
     description: 'Hand out flyers and offer a same-day discount to nearby offices.',
     cost: 150,
-    durationSeconds: 20,
+    cooldownSeconds: 10, // 10 seconds cooldown
     effects: [
       {
         metric: GameMetric.SpawnIntervalSeconds,
         type: EffectType.Add,
         value: -1, // reduce spawn interval by 1 second
+        durationSeconds: 30, // 30 seconds effect
       },
     ],
   },
@@ -78,12 +78,13 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
     name: 'Community Open House',
     description: 'Host a monthend open house with free mini check-ups and swag.',
     cost: 200,
-    durationSeconds: 30,
+    cooldownSeconds: 15, // 15 seconds cooldown
     effects: [
       {
         metric: GameMetric.ReputationMultiplier,
         type: EffectType.Percent,
         value: 200, // +200% reputation gain
+        durationSeconds: 45, // 45 seconds effect
       },
     ],
   },
@@ -92,17 +93,19 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
     name: 'Digital Ad Burst',
     description: 'Launch a short social media blitz to boost incoming customers.',
     cost: 240,
-    durationSeconds: 24,
+    cooldownSeconds: 12, // 12 seconds cooldown
     effects: [
       {
         metric: GameMetric.SpawnIntervalSeconds,
         type: EffectType.Percent,
         value: 100, // double the spawn speed (interval ÷ 2)
+        durationSeconds: 35, // 35 seconds effect
       },
       {
         metric: GameMetric.MonthlyExpenses,
         type: EffectType.Add,
         value: 300, // +$300 expenses while active
+        durationSeconds: 35, // 35 seconds effect
       },
     ],
   },
@@ -111,12 +114,13 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
     name: 'VIP Weekend',
     description: 'Bundle premium services for high-value patients.',
     cost: 360,
-    durationSeconds: 26,
+    cooldownSeconds: 20, // 20 seconds cooldown
     effects: [
       {
         metric: GameMetric.ServiceRevenueFlatBonus,
         type: EffectType.Add,
         value: 80, // add $80 to each service
+        durationSeconds: 40, // 40 seconds effect
       },
     ],
   },
@@ -125,12 +129,13 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
     name: 'Revenue Multiplier Test',
     description: 'A test campaign to boost service revenue by a multiplier.',
     cost: 400,
-    durationSeconds: 25,
+    cooldownSeconds: 25, // 25 seconds cooldown
     effects: [
       {
         metric: GameMetric.ServiceRevenueMultiplier,
         type: EffectType.Multiply,
         value: 1.5, // multiply service revenue by 1.5
+        durationSeconds: 50, // 50 seconds effect
       },
     ],
   },
@@ -139,17 +144,19 @@ const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
     name: 'Express Check-in',
     description: 'Bring in temporary staff to keep chairs turning quickly.',
     cost: 320,
-    durationSeconds: 22,
+    cooldownSeconds: 18, // 18 seconds cooldown
     effects: [
       {
         metric: GameMetric.ServiceSpeedMultiplier,
         type: EffectType.Multiply,
         value: 1.25, // speed up service by 25%
+        durationSeconds: 32, // 32 seconds effect
       },
       {
         metric: GameMetric.ServiceRooms,
         type: EffectType.Add,
         value: 1, // add one temporary service room
+        durationSeconds: 32, // 32 seconds effect
       },
     ],
   },
@@ -162,30 +169,23 @@ const cloneCampaign = (campaign: MarketingCampaign): MarketingCampaign => ({
 
 export const getInitialMarketingState = (): Pick<
   MarketingSlice,
-  'activeCampaign' | 'campaignStartedAt' | 'campaignEndsAt' | 'availableCampaigns'
+  'campaignCooldowns' | 'availableCampaigns'
 > => ({
-  activeCampaign: null,
-  campaignStartedAt: null,
-  campaignEndsAt: null,
+  campaignCooldowns: {},
   availableCampaigns: DEFAULT_CAMPAIGNS.map(cloneCampaign),
 });
 
 export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlice> = (set, get) => ({
   ...getInitialMarketingState(),
   setAvailableCampaigns: (campaigns: MarketingCampaign[]) => {
-    const { activeCampaign } = get();
-    if (activeCampaign) {
-      removeMarketingEffects(activeCampaign.id);
-    }
+    // Clear all marketing effects when changing available campaigns
     effectManager.clearCategory('marketing');
 
     const nextBlueprints = campaigns.length > 0 ? campaigns : DEFAULT_CAMPAIGNS;
     const cloned = nextBlueprints.map(cloneCampaign);
 
     set({
-      activeCampaign: null,
-      campaignStartedAt: null,
-      campaignEndsAt: null,
+      campaignCooldowns: {},
       availableCampaigns: cloned,
     });
   },
@@ -196,12 +196,13 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       return { success: false, message: 'Campaign not found.' };
     }
 
-    const currentCampaign = get().activeCampaign;
-    if (currentCampaign) {
-      if (currentCampaign.id === campaignId) {
-        return { success: false, message: `${campaign.name} is already running.` };
-      }
-      return { success: false, message: `${currentCampaign.name} is already in progress.` };
+    const { campaignCooldowns, gameTime } = get();
+
+    // Check if campaign is on cooldown
+    const existingCooldownEnd = campaignCooldowns[campaignId];
+    if (existingCooldownEnd && gameTime < existingCooldownEnd) {
+      const remainingSeconds = Math.ceil(existingCooldownEnd - gameTime);
+      return { success: false, message: `${campaign.name} is on cooldown for ${Math.ceil(remainingSeconds / 60)} more minutes.` };
     }
 
     const { metrics } = get();
@@ -220,65 +221,44 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       addOneTimeCost(costEntry, { deductNow: true });
     }
 
-    const campaignStartedAt = get().gameTime ?? 0;
-    const campaignEndsAt = campaignStartedAt + campaign.durationSeconds;
-
-    // Register effects to effectManager
+    // Register effects to effectManager (expiration handled automatically)
     addMarketingEffects(campaign);
 
-    set({
-      activeCampaign: campaign,
-      campaignStartedAt,
-      campaignEndsAt,
-    });
+    // Start cooldown immediately
+    const cooldownEnd = gameTime + campaign.cooldownSeconds;
+
+    set((state) => ({
+      campaignCooldowns: {
+        ...state.campaignCooldowns,
+        [campaignId]: cooldownEnd,
+      },
+    }));
 
     return { success: true, message: `${campaign.name} launched!` };
   },
 
-  stopCampaign: () => {
-    const { activeCampaign } = get();
-    if (!activeCampaign) {
-      return;
-    }
-
-    // Remove effects from effectManager
-    removeMarketingEffects(activeCampaign.id);
-
-    set({
-      activeCampaign: null,
-      campaignStartedAt: null,
-      campaignEndsAt: null,
-    });
-  },
-
   tickMarketing: (currentGameTime: number) => {
-    const { activeCampaign, campaignEndsAt } = get();
-    if (!activeCampaign || campaignEndsAt == null) {
-      return;
-    }
+    const { campaignCooldowns } = get();
 
-    if (currentGameTime >= campaignEndsAt) {
-      // Remove effects from effectManager
-      removeMarketingEffects(activeCampaign.id);
+    // Clean up expired cooldowns
+    const expiredCooldowns = Object.keys(campaignCooldowns).filter(
+      campaignId => campaignCooldowns[campaignId] <= currentGameTime
+    );
 
-      set({
-        activeCampaign: null,
-        campaignStartedAt: null,
-        campaignEndsAt: null,
+    if (expiredCooldowns.length > 0) {
+      set((state) => {
+        const newCooldowns = { ...state.campaignCooldowns };
+        expiredCooldowns.forEach(id => delete newCooldowns[id]);
+        return { campaignCooldowns: newCooldowns };
       });
     }
   },
 
   resetMarketing: () => {
-    const { activeCampaign } = get();
-    if (activeCampaign) {
-      removeMarketingEffects(activeCampaign.id);
-    }
+    // Clear all marketing effects
     effectManager.clearCategory('marketing');
     set((state) => ({
-      activeCampaign: null,
-      campaignStartedAt: null,
-      campaignEndsAt: null,
+      campaignCooldowns: {},
       availableCampaigns:
         state.availableCampaigns.length > 0
           ? state.availableCampaigns.map(cloneCampaign)

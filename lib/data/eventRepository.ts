@@ -31,12 +31,13 @@ type RawConsequence = {
   description?: string;
   weight?: number;
   effects?: RawEffect[];
-  temporaryEffects?: RawTemporaryEffect[];
+  temporaryEffects?: RawTemporaryEffect[]; // For backward compatibility with old data
 };
 
 type RawEffect =
   | { type: 'cash'; amount: number; label?: string }
-  | { type: 'reputation'; amount: number; label?: string };
+  | { type: 'reputation'; amount: number; label?: string }
+  | { type: 'metric'; metric?: string; effectType?: string; value?: number; durationSeconds?: number | null; priority?: number };
 
 type RawTemporaryEffect = {
   metric?: string;
@@ -64,47 +65,41 @@ const isRawEffect = (value: unknown): value is RawEffect => {
     return false;
   }
   const record = value as Record<string, unknown>;
-  return record.type === 'cash' || record.type === 'reputation';
+  return record.type === 'cash' || record.type === 'reputation' || record.type === 'metric';
 };
 
-const mapTemporaryEffects = (raw: RawTemporaryEffect[] | undefined): GameEventTemporaryEffect[] => {
-  if (!Array.isArray(raw)) {
-    return [];
-  }
-
-  return raw
-    .filter(
-      (item) =>
-        item &&
-        typeof item.metric === 'string' &&
-        typeof item.type === 'string' &&
-        Number.isFinite(item.value) &&
-        (item.durationSeconds === null || Number.isFinite(item.durationSeconds)),
-    )
-    .map((item): GameEventTemporaryEffect => ({
-      metric: item.metric as GameMetric,
-      type: item.type as EffectType,
-      value: item.value ?? 0,
-      durationSeconds: item.durationSeconds ?? null,
-      priority: item.priority ?? undefined,
-    }));
-};
 
 const mapConsequences = (raw: RawConsequence[] | undefined): GameEventConsequence[] => {
   if (!Array.isArray(raw)) {
     return [];
   }
 
-  return raw.map((consequence) => ({
-    id: String(consequence.id ?? ''),
-    label: consequence.label,
-    description: consequence.description,
-    weight: Math.max(0, toNumber(consequence.weight, 0)),
-    effects: Array.isArray(consequence.effects)
+  return raw.map((consequence) => {
+    // Handle backward compatibility: convert temporaryEffects to metric effects if they exist
+    const regularEffects = Array.isArray(consequence.effects)
       ? consequence.effects.filter(isRawEffect).map((effect) => ({ ...effect }))
-      : [],
-    temporaryEffects: mapTemporaryEffects(consequence.temporaryEffects),
-  }));
+      : [];
+
+    // For backward compatibility with old data that still has temporaryEffects
+    const temporaryEffects = Array.isArray((consequence as any).temporaryEffects)
+      ? (consequence as any).temporaryEffects.map((temp: any): RawEffect => ({
+          type: 'metric',
+          metric: temp.metric,
+          effectType: temp.type,
+          value: temp.value,
+          durationSeconds: temp.durationSeconds,
+          priority: temp.priority,
+        }))
+      : [];
+
+    return {
+      id: String(consequence.id ?? ''),
+      label: consequence.label,
+      description: consequence.description,
+      weight: Math.max(0, toNumber(consequence.weight, 0)),
+      effects: [...regularEffects, ...temporaryEffects],
+    };
+  });
 };
 
 const mapChoices = (raw: RawChoice[] | undefined): GameEventChoice[] => {
@@ -164,13 +159,6 @@ function serializeChoices(choices: GameEventChoice[]): RawChoice[] {
       description: consequence.description,
       weight: consequence.weight,
       effects: consequence.effects.map((e) => ({ ...(e as RawEffect) })),
-      temporaryEffects: (consequence.temporaryEffects ?? []).map((t) => ({
-        metric: t.metric,
-        type: t.type,
-        value: t.value,
-        durationSeconds: t.durationSeconds,
-        priority: t.priority,
-      })),
     })),
   }));
 }

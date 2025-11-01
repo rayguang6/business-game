@@ -7,14 +7,7 @@ export type EventCategory = 'opportunity' | 'risk';
 export type GameEventEffect =
   | { type: 'cash'; amount: number; label?: string }
   | { type: 'reputation'; amount: number }
-
-export interface GameEventTemporaryEffect {
-  metric: GameMetric;
-  type: EffectType;
-  value: number;
-  durationSeconds: number | null; // null = permanent effect
-  priority?: number;
-}
+  | { type: 'metric'; metric: GameMetric; effectType: EffectType; value: number; durationSeconds?: number | null; priority?: number }
 
 export interface GameEventConsequence {
   id: string;
@@ -22,7 +15,6 @@ export interface GameEventConsequence {
   description?: string;
   weight: number; // Positive integer weight; higher values increase selection chance
   effects: GameEventEffect[];
-  temporaryEffects?: GameEventTemporaryEffect[];
 }
 
 export interface GameEventChoice {

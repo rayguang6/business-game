@@ -1,15 +1,8 @@
 import { StateCreator } from 'zustand';
-import { GameEvent, GameEventChoice, GameEventConsequence, GameEventEffect, GameEventTemporaryEffect } from '../../types/gameEvents';
+import { GameEvent, GameEventChoice, GameEventConsequence, GameEventEffect } from '../../types/gameEvents';
 import { GameMetric, EffectType } from '../../game/effectManager';
 import type { GameStore } from '../gameStore';
 import { effectManager } from '@/lib/game/effectManager';
-
-interface ActiveEventEffect {
-  effectId: string;
-  eventId: string;
-  effect: GameEventTemporaryEffect;
-  expiresAt: number | null;
-}
 
 export interface ResolvedEventOutcome {
   eventId: string;
@@ -21,38 +14,24 @@ export interface ResolvedEventOutcome {
   appliedEffects: GameEventEffect[];
   consequenceLabel?: string;
   consequenceDescription?: string;
-  temporaryEffects?: {
-    metric: GameEventTemporaryEffect['metric'];
-    type: GameEventTemporaryEffect['type'];
-    value: number;
-    durationSeconds: number | null;
-    expiresAt: number | null;
-    priority?: number;
-  }[];
 }
 
 export interface EventSlice {
   currentEvent: GameEvent | null;
   wasPausedBeforeEvent: boolean;
   lastEventOutcome: ResolvedEventOutcome | null;
-  activeEventEffects: ActiveEventEffect[];
   setCurrentEvent: (event: GameEvent | null) => void;
   resolveEventChoice: (choiceId: string) => void;
   clearLastEventOutcome: () => void;
-  tickEventEffects: (currentGameTime: number) => void;
-  clearEventEffects: () => void;
 }
 
-// Convert legacy event effects to effectManager system
+// Convert event effects to effectManager system
 const applyEventEffect = (
   effect: GameEventEffect,
   event: GameEvent,
   choice: GameEventChoice,
   store: GameStore,
 ): void => {
-  // Convert legacy event effect types to GameMetric effects
-  let gameMetricEffect: { metric: GameMetric; type: EffectType; value: number } | null = null;
-
   switch (effect.type) {
     case 'cash': {
       // Cash effects should be handled by the game's revenue system
@@ -65,30 +44,38 @@ const applyEventEffect = (
       return; // Don't use effectManager for cash (handled by revenue system)
     }
     case 'reputation': {
-      gameMetricEffect = {
+      // Convert reputation to metric effect
+      effectManager.add({
+        id: `event_${event.id}_${choice.id}_${Date.now()}`,
+        source: {
+          category: 'event',
+          id: event.id,
+          name: event.title,
+        },
         metric: GameMetric.ReputationMultiplier,
         type: EffectType.Add,
         value: effect.amount,
-      };
+        durationSeconds: null, // Permanent reputation change
+      });
       break;
     }
-    default:
-      return;
-  }
-
-  // Apply the effect using effectManager
-  if (gameMetricEffect) {
-    effectManager.add({
-      id: `event_${event.id}_${choice.id}_${Date.now()}`,
-      source: {
-        category: 'event',
-        id: event.id,
-        name: event.title,
-      },
-      metric: gameMetricEffect.metric,
-      type: gameMetricEffect.type,
-      value: gameMetricEffect.value,
-    });
+    case 'metric': {
+      // Direct metric effect
+      effectManager.add({
+        id: `event_${event.id}_${choice.id}_${Date.now()}`,
+        source: {
+          category: 'event',
+          id: event.id,
+          name: event.title,
+        },
+        metric: effect.metric,
+        type: effect.effectType,
+        value: effect.value,
+        durationSeconds: effect.durationSeconds,
+        priority: effect.priority,
+      });
+      break;
+    }
   }
 };
 
@@ -128,7 +115,6 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
   currentEvent: null,
   wasPausedBeforeEvent: false,
   lastEventOutcome: null,
-  activeEventEffects: [],
   setCurrentEvent: (event) => {
     if (event) {
       const store = get();
@@ -179,57 +165,15 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
 
     const consequence = pickConsequence(choice);
     const appliedEffects: GameEventEffect[] = [];
-    const newActiveEffects: ActiveEventEffect[] = [];
-    const temporaryEffectSummaries: ResolvedEventOutcome['temporaryEffects'] = [];
-    const startTime = get().gameTime ?? 0;
 
     if (consequence) {
-      consequence.effects.forEach((effect) => {
+      consequence.effects.forEach((effect: GameEventEffect) => {
         applyEventEffect(effect, event, choice, store);
         appliedEffects.push(effect);
       });
-
-      (consequence.temporaryEffects ?? []).forEach((effect, index) => {
-        const effectId = `event_${event.id}_${choice.id}_${consequence.id}_${Date.now()}_${index}`;
-        const expiresAt = Number.isFinite(effect.durationSeconds)
-          ? startTime + Math.max(0, effect.durationSeconds)
-          : null;
-
-        effectManager.add({
-          id: effectId,
-          source: {
-            category: 'event',
-            id: event.id,
-            name: event.title,
-          },
-          metric: effect.metric,
-          type: effect.type,
-          value: effect.value,
-          priority: effect.priority,
-        });
-
-        newActiveEffects.push({
-          effectId,
-          eventId: event.id,
-          effect,
-          expiresAt,
-        });
-
-        temporaryEffectSummaries.push({
-          metric: effect.metric,
-          type: effect.type,
-          value: effect.value,
-          durationSeconds: effect.durationSeconds,
-          expiresAt,
-          priority: effect.priority,
-        });
-      });
     }
 
-    set((state) => ({
-      activeEventEffects: newActiveEffects.length > 0
-        ? [...state.activeEventEffects, ...newActiveEffects]
-        : state.activeEventEffects,
+    set({
       lastEventOutcome: {
         eventId: event.id,
         eventTitle: event.title,
@@ -240,61 +184,20 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
         appliedEffects,
         consequenceLabel: consequence?.label,
         consequenceDescription: consequence?.description,
-        temporaryEffects: temporaryEffectSummaries,
       },
-    }));
+    });
 
     store.setCurrentEvent(null);
   },
   clearLastEventOutcome: () => {
     const store = get();
     const shouldUnpause = !store.wasPausedBeforeEvent;
-    set((state) => ({
+    set({
       lastEventOutcome: null,
       wasPausedBeforeEvent: false,
-      activeEventEffects: state.activeEventEffects,
-    }));
+    });
     if (shouldUnpause) {
       store.unpauseGame();
     }
-  },
-  tickEventEffects: (currentGameTime) => {
-    set((state) => {
-      if (state.activeEventEffects.length === 0) {
-        return state;
-      }
-
-      const remaining: ActiveEventEffect[] = [];
-      state.activeEventEffects.forEach((instance) => {
-        if (instance.expiresAt !== null && instance.expiresAt <= currentGameTime) {
-          effectManager.remove(instance.effectId);
-        } else {
-          remaining.push(instance);
-        }
-      });
-
-      if (remaining.length === state.activeEventEffects.length) {
-        return state;
-      }
-
-      return {
-        ...state,
-        activeEventEffects: remaining,
-      };
-    });
-  },
-  clearEventEffects: () => {
-    set((state) => {
-      if (state.activeEventEffects.length > 0) {
-        state.activeEventEffects.forEach((instance) => {
-          effectManager.remove(instance.effectId);
-        });
-      }
-      effectManager.clearCategory('event');
-      return {
-        ...state,
-        activeEventEffects: [],
-      };
-    });
   },
 });

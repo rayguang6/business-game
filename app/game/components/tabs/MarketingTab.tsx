@@ -69,20 +69,12 @@ const getToneClass = (effect: CampaignEffect): string => {
 
 export function MarketingTab() {
   const availableCampaigns = useGameStore((state) => state.availableCampaigns);
-  const activeCampaign = useGameStore((state) => state.activeCampaign);
-  const campaignEndsAt = useGameStore((state) => state.campaignEndsAt);
+  const campaignCooldowns = useGameStore((state) => state.campaignCooldowns);
   const startCampaign = useGameStore((state) => state.startCampaign);
   const metrics = useGameStore((state) => state.metrics);
   const gameTime = useGameStore((state) => state.gameTime);
 
   const [message, setMessage] = useState<string | null>(null);
-
-  const remainingSeconds = useMemo(() => {
-    if (!activeCampaign || campaignEndsAt == null) {
-      return 0;
-    }
-    return Math.max(0, campaignEndsAt - gameTime);
-  }, [activeCampaign, campaignEndsAt, gameTime]);
 
   const handleLaunch = (campaignId: string) => {
     const result = startCampaign(campaignId);
@@ -106,9 +98,11 @@ export function MarketingTab() {
 
       <div className="space-y-3">
         {availableCampaigns.map((campaign) => {
-          const isActive = activeCampaign?.id === campaign.id;
-          const isAnotherActive = Boolean(activeCampaign && !isActive);
           const canAfford = metrics.cash >= campaign.cost;
+          const cooldownEnd = campaignCooldowns[campaign.id];
+          const isOnCooldown = cooldownEnd && gameTime < cooldownEnd;
+          const cooldownRemaining = isOnCooldown ? Math.max(0, cooldownEnd - gameTime) : 0;
+
           const descriptions = campaign.effects.map((effect) => ({
             text: describeEffect(effect),
             toneClass: getToneClass(effect),
@@ -117,9 +111,7 @@ export function MarketingTab() {
           return (
             <div
               key={campaign.id}
-              className={`rounded-lg border p-4 space-y-3 ${
-                isActive ? 'bg-blue-900/50 border-blue-600' : 'bg-gray-800 border-gray-700'
-              }`}
+              className="rounded-lg border p-4 space-y-3 bg-gray-800 border-gray-700"
             >
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -144,28 +136,21 @@ export function MarketingTab() {
                     </span>
                   ))
                 )}
-                {isActive && (
-                  <span className="text-yellow-300">
-                    Ends in {formatSeconds(remainingSeconds)}
-                  </span>
-                )}
               </div>
 
               <button
                 onClick={() => handleLaunch(campaign.id)}
-                disabled={isActive || !canAfford || isAnotherActive}
+                disabled={isOnCooldown}
                 className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors ${
-                  isActive
-                    ? 'bg-green-700 text-white cursor-not-allowed'
-                    : canAfford && !isAnotherActive
+                  isOnCooldown
+                    ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                    : canAfford
                     ? 'bg-green-600 hover:bg-green-500 text-white'
                     : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                 }`}
               >
-                {isActive
-                  ? 'Campaign Running'
-                  : isAnotherActive
-                  ? 'Another Campaign Active'
+                {isOnCooldown
+                  ? `Cooldown: ${formatSeconds(cooldownRemaining)}`
                   : canAfford
                   ? 'Launch Campaign'
                   : 'Not Enough Cash'}
@@ -175,15 +160,6 @@ export function MarketingTab() {
         })}
       </div>
 
-      <div className="text-xs text-gray-400 border-t border-gray-800 pt-3">
-        {activeCampaign ? (
-          <span>
-            Active marketing: <span className="text-emerald-400 font-semibold">{activeCampaign.name}</span>
-          </span>
-        ) : (
-          <span className="text-gray-400">No active marketing campaign.</span>
-        )}
-      </div>
     </div>
   );
 }

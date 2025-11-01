@@ -467,7 +467,6 @@ function getStaticEventsForIndustry(industryId: IndustryId): GameEvent[] {
       consequences: choice.consequences.map((consequence) => ({
         ...consequence,
         effects: consequence.effects.map((effect) => ({ ...effect })),
-        temporaryEffects: (consequence.temporaryEffects ?? []).map((effect) => ({ ...effect })),
       })),
     })),
   }));
@@ -606,7 +605,6 @@ export function setIndustryEvents(industryId: IndustryId, events: GameEvent[]): 
       consequences: choice.consequences.map((consequence) => ({
         ...consequence,
         effects: consequence.effects.map((effect) => ({ ...effect })),
-        temporaryEffects: (consequence.temporaryEffects ?? []).map((effect) => ({ ...effect })),
       })),
     })),
   }));
@@ -618,7 +616,6 @@ export function setIndustryEvents(industryId: IndustryId, events: GameEvent[]): 
       consequences: choice.consequences.map((consequence) => ({
         ...consequence,
         effects: consequence.effects.map((effect) => ({ ...effect })),
-        temporaryEffects: (consequence.temporaryEffects ?? []).map((effect) => ({ ...effect })),
       })),
     })),
   }));
