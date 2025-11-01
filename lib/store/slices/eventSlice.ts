@@ -44,20 +44,10 @@ const applyEventEffect = (
       return; // Don't use effectManager for cash (handled by revenue system)
     }
     case 'reputation': {
-      // Convert reputation to metric effect
-      effectManager.add({
-        id: `event_${event.id}_${choice.id}_${Date.now()}`,
-        source: {
-          category: 'event',
-          id: event.id,
-          name: event.title,
-        },
-        metric: GameMetric.ReputationMultiplier,
-        type: EffectType.Add,
-        value: effect.amount,
-        durationSeconds: null, // Permanent reputation change
-      });
-      break;
+      // Reputation effects should directly modify reputation
+      const { applyReputationChange } = store;
+      applyReputationChange(effect.amount);
+      return; // Don't use effectManager for reputation (handled directly)
     }
     case 'metric': {
       // Direct metric effect
