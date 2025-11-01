@@ -17,6 +17,7 @@ import { useAudioControls } from '@/hooks/useAudio';
 import { FullscreenToggle } from '@/app/game/components/ui/FullscreenToggle';
 import EventPopup from '@/app/game/components/ui/EventPopup';
 import GameOverPopup from '@/app/game/components/ui/GameOverPopup';
+import { FlagDebug } from '@/app/game/components/ui/FlagDebug';
 import { useRandomEventTrigger } from '@/hooks/useRandomEventTrigger';
 import Image from 'next/image';
 import { fetchGlobalSimulationConfig } from '@/lib/data/simulationConfigRepository';
@@ -25,6 +26,7 @@ import { fetchServicesForIndustry } from '@/lib/data/serviceRepository';
 import { fetchUpgradesForIndustry } from '@/lib/data/upgradeRepository';
 import { fetchEventsForIndustry } from '@/lib/data/eventRepository';
 import { fetchStaffDataForIndustry } from '@/lib/data/staffRepository';
+import { fetchConditionsForIndustry } from '@/lib/data/conditionRepository';
 import {
   setIndustryServices,
   setIndustryUpgrades,
@@ -45,6 +47,7 @@ export default function GamePage() {
   const pauseGame = useGameStore((state) => state.pauseGame);
   const unpauseGame = useGameStore((state) => state.unpauseGame);
   const resetAllGame = useGameStore((state) => state.resetAllGame);
+  const setAvailableConditions = useGameStore((state) => state.setAvailableConditions);
   const router = useRouter();
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<TabType>('home');
@@ -108,11 +111,12 @@ export default function GamePage() {
     (async () => {
       const industryId = selectedIndustry.id as IndustryId;
       try {
-        const [servicesResult, upgradesResult, eventsResult, staffResult] = await Promise.all([
+        const [servicesResult, upgradesResult, eventsResult, staffResult, conditionsResult] = await Promise.all([
           fetchServicesForIndustry(industryId),
           fetchUpgradesForIndustry(industryId),
           fetchEventsForIndustry(industryId),
           fetchStaffDataForIndustry(industryId),
+          fetchConditionsForIndustry(industryId),
         ]);
 
         if (!isMounted) {
@@ -123,6 +127,7 @@ export default function GamePage() {
         const upgrades = Array.isArray(upgradesResult) ? upgradesResult : [];
         const events = Array.isArray(eventsResult) ? eventsResult : [];
         const staffData = staffResult ?? null;
+        const conditions = Array.isArray(conditionsResult) ? conditionsResult : [];
 
         const hasServices = services.length > 0;
         const hasUpgrades = upgrades.length > 0;
@@ -130,6 +135,7 @@ export default function GamePage() {
         const hasStaff =
           staffData === null ||
           (Array.isArray(staffData.roles) && staffData.roles.length > 0);
+        const hasConditions = conditions.length > 0;
 
         if (hasServices) {
           setIndustryServices(industryId, services);
@@ -152,6 +158,9 @@ export default function GamePage() {
           initializeStaffForIndustry(industryId);
         }
 
+        // Set conditions regardless of whether they exist (empty array is fine)
+        setAvailableConditions(conditions);
+
         if (hasServices && hasUpgrades && hasEvents && hasStaff) {
           setDataLoadState('ready');
         } else {
@@ -161,6 +170,7 @@ export default function GamePage() {
             hasUpgrades,
             hasEvents,
             hasStaff,
+            hasConditions,
           });
           setDataLoadState('error');
         }
@@ -266,6 +276,7 @@ export default function GamePage() {
           <GameCanvas />
           <EventPopup />
           <GameOverPopup />
+          <FlagDebug />
         </div>
       </div>
 

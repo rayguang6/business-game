@@ -13,6 +13,7 @@ interface StaffRoleRow {
   service_speed?: number | string | null; // Legacy columns for backward compatibility
   workload_reduction?: number | string | null;
   emoji: string | null;
+  sets_flag: string | null;
 }
 
 interface StaffPresetRow {
@@ -90,6 +91,7 @@ const mapRoleRows = (rows: StaffRoleRow[] | null | undefined): StaffRoleConfig[]
         salary: parseNumber(row.salary),
         effects,
         emoji: row.emoji && row.emoji.trim() ? row.emoji.trim() : '🧑‍💼',
+        setsFlag: row.sets_flag || undefined,
       };
     });
 };
@@ -125,7 +127,7 @@ export async function fetchStaffDataForIndustry(
   const [rolesResponse, presetsResponse] = await Promise.all([
     supabase
       .from('staff_roles')
-      .select('id, industry_id, name, salary, effects, service_speed, workload_reduction, emoji')
+      .select('id, industry_id, name, salary, effects, service_speed, workload_reduction, emoji, sets_flag')
       .eq('industry_id', industryId),
     supabase
       .from('staff_presets')
@@ -164,6 +166,7 @@ export async function upsertStaffRole(role: {
   salary: number;
   effects: UpgradeEffect[];
   emoji?: string;
+  setsFlag?: string;
 }): Promise<{ success: boolean; message?: string }>
 {
   if (!supabase) {
@@ -191,6 +194,7 @@ export async function upsertStaffRole(role: {
     service_speed: serviceSpeed, // Legacy compatibility
     workload_reduction: workloadReduction, // Legacy compatibility
     emoji: role.emoji ?? null,
+    sets_flag: role.setsFlag || null,
   };
 
   const { error } = await supabase

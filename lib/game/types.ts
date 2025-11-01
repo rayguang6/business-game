@@ -67,6 +67,7 @@ export interface UpgradeDefinition {
   cost: number;
   maxLevel: number;
   effects: UpgradeEffect[];
+  setsFlag?: string; // Optional flag to set when this upgrade is purchased
 }
 
 export type UpgradeId = UpgradeDefinition['id'];

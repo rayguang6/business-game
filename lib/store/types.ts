@@ -79,6 +79,9 @@ export interface GameState {
   // Upgrades
   upgrades: Upgrades;
   
+  // Flags - Simple boolean state tracking
+  flags: Record<string, boolean>;
+  
   // Monthly Tracking
   monthlyRevenue: number;
   monthlyExpenses: number;

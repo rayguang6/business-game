@@ -9,6 +9,7 @@ interface MarketingCampaignRow {
   cost: number | string | null;
   cooldown_seconds: number | null;
   effects: unknown;
+  sets_flag: string | null;
 }
 
 interface RawEffect {
@@ -53,7 +54,7 @@ export async function fetchMarketingCampaigns(): Promise<MarketingCampaign[] | n
 
   const { data, error } = await supabase
     .from('marketing_campaigns')
-    .select('id, name, description, cost, cooldown_seconds, effects')
+    .select('id, name, description, cost, cooldown_seconds, effects, sets_flag')
     .order('name', { ascending: true });
 
   if (error) {
@@ -74,6 +75,7 @@ export async function fetchMarketingCampaigns(): Promise<MarketingCampaign[] | n
       cost: parseNumber(row.cost),
       cooldownSeconds: parseNumber(row.cooldown_seconds, 60), // Default to 300s if not set
       effects: mapEffects(row.effects),
+      setsFlag: row.sets_flag || undefined,
     }));
 }
 
@@ -90,6 +92,7 @@ export async function upsertMarketingCampaign(campaign: MarketingCampaign): Prom
     cost: campaign.cost,
     cooldown_seconds: campaign.cooldownSeconds,
     effects: campaign.effects.map((e) => ({ metric: e.metric, type: e.type, value: e.value, durationSeconds: e.durationSeconds })),
+    sets_flag: campaign.setsFlag || null,
   };
 
   const { error } = await supabase

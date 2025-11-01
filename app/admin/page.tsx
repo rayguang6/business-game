@@ -30,6 +30,11 @@ import { fetchMarketingCampaigns, upsertMarketingCampaign, deleteMarketingCampai
 import type { MarketingCampaign } from '@/lib/store/slices/marketingSlice';
 import { fetchEventsForIndustry, upsertEventForIndustry, deleteEventById } from '@/lib/data/eventRepository';
 import type { GameEvent, GameEventChoice, GameEventConsequence, GameEventEffect } from '@/lib/types/gameEvents';
+import { fetchFlagsForIndustry, upsertFlagForIndustry, deleteFlagById } from '@/lib/data/flagRepository';
+import type { GameFlag } from '@/lib/data/flagRepository';
+import { fetchConditionsForIndustry, upsertConditionForIndustry, deleteConditionById } from '@/lib/data/conditionRepository';
+import type { GameCondition, ConditionOperator } from '@/lib/types/conditions';
+import { ConditionMetric } from '@/lib/types/conditions';
 
 interface FormState {
   id: string;
@@ -102,7 +107,7 @@ export default function AdminPage() {
   const [staffLoading, setStaffLoading] = useState<boolean>(false);
   const [staffStatus, setStaffStatus] = useState<string | null>(null);
 
-  const [roleForm, setRoleForm] = useState<{ id: string; name: string; salary: string; effects: Array<{ metric: GameMetric; type: EffectType; value: string }>; emoji: string }>({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼' });
+  const [roleForm, setRoleForm] = useState<{ id: string; name: string; salary: string; effects: Array<{ metric: GameMetric; type: EffectType; value: string }>; emoji: string; setsFlag?: string }>({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼' });
   const [selectedRoleId, setSelectedRoleId] = useState<string>('');
   const [roleSaving, setRoleSaving] = useState<boolean>(false);
   const [roleDeleting, setRoleDeleting] = useState<boolean>(false);
@@ -122,7 +127,7 @@ export default function AdminPage() {
   const [upgradeDeleting, setUpgradeDeleting] = useState<boolean>(false);
   const [upgradesLoading, setUpgradesLoading] = useState<boolean>(false);
   const [upgradeStatus, setUpgradeStatus] = useState<string | null>(null);
-  const [upgradeForm, setUpgradeForm] = useState<{ id: string; name: string; description: string; icon: string; cost: string; maxLevel: string }>({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1' });
+  const [upgradeForm, setUpgradeForm] = useState<{ id: string; name: string; description: string; icon: string; cost: string; maxLevel: string; setsFlag?: string }>({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1' });
   const [effectsForm, setEffectsForm] = useState<Array<{ metric: GameMetric; type: EffectType; value: string }>>([]);
 
   // Marketing management state
@@ -133,7 +138,7 @@ export default function AdminPage() {
   const [campaignDeleting, setCampaignDeleting] = useState<boolean>(false);
   const [campaignsLoading, setCampaignsLoading] = useState<boolean>(false);
   const [campaignStatus, setCampaignStatus] = useState<string | null>(null);
-  const [campaignForm, setCampaignForm] = useState<{ id: string; name: string; description: string; cost: string; cooldownSeconds: string }>({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15' });
+  const [campaignForm, setCampaignForm] = useState<{ id: string; name: string; description: string; cost: string; cooldownSeconds: string; setsFlag?: string }>({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15' });
   const [campaignEffectsForm, setCampaignEffectsForm] = useState<Array<{ metric: GameMetric; type: EffectType; value: string; durationSeconds: string }>>([]);
 
   // Events management state (base only for now)
@@ -148,7 +153,7 @@ export default function AdminPage() {
   const [eventChoices, setEventChoices] = useState<GameEventChoice[]>([]);
   const [selectedChoiceId, setSelectedChoiceId] = useState<string>('');
   const [isCreatingChoice, setIsCreatingChoice] = useState<boolean>(false);
-  const [choiceForm, setChoiceForm] = useState<{ id: string; label: string; description: string; cost: string }>({ id: '', label: '', description: '', cost: '' });
+  const [choiceForm, setChoiceForm] = useState<{ id: string; label: string; description: string; cost: string; setsFlag?: string }>({ id: '', label: '', description: '', cost: '' });
 
   // Consequences editor state for the selected choice
   const [selectedConsequenceId, setSelectedConsequenceId] = useState<string>('');
@@ -170,6 +175,26 @@ export default function AdminPage() {
   const [jsonImportText, setJsonImportText] = useState<string>('');
   const [jsonImportErrors, setJsonImportErrors] = useState<string[]>([]);
   const [jsonImporting, setJsonImporting] = useState<boolean>(false);
+
+  // Flags management state
+  const [flags, setFlags] = useState<GameFlag[]>([]);
+  const [flagsLoading, setFlagsLoading] = useState<boolean>(false);
+  const [flagStatus, setFlagStatus] = useState<string | null>(null);
+  const [selectedFlagId, setSelectedFlagId] = useState<string>('');
+  const [isCreatingFlag, setIsCreatingFlag] = useState<boolean>(false);
+  const [flagSaving, setFlagSaving] = useState<boolean>(false);
+  const [flagDeleting, setFlagDeleting] = useState<boolean>(false);
+  const [flagForm, setFlagForm] = useState<{ id: string; name: string; description: string }>({ id: '', name: '', description: '' });
+
+  // Conditions management state
+  const [conditions, setConditions] = useState<GameCondition[]>([]);
+  const [conditionsLoading, setConditionsLoading] = useState<boolean>(false);
+  const [conditionsStatus, setConditionsStatus] = useState<string | null>(null);
+  const [selectedConditionId, setSelectedConditionId] = useState<string>('');
+  const [isCreatingCondition, setIsCreatingCondition] = useState<boolean>(false);
+  const [conditionForm, setConditionForm] = useState<{ id: string; name: string; description: string; metric: ConditionMetric; operator: ConditionOperator; value: string }>({ id: '', name: '', description: '', metric: ConditionMetric.Cash, operator: 'greater', value: '0' });
+  const [conditionSaving, setConditionSaving] = useState<boolean>(false);
+  const [conditionDeleting, setConditionDeleting] = useState<boolean>(false);
 
   // Persist helper: upserts the current event with provided choices
   const persistEventWithChoices = async (nextChoices: GameEventChoice[], successMessage: string = 'Event saved.') => {
@@ -282,6 +307,8 @@ export default function AdminPage() {
     loadUpgradesForIndustry(industry.id);
     loadMarketingCampaigns();
     loadEventsForIndustry(industry.id);
+    loadFlagsForIndustry(industry.id);
+    loadConditionsForIndustry(industry.id);
   };
 
   useEffect(() => {
@@ -397,7 +424,7 @@ export default function AdminPage() {
   const selectUpgrade = (upgrade: UpgradeDefinition, resetMsg = true) => {
     setSelectedUpgradeId(upgrade.id);
     setIsCreatingUpgrade(false);
-    setUpgradeForm({ id: upgrade.id, name: upgrade.name, description: upgrade.description, icon: upgrade.icon, cost: String(upgrade.cost), maxLevel: String(upgrade.maxLevel) });
+    setUpgradeForm({ id: upgrade.id, name: upgrade.name, description: upgrade.description, icon: upgrade.icon, cost: String(upgrade.cost), maxLevel: String(upgrade.maxLevel), setsFlag: upgrade.setsFlag });
     setEffectsForm(upgrade.effects.map((e) => ({ metric: e.metric, type: e.type, value: String(e.value) })));
     if (resetMsg) setUpgradeStatus(null);
   };
@@ -406,7 +433,7 @@ export default function AdminPage() {
     if (!form.id) { setUpgradeStatus('Save the industry first.'); return; }
     setIsCreatingUpgrade(true);
     setSelectedUpgradeId('');
-    setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1' });
+    setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', setsFlag: '' });
     setEffectsForm([]);
     setUpgradeStatus(null);
   };
@@ -424,18 +451,19 @@ export default function AdminPage() {
       setUpgradeStatus('Cost must be >= 0 and Max Level >= 1.');
       return;
     }
+    const setsFlag = upgradeForm.setsFlag?.trim() || undefined;
     const effects: UpgradeEffect[] = effectsForm.map((ef) => ({
       metric: ef.metric,
       type: ef.type,
       value: Number(ef.value) || 0,
     }));
     setUpgradeSaving(true);
-    const result = await upsertUpgradeForIndustry(form.id, { id, name, description, icon, cost, maxLevel, effects });
+    const result = await upsertUpgradeForIndustry(form.id, { id, name, description, icon, cost, maxLevel, effects, setsFlag });
     setUpgradeSaving(false);
     if (!result.success) { setUpgradeStatus(result.message ?? 'Failed to save upgrade.'); return; }
     setUpgrades((prev) => {
       const exists = prev.some((u) => u.id === id);
-      const nextItem: UpgradeDefinition = { id, name, description, icon, cost, maxLevel, effects } as any;
+      const nextItem: UpgradeDefinition = { id, name, description, icon, cost, maxLevel, effects, setsFlag };
       const next = exists ? prev.map((u) => (u.id === id ? nextItem : u)) : [...prev, nextItem];
       return next.sort((a, b) => a.name.localeCompare(b.name));
     });
@@ -453,7 +481,7 @@ export default function AdminPage() {
     if (!result.success) { setUpgradeStatus(result.message ?? 'Failed to delete upgrade.'); return; }
     setUpgrades((prev) => prev.filter((u) => u.id !== selectedUpgradeId));
     setSelectedUpgradeId('');
-    setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1' });
+    setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', setsFlag: '' });
     setEffectsForm([]);
     setUpgradeStatus('Upgrade deleted.');
   };
@@ -476,7 +504,7 @@ export default function AdminPage() {
   const selectCampaign = (campaign: MarketingCampaign, resetMsg = true) => {
     setSelectedCampaignId(campaign.id);
     setIsCreatingCampaign(false);
-    setCampaignForm({ id: campaign.id, name: campaign.name, description: campaign.description, cost: String(campaign.cost), cooldownSeconds: String(campaign.cooldownSeconds) });
+    setCampaignForm({ id: campaign.id, name: campaign.name, description: campaign.description, cost: String(campaign.cost), cooldownSeconds: String(campaign.cooldownSeconds), setsFlag: campaign.setsFlag });
     setCampaignEffectsForm(campaign.effects.map((e) => ({ metric: e.metric, type: e.type, value: String(e.value), durationSeconds: String(e.durationSeconds ?? '') })));
     if (resetMsg) setCampaignStatus(null);
   };
@@ -484,7 +512,7 @@ export default function AdminPage() {
   const handleCreateCampaign = () => {
     setIsCreatingCampaign(true);
     setSelectedCampaignId('');
-    setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15' });
+    setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', setsFlag: '' });
     setCampaignEffectsForm([]);
     setCampaignStatus(null);
   };
@@ -500,6 +528,7 @@ export default function AdminPage() {
       setCampaignStatus('Cost must be >= 0 and Cooldown >= 0 seconds (recommended: 10-30 seconds).');
       return;
     }
+    const setsFlag = campaignForm.setsFlag?.trim() || undefined;
     const effects = campaignEffectsForm.map((ef) => ({
       metric: ef.metric,
       type: ef.type,
@@ -507,12 +536,12 @@ export default function AdminPage() {
       durationSeconds: ef.durationSeconds === '' ? null : Number(ef.durationSeconds) || null
     }));
     setCampaignSaving(true);
-    const result = await upsertMarketingCampaign({ id, name, description, cost, cooldownSeconds, effects });
+    const result = await upsertMarketingCampaign({ id, name, description, cost, cooldownSeconds, effects, setsFlag });
     setCampaignSaving(false);
     if (!result.success) { setCampaignStatus(result.message ?? 'Failed to save campaign.'); return; }
     setCampaigns((prev) => {
       const exists = prev.some((c) => c.id === id);
-      const nextItem: MarketingCampaign = { id, name, description, cost, cooldownSeconds, effects };
+      const nextItem: MarketingCampaign = { id, name, description, cost, cooldownSeconds, effects, setsFlag };
       const next = exists ? prev.map((c) => (c.id === id ? nextItem : c)) : [...prev, nextItem];
       return next.sort((a, b) => a.name.localeCompare(b.name));
     });
@@ -530,9 +559,37 @@ export default function AdminPage() {
     if (!result.success) { setCampaignStatus(result.message ?? 'Failed to delete campaign.'); return; }
     setCampaigns((prev) => prev.filter((c) => c.id !== selectedCampaignId));
     setSelectedCampaignId('');
-    setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15' });
+    setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', setsFlag: '' });
     setCampaignEffectsForm([]);
     setCampaignStatus('Campaign deleted.');
+  };
+
+  const loadFlagsForIndustry = async (industryId: string) => {
+    setFlagsLoading(true);
+    setFlagStatus(null);
+    setFlags([]);
+    setSelectedFlagId('');
+    setIsCreatingFlag(false);
+    setFlagForm({ id: '', name: '', description: '' });
+    const result = await fetchFlagsForIndustry(industryId);
+    setFlagsLoading(false);
+    if (!result) return;
+    setFlags(result);
+    if (result.length > 0) selectFlag(result[0], false);
+  };
+
+  const loadConditionsForIndustry = async (industryId: string) => {
+    setConditionsLoading(true);
+    setConditionsStatus(null);
+    setConditions([]);
+    setSelectedConditionId('');
+    setIsCreatingCondition(false);
+    setConditionForm({ id: '', name: '', description: '', metric: ConditionMetric.Cash, operator: 'greater', value: '0' });
+    const result = await fetchConditionsForIndustry(industryId);
+    setConditionsLoading(false);
+    if (!result) return;
+    setConditions(result);
+    if (result.length > 0) selectCondition(result[0], false);
   };
 
   const loadEventsForIndustry = async (industryId: string) => {
@@ -551,6 +608,129 @@ export default function AdminPage() {
     if (sorted.length > 0) selectEvent(sorted[0], false);
   };
 
+  const selectFlag = (flag: GameFlag, resetMsg = true) => {
+    setSelectedFlagId(flag.id);
+    setIsCreatingFlag(false);
+    setFlagForm({ id: flag.id, name: flag.name, description: flag.description });
+    if (resetMsg) setFlagStatus(null);
+  };
+
+  const handleCreateFlag = () => {
+    if (!form.id) { setFlagStatus('Save the industry first.'); return; }
+    setIsCreatingFlag(true);
+    setSelectedFlagId('');
+    setFlagForm({ id: '', name: '', description: '' });
+    setFlagStatus(null);
+  };
+
+  const handleSaveFlag = async () => {
+    if (!form.id) { setFlagStatus('Save the industry first.'); return; }
+    const id = flagForm.id.trim();
+    const name = flagForm.name.trim();
+    const description = flagForm.description.trim();
+    if (!id || !name) { setFlagStatus('Flag id and name are required.'); return; }
+    setFlagSaving(true);
+    const result = await upsertFlagForIndustry(form.id, { id, name, description });
+    setFlagSaving(false);
+    if (!result.success) { setFlagStatus(result.message ?? 'Failed to save flag.'); return; }
+    const result2 = await fetchFlagsForIndustry(form.id);
+    if (result2) {
+      setFlags(result2);
+      if (result2.length > 0) selectFlag(result2.find(f => f.id === id) || result2[0], false);
+    }
+    setFlagStatus('Flag saved.');
+    setIsCreatingFlag(false);
+    setSelectedFlagId(id);
+  };
+
+  const handleDeleteFlag = async () => {
+    if (isCreatingFlag || !selectedFlagId) return;
+    if (!window.confirm(`Delete flag "${flagForm.name || selectedFlagId}"?`)) return;
+    setFlagDeleting(true);
+    const result = await deleteFlagById(selectedFlagId);
+    setFlagDeleting(false);
+    if (!result.success) { setFlagStatus(result.message ?? 'Failed to delete flag.'); return; }
+    const result2 = await fetchFlagsForIndustry(form.id);
+    if (result2) {
+      setFlags(result2);
+      if (result2.length > 0) selectFlag(result2[0], false);
+      else {
+        setSelectedFlagId('');
+        setFlagForm({ id: '', name: '', description: '' });
+        setIsCreatingFlag(false);
+      }
+    }
+    setFlagStatus('Flag deleted.');
+  };
+
+  const selectCondition = (condition: GameCondition, resetMsg = true) => {
+    setSelectedConditionId(condition.id);
+    setIsCreatingCondition(false);
+    setConditionForm({
+      id: condition.id,
+      name: condition.name,
+      description: condition.description,
+      metric: condition.metric as ConditionMetric,
+      operator: condition.operator,
+      value: String(condition.value)
+    });
+    if (resetMsg) setConditionsStatus(null);
+  };
+
+  const handleCreateCondition = () => {
+    if (!form.id) { setConditionsStatus('Save the industry first.'); return; }
+    setIsCreatingCondition(true);
+    setSelectedConditionId('');
+    setConditionForm({ id: '', name: '', description: '', metric: ConditionMetric.Cash, operator: 'greater', value: '0' });
+    setConditionsStatus(null);
+  };
+
+  const handleSaveCondition = async () => {
+    if (!form.id) { setConditionsStatus('Save the industry first.'); return; }
+    const id = conditionForm.id.trim();
+    const name = conditionForm.name.trim();
+    const description = conditionForm.description.trim();
+    const metric = conditionForm.metric;
+    const operator = conditionForm.operator;
+    const value = Number(conditionForm.value);
+
+    if (!id || !name) { setConditionsStatus('Condition id and name are required.'); return; }
+    if (!Number.isFinite(value)) { setConditionsStatus('Value must be a valid number.'); return; }
+
+    setConditionSaving(true);
+    const result = await upsertConditionForIndustry(form.id, { id, name, description, metric, operator, value });
+    setConditionSaving(false);
+    if (!result.success) { setConditionsStatus(result.message ?? 'Failed to save condition.'); return; }
+    const result2 = await fetchConditionsForIndustry(form.id);
+    if (result2) {
+      setConditions(result2);
+      if (result2.length > 0) selectCondition(result2.find(c => c.id === id) || result2[0], false);
+    }
+    setConditionsStatus('Condition saved.');
+    setIsCreatingCondition(false);
+    setSelectedConditionId(id);
+  };
+
+  const handleDeleteCondition = async () => {
+    if (isCreatingCondition || !selectedConditionId) return;
+    if (!window.confirm(`Delete condition "${conditionForm.name || selectedConditionId}"?`)) return;
+    setConditionDeleting(true);
+    const result = await deleteConditionById(selectedConditionId);
+    setConditionDeleting(false);
+    if (!result.success) { setConditionsStatus(result.message ?? 'Failed to delete condition.'); return; }
+    const result2 = await fetchConditionsForIndustry(form.id);
+    if (result2) {
+      setConditions(result2);
+      if (result2.length > 0) selectCondition(result2[0], false);
+      else {
+        setSelectedConditionId('');
+        setConditionForm({ id: '', name: '', description: '', metric: ConditionMetric.Cash, operator: 'greater', value: '0' });
+        setIsCreatingCondition(false);
+      }
+    }
+    setConditionsStatus('Condition deleted.');
+  };
+
   const selectEvent = (event: GameEvent, resetMsg = true) => {
     setSelectedEventId(event.id);
     setIsCreatingEvent(false);
@@ -558,7 +738,7 @@ export default function AdminPage() {
     setEventChoices(event.choices);
     setSelectedChoiceId('');
     setIsCreatingChoice(false);
-    setChoiceForm({ id: '', label: '', description: '', cost: '' });
+    setChoiceForm({ id: '', label: '', description: '', cost: '', setsFlag: '' });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
     setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
@@ -573,7 +753,7 @@ export default function AdminPage() {
     setEventChoices([]);
     setSelectedChoiceId('');
     setIsCreatingChoice(false);
-    setChoiceForm({ id: '', label: '', description: '', cost: '' });
+    setChoiceForm({ id: '', label: '', description: '', cost: '', setsFlag: '' });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
     setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
@@ -616,7 +796,7 @@ export default function AdminPage() {
     setEventChoices([]);
     setSelectedChoiceId('');
     setIsCreatingChoice(false);
-    setChoiceForm({ id: '', label: '', description: '', cost: '' });
+    setChoiceForm({ id: '', label: '', description: '', cost: '', setsFlag: '' });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
     setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
@@ -626,7 +806,7 @@ export default function AdminPage() {
   const selectChoice = (choice: GameEventChoice) => {
     setIsCreatingChoice(false);
     setSelectedChoiceId(choice.id);
-    setChoiceForm({ id: choice.id, label: choice.label, description: choice.description ?? '', cost: choice.cost !== undefined ? String(choice.cost) : '' });
+    setChoiceForm({ id: choice.id, label: choice.label, description: choice.description ?? '', cost: choice.cost !== undefined ? String(choice.cost) : '', setsFlag: choice.setsFlag });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
     setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
@@ -636,7 +816,7 @@ export default function AdminPage() {
     if (!selectedEventId && !isCreatingEvent) { setEventStatus('Create or select an event first.'); return; }
     setIsCreatingChoice(true);
     setSelectedChoiceId('');
-    setChoiceForm({ id: '', label: '', description: '', cost: '' });
+    setChoiceForm({ id: '', label: '', description: '', cost: '', setsFlag: '' });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
     setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
@@ -647,11 +827,12 @@ export default function AdminPage() {
     const label = choiceForm.label.trim();
     const description = choiceForm.description.trim();
     const cost = choiceForm.cost.trim() === '' ? undefined : Number(choiceForm.cost);
+    const setsFlag = choiceForm.setsFlag?.trim() || undefined;
     if (!id || !label) { setEventStatus('Choice id and label are required.'); return; }
     if (cost !== undefined && (!Number.isFinite(cost) || cost < 0)) { setEventStatus('Choice cost must be a non-negative number.'); return; }
 
     const exists = eventChoices.some((c) => c.id === id);
-    const nextItem: GameEventChoice = { id, label, description: description || undefined, cost, consequences: exists ? eventChoices.find(c => c.id === id)!.consequences : [] };
+    const nextItem: GameEventChoice = { id, label, description: description || undefined, cost, setsFlag, consequences: exists ? eventChoices.find(c => c.id === id)!.consequences : [] };
     const next = (exists ? eventChoices.map((c) => (c.id === id ? nextItem : c)) : [...eventChoices, nextItem])
       .sort((a, b) => a.label.localeCompare(b.label));
     setEventChoices(next);
@@ -665,7 +846,7 @@ export default function AdminPage() {
     const next = eventChoices.filter((c) => c.id !== selectedChoiceId);
     setEventChoices(next);
     setSelectedChoiceId('');
-    setChoiceForm({ id: '', label: '', description: '', cost: '' });
+    setChoiceForm({ id: '', label: '', description: '', cost: '', setsFlag: '' });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
     setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
@@ -1089,7 +1270,7 @@ export default function AdminPage() {
       setEventChoices(parsed.choices);
       setSelectedChoiceId('');
       setIsCreatingChoice(false);
-      setChoiceForm({ id: '', label: '', description: '', cost: '' });
+      setChoiceForm({ id: '', label: '', description: '', cost: '', setsFlag: '' });
       setSelectedConsequenceId('');
       setIsCreatingConsequence(false);
       setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
@@ -1119,9 +1300,9 @@ export default function AdminPage() {
       if ('workloadReduction' in role && (role as any).workloadReduction > 0) {
         legacyEffects.push({ metric: GameMetric.FounderWorkingHours, type: EffectType.Add, value: String(-(role as any).workloadReduction) });
       }
-      setRoleForm({ id: role.id, name: role.name, salary: String(role.salary), effects: legacyEffects, emoji: role.emoji });
+      setRoleForm({ id: role.id, name: role.name, salary: String(role.salary), effects: legacyEffects, emoji: role.emoji, setsFlag: role.setsFlag });
     } else {
-      setRoleForm({ id: role.id, name: role.name, salary: String(role.salary), effects: effects.map(e => ({ metric: e.metric, type: e.type, value: String(e.value) })), emoji: role.emoji });
+      setRoleForm({ id: role.id, name: role.name, salary: String(role.salary), effects: effects.map(e => ({ metric: e.metric, type: e.type, value: String(e.value) })), emoji: role.emoji, setsFlag: role.setsFlag });
     }
     setStaffStatus(null);
   };
@@ -1133,7 +1314,7 @@ export default function AdminPage() {
     }
     setIsCreatingRole(true);
     setSelectedRoleId('');
-                                  setRoleForm({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼' });
+    setRoleForm({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼', setsFlag: '' });
     setStaffStatus(null);
   };
 
@@ -1170,7 +1351,8 @@ export default function AdminPage() {
       });
     }
     setRoleSaving(true);
-    const result = await upsertStaffRole({ id, industryId: form.id, name, salary, effects, emoji: roleForm.emoji.trim() || undefined });
+    const setsFlag = roleForm.setsFlag?.trim() || undefined;
+    const result = await upsertStaffRole({ id, industryId: form.id, name, salary, effects, emoji: roleForm.emoji.trim() || undefined, setsFlag });
     setRoleSaving(false);
     if (!result.success) {
       setStaffStatus(result.message ?? 'Failed to save role.');
@@ -1178,7 +1360,7 @@ export default function AdminPage() {
     }
     setStaffRoles((prev) => {
       const exists = prev.some((r) => r.id === id);
-      const next = exists ? prev.map((r) => (r.id === id ? { id, name, salary, effects, emoji: roleForm.emoji.trim() || '🧑‍💼' } : r)) : [...prev, { id, name, salary, effects, emoji: roleForm.emoji.trim() || '🧑‍💼' }];
+      const next = exists ? prev.map((r) => (r.id === id ? { id, name, salary, effects, emoji: roleForm.emoji.trim() || '🧑‍💼', setsFlag } : r)) : [...prev, { id, name, salary, effects, emoji: roleForm.emoji.trim() || '🧑‍💼', setsFlag }];
       return next.sort((a, b) => a.name.localeCompare(b.name));
     });
     setStaffStatus('Role saved.');
@@ -1203,7 +1385,7 @@ export default function AdminPage() {
     }
     setStaffRoles((prev) => prev.filter((r) => r.id !== selectedRoleId));
     setSelectedRoleId('');
-                                  setRoleForm({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼' });
+    setRoleForm({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼', setsFlag: '' });
     setStaffStatus('Role deleted.');
   };
 
@@ -1965,6 +2147,301 @@ export default function AdminPage() {
 
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
+            <h2 className="text-2xl font-semibold">Flags</h2>
+            <p className="text-sm text-slate-400 mt-1">Create flags that can be set by event choices. Use these to track persistent game state.</p>
+          </div>
+          <div className="p-6 space-y-6">
+            {!form.id ? (
+              <div className="text-sm text-slate-400">Select or create an industry first.</div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    onClick={handleCreateFlag}
+                    className="px-3 py-2 text-sm font-medium rounded-lg border border-purple-500 text-purple-200 hover:bg-purple-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isCreating || !form.id}
+                  >
+                    + New Flag
+                  </button>
+                  {flagStatus && <span className="text-sm text-slate-300">{flagStatus}</span>}
+                </div>
+
+                {flagsLoading ? (
+                  <div className="text-sm text-slate-400">Loading flags…</div>
+                ) : flags.length === 0 && !isCreatingFlag ? (
+                  <div className="text-sm text-slate-400">No flags configured yet.</div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                      {flags.map((flag) => (
+                        <button
+                          key={flag.id}
+                          onClick={() => selectFlag(flag)}
+                          className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
+                            selectedFlagId === flag.id && !isCreatingFlag
+                              ? 'border-purple-400 bg-purple-500/10 text-purple-200'
+                              : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
+                          }`}
+                        >
+                          {flag.name}
+                        </button>
+                      ))}
+                    </div>
+
+                    {(selectedFlagId || isCreatingFlag) && (
+                      <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-300 mb-1">Flag ID</label>
+                            <input
+                              value={flagForm.id}
+                              onChange={(e) => {
+                                const nextId = e.target.value;
+                                setFlagForm((p) => ({ ...p, id: nextId }));
+                              }}
+                              onBlur={() => {
+                                setFlagForm((p) => {
+                                  if (!p.id && p.name.trim()) {
+                                    const nextId = p.name.trim().toLowerCase().replace(/\s+/g, '-');
+                                    return { ...p, id: nextId };
+                                  }
+                                  return p;
+                                });
+                              }}
+                              className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-semibold text-slate-300 mb-1">Name</label>
+                            <input
+                              value={flagForm.name}
+                              onChange={(e) => setFlagForm((p) => ({ ...p, name: e.target.value }))}
+                              className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-semibold text-slate-300 mb-1">Description (optional)</label>
+                            <textarea
+                              rows={2}
+                              value={flagForm.description}
+                              onChange={(e) => setFlagForm((p) => ({ ...p, description: e.target.value }))}
+                              className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                            />
+                          </div>
+                          <div className="md:col-span-2 flex flex-wrap gap-3">
+                            <button
+                              type="button"
+                              onClick={handleSaveFlag}
+                              disabled={flagSaving || flagDeleting}
+                              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                                flagSaving
+                                  ? 'bg-purple-900 text-purple-300 cursor-wait'
+                                  : 'bg-purple-600 hover:bg-purple-500 text-white'
+                              }`}
+                            >
+                              {flagSaving ? 'Saving…' : 'Save Flag'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (selectedFlagId && !isCreatingFlag) {
+                                  const existing = flags.find((f) => f.id === selectedFlagId);
+                                  if (existing) selectFlag(existing);
+                                } else {
+                                  setIsCreatingFlag(false);
+                                  setSelectedFlagId('');
+                                  setFlagForm({ id: '', name: '', description: '' });
+                                }
+                                setFlagStatus(null);
+                              }}
+                              disabled={flagSaving || flagDeleting}
+                              className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800"
+                            >
+                              {isCreatingFlag ? 'Cancel' : 'Reset'}
+                            </button>
+                            {!isCreatingFlag && selectedFlagId && (
+                              <button
+                                type="button"
+                                onClick={handleDeleteFlag}
+                                disabled={flagSaving || flagDeleting}
+                                className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                                  flagDeleting
+                                    ? 'bg-rose-900 text-rose-200 cursor-wait'
+                                    : 'bg-rose-600 hover:bg-rose-500 text-white'
+                                }`}
+                              >
+                                {flagDeleting ? 'Deleting…' : 'Delete Flag'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
+          <div className="p-6 border-b border-slate-800">
+            <h2 className="text-2xl font-semibold">Conditions</h2>
+            <p className="text-sm text-slate-400 mt-1">Create metric-based conditions that can be checked by the game logic.</p>
+          </div>
+          <div className="p-6 space-y-6">
+            {!form.id ? (
+              <div className="text-sm text-slate-400">Select or create an industry first.</div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    {conditionsStatus && <span className="text-sm text-slate-300">{conditionsStatus}</span>}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCreateCondition}
+                    disabled={conditionSaving || conditionDeleting}
+                    className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    + New Condition
+                  </button>
+                </div>
+
+                {conditionsLoading ? (
+                  <div className="text-sm text-slate-400">Loading conditions…</div>
+                ) : conditions.length === 0 && !isCreatingCondition ? (
+                  <div className="text-sm text-slate-400">No conditions configured yet.</div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                      {conditions.map((condition) => (
+                        <button
+                          key={condition.id}
+                          onClick={() => selectCondition(condition)}
+                          className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
+                            selectedConditionId === condition.id && !isCreatingCondition
+                              ? 'border-slate-400 bg-slate-800 text-slate-100'
+                              : 'border-slate-600 text-slate-300 hover:bg-slate-800'
+                          }`}
+                        >
+                          {condition.name}
+                        </button>
+                      ))}
+                      {isCreatingCondition && (
+                        <button className="px-3 py-2 rounded-lg border border-slate-400 bg-slate-800 text-slate-100 text-sm font-medium">
+                          New Condition
+                        </button>
+                      )}
+                    </div>
+
+                    {(selectedConditionId || isCreatingCondition) && (
+                      <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">Condition ID</label>
+                          <input
+                            value={conditionForm.id}
+                            onChange={(e) => setConditionForm((p) => ({ ...p, id: e.target.value }))}
+                            disabled={!isCreatingCondition && !!selectedConditionId}
+                            className={`w-full rounded-lg border px-3 py-2 text-slate-200 ${
+                              isCreatingCondition || !selectedConditionId ? 'bg-slate-900 border-slate-600' : 'bg-slate-800 border-slate-700 cursor-not-allowed'
+                            }`}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">Name</label>
+                          <input
+                            value={conditionForm.name}
+                            onChange={(e) => setConditionForm((p) => ({ ...p, name: e.target.value }))}
+                            onBlur={() => {
+                              if (!conditionForm.id && conditionForm.name.trim()) {
+                                const base = slugify(conditionForm.name.trim());
+                                const unique = makeUniqueId(base, new Set(conditions.map((c) => c.id)));
+                                setConditionForm((prev) => ({ ...prev, id: unique }));
+                              }
+                            }}
+                            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">Description</label>
+                          <textarea
+                            rows={2}
+                            value={conditionForm.description}
+                            onChange={(e) => setConditionForm((p) => ({ ...p, description: e.target.value }))}
+                            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">Metric</label>
+                          <select
+                            value={conditionForm.metric}
+                            onChange={(e) => setConditionForm((p) => ({ ...p, metric: e.target.value as ConditionMetric }))}
+                            className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                          >
+                            <option value={ConditionMetric.Cash}>Cash</option>
+                            <option value={ConditionMetric.Reputation}>Reputation</option>
+                            <option value={ConditionMetric.Expenses}>Monthly Expenses</option>
+                            <option value={ConditionMetric.GameTime}>Game Time (seconds)</option>
+                            <option value={ConditionMetric.FounderWorkingHours}>Founder Working Hours</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">Operator</label>
+                          <select
+                            value={conditionForm.operator}
+                            onChange={(e) => setConditionForm((p) => ({ ...p, operator: e.target.value as ConditionOperator }))}
+                            className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                          >
+                            <option value="greater">&gt; Greater than</option>
+                            <option value="less">&lt; Less than</option>
+                            <option value="equals">= Equals</option>
+                            <option value="greater_equal">≥ Greater or equal</option>
+                            <option value="less_equal">≤ Less or equal</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">Value</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={conditionForm.value}
+                            onChange={(e) => setConditionForm((p) => ({ ...p, value: e.target.value }))}
+                            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                          />
+                        </div>
+
+                        <div className="md:col-span-2 flex items-center justify-end gap-3">
+                          <button
+                            type="button"
+                            onClick={handleSaveCondition}
+                            disabled={conditionSaving || conditionDeleting}
+                            className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {conditionSaving ? 'Saving…' : 'Save Condition'}
+                          </button>
+                          {selectedConditionId && !isCreatingCondition && (
+                            <button
+                              type="button"
+                              onClick={handleDeleteCondition}
+                              disabled={conditionSaving || conditionDeleting}
+                              className="px-4 py-2 rounded-lg text-sm font-semibold border border-red-600 text-red-400 hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {conditionDeleting ? 'Deleting…' : 'Delete'}
+                            </button>
+                          )}
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </section>
+
+        <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
+          <div className="p-6 border-b border-slate-800">
             <h2 className="text-2xl font-semibold">Events</h2>
             <p className="text-sm text-slate-400 mt-1">Create events with title, summary, and category. Choices and consequences coming next.</p>
           </div>
@@ -2207,6 +2684,22 @@ export default function AdminPage() {
                                       className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
                                     />
                                   </div>
+                                  <div>
+                                    <label className="block text-sm font-semibold text-slate-300 mb-1">Sets Flag (optional)</label>
+                                    <select
+                                      value={choiceForm.setsFlag || ''}
+                                      onChange={(e) => setChoiceForm((p) => ({ ...p, setsFlag: e.target.value }))}
+                                      className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                                    >
+                                      <option value="">None</option>
+                                      {flags.map((flag) => (
+                                        <option key={flag.id} value={flag.id}>
+                                          {flag.name}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <p className="text-xs text-gray-400 mt-1">Flag to set when this choice is selected</p>
+                                  </div>
                                   <div className="md:col-span-2 flex flex-wrap gap-3">
                                     <button
                                       type="button"
@@ -2224,7 +2717,7 @@ export default function AdminPage() {
                                         } else {
                                           setIsCreatingChoice(false);
                                           setSelectedChoiceId('');
-                                          setChoiceForm({ id: '', label: '', description: '', cost: '' });
+                                          setChoiceForm({ id: '', label: '', description: '', cost: '', setsFlag: '' });
                                         }
                                         setEventStatus(null);
                                       }}
@@ -2769,6 +3262,22 @@ export default function AdminPage() {
                       />
                     </div>
 
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Sets Flag</label>
+                      <select
+                        value={campaignForm.setsFlag || ''}
+                        onChange={(e) => setCampaignForm((p) => ({ ...p, setsFlag: e.target.value }))}
+                        className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                      >
+                        <option value="">None</option>
+                        {flags.map((flag) => (
+                          <option key={flag.id} value={flag.id}>
+                            {flag.name} ({flag.id})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
                     <div className="md:col-span-2">
                       <div className="flex items-start justify-between mb-2">
                         <div>
@@ -2987,6 +3496,22 @@ export default function AdminPage() {
                             onChange={(e) => setUpgradeForm((p) => ({ ...p, maxLevel: e.target.value }))}
                             className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                           />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">Sets Flag</label>
+                          <select
+                            value={upgradeForm.setsFlag || ''}
+                            onChange={(e) => setUpgradeForm((p) => ({ ...p, setsFlag: e.target.value }))}
+                            className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                          >
+                            <option value="">None</option>
+                            {flags.map((flag) => (
+                              <option key={flag.id} value={flag.id}>
+                                {flag.name} ({flag.id})
+                              </option>
+                            ))}
+                          </select>
                         </div>
 
                         <div className="md:col-span-2">
@@ -3361,6 +3886,23 @@ export default function AdminPage() {
                               className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                             />
                           </div>
+
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-300 mb-1">Sets Flag</label>
+                            <select
+                              value={roleForm.setsFlag || ''}
+                              onChange={(e) => setRoleForm((p) => ({ ...p, setsFlag: e.target.value }))}
+                              className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                            >
+                              <option value="">None</option>
+                              {flags.map((flag) => (
+                                <option key={flag.id} value={flag.id}>
+                                  {flag.name} ({flag.id})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
                           <div className="md:col-span-2">
                             <label className="block text-sm font-semibold text-slate-300 mb-1">Effects</label>
                             <div className="space-y-2">

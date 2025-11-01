@@ -17,6 +17,7 @@ interface UpgradeRow {
     value: number | string;
     priority: number | null;
   }[] | null;
+  sets_flag: string | null;
 }
 
 function parseNumber(value: number | string | null | undefined): number {
@@ -53,7 +54,7 @@ export async function fetchUpgradesForIndustry(
 
   const { data, error } = await supabase
     .from('upgrades')
-    .select('id, industry_id, name, description, icon, cost, max_level, upgrade_effects(id, metric, type, value, priority)')
+    .select('id, industry_id, name, description, icon, cost, max_level, upgrade_effects(id, metric, type, value, priority), sets_flag')
     .eq('industry_id', industryId);
 
   if (error) {
@@ -75,6 +76,7 @@ export async function fetchUpgradesForIndustry(
       cost: parseNumber(row.cost),
       maxLevel: row.max_level,
       effects: mapEffects(row.upgrade_effects),
+      setsFlag: row.sets_flag || undefined,
     }));
 }
 
@@ -95,6 +97,7 @@ export async function upsertUpgradeForIndustry(
     icon: upgrade.icon,
     cost: upgrade.cost,
     max_level: upgrade.maxLevel,
+    sets_flag: upgrade.setsFlag || null,
   } as const;
 
   const { error: upsertError } = await supabase
