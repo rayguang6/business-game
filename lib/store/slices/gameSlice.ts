@@ -117,7 +117,6 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       resetUpgrades,
       resetMarketing,
       setCurrentEvent,
-      clearEventEffects,
     } = get();
 
     // Clear all active effects before rebuilding initial ones
@@ -131,9 +130,6 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     }
     if (setCurrentEvent) {
       setCurrentEvent(null);
-    }
-    if (clearEventEffects) {
-      clearEventEffects();
     }
     if (resetStaff) {
       resetStaff();
@@ -176,9 +172,16 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     });
     
     // Check for game over after tick updates
-    const { tickMarketing, tickEventEffects, checkGameOver, gameTime } = get();
-    tickMarketing(gameTime);
-    tickEventEffects(gameTime);
+    const { checkGameOver, checkCampaignEnd, gameTime } = get();
+
+    // Handle effect expiration through unified effect manager
+    effectManager.tick(gameTime);
+
+    // Check if marketing campaigns have ended
+    if (checkCampaignEnd) {
+      checkCampaignEnd();
+    }
+
     checkGameOver();
   },
 

@@ -50,7 +50,12 @@ export interface Effect {
   type: EffectType;        // How it's applied
   value: number;           // The magnitude (20 = +20% for Percent type)
   priority?: number;       // Optional ordering within same type
+  durationSeconds?: number | null; // null = permanent, number = expires after seconds
+  createdAt: number;       // When effect was added (for expiration calculation)
 }
+
+// Input for creating new effects (without createdAt)
+export interface EffectInput extends Omit<Effect, 'createdAt'> {}
 
 // Constraints for each metric
 export interface MetricConstraints {
@@ -240,8 +245,12 @@ class EffectManager {
   /**
    * Add a new effect to the system
    */
-  add(effect: Effect): void {
-    this.effects.set(effect.id, effect);
+  add(effect: EffectInput): void {
+    const effectWithTimestamp: Effect = {
+      ...effect,
+      createdAt: Date.now() / 1000, // Convert to seconds to match game time
+    };
+    this.effects.set(effect.id, effectWithTimestamp);
     this.notifyListeners();
   }
 
@@ -432,6 +441,34 @@ class EffectManager {
    */
   getAllEffects(): Effect[] {
     return Array.from(this.effects.values());
+  }
+
+  /**
+   * Check if an effect has expired
+   */
+  private isEffectExpired(effect: Effect, currentTime: number): boolean {
+    if (effect.durationSeconds === null || effect.durationSeconds === undefined) {
+      return false; // Permanent effect
+    }
+    return currentTime >= effect.createdAt + effect.durationSeconds;
+  }
+
+  /**
+   * Tick the effect manager - remove expired effects
+   * Call this from the game loop with current game time
+   */
+  tick(currentTime: number): void {
+    const toRemove: string[] = [];
+    for (const [id, effect] of this.effects.entries()) {
+      if (this.isEffectExpired(effect, currentTime)) {
+        toRemove.push(id);
+      }
+    }
+
+    if (toRemove.length > 0) {
+      toRemove.forEach(id => this.effects.delete(id));
+      this.notifyListeners();
+    }
   }
 
   private notifyListeners(): void {

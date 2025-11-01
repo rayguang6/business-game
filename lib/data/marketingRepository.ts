@@ -7,7 +7,7 @@ interface MarketingCampaignRow {
   name: string;
   description: string;
   cost: number | string | null;
-  duration_seconds: number | null;
+  cooldown_seconds: number | null;
   effects: unknown;
 }
 
@@ -15,6 +15,7 @@ interface RawEffect {
   metric?: string;
   type?: string;
   value?: number;
+  durationSeconds?: number | null;
 }
 
 const parseNumber = (value: number | string | null | undefined, fallback = 0): number => {
@@ -40,6 +41,7 @@ const mapEffects = (raw: unknown): CampaignEffect[] => {
       metric: item.metric as GameMetric,
       type: item.type as EffectType,
       value: typeof item.value === 'number' ? item.value : 0,
+      durationSeconds: item.durationSeconds ?? null,
     }));
 };
 
@@ -51,7 +53,7 @@ export async function fetchMarketingCampaigns(): Promise<MarketingCampaign[] | n
 
   const { data, error } = await supabase
     .from('marketing_campaigns')
-    .select('id, name, description, cost, duration_seconds, effects')
+    .select('id, name, description, cost, cooldown_seconds, effects')
     .order('name', { ascending: true });
 
   if (error) {
@@ -70,7 +72,7 @@ export async function fetchMarketingCampaigns(): Promise<MarketingCampaign[] | n
       name: row.name,
       description: row.description ?? '',
       cost: parseNumber(row.cost),
-      durationSeconds: parseNumber(row.duration_seconds, 1),
+      cooldownSeconds: parseNumber(row.cooldown_seconds, 60), // Default to 300s if not set
       effects: mapEffects(row.effects),
     }));
 }
@@ -86,8 +88,8 @@ export async function upsertMarketingCampaign(campaign: MarketingCampaign): Prom
     name: campaign.name,
     description: campaign.description,
     cost: campaign.cost,
-    duration_seconds: campaign.durationSeconds,
-    effects: campaign.effects.map((e) => ({ metric: e.metric, type: e.type, value: e.value })),
+    cooldown_seconds: campaign.cooldownSeconds,
+    effects: campaign.effects.map((e) => ({ metric: e.metric, type: e.type, value: e.value, durationSeconds: e.durationSeconds })),
   };
 
   const { error } = await supabase

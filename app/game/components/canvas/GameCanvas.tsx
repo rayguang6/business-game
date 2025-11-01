@@ -35,8 +35,6 @@ export function GameCanvas() {
   const {
     selectedIndustry,
     customers,
-    activeCampaign,
-    campaignEndsAt,
     gameTime,
   } = useGameStore();
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -104,7 +102,7 @@ export function GameCanvas() {
   const serviceRevenueMultiplier = metrics.serviceRevenueMultiplier;
   const serviceRevenueBonus = metrics.serviceRevenueFlatBonus;
   const serviceRevenueScale = metrics.serviceRevenueScale ?? 1;
-  const campaignSecondsRemaining = activeCampaign && campaignEndsAt != null ? Math.max(0, campaignEndsAt - gameTime) : null;
+  // No need for campaign timing in canvas - effects are handled by effectManager
 
   // Canvas coordinate system (for future 2D animations)
   const canvasCoordinates = {
@@ -164,17 +162,6 @@ export function GameCanvas() {
             <div>
               <span className="text-gray-300">Payout scale:</span>{' '}
               <span className="font-semibold">×{serviceRevenueScale.toFixed(2)}</span>
-            </div>
-            <div>
-              <span className="text-gray-300">Campaign:</span>{' '}
-              {activeCampaign ? (
-                <span className="text-emerald-300 font-semibold">
-                  {activeCampaign.name}
-                  {campaignSecondsRemaining != null ? ` (${formatDuration(campaignSecondsRemaining)})` : ''}
-                </span>
-              ) : (
-                <span className="text-gray-400">none</span>
-              )}
             </div>
           </div>
         )}
