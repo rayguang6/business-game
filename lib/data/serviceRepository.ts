@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
-import type { IndustryId, IndustryServiceDefinition } from '@/lib/game/types';
+import type { IndustryId, IndustryServiceDefinition, Requirement } from '@/lib/game/types';
 
 interface ServiceRow {
   id: string;
@@ -7,6 +7,7 @@ interface ServiceRow {
   name: string;
   duration: number | null;
   price: number | null;
+  requirements?: unknown; // JSONB column for requirements array
 }
 
 export async function fetchServicesForIndustry(
@@ -19,7 +20,7 @@ export async function fetchServicesForIndustry(
 
   const { data, error } = await supabase
     .from('services')
-    .select('id, industry_id, name, duration, price')
+    .select('id, industry_id, name, duration, price, requirements')
     .eq('industry_id', industryId);
 
   if (error) {
@@ -50,6 +51,7 @@ export async function upsertServiceForIndustry(
     name: service.name,
     duration: service.duration,
     price: service.price,
+    requirements: service.requirements || [],
   };
 
   const { data, error } = await supabase
@@ -83,11 +85,24 @@ export async function deleteServiceById(id: string): Promise<{ success: boolean;
 }
 
 function mapRowToService(row: ServiceRow): IndustryServiceDefinition {
+  // Parse requirements - ensure it's a valid array
+  let requirements: Requirement[] = [];
+  if (row.requirements) {
+    if (Array.isArray(row.requirements)) {
+      requirements = row.requirements.map((req: any) => ({
+        type: req.type || 'flag',
+        id: req.id || '',
+        expected: req.expected !== undefined ? req.expected : true,
+      })).filter((req: Requirement) => req.id.length > 0);
+    }
+  }
+
   return {
     id: row.id,
     industryId: row.industry_id,
     name: row.name,
     duration: row.duration ?? 0,
     price: row.price ?? 0,
+    requirements: requirements.length > 0 ? requirements : undefined,
   };
 }

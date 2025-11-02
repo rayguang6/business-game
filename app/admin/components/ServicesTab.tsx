@@ -1,6 +1,9 @@
 'use client';
 
-import type { IndustryServiceDefinition } from '@/lib/game/types';
+import type { IndustryServiceDefinition, Requirement } from '@/lib/game/types';
+import type { GameFlag } from '@/lib/data/flagRepository';
+import type { GameCondition } from '@/lib/types/conditions';
+import { RequirementsSelector } from './RequirementsSelector';
 import { makeUniqueId, slugify } from './utils';
 
 interface ServicesTabProps {
@@ -10,9 +13,13 @@ interface ServicesTabProps {
   serviceStatus: string | null;
   selectedServiceId: string;
   isCreatingService: boolean;
-  serviceForm: { id: string; name: string; duration: string; price: string };
+  serviceForm: { id: string; name: string; duration: string; price: string; requirements: Requirement[] };
   serviceSaving: boolean;
   serviceDeleting: boolean;
+  flags: GameFlag[];
+  flagsLoading: boolean;
+  conditions: GameCondition[];
+  conditionsLoading: boolean;
   onSelectService: (service: IndustryServiceDefinition) => void;
   onCreateService: () => void;
   onSaveService: () => Promise<void>;
@@ -31,6 +38,10 @@ export function ServicesTab({
   serviceForm,
   serviceSaving,
   serviceDeleting,
+  flags,
+  flagsLoading,
+  conditions,
+  conditionsLoading,
   onSelectService,
   onCreateService,
   onSaveService,
@@ -133,6 +144,18 @@ export function ServicesTab({
                         value={serviceForm.price}
                         onChange={(e) => onUpdateForm({ price: e.target.value })}
                         className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-slate-300 mb-2">Requirements</label>
+                      <RequirementsSelector
+                        flags={flags}
+                        conditions={conditions}
+                        flagsLoading={flagsLoading}
+                        conditionsLoading={conditionsLoading}
+                        requirements={serviceForm.requirements || []}
+                        onRequirementsChange={(requirements) => onUpdateForm({ requirements })}
                       />
                     </div>
 
