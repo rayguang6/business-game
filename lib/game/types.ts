@@ -107,6 +107,8 @@ export interface SimulationLayoutConfig {
   serviceRoomPositions: GridPosition[];
 }
 
+export type ServicePricingCategory = 'low' | 'mid' | 'high';
+
 export interface IndustryServiceDefinition {
   id: string;
   industryId: IndustryId;
@@ -114,6 +116,8 @@ export interface IndustryServiceDefinition {
   duration: number;
   price: number;
   requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
+  pricingCategory?: ServicePricingCategory; // low, mid, or high end pricing
+  weightage?: number; // Weight for random selection (higher = more likely to be selected)
 }
 
 export interface IndustrySimulationConfig {

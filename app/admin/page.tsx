@@ -73,6 +73,8 @@ interface ServiceFormState {
   duration: string;
   price: string;
   requirements: Requirement[];
+  pricingCategory: string;
+  weightage: string;
 }
 
 const emptyServiceForm: ServiceFormState = {
@@ -81,6 +83,8 @@ const emptyServiceForm: ServiceFormState = {
   duration: '0',
   price: '0',
   requirements: [],
+  pricingCategory: '',
+  weightage: '1',
 };
 
 export default function AdminPage() {
@@ -273,6 +277,8 @@ export default function AdminPage() {
       duration: service.duration.toString(),
       price: service.price.toString(),
       requirements: service.requirements || [],
+      pricingCategory: service.pricingCategory || '',
+      weightage: service.weightage?.toString() || '1',
     });
     if (resetMessage) {
       setServiceStatus(null);
@@ -1654,6 +1660,7 @@ export default function AdminPage() {
 
     const durationValue = Number(serviceForm.duration);
     const priceValue = Number(serviceForm.price);
+    const weightageValue = serviceForm.weightage ? Number(serviceForm.weightage) : undefined;
 
     if (!Number.isFinite(durationValue) || durationValue < 0) {
       setServiceStatus('Duration must be a non-negative number.');
@@ -1665,6 +1672,17 @@ export default function AdminPage() {
       return;
     }
 
+    if (weightageValue !== undefined && (!Number.isFinite(weightageValue) || weightageValue <= 0)) {
+      setServiceStatus('Weightage must be a positive number.');
+      return;
+    }
+
+    // Validate pricing category
+    const pricingCategory = serviceForm.pricingCategory?.trim();
+    const validCategory = pricingCategory && ['low', 'mid', 'high'].includes(pricingCategory.toLowerCase())
+      ? pricingCategory.toLowerCase() as 'low' | 'mid' | 'high'
+      : undefined;
+
     setServiceSaving(true);
     setServiceStatus(null);
 
@@ -1675,6 +1693,8 @@ export default function AdminPage() {
       duration: durationValue,
       price: priceValue,
       requirements: serviceForm.requirements || undefined,
+      pricingCategory: validCategory,
+      weightage: weightageValue,
     };
 
     const result = await upsertServiceForIndustry(payload);
@@ -3853,7 +3873,7 @@ export default function AdminPage() {
                 const existing = services.find((item) => item.id === selectedServiceId);
                 if (existing) selectService(existing);
               } else {
-                setServiceForm({ id: '', name: '', duration: '0', price: '0', requirements: [] });
+                setServiceForm({ id: '', name: '', duration: '0', price: '0', requirements: [], pricingCategory: '', weightage: '1' });
                 setIsCreatingService(false);
                 setSelectedServiceId('');
               }

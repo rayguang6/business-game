@@ -194,6 +194,16 @@ function ServiceCard({ service }: { service: IndustryServiceDefinition }) {
           <div className="flex items-center gap-4 text-xs text-slate-400">
             <span>Duration: {service.duration}s</span>
             <span className="text-green-400 font-semibold">${service.price.toFixed(2)}</span>
+            {service.pricingCategory && (
+              <span className="capitalize text-purple-400">
+                {service.pricingCategory} end
+              </span>
+            )}
+            {service.weightage && service.weightage !== 1 && (
+              <span className="text-blue-400">
+                Weight: {service.weightage}
+              </span>
+            )}
           </div>
         </div>
         <div className={`text-xs font-semibold px-2 py-1 rounded ${

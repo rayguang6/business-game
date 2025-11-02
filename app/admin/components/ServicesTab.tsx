@@ -13,7 +13,7 @@ interface ServicesTabProps {
   serviceStatus: string | null;
   selectedServiceId: string;
   isCreatingService: boolean;
-  serviceForm: { id: string; name: string; duration: string; price: string; requirements: Requirement[] };
+  serviceForm: { id: string; name: string; duration: string; price: string; requirements: Requirement[]; pricingCategory: string; weightage: string };
   serviceSaving: boolean;
   serviceDeleting: boolean;
   flags: GameFlag[];
@@ -145,6 +145,34 @@ export function ServicesTab({
                         onChange={(e) => onUpdateForm({ price: e.target.value })}
                         className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Pricing Category</label>
+                      <select
+                        value={serviceForm.pricingCategory}
+                        onChange={(e) => onUpdateForm({ pricingCategory: e.target.value })}
+                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      >
+                        <option value="">None</option>
+                        <option value="low">Low End</option>
+                        <option value="mid">Mid Range</option>
+                        <option value="high">High End</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Weightage</label>
+                      <input
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        value={serviceForm.weightage}
+                        onChange={(e) => onUpdateForm({ weightage: e.target.value })}
+                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                        placeholder="1.0"
+                      />
+                      <p className="text-xs text-slate-400 mt-1">Higher weightage = more likely to be selected</p>
                     </div>
 
                     <div className="md:col-span-2">
