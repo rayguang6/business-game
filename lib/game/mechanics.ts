@@ -29,6 +29,7 @@ import {
 import { getServicesForIndustry } from '@/lib/game/config';
 import { checkRequirements } from '@/lib/game/requirementChecker';
 import type { GameStore } from '@/lib/store/gameStore';
+import { getWeightedRandomService } from '@/lib/features/services';
 import {
   endOfMonth,
   getMonthlyBaseExpenses,
@@ -507,7 +508,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
   if (shouldSpawn) {
     // Filter services by requirements (same pattern as upgrades/marketing)
     const allServices = getServicesForIndustry(industryId);
-    
+
     // Create a minimal store-like object for requirement checking
     const storeContext: Partial<GameStore> = {
       flags: state.flags || {},
@@ -516,7 +517,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
       metrics: state.metrics,
       upgrades: state.upgrades,
     };
-    
+
     // Filter services that meet requirements
     const availableServices = allServices.filter((service) => {
       if (!service.requirements || service.requirements.length === 0) {
@@ -524,13 +525,12 @@ export function tickOnce(state: TickSnapshot): TickResult {
       }
       return checkRequirements(service.requirements, storeContext as GameStore);
     });
-    
+
     // If no services available, fall back to all services (shouldn't happen, but safety check)
     const servicesToUse = availableServices.length > 0 ? availableServices : allServices;
-    
-    // Pick a random service from available ones
-    const randomIndex = Math.floor(Math.random() * servicesToUse.length);
-    const selectedService = servicesToUse[randomIndex];
+
+    // Pick a weighted random service from available ones
+    const selectedService = getWeightedRandomService(servicesToUse);
     
     // Create customer with the selected service (override the randomly selected one)
     const customer = createCustomer(gameMetrics.serviceSpeedMultiplier, industryId);

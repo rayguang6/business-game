@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
-import type { IndustryId, IndustryServiceDefinition, Requirement } from '@/lib/game/types';
+import type { IndustryId, IndustryServiceDefinition, Requirement, ServicePricingCategory } from '@/lib/game/types';
 
 interface ServiceRow {
   id: string;
@@ -8,6 +8,8 @@ interface ServiceRow {
   duration: number | null;
   price: number | null;
   requirements?: unknown; // JSONB column for requirements array
+  pricing_category?: string | null; // low, mid, or high
+  weightage?: number | null; // Weight for random selection
 }
 
 export async function fetchServicesForIndustry(
@@ -20,7 +22,7 @@ export async function fetchServicesForIndustry(
 
   const { data, error } = await supabase
     .from('services')
-    .select('id, industry_id, name, duration, price, requirements')
+    .select('id, industry_id, name, duration, price, requirements, pricing_category, weightage')
     .eq('industry_id', industryId);
 
   if (error) {
@@ -52,6 +54,8 @@ export async function upsertServiceForIndustry(
     duration: service.duration,
     price: service.price,
     requirements: service.requirements || [],
+    pricing_category: service.pricingCategory || null,
+    weightage: service.weightage ?? null,
   };
 
   const { data, error } = await supabase
@@ -97,6 +101,12 @@ function mapRowToService(row: ServiceRow): IndustryServiceDefinition {
     }
   }
 
+  // Parse pricing category - validate it's one of the allowed values
+  let pricingCategory: ServicePricingCategory | undefined;
+  if (row.pricing_category && ['low', 'mid', 'high'].includes(row.pricing_category.toLowerCase())) {
+    pricingCategory = row.pricing_category.toLowerCase() as ServicePricingCategory;
+  }
+
   return {
     id: row.id,
     industryId: row.industry_id,
@@ -104,5 +114,7 @@ function mapRowToService(row: ServiceRow): IndustryServiceDefinition {
     duration: row.duration ?? 0,
     price: row.price ?? 0,
     requirements: requirements.length > 0 ? requirements : undefined,
+    pricingCategory,
+    weightage: row.weightage ?? undefined,
   };
 }
