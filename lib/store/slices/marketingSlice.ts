@@ -3,6 +3,7 @@ import { GameStore } from '../gameStore';
 import { OneTimeCost, OneTimeCostCategory } from '../types';
 import { effectManager, GameMetric, EffectType, Effect } from '@/lib/game/effectManager';
 import { checkRequirements } from '@/lib/game/requirementChecker';
+import type { Requirement, IndustryId } from '@/lib/game/types';
 
 // Marketing campaign effect (simplified from full Effect, no ID/source yet)
 export interface CampaignEffect {
@@ -20,7 +21,7 @@ export interface MarketingCampaign {
   cooldownSeconds: number; // How long before this campaign can be run again
   effects: CampaignEffect[];
   setsFlag?: string; // Optional flag to set when campaign is launched
-  requirementIds?: string[]; // References to flag/condition IDs that must be met
+  requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
 }
 
 export interface MarketingSlice {
@@ -214,9 +215,9 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
     }
 
     // Check requirements
-    if (campaign.requirementIds && campaign.requirementIds.length > 0) {
+    if (campaign.requirements && campaign.requirements.length > 0) {
       const store = get();
-      const requirementsMet = checkRequirements(campaign.requirementIds, store);
+      const requirementsMet = checkRequirements(campaign.requirements, store);
       if (!requirementsMet) {
         return { success: false, message: `Requirements not met to launch ${campaign.name}.` };
       }

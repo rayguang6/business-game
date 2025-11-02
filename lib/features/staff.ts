@@ -1,5 +1,5 @@
 import { effectManager, GameMetric, EffectType } from '@/lib/game/effectManager';
-import type { UpgradeEffect } from '@/lib/game/types';
+import type { UpgradeEffect, Requirement } from '@/lib/game/types';
 
 export interface Staff {
   id: string;
@@ -10,7 +10,7 @@ export interface Staff {
   role: string;
   roleId: string; // Reference to the role configuration
   setsFlag?: string; // Optional flag to set when this staff member is hired
-  requirementIds?: string[]; // References to flag/condition IDs that must be met
+  requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
 }
 
 /**

@@ -4,6 +4,7 @@ import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import type { GameFlag } from '@/lib/data/flagRepository';
 import type { GameCondition } from '@/lib/types/conditions';
 import type { MarketingCampaign } from '@/lib/store/slices/marketingSlice';
+import type { Requirement } from '@/lib/game/types';
 import { RequirementsSelector } from './RequirementsSelector';
 import { makeUniqueId, slugify } from './utils';
 
@@ -20,7 +21,7 @@ interface MarketingTabProps {
     cost: string;
     cooldownSeconds: string;
     setsFlag?: string;
-    requirementIds: string[];
+    requirements: Requirement[];
   };
   campaignEffectsForm: Array<{
     metric: GameMetric;
@@ -193,8 +194,8 @@ export function MarketingTab({
                     conditions={conditions}
                     flagsLoading={flagsLoading}
                     conditionsLoading={conditionsLoading}
-                    selectedIds={campaignForm.requirementIds || []}
-                    onSelectionChange={(ids) => onUpdateForm({ requirementIds: ids })}
+                    requirements={campaignForm.requirements || []}
+                    onRequirementsChange={(requirements) => onUpdateForm({ requirements })}
                   />
                 </div>
 

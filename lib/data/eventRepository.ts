@@ -5,7 +5,7 @@ import type {
   GameEventConsequence,
   GameEventEffect,
 } from '@/lib/types/gameEvents';
-import type { IndustryId } from '@/lib/game/types';
+import type { IndustryId, Requirement } from '@/lib/game/types';
 import { EffectType, GameMetric } from '@/lib/game/effectManager';
 
 interface EventRow {
@@ -15,7 +15,7 @@ interface EventRow {
   category: string;
   summary: string;
   choices: unknown;
-  requirement_ids: unknown;
+  requirements: unknown;
 }
 
 type RawChoice = {
@@ -100,7 +100,7 @@ export async function fetchEventsForIndustry(industryId: IndustryId): Promise<Ga
 
   const { data, error } = await supabase
     .from('events')
-    .select('id, industry_id, title, category, summary, choices, requirement_ids')
+    .select('id, industry_id, title, category, summary, choices, requirements')
     .eq('industry_id', industryId);
 
   if (error) {
@@ -120,7 +120,7 @@ export async function fetchEventsForIndustry(industryId: IndustryId): Promise<Ga
       category: row.category as GameEvent['category'],
       summary: row.summary,
       choices: mapChoices(Array.isArray(row.choices) ? (row.choices as RawChoice[]) : undefined),
-      requirementIds: Array.isArray(row.requirement_ids) ? row.requirement_ids as string[] : [],
+      requirements: Array.isArray(row.requirements) ? row.requirements as Requirement[] : undefined,
     }));
 }
 
@@ -209,7 +209,7 @@ export async function upsertEventForIndustry(
     category: event.category,
     summary: event.summary,
     choices: serializeChoices(event.choices),
-    requirement_ids: event.requirementIds || [],
+    requirements: event.requirements || [],
   };
 
   const { error } = await supabase

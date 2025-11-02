@@ -3,14 +3,15 @@
 import { useState } from 'react';
 import type { GameFlag } from '@/lib/data/flagRepository';
 import type { GameCondition } from '@/lib/types/conditions';
+import type { Requirement } from '@/lib/game/types';
 
 interface RequirementsSelectorProps {
   flags: GameFlag[];
   conditions: GameCondition[];
   flagsLoading: boolean;
   conditionsLoading: boolean;
-  selectedIds: string[];
-  onSelectionChange: (ids: string[]) => void;
+  requirements?: Requirement[];
+  onRequirementsChange?: (requirements: Requirement[]) => void;
 }
 
 export function RequirementsSelector({
@@ -18,8 +19,8 @@ export function RequirementsSelector({
   conditions,
   flagsLoading,
   conditionsLoading,
-  selectedIds,
-  onSelectionChange,
+  requirements = [],
+  onRequirementsChange,
 }: RequirementsSelectorProps) {
   const [search, setSearch] = useState<string>('');
 
@@ -36,13 +37,40 @@ export function RequirementsSelector({
       condition.metric.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleToggle = (prefixedId: string) => {
-    const currentIds = selectedIds || [];
-    if (currentIds.includes(prefixedId)) {
-      onSelectionChange(currentIds.filter((id) => id !== prefixedId));
+  const isRequirementSelected = (cleanId: string, type: 'flag' | 'condition'): boolean => {
+    return requirements.some(req => req.id === cleanId && req.type === type);
+  };
+
+  const getRequirementExpected = (cleanId: string, type: 'flag' | 'condition'): boolean | undefined => {
+    const req = requirements.find(r => r.id === cleanId && r.type === type);
+    return req?.expected;
+  };
+
+  const handleToggle = (cleanId: string, type: 'flag' | 'condition') => {
+    if (!onRequirementsChange) return;
+
+    const existingIndex = requirements.findIndex(req => req.id === cleanId && req.type === type);
+
+    if (existingIndex >= 0) {
+      // Remove if already selected
+      onRequirementsChange(requirements.filter((_, index) => index !== existingIndex));
     } else {
-      onSelectionChange([...currentIds, prefixedId]);
+      // Add with default expected: true (must be met)
+      onRequirementsChange([...requirements, { type, id: cleanId, expected: true }]);
     }
+  };
+
+  const handleToggleExpected = (cleanId: string, type: 'flag' | 'condition') => {
+    if (!onRequirementsChange) return;
+
+    const updated = requirements.map(req => {
+      if (req.id === cleanId && req.type === type) {
+        // Toggle between true and false
+        return { ...req, expected: req.expected === false ? true : false };
+      }
+      return req;
+    });
+    onRequirementsChange(updated);
   };
 
   // For now, keep the UI showing prefixed IDs for backward compatibility
@@ -76,33 +104,52 @@ export function RequirementsSelector({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {filteredFlags.map((flag) => {
                     const cleanId = flag.id.startsWith('flag_') ? flag.id.substring(5) : flag.id;
-                    const prefixedId = `flag_${cleanId}`;
-                    const isSelected = selectedIds.includes(prefixedId);
+                    const isSelected = isRequirementSelected(cleanId, 'flag');
+                    const expected = getRequirementExpected(cleanId, 'flag');
+
                     return (
-                      <label
+                      <div
                         key={flag.id}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
+                        className={`px-3 py-2 rounded-lg border transition-colors ${
                           isSelected
                             ? 'bg-purple-500/20 border-purple-500 text-purple-200'
                             : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-slate-500'
                         }`}
                       >
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => handleToggle(prefixedId)}
-                          className="w-4 h-4 rounded border-slate-500 bg-slate-800 text-purple-600 focus:ring-purple-500 focus:ring-2"
-                        />
-                        <span className="text-sm flex-1">{flag.name}</span>
-                        {flag.description && (
-                          <span
-                            className="text-xs text-slate-400 truncate max-[200px]"
-                            title={flag.description}
-                          >
-                            {flag.description}
-                          </span>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggle(cleanId, 'flag')}
+                            className="w-4 h-4 rounded border-slate-500 bg-slate-800 text-purple-600 focus:ring-purple-500 focus:ring-2"
+                          />
+                          <span className="text-sm flex-1">{flag.name}</span>
+                          {flag.description && (
+                            <span
+                              className="text-xs text-slate-400 truncate max-[150px]"
+                              title={flag.description}
+                            >
+                              {flag.description}
+                            </span>
+                          )}
+                        </div>
+                        {isSelected && (
+                          <div className="flex items-center gap-2 mt-2 ml-6">
+                            <span className="text-xs text-slate-400">Must be:</span>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleExpected(cleanId, 'flag')}
+                              className={`px-2 py-1 text-xs rounded border transition-colors ${
+                                expected === false
+                                  ? 'bg-red-500/20 border-red-500 text-red-200'
+                                  : 'bg-green-500/20 border-green-500 text-green-200'
+                              }`}
+                            >
+                              {expected === false ? 'NO' : 'YES'}
+                            </button>
+                          </div>
                         )}
-                      </label>
+                      </div>
                     );
                   })}
                 </div>
@@ -123,38 +170,57 @@ export function RequirementsSelector({
                     const cleanId = condition.id.startsWith('condition_')
                       ? condition.id.substring(10)
                       : condition.id;
-                    const prefixedId = `condition_${cleanId}`;
-                    const isSelected = selectedIds.includes(prefixedId);
+                    const isSelected = isRequirementSelected(cleanId, 'condition');
+                    const expected = getRequirementExpected(cleanId, 'condition');
+
                     return (
-                      <label
+                      <div
                         key={condition.id}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
+                        className={`px-3 py-2 rounded-lg border transition-colors ${
                           isSelected
                             ? 'bg-blue-500/20 border-blue-500 text-blue-200'
                             : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-slate-500'
                         }`}
                       >
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => handleToggle(prefixedId)}
-                          className="w-4 h-4 rounded border-slate-500 bg-slate-800 text-blue-600 focus:ring-blue-500 focus:ring-2"
-                        />
-                        <span className="text-sm flex-1">{condition.name}</span>
-                        <span className="text-xs text-slate-400">
-                          ({condition.metric}{' '}
-                          {condition.operator === 'greater'
-                            ? '&gt;'
-                            : condition.operator === 'less'
-                              ? '&lt;'
-                              : condition.operator === 'equals'
-                                ? '='
-                                : condition.operator === 'greater_equal'
-                                  ? '&gt;='
-                                  : '&lt;='}{' '}
-                          {condition.value})
-                        </span>
-                      </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggle(cleanId, 'condition')}
+                            className="w-4 h-4 rounded border-slate-500 bg-slate-800 text-blue-600 focus:ring-blue-500 focus:ring-2"
+                          />
+                          <span className="text-sm flex-1">{condition.name}</span>
+                          <span className="text-xs text-slate-400">
+                            ({condition.metric}{' '}
+                            {condition.operator === 'greater'
+                              ? '&gt;'
+                              : condition.operator === 'less'
+                                ? '&lt;'
+                                : condition.operator === 'equals'
+                                  ? '='
+                                  : condition.operator === 'greater_equal'
+                                    ? '&gt;='
+                                    : '&lt;='}{' '}
+                            {condition.value})
+                          </span>
+                        </div>
+                        {isSelected && (
+                          <div className="flex items-center gap-2 mt-2 ml-6">
+                            <span className="text-xs text-slate-400">Must be:</span>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleExpected(cleanId, 'condition')}
+                              className={`px-2 py-1 text-xs rounded border transition-colors ${
+                                expected === false
+                                  ? 'bg-red-500/20 border-red-500 text-red-200'
+                                  : 'bg-green-500/20 border-green-500 text-green-200'
+                              }`}
+                            >
+                              {expected === false ? 'NO' : 'YES'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
@@ -184,13 +250,13 @@ export function RequirementsSelector({
           })()}
 
           {/* Selected Summary */}
-          {selectedIds.length > 0 && (
+          {requirements.length > 0 && (
             <div className="pt-2 border-t border-slate-700">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-semibold text-slate-400">Selected: {selectedIds.length}</span>
+                <span className="text-xs font-semibold text-slate-400">Selected: {requirements.length}</span>
                 <button
                   type="button"
-                  onClick={() => onSelectionChange([])}
+                  onClick={() => onRequirementsChange && onRequirementsChange([])}
                   className="text-xs text-red-400 hover:text-red-300 underline"
                 >
                   Clear All

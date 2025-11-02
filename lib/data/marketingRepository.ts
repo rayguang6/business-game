@@ -1,16 +1,18 @@
 import { supabase } from '@/lib/supabase/client';
 import type { MarketingCampaign, CampaignEffect } from '@/lib/store/slices/marketingSlice';
 import { EffectType, GameMetric } from '@/lib/game/effectManager';
+import type { IndustryId } from '@/lib/game/types';
 
 interface MarketingCampaignRow {
   id: string;
+  industry_id: string;
   name: string;
   description: string;
   cost: number | string | null;
   cooldown_seconds: number | null;
   effects: unknown;
   sets_flag: string | null;
-  requirement_ids: unknown;
+  requirements: unknown;
 }
 
 interface RawEffect {
@@ -47,7 +49,8 @@ const mapEffects = (raw: unknown): CampaignEffect[] => {
     }));
 };
 
-export async function fetchMarketingCampaigns(): Promise<MarketingCampaign[] | null> {
+export async function fetchMarketingCampaignsForIndustry(industryId: IndustryId): Promise<MarketingCampaign[] | null> {
+  console.log('fetchMarketingCampaignsForIndustry called with:', industryId);
   if (!supabase) {
     console.error('Supabase client not configured. Unable to fetch marketing campaigns.');
     return null;
@@ -55,8 +58,11 @@ export async function fetchMarketingCampaigns(): Promise<MarketingCampaign[] | n
 
   const { data, error } = await supabase
     .from('marketing_campaigns')
-    .select('id, name, description, cost, cooldown_seconds, effects, sets_flag, requirement_ids')
+    .select('id, industry_id, name, description, cost, cooldown_seconds, effects, sets_flag, requirements')
+    .eq('industry_id', industryId)
     .order('name', { ascending: true });
+
+  console.log('Supabase query result:', { data, error });
 
   if (error) {
     console.error('Failed to fetch marketing campaigns from Supabase', error);
@@ -67,21 +73,25 @@ export async function fetchMarketingCampaigns(): Promise<MarketingCampaign[] | n
     return [];
   }
 
-  return data
+  const campaigns = data
     .filter((row) => row.id && row.name)
     .map((row) => ({
       id: row.id,
+      industryId: row.industry_id as any,
       name: row.name,
       description: row.description ?? '',
       cost: parseNumber(row.cost),
       cooldownSeconds: parseNumber(row.cooldown_seconds, 60), // Default to 300s if not set
       effects: mapEffects(row.effects),
       setsFlag: row.sets_flag || undefined,
-      requirementIds: Array.isArray(row.requirement_ids) ? row.requirement_ids as string[] : [],
+      requirements: Array.isArray(row.requirements) ? row.requirements as any[] : [],
     }));
+
+  console.log('Mapped campaigns:', campaigns);
+  return campaigns;
 }
 
-export async function upsertMarketingCampaign(campaign: MarketingCampaign): Promise<{ success: boolean; message?: string }>
+export async function upsertMarketingCampaignForIndustry(industryId: string, campaign: MarketingCampaign): Promise<{ success: boolean; message?: string }>
 {
   if (!supabase) {
     return { success: false, message: 'Supabase client not configured.' };
@@ -89,13 +99,14 @@ export async function upsertMarketingCampaign(campaign: MarketingCampaign): Prom
 
   const payload: MarketingCampaignRow = {
     id: campaign.id,
+    industry_id: industryId,
     name: campaign.name,
     description: campaign.description,
     cost: campaign.cost,
     cooldown_seconds: campaign.cooldownSeconds,
     effects: campaign.effects.map((e) => ({ metric: e.metric, type: e.type, value: e.value, durationSeconds: e.durationSeconds })),
     sets_flag: campaign.setsFlag || null,
-    requirement_ids: campaign.requirementIds || [],
+    requirements: campaign.requirements || [],
   };
 
   const { error } = await supabase
@@ -110,12 +121,16 @@ export async function upsertMarketingCampaign(campaign: MarketingCampaign): Prom
   return { success: true };
 }
 
-export async function deleteMarketingCampaign(id: string): Promise<{ success: boolean; message?: string }>
+export async function deleteMarketingCampaignById(id: string, industryId: IndustryId): Promise<{ success: boolean; message?: string }>
 {
   if (!supabase) {
     return { success: false, message: 'Supabase client not configured.' };
   }
-  const { error } = await supabase.from('marketing_campaigns').delete().eq('id', id);
+  const { error } = await supabase
+    .from('marketing_campaigns')
+    .delete()
+    .eq('id', id)
+    .eq('industry_id', industryId);
   if (error) {
     console.error('Failed to delete marketing campaign', error);
     return { success: false, message: error.message };

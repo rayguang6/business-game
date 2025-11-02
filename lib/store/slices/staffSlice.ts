@@ -38,8 +38,8 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
       }
 
       // Check requirements
-      if (candidate.requirementIds && candidate.requirementIds.length > 0) {
-        const requirementsMet = checkRequirements(candidate.requirementIds, store);
+      if (candidate.requirements && candidate.requirements.length > 0) {
+        const requirementsMet = checkRequirements(candidate.requirements, store);
         if (!requirementsMet) {
           console.warn(`[Requirements] Cannot hire ${candidate.name}: requirements not met`);
           return;

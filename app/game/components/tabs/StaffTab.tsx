@@ -81,7 +81,7 @@ interface StaffCandidateCardProps {
 }
 
 function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
-  const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(candidate.requirementIds);
+  const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(candidate.requirements);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
   const styles = getRoleStyles(candidate.role);
 

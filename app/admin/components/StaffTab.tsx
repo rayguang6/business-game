@@ -4,6 +4,7 @@ import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import type { StaffRoleConfig, StaffPreset } from '@/lib/game/staffConfig';
 import type { GameFlag } from '@/lib/data/flagRepository';
 import type { GameCondition } from '@/lib/types/conditions';
+import type { Requirement } from '@/lib/game/types';
 import { RequirementsSelector } from './RequirementsSelector';
 import { makeUniqueId, slugify } from './utils';
 
@@ -22,7 +23,7 @@ interface StaffTabProps {
     effects: Array<{ metric: GameMetric; type: EffectType; value: string }>;
     emoji: string;
     setsFlag?: string;
-    requirementIds: string[];
+    requirements: Requirement[];
   };
   roleSaving: boolean;
   roleDeleting: boolean;
@@ -199,8 +200,8 @@ export function StaffTab({
                           conditions={conditions}
                           flagsLoading={flagsLoading}
                           conditionsLoading={conditionsLoading}
-                          selectedIds={roleForm.requirementIds || []}
-                          onSelectionChange={(ids) => onUpdateRoleForm({ requirementIds: ids })}
+                          requirements={roleForm.requirements || []}
+                          onRequirementsChange={(requirements) => onUpdateRoleForm({ requirements })}
                         />
                       </div>
 
