@@ -35,6 +35,16 @@ import type { GameFlag } from '@/lib/data/flagRepository';
 import { fetchConditionsForIndustry, upsertConditionForIndustry, deleteConditionById } from '@/lib/data/conditionRepository';
 import type { GameCondition, ConditionOperator } from '@/lib/types/conditions';
 import { ConditionMetric } from '@/lib/types/conditions';
+import { FlagsTab } from './components/FlagsTab';
+import { ConditionsTab } from './components/ConditionsTab';
+import { MarketingTab } from './components/MarketingTab';
+import { UpgradesTab } from './components/UpgradesTab';
+import { StaffTab } from './components/StaffTab';
+import { ServicesTab } from './components/ServicesTab';
+import { IndustriesTab } from './components/IndustriesTab';
+import { GlobalConfigTab } from './components/GlobalConfigTab';
+import { RequirementsSelector } from './components/RequirementsSelector';
+import { makeUniqueId, slugify } from './components/utils';
 
 interface FormState {
   id: string;
@@ -249,14 +259,7 @@ export default function AdminPage() {
     { value: EffectType.Set, label: 'Set (=)', hint: 'Force a value to a number, overwrites others' },
   ];
 
-  const makeUniqueId = (base: string, existingIds: Set<string>): string => {
-    let candidate = base;
-    let counter = 2;
-    while (existingIds.has(candidate)) {
-      candidate = `${base}-${counter++}`;
-    }
-    return candidate;
-  };
+  // Utilities moved to ./components/utils.ts
 
   const selectService = (service: IndustryServiceDefinition, resetMessage: boolean = true) => {
     setSelectedServiceId(service.id);
@@ -396,9 +399,9 @@ export default function AdminPage() {
         if ('workloadReduction' in first && (first as any).workloadReduction > 0) {
           legacyEffects.push({ metric: GameMetric.FounderWorkingHours, type: EffectType.Add, value: String(-(first as any).workloadReduction) });
         }
-        setRoleForm({ id: first.id, name: first.name, salary: String(first.salary), effects: legacyEffects, emoji: first.emoji, setsFlag: first.setsFlag });
+        setRoleForm({ id: first.id, name: first.name, salary: String(first.salary), effects: legacyEffects, emoji: first.emoji, setsFlag: first.setsFlag, requirementIds: first.requirementIds || [] });
       } else {
-        setRoleForm({ id: first.id, name: first.name, salary: String(first.salary), effects: effects.map(e => ({ metric: e.metric, type: e.type, value: String(e.value) })), emoji: first.emoji, setsFlag: first.setsFlag });
+        setRoleForm({ id: first.id, name: first.name, salary: String(first.salary), effects: effects.map(e => ({ metric: e.metric, type: e.type, value: String(e.value) })), emoji: first.emoji, setsFlag: first.setsFlag, requirementIds: first.requirementIds || [] });
       }
     }
     if (presetsSorted.length > 0) {
@@ -414,7 +417,7 @@ export default function AdminPage() {
     setUpgrades([]);
     setSelectedUpgradeId('');
     setIsCreatingUpgrade(false);
-    setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1' });
+    setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', requirementIds: [] });
     setEffectsForm([]);
     const result = await fetchUpgradesForIndustry(industryId);
     setUpgradesLoading(false);
@@ -485,7 +488,7 @@ export default function AdminPage() {
     if (!result.success) { setUpgradeStatus(result.message ?? 'Failed to delete upgrade.'); return; }
     setUpgrades((prev) => prev.filter((u) => u.id !== selectedUpgradeId));
     setSelectedUpgradeId('');
-    setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', setsFlag: '' });
+    setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', setsFlag: '', requirementIds: [] });
     setEffectsForm([]);
     setUpgradeStatus('Upgrade deleted.');
   };
@@ -496,7 +499,7 @@ export default function AdminPage() {
     setCampaigns([]);
     setSelectedCampaignId('');
     setIsCreatingCampaign(false);
-    setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15' });
+    setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', requirementIds: [] });
     setCampaignEffectsForm([]);
     const result = await fetchMarketingCampaigns();
     setCampaignsLoading(false);
@@ -564,7 +567,7 @@ export default function AdminPage() {
     if (!result.success) { setCampaignStatus(result.message ?? 'Failed to delete campaign.'); return; }
     setCampaigns((prev) => prev.filter((c) => c.id !== selectedCampaignId));
     setSelectedCampaignId('');
-    setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', setsFlag: '' });
+    setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', setsFlag: '', requirementIds: [] });
     setCampaignEffectsForm([]);
     setCampaignStatus('Campaign deleted.');
   };
@@ -1391,7 +1394,7 @@ export default function AdminPage() {
     }
     setStaffRoles((prev) => prev.filter((r) => r.id !== selectedRoleId));
     setSelectedRoleId('');
-    setRoleForm({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼', setsFlag: '' });
+    setRoleForm({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼', setsFlag: '', requirementIds: [] });
     setStaffStatus('Role deleted.');
   };
 
@@ -1732,6 +1735,45 @@ export default function AdminPage() {
           <p className="text-sm text-slate-400">Edit base game content directly</p>
         </header>
 
+        {/* Global Industry Selector */}
+        {activeTab !== 'industries' && activeTab !== 'global' && (
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-slate-200">Select Industry</h3>
+                {form.id && (
+                  <span className="text-sm text-slate-400">
+                    Selected: <span className="text-slate-200 font-medium">{form.icon} {form.name}</span>
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {isLoading ? (
+                  <div className="text-sm text-slate-400">Loading industries...</div>
+                ) : error ? (
+                  <div className="text-sm text-rose-400">{error}</div>
+                ) : industries.length === 0 ? (
+                  <div className="text-sm text-slate-400">No industries available. Create one in the Industries tab.</div>
+                ) : (
+                  industries.map((industry) => (
+                    <button
+                      key={industry.id}
+                      onClick={() => handleSelect(industry.id)}
+                      className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
+                        form.id === industry.id
+                          ? 'border-blue-400 bg-blue-500/10 text-blue-200'
+                          : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
+                      }`}
+                    >
+                      {industry.icon} {industry.name}
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Tab Navigation */}
         <div className="bg-slate-900 border border-slate-800 rounded-xl">
           <nav className="flex flex-wrap border-b border-slate-800">
@@ -1753,6 +1795,24 @@ export default function AdminPage() {
 
         {/* Global Config Section */}
         {activeTab === 'global' && (
+          <GlobalConfigTab
+            globalLoading={globalLoading}
+            globalStatus={globalStatus}
+            globalSaving={globalSaving}
+            metrics={metrics}
+            stats={stats}
+            eventSecondsInput={eventSecondsInput}
+            movementJSON={movementJSON}
+            onUpdateMetrics={(updates) => setMetrics((p) => ({ ...p, ...updates }))}
+            onUpdateStats={(updates) => setStats((p) => ({ ...p, ...updates }))}
+            onUpdateEventSeconds={setEventSecondsInput}
+            onUpdateMovementJSON={setMovementJSON}
+            onSave={handleGlobalSave}
+          />
+        )}
+
+        {/* Old Global Config Section - REMOVED */}
+        {false && activeTab === 'global-old' && (
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
             <h2 className="text-2xl font-semibold">Global Simulation Config</h2>
@@ -1985,6 +2045,45 @@ export default function AdminPage() {
 
         {/* Industries Section */}
         {activeTab === 'industries' && (
+          <IndustriesTab
+            industries={industries}
+            isLoading={isLoading}
+            error={error}
+            form={form}
+            isSaving={isSaving}
+            isDeleting={isDeleting}
+            statusMessage={statusMessage}
+            isCreating={isCreating}
+            onSelectIndustry={(industryId) => handleSelect(industryId)}
+            onCreateNew={handleCreateNew}
+            onSave={handleSave}
+            onDelete={handleDelete}
+            onReset={() => {
+              if (!isCreating) {
+                const current = industries.find((item) => item.id === form.id);
+                if (current) {
+                  setForm({
+                    id: current.id,
+                    name: current.name,
+                    icon: current.icon,
+                    description: current.description,
+                    image: current.image ?? '',
+                    mapImage: current.mapImage ?? '',
+                    isAvailable: current.isAvailable ?? true,
+                  });
+                }
+              } else {
+                setForm({ id: '', name: '', icon: '', description: '', image: '', mapImage: '', isAvailable: true });
+                setIsCreating(false);
+              }
+              setStatusMessage(null);
+            }}
+            onUpdateForm={(updates) => setForm((p) => ({ ...p, ...updates }))}
+          />
+        )}
+
+        {/* Old Industries Section - REMOVED */}
+        {false && activeTab === 'industries-old' && (
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
             <h2 className="text-2xl font-semibold">Industries</h2>
@@ -2191,144 +2290,75 @@ export default function AdminPage() {
 
         {/* Flags Section */}
         {activeTab === 'flags' && (
-        <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
-          <div className="p-6 border-b border-slate-800">
-            <h2 className="text-2xl font-semibold">Flags</h2>
-            <p className="text-sm text-slate-400 mt-1">Create flags that can be set by event choices. Use these to track persistent game state.</p>
-          </div>
-          <div className="p-6 space-y-6">
-            {!form.id ? (
-              <div className="text-sm text-slate-400">Select or create an industry first.</div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between gap-3">
-                  <button
-                    onClick={handleCreateFlag}
-                    className="px-3 py-2 text-sm font-medium rounded-lg border border-purple-500 text-purple-200 hover:bg-purple-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={isCreating || !form.id}
-                  >
-                    + New Flag
-                  </button>
-                  {flagStatus && <span className="text-sm text-slate-300">{flagStatus}</span>}
-                </div>
-
-                {flagsLoading ? (
-                  <div className="text-sm text-slate-400">Loading flags…</div>
-                ) : flags.length === 0 && !isCreatingFlag ? (
-                  <div className="text-sm text-slate-400">No flags configured yet.</div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="flex flex-wrap gap-2">
-                      {flags.map((flag) => (
-                        <button
-                          key={flag.id}
-                          onClick={() => selectFlag(flag)}
-                          className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
-                            selectedFlagId === flag.id && !isCreatingFlag
-                              ? 'border-purple-400 bg-purple-500/10 text-purple-200'
-                              : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
-                          }`}
-                        >
-                          {flag.name}
-                        </button>
-                      ))}
-                    </div>
-
-                    {(selectedFlagId || isCreatingFlag) && (
-                      <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-semibold text-slate-300 mb-1">Flag ID (auto-generated)</label>
-                            <input
-                              value={flagForm.id}
-                              disabled={true}
-                              className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-400 cursor-not-allowed"
-                            />
-                            <p className="text-xs text-slate-500 mt-1">ID will be auto-generated with 'flag_' prefix</p>
-                          </div>
-                          <div className="md:col-span-2">
-                            <label className="block text-sm font-semibold text-slate-300 mb-1">Name</label>
-                            <input
-                              value={flagForm.name}
-                              onChange={(e) => setFlagForm((p) => ({ ...p, name: e.target.value }))}
-                              onBlur={() => {
-                                if (isCreatingFlag && flagForm.name.trim()) {
-                                  const base = slugify(flagForm.name.trim());
-                                  const unique = makeUniqueId(base, new Set(flags.map((f) => f.id)));
-                                  setFlagForm((prev) => ({ ...prev, id: `flag_${unique}` }));
-                                }
-                              }}
-                              className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
-                            />
-                          </div>
-                          <div className="md:col-span-2">
-                            <label className="block text-sm font-semibold text-slate-300 mb-1">Description (optional)</label>
-                            <textarea
-                              rows={2}
-                              value={flagForm.description}
-                              onChange={(e) => setFlagForm((p) => ({ ...p, description: e.target.value }))}
-                              className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
-                            />
-                          </div>
-                          <div className="md:col-span-2 flex flex-wrap gap-3">
-                            <button
-                              type="button"
-                              onClick={handleSaveFlag}
-                              disabled={flagSaving || flagDeleting}
-                              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                                flagSaving
-                                  ? 'bg-purple-900 text-purple-300 cursor-wait'
-                                  : 'bg-purple-600 hover:bg-purple-500 text-white'
-                              }`}
-                            >
-                              {flagSaving ? 'Saving…' : 'Save Flag'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (selectedFlagId && !isCreatingFlag) {
-                                  const existing = flags.find((f) => f.id === selectedFlagId);
-                                  if (existing) selectFlag(existing);
-                                } else {
-                                  setIsCreatingFlag(false);
-                                  setSelectedFlagId('');
-                                  setFlagForm({ id: '', name: '', description: '' });
-                                }
-                                setFlagStatus(null);
-                              }}
-                              disabled={flagSaving || flagDeleting}
-                              className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800"
-                            >
-                              {isCreatingFlag ? 'Cancel' : 'Reset'}
-                            </button>
-                            {!isCreatingFlag && selectedFlagId && (
-                              <button
-                                type="button"
-                                onClick={handleDeleteFlag}
-                                disabled={flagSaving || flagDeleting}
-                                className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                                  flagDeleting
-                                    ? 'bg-rose-900 text-rose-200 cursor-wait'
-                                    : 'bg-rose-600 hover:bg-rose-500 text-white'
-                                }`}
-                              >
-                                {flagDeleting ? 'Deleting…' : 'Delete Flag'}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </section>
+          <FlagsTab
+            industryId={form.id}
+            flags={flags}
+            flagsLoading={flagsLoading}
+            flagStatus={flagStatus}
+            selectedFlagId={selectedFlagId}
+            isCreatingFlag={isCreatingFlag}
+            flagForm={flagForm}
+            flagSaving={flagSaving}
+            flagDeleting={flagDeleting}
+            onSelectFlag={(flag) => selectFlag(flag)}
+            onCreateFlag={handleCreateFlag}
+            onSaveFlag={handleSaveFlag}
+            onDeleteFlag={handleDeleteFlag}
+            onReset={() => {
+              if (selectedFlagId && !isCreatingFlag) {
+                const existing = flags.find((f) => f.id === selectedFlagId);
+                if (existing) selectFlag(existing);
+              } else {
+                setIsCreatingFlag(false);
+                setSelectedFlagId('');
+                setFlagForm({ id: '', name: '', description: '' });
+              }
+              setFlagStatus(null);
+            }}
+            onUpdateForm={(updates) => setFlagForm((p) => ({ ...p, ...updates }))}
+          />
         )}
 
         {/* Conditions Section */}
         {activeTab === 'conditions' && (
+          <ConditionsTab
+            industryId={form.id}
+            conditions={conditions}
+            conditionsLoading={conditionsLoading}
+            conditionsStatus={conditionsStatus}
+            selectedConditionId={selectedConditionId}
+            isCreatingCondition={isCreatingCondition}
+            conditionForm={conditionForm}
+            conditionSaving={conditionSaving}
+            conditionDeleting={conditionDeleting}
+            onSelectCondition={(condition) => selectCondition(condition)}
+            onCreateCondition={handleCreateCondition}
+            onSaveCondition={handleSaveCondition}
+            onDeleteCondition={handleDeleteCondition}
+            onReset={() => {
+              if (selectedConditionId && !isCreatingCondition) {
+                const existing = conditions.find((c) => c.id === selectedConditionId);
+                if (existing) selectCondition(existing);
+              } else {
+                setIsCreatingCondition(false);
+                setSelectedConditionId('');
+                setConditionForm({
+                  id: '',
+                  name: '',
+                  description: '',
+                  metric: ConditionMetric.Cash,
+                  operator: 'greater',
+                  value: '0',
+                });
+              }
+              setConditionsStatus(null);
+            }}
+            onUpdateForm={(updates) => setConditionForm((p) => ({ ...p, ...updates }))}
+          />
+        )}
+
+        {/* Old Conditions Section - REMOVED */}
+        {false && activeTab === 'conditions-old' && (
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
             <h2 className="text-2xl font-semibold">Conditions</h2>
@@ -3218,6 +3248,45 @@ export default function AdminPage() {
 
         {/* Marketing Section */}
         {activeTab === 'marketing' && (
+          <MarketingTab
+            campaigns={campaigns}
+            campaignsLoading={campaignsLoading}
+            campaignStatus={campaignStatus}
+            selectedCampaignId={selectedCampaignId}
+            isCreatingCampaign={isCreatingCampaign}
+            campaignForm={campaignForm}
+            campaignEffectsForm={campaignEffectsForm}
+            campaignSaving={campaignSaving}
+            campaignDeleting={campaignDeleting}
+            flags={flags}
+            flagsLoading={flagsLoading}
+            conditions={conditions}
+            conditionsLoading={conditionsLoading}
+            metricOptions={METRIC_OPTIONS}
+            effectTypeOptions={EFFECT_TYPE_OPTIONS}
+            onSelectCampaign={(campaign) => selectCampaign(campaign)}
+            onCreateCampaign={handleCreateCampaign}
+            onSaveCampaign={handleSaveCampaign}
+            onDeleteCampaign={handleDeleteCampaign}
+            onReset={() => {
+              if (selectedCampaignId && !isCreatingCampaign) {
+                const existing = campaigns.find((c) => c.id === selectedCampaignId);
+                if (existing) selectCampaign(existing);
+              } else {
+                setIsCreatingCampaign(false);
+                setSelectedCampaignId('');
+                setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', requirementIds: [] });
+                setCampaignEffectsForm([]);
+              }
+              setCampaignStatus(null);
+            }}
+            onUpdateForm={(updates) => setCampaignForm((p) => ({ ...p, ...updates }))}
+            onUpdateEffects={setCampaignEffectsForm}
+          />
+        )}
+
+        {/* Old Marketing Section - REMOVED */}
+        {false && activeTab === 'marketing-old' && (
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
             <h2 className="text-2xl font-semibold">Marketing Campaigns</h2>
@@ -3334,60 +3403,15 @@ export default function AdminPage() {
                     </div>
 
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-slate-300 mb-1">Requirements</label>
-                      <div className="space-y-2">
-                        <select
-                          multiple
-                          value={campaignForm.requirementIds || []}
-                          onChange={(e) => {
-                            const selected = Array.from(e.target.selectedOptions, option => option.value);
-                            setCampaignForm((p) => ({ ...p, requirementIds: selected }));
-                          }}
-                          disabled={flagsLoading || conditionsLoading}
-                          className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200 disabled:opacity-50 min-h-[80px]"
-                        >
-                          {!flagsLoading && !conditionsLoading && flags && conditions && (
-                            <>
-                              <optgroup label="🏁 Flags">
-                                {(flags || []).map((flag) => {
-                                  const cleanId = flag.id.startsWith('flag_') ? flag.id.substring(5) : flag.id;
-                                  return (
-                                    <option key={`flag_${flag.id}`} value={`flag_${cleanId}`}>
-                                      {flag.name}
-                                    </option>
-                                  );
-                                })}
-                              </optgroup>
-                              <optgroup label="📊 Conditions">
-                                {(conditions || []).map((condition) => {
-                                  const cleanId = condition.id.startsWith('condition_') ? condition.id.substring(10) : condition.id;
-                                  return (
-                                    <option key={`condition_${condition.id}`} value={`condition_${cleanId}`}>
-                                      {condition.name}
-                                    </option>
-                                  );
-                                })}
-                              </optgroup>
-                            </>
-                          )}
-                        </select>
-                        {(campaignForm.requirementIds || []).length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {(campaignForm.requirementIds || []).map((reqId) => {
-                              const isFlag = reqId.startsWith('flag_');
-                              const cleanId = isFlag ? reqId.substring(5) : reqId.substring(10);
-                              const item = isFlag
-                                ? flags.find(f => f.id === cleanId)
-                                : conditions.find(c => c.id === cleanId);
-                              return (
-                                <span key={reqId} className="inline-flex items-center gap-1 px-2 py-1 bg-slate-700 text-xs rounded">
-                                  {isFlag ? '🏁' : '📊'} {item?.name || cleanId}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-2">Requirements</label>
+                      <RequirementsSelector
+                        flags={flags}
+                        conditions={conditions}
+                        flagsLoading={flagsLoading}
+                        conditionsLoading={conditionsLoading}
+                        selectedIds={campaignForm.requirementIds || []}
+                        onSelectionChange={(ids) => setCampaignForm((p) => ({ ...p, requirementIds: ids }))}
+                      />
                     </div>
 
                     <div className="md:col-span-2">
@@ -3471,7 +3495,7 @@ export default function AdminPage() {
                           } else {
                             setIsCreatingCampaign(false);
                             setSelectedCampaignId('');
-                            setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15' });
+                            setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', requirementIds: [] });
                             setCampaignEffectsForm([]);
                           }
                           setCampaignStatus(null);
@@ -3504,6 +3528,46 @@ export default function AdminPage() {
 
         {/* Upgrades Section */}
         {activeTab === 'upgrades' && (
+          <UpgradesTab
+            industryId={form.id}
+            upgrades={upgrades}
+            upgradesLoading={upgradesLoading}
+            upgradeStatus={upgradeStatus}
+            selectedUpgradeId={selectedUpgradeId}
+            isCreatingUpgrade={isCreatingUpgrade}
+            upgradeForm={upgradeForm}
+            effectsForm={effectsForm}
+            upgradeSaving={upgradeSaving}
+            upgradeDeleting={upgradeDeleting}
+            flags={flags}
+            flagsLoading={flagsLoading}
+            conditions={conditions}
+            conditionsLoading={conditionsLoading}
+            metricOptions={METRIC_OPTIONS}
+            effectTypeOptions={EFFECT_TYPE_OPTIONS}
+            onSelectUpgrade={(upgrade) => selectUpgrade(upgrade)}
+            onCreateUpgrade={handleCreateUpgrade}
+            onSaveUpgrade={handleSaveUpgrade}
+            onDeleteUpgrade={handleDeleteUpgrade}
+            onReset={() => {
+              if (selectedUpgradeId && !isCreatingUpgrade) {
+                const existing = upgrades.find((u) => u.id === selectedUpgradeId);
+                if (existing) selectUpgrade(existing);
+              } else {
+                setIsCreatingUpgrade(false);
+                setSelectedUpgradeId('');
+                setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', requirementIds: [] });
+                setEffectsForm([]);
+              }
+              setUpgradeStatus(null);
+            }}
+            onUpdateForm={(updates) => setUpgradeForm((p) => ({ ...p, ...updates }))}
+            onUpdateEffects={setEffectsForm}
+          />
+        )}
+
+        {/* Old Upgrades Section - REMOVED */}
+        {false && activeTab === 'upgrades-old' && (
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
             <h2 className="text-2xl font-semibold">Upgrades</h2>
@@ -3633,60 +3697,15 @@ export default function AdminPage() {
                         </div>
 
                         <div className="md:col-span-2">
-                          <label className="block text-sm font-semibold text-slate-300 mb-1">Requirements</label>
-                          <div className="space-y-2">
-                            <select
-                              multiple
-                              value={upgradeForm.requirementIds || []}
-                              onChange={(e) => {
-                                const selected = Array.from(e.target.selectedOptions, option => option.value);
-                                setUpgradeForm((p) => ({ ...p, requirementIds: selected }));
-                              }}
-                              disabled={flagsLoading || conditionsLoading}
-                              className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200 disabled:opacity-50 min-h-[80px]"
-                            >
-                              {!flagsLoading && !conditionsLoading && flags && conditions && (
-                                <>
-                              <optgroup label="🏁 Flags">
-                                {(flags || []).map((flag) => {
-                                  const cleanId = flag.id.startsWith('flag_') ? flag.id.substring(5) : flag.id;
-                                  return (
-                                    <option key={`flag_${flag.id}`} value={`flag_${cleanId}`}>
-                                      {flag.name}
-                                    </option>
-                                  );
-                                })}
-                              </optgroup>
-                              <optgroup label="📊 Conditions">
-                                {(conditions || []).map((condition) => {
-                                  const cleanId = condition.id.startsWith('condition_') ? condition.id.substring(10) : condition.id;
-                                  return (
-                                    <option key={`condition_${condition.id}`} value={`condition_${cleanId}`}>
-                                      {condition.name}
-                                    </option>
-                                  );
-                                })}
-                              </optgroup>
-                                </>
-                              )}
-                            </select>
-                            {(upgradeForm.requirementIds || []).length > 0 && (
-                              <div className="flex flex-wrap gap-1">
-                                {(upgradeForm.requirementIds || []).map((reqId) => {
-                                  const isFlag = reqId.startsWith('flag_');
-                                  const cleanId = isFlag ? reqId.substring(5) : reqId.substring(10);
-                                  const item = isFlag
-                                    ? flags.find(f => f.id === cleanId)
-                                    : conditions.find(c => c.id === cleanId);
-                                  return (
-                                    <span key={reqId} className="inline-flex items-center gap-1 px-2 py-1 bg-slate-700 text-xs rounded">
-                                      {isFlag ? '🏁' : '📊'} {item?.name || cleanId}
-                                    </span>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
+                          <label className="block text-sm font-semibold text-slate-300 mb-2">Requirements</label>
+                          <RequirementsSelector
+                            flags={flags}
+                            conditions={conditions}
+                            flagsLoading={flagsLoading}
+                            conditionsLoading={conditionsLoading}
+                            selectedIds={upgradeForm.requirementIds || []}
+                            onSelectionChange={(ids) => setUpgradeForm((p) => ({ ...p, requirementIds: ids }))}
+                          />
                         </div>
 
                         <div className="md:col-span-2">
@@ -3765,7 +3784,7 @@ export default function AdminPage() {
                               } else {
                                 setIsCreatingUpgrade(false);
                                 setSelectedUpgradeId('');
-                                setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1' });
+                                setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', requirementIds: [] });
                                 setEffectsForm([]);
                               }
                               setUpgradeStatus(null);
@@ -3800,6 +3819,37 @@ export default function AdminPage() {
 
         {/* Services Section */}
         {activeTab === 'services' && (
+          <ServicesTab
+            industryId={form.id}
+            services={services}
+            serviceLoading={serviceLoading}
+            serviceStatus={serviceStatus}
+            selectedServiceId={selectedServiceId}
+            isCreatingService={isCreatingService}
+            serviceForm={serviceForm}
+            serviceSaving={serviceSaving}
+            serviceDeleting={serviceDeleting}
+            onSelectService={(service) => selectService(service)}
+            onCreateService={handleCreateService}
+            onSaveService={handleServiceSave}
+            onDeleteService={handleServiceDelete}
+            onReset={() => {
+              if (selectedServiceId && !isCreatingService) {
+                const existing = services.find((item) => item.id === selectedServiceId);
+                if (existing) selectService(existing);
+              } else {
+                setServiceForm({ id: '', name: '', duration: '0', price: '0' });
+                setIsCreatingService(false);
+                setSelectedServiceId('');
+              }
+              setServiceStatus(null);
+            }}
+            onUpdateForm={(updates) => setServiceForm((p) => ({ ...p, ...updates }))}
+          />
+        )}
+
+        {/* Old Services Section - REMOVED */}
+        {false && activeTab === 'services-old' && (
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
             <h2 className="text-2xl font-semibold">Services</h2>
@@ -3984,442 +4034,61 @@ export default function AdminPage() {
 
         {/* Staff Section */}
         {activeTab === 'staff' && (
-        <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
-          <div className="p-6 border-b border-slate-800">
-            <h2 className="text-2xl font-semibold">Staff</h2>
-            <p className="text-sm text-slate-400 mt-1">Manage staff roles and initial presets for this industry.</p>
-          </div>
-          <div className="p-6 space-y-6">
-            {!form.id ? (
-              <div className="text-sm text-slate-400">Select or create an industry first.</div>
-            ) : (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between gap-3">
-                  <button
-                    onClick={handleCreateRole}
-                    className="px-3 py-2 text-sm font-medium rounded-lg border border-indigo-500 text-indigo-200 hover:bg-indigo-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={isCreating || !form.id}
-                  >
-                    + New Role
-                  </button>
-                  {staffStatus && <span className="text-sm text-slate-300">{staffStatus}</span>}
-                </div>
-
-                {staffLoading ? (
-                  <div className="text-sm text-slate-400">Loading staff…</div>
-                ) : (
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">Roles</h3>
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {staffRoles.map((role) => (
-                          <button
-                            key={role.id}
-                            onClick={() => selectRole(role)}
-                            className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
-                              selectedRoleId === role.id && !isCreatingRole
-                                ? 'border-indigo-400 bg-indigo-500/10 text-indigo-200'
-                                : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
-                            }`}
-                          >
-                            {role.emoji} {role.name}
-                          </button>
-                        ))}
-                      </div>
-
-                      {(selectedRoleId || isCreatingRole) && (
-                        <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-semibold text-slate-300 mb-1">Role ID</label>
-                            <input
-                              value={roleForm.id}
-                              onChange={(e) => setRoleForm((p) => ({ ...p, id: e.target.value }))}
-                              disabled={!isCreatingRole && !!selectedRoleId}
-                              className={`w-full rounded-lg border px-3 py-2 text-slate-200 ${
-                                isCreatingRole || !selectedRoleId ? 'bg-slate-900 border-slate-600' : 'bg-slate-800 border-slate-700 cursor-not-allowed'
-                              }`}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-slate-300 mb-1">Name</label>
-                          <input
-                            value={roleForm.name}
-                            onChange={(e) => setRoleForm((p) => ({ ...p, name: e.target.value }))}
-                            onBlur={() => {
-                              if (!roleForm.id && roleForm.name.trim()) {
-                                const base = slugify(roleForm.name.trim());
-                                const unique = makeUniqueId(base, new Set(staffRoles.map((r) => r.id)));
-                                setRoleForm((prev) => ({ ...prev, id: unique }));
-                              }
-                            }}
-                            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                          />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-slate-300 mb-1">Salary</label>
-                            <input
-                              type="number"
-                              min="0"
-                              value={roleForm.salary}
-                              onChange={(e) => setRoleForm((p) => ({ ...p, salary: e.target.value }))}
-                              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-semibold text-slate-300 mb-1">Sets Flag</label>
-                            <select
-                              value={roleForm.setsFlag || ''}
-                              onChange={(e) => setRoleForm((p) => ({ ...p, setsFlag: e.target.value }))}
-                              disabled={flagsLoading}
-                              className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200 disabled:opacity-50"
-                            >
-                              <option value="">
-                                {flagsLoading ? 'Loading flags...' : 'None'}
-                              </option>
-                              {!flagsLoading && flags.map((flag) => (
-                                <option key={flag.id} value={flag.id}>
-                                  {flag.name} ({flag.id})
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div className="md:col-span-2">
-                            <label className="block text-sm font-semibold text-slate-300 mb-1">Requirements</label>
-                            <div className="space-y-2">
-                              <select
-                                multiple
-                                value={roleForm.requirementIds || []}
-                                onChange={(e) => {
-                                  const selected = Array.from(e.target.selectedOptions, option => option.value);
-                                  setRoleForm((p) => ({ ...p, requirementIds: selected }));
-                                }}
-                                disabled={flagsLoading || conditionsLoading}
-                                className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200 disabled:opacity-50 min-h-[80px]"
-                              >
-                              {!flagsLoading && !conditionsLoading && flags && conditions && (
-                                <>
-                              <optgroup label="🏁 Flags">
-                                {(flags || []).map((flag) => {
-                                  const cleanId = flag.id.startsWith('flag_') ? flag.id.substring(5) : flag.id;
-                                  return (
-                                    <option key={`flag_${flag.id}`} value={`flag_${cleanId}`}>
-                                      {flag.name}
-                                    </option>
-                                  );
-                                })}
-                              </optgroup>
-                              <optgroup label="📊 Conditions">
-                                {(conditions || []).map((condition) => {
-                                  const cleanId = condition.id.startsWith('condition_') ? condition.id.substring(10) : condition.id;
-                                  return (
-                                    <option key={`condition_${condition.id}`} value={`condition_${cleanId}`}>
-                                      {condition.name}
-                                    </option>
-                                  );
-                                })}
-                              </optgroup>
-                                </>
-                              )}
-                              </select>
-                              {(roleForm.requirementIds || []).length > 0 && (
-                                <div className="flex flex-wrap gap-1">
-                                  {(roleForm.requirementIds || []).map((reqId) => {
-                                    const isFlag = reqId.startsWith('flag_');
-                                    const cleanId = isFlag ? reqId.substring(5) : reqId.substring(10);
-                                    const item = isFlag
-                                      ? flags.find(f => f.id === cleanId)
-                                      : conditions.find(c => c.id === cleanId);
-                                    return (
-                                      <span key={reqId} className="inline-flex items-center gap-1 px-2 py-1 bg-slate-700 text-xs rounded">
-                                        {isFlag ? '🏁' : '📊'} {item?.name || cleanId}
-                                      </span>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="md:col-span-2">
-                            <label className="block text-sm font-semibold text-slate-300 mb-1">Effects</label>
-                            <div className="space-y-2">
-                              {roleForm.effects.map((effect, index) => (
-                                <div key={index} className="flex items-center gap-2 p-2 bg-slate-800 rounded border">
-                                  <select
-                                    value={effect.metric}
-                                    onChange={(e) => {
-                                      const newEffects = [...roleForm.effects];
-                                      newEffects[index] = { ...newEffects[index], metric: e.target.value as GameMetric };
-                                      setRoleForm(p => ({ ...p, effects: newEffects }));
-                                    }}
-                                    className="flex-1 rounded bg-slate-700 border border-slate-600 px-2 py-1 text-sm"
-                                  >
-                                    <option value={GameMetric.ServiceSpeedMultiplier}>Service Speed</option>
-                                    <option value={GameMetric.FounderWorkingHours}>Founder Workload</option>
-                                    <option value={GameMetric.MonthlyExpenses}>Monthly Expenses</option>
-                                    <option value={GameMetric.ReputationMultiplier}>Reputation</option>
-                                    <option value={GameMetric.ServiceRevenueMultiplier}>Revenue Multiplier</option>
-                                    <option value={GameMetric.ServiceRevenueFlatBonus}>Revenue Bonus</option>
-                                  </select>
-                                  <select
-                                    value={effect.type}
-                                    onChange={(e) => {
-                                      const newEffects = [...roleForm.effects];
-                                      newEffects[index] = { ...newEffects[index], type: e.target.value as EffectType };
-                                      setRoleForm(p => ({ ...p, effects: newEffects }));
-                                    }}
-                                    className="w-20 rounded bg-slate-700 border border-slate-600 px-2 py-1 text-sm"
-                                  >
-                                    <option value={EffectType.Add}>Add</option>
-                                    <option value={EffectType.Percent}>%</option>
-                                    <option value={EffectType.Multiply}>×</option>
-                                  </select>
-                                  <input
-                                    type="number"
-                                    value={effect.value}
-                                    onChange={(e) => {
-                                      const newEffects = [...roleForm.effects];
-                                      newEffects[index] = { ...newEffects[index], value: e.target.value };
-                                      setRoleForm(p => ({ ...p, effects: newEffects }));
-                                    }}
-                                    className="w-20 rounded bg-slate-700 border border-slate-600 px-2 py-1 text-sm"
-                                    placeholder="Value"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const newEffects = roleForm.effects.filter((_, i) => i !== index);
-                                      setRoleForm(p => ({ ...p, effects: newEffects }));
-                                    }}
-                                    className="text-red-400 hover:text-red-300"
-                                  >
-                                    ×
-                                  </button>
-                                </div>
-                              ))}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newEffect = { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: '20' };
-                                  setRoleForm(p => ({ ...p, effects: [...p.effects, newEffect] }));
-                                }}
-                                className="w-full py-1 px-3 bg-slate-700 hover:bg-slate-600 rounded text-sm text-slate-300"
-                              >
-                                + Add Effect
-                              </button>
-                            </div>
-                          </div>
-                          <div className="md:col-span-2">
-                            <label className="block text-sm font-semibold text-slate-300 mb-1">Emoji</label>
-                            <input
-                              value={roleForm.emoji}
-                              onChange={(e) => setRoleForm((p) => ({ ...p, emoji: e.target.value }))}
-                              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                            />
-                          </div>
-                          <div className="md:col-span-2 flex flex-wrap gap-3">
-                            <button
-                              type="button"
-                              onClick={handleSaveRole}
-                              disabled={roleSaving || roleDeleting}
-                              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                                roleSaving ? 'bg-indigo-900 text-indigo-200 cursor-wait' : 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                              }`}
-                            >
-                              {roleSaving ? 'Saving…' : 'Save Role'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (selectedRoleId && !isCreatingRole) {
-                                  const existing = staffRoles.find((r) => r.id === selectedRoleId);
-                                  if (existing) selectRole(existing);
-                                } else {
-                                  setIsCreatingRole(false);
-                                  setSelectedRoleId('');
-                                  setRoleForm({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼' });
-                                }
-                                setStaffStatus(null);
-                              }}
-                              disabled={roleSaving || roleDeleting}
-                              className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800"
-                            >
-                              {isCreatingRole ? 'Cancel' : 'Reset'}
-                            </button>
-                            {!isCreatingRole && selectedRoleId && (
-                              <button
-                                type="button"
-                                onClick={handleDeleteRole}
-                                disabled={roleDeleting || roleSaving}
-                                className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                                  roleDeleting ? 'bg-rose-900 text-rose-200 cursor-wait' : 'bg-rose-600 hover:bg-rose-500 text-white'
-                                }`}
-                              >
-                                {roleDeleting ? 'Deleting…' : 'Delete'}
-                              </button>
-                            )}
-                          </div>
-                        </form>
-                      )}
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-lg font-semibold">Initial Presets</h3>
-                        <button
-                          onClick={handleCreatePreset}
-                          className="px-3 py-2 text-sm font-medium rounded-lg border border-emerald-500 text-emerald-200 hover:bg-emerald-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                          disabled={!form.id}
-                        >
-                          + New Preset
-                        </button>
-                      </div>
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {staffPresets.map((preset) => (
-                          <button
-                            key={preset.id}
-                            onClick={() => selectPreset(preset)}
-                            className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
-                              selectedPresetId === preset.id && !isCreatingPreset
-                                ? 'border-emerald-400 bg-emerald-500/10 text-emerald-200'
-                                : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
-                            }`}
-                          >
-                            {preset.name}
-                          </button>
-                        ))}
-                      </div>
-
-                      {(selectedPresetId || isCreatingPreset) && (
-                        <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-semibold text-slate-300 mb-1">Preset ID</label>
-                            <input
-                              value={presetForm.id}
-                              onChange={(e) => setPresetForm((p) => ({ ...p, id: e.target.value }))}
-                              disabled={!isCreatingPreset && !!selectedPresetId}
-                              className={`w-full rounded-lg border px-3 py-2 text-slate-200 ${
-                                isCreatingPreset || !selectedPresetId ? 'bg-slate-900 border-slate-600' : 'bg-slate-800 border-slate-700 cursor-not-allowed'
-                              }`}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-slate-300 mb-1">Name (optional)</label>
-                          <input
-                            value={presetForm.name}
-                            onChange={(e) => setPresetForm((p) => ({ ...p, name: e.target.value }))}
-                            onBlur={() => {
-                              if (!presetForm.id && presetForm.name.trim()) {
-                                const base = slugify(presetForm.name.trim());
-                                const unique = makeUniqueId(base, new Set(staffPresets.map((p) => p.id)));
-                                setPresetForm((prev) => ({ ...prev, id: unique }));
-                              }
-                            }}
-                            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                          />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-slate-300 mb-1">Role</label>
-                            <select
-                              value={presetForm.roleId}
-                              onChange={(e) => setPresetForm((p) => ({ ...p, roleId: e.target.value }))}
-                              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                            >
-                              {staffRoles.map((role) => (
-                                <option key={role.id} value={role.id}>{role.name}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-slate-300 mb-1">Salary Override</label>
-                            <input
-                              type="number"
-                              min="0"
-                              value={presetForm.salary ?? ''}
-                              onChange={(e) => setPresetForm((p) => ({ ...p, salary: e.target.value }))}
-                              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-slate-300 mb-1">Service Speed Override</label>
-                            <input
-                              type="number"
-                              min="0"
-                              value={presetForm.serviceSpeed ?? ''}
-                              onChange={(e) => setPresetForm((p) => ({ ...p, serviceSpeed: e.target.value }))}
-                              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                            />
-                          </div>
-                          <div className="md:col-span-2">
-                            <label className="block text-sm font-semibold text-slate-300 mb-1">Emoji (optional)</label>
-                            <input
-                              value={presetForm.emoji ?? ''}
-                              onChange={(e) => setPresetForm((p) => ({ ...p, emoji: e.target.value }))}
-                              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                            />
-                          </div>
-                          <div className="md:col-span-2 flex flex-wrap gap-3">
-                            <button
-                              type="button"
-                              onClick={handleSavePreset}
-                              disabled={presetSaving || presetDeleting}
-                              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                                presetSaving ? 'bg-emerald-900 text-emerald-200 cursor-wait' : 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                              }`}
-                            >
-                              {presetSaving ? 'Saving…' : 'Save Preset'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (selectedPresetId && !isCreatingPreset) {
-                                  const existing = staffPresets.find((p) => p.id === selectedPresetId);
-                                  if (existing) selectPreset(existing);
-                                } else {
-                                  setIsCreatingPreset(false);
-                                  setSelectedPresetId('');
-                                  setPresetForm({ id: '', roleId: staffRoles[0]?.id ?? '', name: '' });
-                                }
-                                setStaffStatus(null);
-                              }}
-                              disabled={presetSaving || presetDeleting}
-                              className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800"
-                            >
-                              {isCreatingPreset ? 'Cancel' : 'Reset'}
-                            </button>
-                            {!isCreatingPreset && selectedPresetId && (
-                              <button
-                                type="button"
-                                onClick={handleDeletePreset}
-                                disabled={presetDeleting || presetSaving}
-                                className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                                  presetDeleting ? 'bg-rose-900 text-rose-200 cursor-wait' : 'bg-rose-600 hover:bg-rose-500 text-white'
-                                }`}
-                              >
-                                {presetDeleting ? 'Deleting…' : 'Delete'}
-                              </button>
-                            )}
-                          </div>
-                        </form>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </section>
+          <StaffTab
+            industryId={form.id}
+            staffRoles={staffRoles}
+            staffPresets={staffPresets}
+            staffLoading={staffLoading}
+            staffStatus={staffStatus}
+            selectedRoleId={selectedRoleId}
+            isCreatingRole={isCreatingRole}
+            roleForm={roleForm}
+            roleSaving={roleSaving}
+            roleDeleting={roleDeleting}
+            selectedPresetId={selectedPresetId}
+            isCreatingPreset={isCreatingPreset}
+            presetForm={presetForm}
+            presetSaving={presetSaving}
+            presetDeleting={presetDeleting}
+            flags={flags}
+            flagsLoading={flagsLoading}
+            conditions={conditions}
+            conditionsLoading={conditionsLoading}
+            onSelectRole={(role) => selectRole(role)}
+            onCreateRole={handleCreateRole}
+            onSaveRole={handleSaveRole}
+            onDeleteRole={handleDeleteRole}
+            onResetRole={() => {
+              if (selectedRoleId && !isCreatingRole) {
+                const existing = staffRoles.find((r) => r.id === selectedRoleId);
+                if (existing) selectRole(existing);
+              } else {
+                setIsCreatingRole(false);
+                setSelectedRoleId('');
+                setRoleForm({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼', requirementIds: [] });
+              }
+              setStaffStatus(null);
+            }}
+            onUpdateRoleForm={(updates) => setRoleForm((p) => ({ ...p, ...updates }))}
+            onSelectPreset={(preset) => selectPreset(preset)}
+            onCreatePreset={handleCreatePreset}
+            onSavePreset={handleSavePreset}
+            onDeletePreset={handleDeletePreset}
+            onResetPreset={() => {
+              if (selectedPresetId && !isCreatingPreset) {
+                const existing = staffPresets.find((p) => p.id === selectedPresetId);
+                if (existing) selectPreset(existing);
+              } else {
+                setIsCreatingPreset(false);
+                setSelectedPresetId('');
+                setPresetForm({ id: '', roleId: staffRoles[0]?.id ?? '', name: '' });
+              }
+              setStaffStatus(null);
+            }}
+            onUpdatePresetForm={(updates) => setPresetForm((p) => ({ ...p, ...updates }))}
+          />
         )}
       </div>
     </div>
   );
 }
-const slugify = (value: string): string =>
-  value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-');
