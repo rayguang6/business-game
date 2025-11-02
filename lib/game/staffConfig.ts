@@ -12,6 +12,7 @@ export interface StaffRoleConfig {
   effects: UpgradeEffect[]; // Flexible effects like upgrades
   emoji: string;
   setsFlag?: string; // Optional flag to set when this staff role is hired
+  requirementIds?: string[]; // References to flag/condition IDs that must be met
 }
 
 export interface StaffPreset {

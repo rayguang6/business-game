@@ -72,6 +72,9 @@ const emptyServiceForm: ServiceFormState = {
 };
 
 export default function AdminPage() {
+  // Tab state
+  const [activeTab, setActiveTab] = useState<string>('industries');
+
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [isLoading, setIsLoading] = useState(true);
@@ -107,7 +110,7 @@ export default function AdminPage() {
   const [staffLoading, setStaffLoading] = useState<boolean>(false);
   const [staffStatus, setStaffStatus] = useState<string | null>(null);
 
-  const [roleForm, setRoleForm] = useState<{ id: string; name: string; salary: string; effects: Array<{ metric: GameMetric; type: EffectType; value: string }>; emoji: string; setsFlag?: string }>({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼' });
+  const [roleForm, setRoleForm] = useState<{ id: string; name: string; salary: string; effects: Array<{ metric: GameMetric; type: EffectType; value: string }>; emoji: string; setsFlag?: string; requirementIds: string[] }>({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼', requirementIds: [] });
   const [selectedRoleId, setSelectedRoleId] = useState<string>('');
   const [roleSaving, setRoleSaving] = useState<boolean>(false);
   const [roleDeleting, setRoleDeleting] = useState<boolean>(false);
@@ -127,7 +130,7 @@ export default function AdminPage() {
   const [upgradeDeleting, setUpgradeDeleting] = useState<boolean>(false);
   const [upgradesLoading, setUpgradesLoading] = useState<boolean>(false);
   const [upgradeStatus, setUpgradeStatus] = useState<string | null>(null);
-  const [upgradeForm, setUpgradeForm] = useState<{ id: string; name: string; description: string; icon: string; cost: string; maxLevel: string; setsFlag?: string }>({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1' });
+  const [upgradeForm, setUpgradeForm] = useState<{ id: string; name: string; description: string; icon: string; cost: string; maxLevel: string; setsFlag?: string; requirementIds: string[] }>({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', requirementIds: [] });
   const [effectsForm, setEffectsForm] = useState<Array<{ metric: GameMetric; type: EffectType; value: string }>>([]);
 
   // Marketing management state
@@ -138,7 +141,7 @@ export default function AdminPage() {
   const [campaignDeleting, setCampaignDeleting] = useState<boolean>(false);
   const [campaignsLoading, setCampaignsLoading] = useState<boolean>(false);
   const [campaignStatus, setCampaignStatus] = useState<string | null>(null);
-  const [campaignForm, setCampaignForm] = useState<{ id: string; name: string; description: string; cost: string; cooldownSeconds: string; setsFlag?: string }>({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15' });
+  const [campaignForm, setCampaignForm] = useState<{ id: string; name: string; description: string; cost: string; cooldownSeconds: string; setsFlag?: string; requirementIds: string[] }>({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', requirementIds: [] });
   const [campaignEffectsForm, setCampaignEffectsForm] = useState<Array<{ metric: GameMetric; type: EffectType; value: string; durationSeconds: string }>>([]);
 
   // Events management state (base only for now)
@@ -303,11 +306,11 @@ export default function AdminPage() {
     });
     setStatusMessage(null);
     loadServicesForIndustry(industry.id);
+    loadFlagsForIndustry(industry.id);  // Load flags first!
     loadStaffForIndustry(industry.id);
     loadUpgradesForIndustry(industry.id);
     loadMarketingCampaigns();
     loadEventsForIndustry(industry.id);
-    loadFlagsForIndustry(industry.id);
     loadConditionsForIndustry(industry.id);
   };
 
@@ -393,9 +396,9 @@ export default function AdminPage() {
         if ('workloadReduction' in first && (first as any).workloadReduction > 0) {
           legacyEffects.push({ metric: GameMetric.FounderWorkingHours, type: EffectType.Add, value: String(-(first as any).workloadReduction) });
         }
-        setRoleForm({ id: first.id, name: first.name, salary: String(first.salary), effects: legacyEffects, emoji: first.emoji });
+        setRoleForm({ id: first.id, name: first.name, salary: String(first.salary), effects: legacyEffects, emoji: first.emoji, setsFlag: first.setsFlag });
       } else {
-        setRoleForm({ id: first.id, name: first.name, salary: String(first.salary), effects: effects.map(e => ({ metric: e.metric, type: e.type, value: String(e.value) })), emoji: first.emoji });
+        setRoleForm({ id: first.id, name: first.name, salary: String(first.salary), effects: effects.map(e => ({ metric: e.metric, type: e.type, value: String(e.value) })), emoji: first.emoji, setsFlag: first.setsFlag });
       }
     }
     if (presetsSorted.length > 0) {
@@ -424,7 +427,7 @@ export default function AdminPage() {
   const selectUpgrade = (upgrade: UpgradeDefinition, resetMsg = true) => {
     setSelectedUpgradeId(upgrade.id);
     setIsCreatingUpgrade(false);
-    setUpgradeForm({ id: upgrade.id, name: upgrade.name, description: upgrade.description, icon: upgrade.icon, cost: String(upgrade.cost), maxLevel: String(upgrade.maxLevel), setsFlag: upgrade.setsFlag });
+    setUpgradeForm({ id: upgrade.id, name: upgrade.name, description: upgrade.description, icon: upgrade.icon, cost: String(upgrade.cost), maxLevel: String(upgrade.maxLevel), setsFlag: upgrade.setsFlag, requirementIds: upgrade.requirementIds || [] });
     setEffectsForm(upgrade.effects.map((e) => ({ metric: e.metric, type: e.type, value: String(e.value) })));
     if (resetMsg) setUpgradeStatus(null);
   };
@@ -433,7 +436,7 @@ export default function AdminPage() {
     if (!form.id) { setUpgradeStatus('Save the industry first.'); return; }
     setIsCreatingUpgrade(true);
     setSelectedUpgradeId('');
-    setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', setsFlag: '' });
+    setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', setsFlag: '', requirementIds: [] });
     setEffectsForm([]);
     setUpgradeStatus(null);
   };
@@ -452,18 +455,19 @@ export default function AdminPage() {
       return;
     }
     const setsFlag = upgradeForm.setsFlag?.trim() || undefined;
+    const requirementIds = upgradeForm.requirementIds;
     const effects: UpgradeEffect[] = effectsForm.map((ef) => ({
       metric: ef.metric,
       type: ef.type,
       value: Number(ef.value) || 0,
     }));
     setUpgradeSaving(true);
-    const result = await upsertUpgradeForIndustry(form.id, { id, name, description, icon, cost, maxLevel, effects, setsFlag });
+    const result = await upsertUpgradeForIndustry(form.id, { id, name, description, icon, cost, maxLevel, effects, setsFlag, requirementIds });
     setUpgradeSaving(false);
     if (!result.success) { setUpgradeStatus(result.message ?? 'Failed to save upgrade.'); return; }
     setUpgrades((prev) => {
       const exists = prev.some((u) => u.id === id);
-      const nextItem: UpgradeDefinition = { id, name, description, icon, cost, maxLevel, effects, setsFlag };
+      const nextItem: UpgradeDefinition = { id, name, description, icon, cost, maxLevel, effects, setsFlag, requirementIds };
       const next = exists ? prev.map((u) => (u.id === id ? nextItem : u)) : [...prev, nextItem];
       return next.sort((a, b) => a.name.localeCompare(b.name));
     });
@@ -504,7 +508,7 @@ export default function AdminPage() {
   const selectCampaign = (campaign: MarketingCampaign, resetMsg = true) => {
     setSelectedCampaignId(campaign.id);
     setIsCreatingCampaign(false);
-    setCampaignForm({ id: campaign.id, name: campaign.name, description: campaign.description, cost: String(campaign.cost), cooldownSeconds: String(campaign.cooldownSeconds), setsFlag: campaign.setsFlag });
+    setCampaignForm({ id: campaign.id, name: campaign.name, description: campaign.description, cost: String(campaign.cost), cooldownSeconds: String(campaign.cooldownSeconds), setsFlag: campaign.setsFlag, requirementIds: campaign.requirementIds || [] });
     setCampaignEffectsForm(campaign.effects.map((e) => ({ metric: e.metric, type: e.type, value: String(e.value), durationSeconds: String(e.durationSeconds ?? '') })));
     if (resetMsg) setCampaignStatus(null);
   };
@@ -512,7 +516,7 @@ export default function AdminPage() {
   const handleCreateCampaign = () => {
     setIsCreatingCampaign(true);
     setSelectedCampaignId('');
-    setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', setsFlag: '' });
+    setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', setsFlag: '', requirementIds: [] });
     setCampaignEffectsForm([]);
     setCampaignStatus(null);
   };
@@ -529,6 +533,7 @@ export default function AdminPage() {
       return;
     }
     const setsFlag = campaignForm.setsFlag?.trim() || undefined;
+    const requirementIds = campaignForm.requirementIds;
     const effects = campaignEffectsForm.map((ef) => ({
       metric: ef.metric,
       type: ef.type,
@@ -536,12 +541,12 @@ export default function AdminPage() {
       durationSeconds: ef.durationSeconds === '' ? null : Number(ef.durationSeconds) || null
     }));
     setCampaignSaving(true);
-    const result = await upsertMarketingCampaign({ id, name, description, cost, cooldownSeconds, effects, setsFlag });
+    const result = await upsertMarketingCampaign({ id, name, description, cost, cooldownSeconds, effects, setsFlag, requirementIds });
     setCampaignSaving(false);
     if (!result.success) { setCampaignStatus(result.message ?? 'Failed to save campaign.'); return; }
     setCampaigns((prev) => {
       const exists = prev.some((c) => c.id === id);
-      const nextItem: MarketingCampaign = { id, name, description, cost, cooldownSeconds, effects, setsFlag };
+      const nextItem: MarketingCampaign = { id, name, description, cost, cooldownSeconds, effects, setsFlag, requirementIds };
       const next = exists ? prev.map((c) => (c.id === id ? nextItem : c)) : [...prev, nextItem];
       return next.sort((a, b) => a.name.localeCompare(b.name));
     });
@@ -1300,9 +1305,9 @@ export default function AdminPage() {
       if ('workloadReduction' in role && (role as any).workloadReduction > 0) {
         legacyEffects.push({ metric: GameMetric.FounderWorkingHours, type: EffectType.Add, value: String(-(role as any).workloadReduction) });
       }
-      setRoleForm({ id: role.id, name: role.name, salary: String(role.salary), effects: legacyEffects, emoji: role.emoji, setsFlag: role.setsFlag });
+      setRoleForm({ id: role.id, name: role.name, salary: String(role.salary), effects: legacyEffects, emoji: role.emoji, setsFlag: role.setsFlag, requirementIds: role.requirementIds || [] });
     } else {
-      setRoleForm({ id: role.id, name: role.name, salary: String(role.salary), effects: effects.map(e => ({ metric: e.metric, type: e.type, value: String(e.value) })), emoji: role.emoji, setsFlag: role.setsFlag });
+      setRoleForm({ id: role.id, name: role.name, salary: String(role.salary), effects: effects.map(e => ({ metric: e.metric, type: e.type, value: String(e.value) })), emoji: role.emoji, setsFlag: role.setsFlag, requirementIds: role.requirementIds || [] });
     }
     setStaffStatus(null);
   };
@@ -1314,7 +1319,7 @@ export default function AdminPage() {
     }
     setIsCreatingRole(true);
     setSelectedRoleId('');
-    setRoleForm({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼', setsFlag: '' });
+    setRoleForm({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼', setsFlag: '', requirementIds: [] });
     setStaffStatus(null);
   };
 
@@ -1352,7 +1357,8 @@ export default function AdminPage() {
     }
     setRoleSaving(true);
     const setsFlag = roleForm.setsFlag?.trim() || undefined;
-    const result = await upsertStaffRole({ id, industryId: form.id, name, salary, effects, emoji: roleForm.emoji.trim() || undefined, setsFlag });
+    const requirementIds = roleForm.requirementIds;
+    const result = await upsertStaffRole({ id, industryId: form.id, name, salary, effects, emoji: roleForm.emoji.trim() || undefined, setsFlag, requirementIds });
     setRoleSaving(false);
     if (!result.success) {
       setStaffStatus(result.message ?? 'Failed to save role.');
@@ -1360,7 +1366,7 @@ export default function AdminPage() {
     }
     setStaffRoles((prev) => {
       const exists = prev.some((r) => r.id === id);
-      const next = exists ? prev.map((r) => (r.id === id ? { id, name, salary, effects, emoji: roleForm.emoji.trim() || '🧑‍💼', setsFlag } : r)) : [...prev, { id, name, salary, effects, emoji: roleForm.emoji.trim() || '🧑‍💼', setsFlag }];
+      const next = exists ? prev.map((r) => (r.id === id ? { id, name, salary, effects, emoji: roleForm.emoji.trim() || '🧑‍💼', setsFlag, requirementIds } : r)) : [...prev, { id, name, salary, effects, emoji: roleForm.emoji.trim() || '🧑‍💼', setsFlag, requirementIds }];
       return next.sort((a, b) => a.name.localeCompare(b.name));
     });
     setStaffStatus('Role saved.');
@@ -1705,6 +1711,19 @@ export default function AdminPage() {
     setServiceStatus('Service deleted.');
   };
 
+  // Tab configuration
+  const tabs = [
+    { id: 'industries', label: 'Industries', icon: '🏢' },
+    { id: 'flags', label: 'Flags', icon: '🏁' },
+    { id: 'conditions', label: 'Conditions', icon: '📊' },
+    { id: 'events', label: 'Events', icon: '📅' },
+    { id: 'marketing', label: 'Marketing', icon: '📢' },
+    { id: 'upgrades', label: 'Upgrades', icon: '⚙️' },
+    { id: 'services', label: 'Services', icon: '🛎️' },
+    { id: 'staff', label: 'Staff', icon: '👥' },
+    { id: 'global', label: 'Global Config', icon: '⚡' },
+  ];
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-6">
       <div className="max-w-5xl mx-auto space-y-8">
@@ -1713,6 +1732,27 @@ export default function AdminPage() {
           <p className="text-sm text-slate-400">Edit base game content directly</p>
         </header>
 
+        {/* Tab Navigation */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl">
+          <nav className="flex flex-wrap border-b border-slate-800">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-400'
+                    : 'border-transparent text-slate-400 hover:text-slate-300'
+                }`}
+              >
+                {tab.icon} {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        {/* Global Config Section */}
+        {activeTab === 'global' && (
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
             <h2 className="text-2xl font-semibold">Global Simulation Config</h2>
@@ -1941,7 +1981,10 @@ export default function AdminPage() {
             </div>
           </div>
         </section>
+        )}
 
+        {/* Industries Section */}
+        {activeTab === 'industries' && (
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
             <h2 className="text-2xl font-semibold">Industries</h2>
@@ -2144,7 +2187,10 @@ export default function AdminPage() {
             )}
           </div>
         </section>
+        )}
 
+        {/* Flags Section */}
+        {activeTab === 'flags' && (
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
             <h2 className="text-2xl font-semibold">Flags</h2>
@@ -2192,30 +2238,26 @@ export default function AdminPage() {
                       <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-semibold text-slate-300 mb-1">Flag ID</label>
+                            <label className="block text-sm font-semibold text-slate-300 mb-1">Flag ID (auto-generated)</label>
                             <input
                               value={flagForm.id}
-                              onChange={(e) => {
-                                const nextId = e.target.value;
-                                setFlagForm((p) => ({ ...p, id: nextId }));
-                              }}
-                              onBlur={() => {
-                                setFlagForm((p) => {
-                                  if (!p.id && p.name.trim()) {
-                                    const nextId = p.name.trim().toLowerCase().replace(/\s+/g, '-');
-                                    return { ...p, id: nextId };
-                                  }
-                                  return p;
-                                });
-                              }}
-                              className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                              disabled={true}
+                              className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-400 cursor-not-allowed"
                             />
+                            <p className="text-xs text-slate-500 mt-1">ID will be auto-generated with 'flag_' prefix</p>
                           </div>
                           <div className="md:col-span-2">
                             <label className="block text-sm font-semibold text-slate-300 mb-1">Name</label>
                             <input
                               value={flagForm.name}
                               onChange={(e) => setFlagForm((p) => ({ ...p, name: e.target.value }))}
+                              onBlur={() => {
+                                if (isCreatingFlag && flagForm.name.trim()) {
+                                  const base = slugify(flagForm.name.trim());
+                                  const unique = makeUniqueId(base, new Set(flags.map((f) => f.id)));
+                                  setFlagForm((prev) => ({ ...prev, id: `flag_${unique}` }));
+                                }
+                              }}
                               className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
                             />
                           </div>
@@ -2283,7 +2325,10 @@ export default function AdminPage() {
             )}
           </div>
         </section>
+        )}
 
+        {/* Conditions Section */}
+        {activeTab === 'conditions' && (
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
             <h2 className="text-2xl font-semibold">Conditions</h2>
@@ -2338,15 +2383,13 @@ export default function AdminPage() {
                     {(selectedConditionId || isCreatingCondition) && (
                       <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-semibold text-slate-300 mb-1">Condition ID</label>
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">Condition ID (auto-generated)</label>
                           <input
                             value={conditionForm.id}
-                            onChange={(e) => setConditionForm((p) => ({ ...p, id: e.target.value }))}
-                            disabled={!isCreatingCondition && !!selectedConditionId}
-                            className={`w-full rounded-lg border px-3 py-2 text-slate-200 ${
-                              isCreatingCondition || !selectedConditionId ? 'bg-slate-900 border-slate-600' : 'bg-slate-800 border-slate-700 cursor-not-allowed'
-                            }`}
+                            disabled={true}
+                            className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-400 cursor-not-allowed"
                           />
+                          <p className="text-xs text-slate-500 mt-1">ID will be auto-generated with 'condition_' prefix</p>
                         </div>
                         <div>
                           <label className="block text-sm font-semibold text-slate-300 mb-1">Name</label>
@@ -2354,10 +2397,10 @@ export default function AdminPage() {
                             value={conditionForm.name}
                             onChange={(e) => setConditionForm((p) => ({ ...p, name: e.target.value }))}
                             onBlur={() => {
-                              if (!conditionForm.id && conditionForm.name.trim()) {
+                              if (isCreatingCondition && conditionForm.name.trim()) {
                                 const base = slugify(conditionForm.name.trim());
                                 const unique = makeUniqueId(base, new Set(conditions.map((c) => c.id)));
-                                setConditionForm((prev) => ({ ...prev, id: unique }));
+                                setConditionForm((prev) => ({ ...prev, id: `condition_${unique}` }));
                               }
                             }}
                             className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
@@ -2439,7 +2482,10 @@ export default function AdminPage() {
             )}
           </div>
         </section>
+        )}
 
+        {/* Events Section */}
+        {activeTab === 'events' && (
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
             <h2 className="text-2xl font-semibold">Events</h2>
@@ -2689,10 +2735,13 @@ export default function AdminPage() {
                                     <select
                                       value={choiceForm.setsFlag || ''}
                                       onChange={(e) => setChoiceForm((p) => ({ ...p, setsFlag: e.target.value }))}
-                                      className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                                      disabled={flagsLoading}
+                                      className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200 disabled:opacity-50"
                                     >
-                                      <option value="">None</option>
-                                      {flags.map((flag) => (
+                                      <option value="">
+                                        {flagsLoading ? 'Loading flags...' : 'None'}
+                                      </option>
+                                      {!flagsLoading && flags.map((flag) => (
                                         <option key={flag.id} value={flag.id}>
                                           {flag.name}
                                         </option>
@@ -3027,9 +3076,10 @@ export default function AdminPage() {
             )}
           </div>
         </section>
+        )}
 
-        {/* JSON Import Modal for Events */}
-        {showJsonImport && (
+        {/* JSON Import Modal for Events - inside Events tab */}
+        {activeTab === 'events' && showJsonImport && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
               <div className="p-6 border-b border-slate-700">
@@ -3166,6 +3216,8 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* Marketing Section */}
+        {activeTab === 'marketing' && (
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
             <h2 className="text-2xl font-semibold">Marketing Campaigns</h2>
@@ -3267,15 +3319,75 @@ export default function AdminPage() {
                       <select
                         value={campaignForm.setsFlag || ''}
                         onChange={(e) => setCampaignForm((p) => ({ ...p, setsFlag: e.target.value }))}
-                        className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                        disabled={flagsLoading}
+                        className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200 disabled:opacity-50"
                       >
-                        <option value="">None</option>
-                        {flags.map((flag) => (
+                        <option value="">
+                          {flagsLoading ? 'Loading flags...' : 'None'}
+                        </option>
+                        {!flagsLoading && flags.map((flag) => (
                           <option key={flag.id} value={flag.id}>
                             {flag.name} ({flag.id})
                           </option>
                         ))}
                       </select>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Requirements</label>
+                      <div className="space-y-2">
+                        <select
+                          multiple
+                          value={campaignForm.requirementIds || []}
+                          onChange={(e) => {
+                            const selected = Array.from(e.target.selectedOptions, option => option.value);
+                            setCampaignForm((p) => ({ ...p, requirementIds: selected }));
+                          }}
+                          disabled={flagsLoading || conditionsLoading}
+                          className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200 disabled:opacity-50 min-h-[80px]"
+                        >
+                          {!flagsLoading && !conditionsLoading && flags && conditions && (
+                            <>
+                              <optgroup label="🏁 Flags">
+                                {(flags || []).map((flag) => {
+                                  const cleanId = flag.id.startsWith('flag_') ? flag.id.substring(5) : flag.id;
+                                  return (
+                                    <option key={`flag_${flag.id}`} value={`flag_${cleanId}`}>
+                                      {flag.name}
+                                    </option>
+                                  );
+                                })}
+                              </optgroup>
+                              <optgroup label="📊 Conditions">
+                                {(conditions || []).map((condition) => {
+                                  const cleanId = condition.id.startsWith('condition_') ? condition.id.substring(10) : condition.id;
+                                  return (
+                                    <option key={`condition_${condition.id}`} value={`condition_${cleanId}`}>
+                                      {condition.name}
+                                    </option>
+                                  );
+                                })}
+                              </optgroup>
+                            </>
+                          )}
+                        </select>
+                        {(campaignForm.requirementIds || []).length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {(campaignForm.requirementIds || []).map((reqId) => {
+                              const isFlag = reqId.startsWith('flag_');
+                              const cleanId = isFlag ? reqId.substring(5) : reqId.substring(10);
+                              const item = isFlag
+                                ? flags.find(f => f.id === cleanId)
+                                : conditions.find(c => c.id === cleanId);
+                              return (
+                                <span key={reqId} className="inline-flex items-center gap-1 px-2 py-1 bg-slate-700 text-xs rounded">
+                                  {isFlag ? '🏁' : '📊'} {item?.name || cleanId}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <div className="md:col-span-2">
@@ -3388,7 +3500,10 @@ export default function AdminPage() {
             )}
           </div>
         </section>
+        )}
 
+        {/* Upgrades Section */}
+        {activeTab === 'upgrades' && (
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
             <h2 className="text-2xl font-semibold">Upgrades</h2>
@@ -3503,15 +3618,75 @@ export default function AdminPage() {
                           <select
                             value={upgradeForm.setsFlag || ''}
                             onChange={(e) => setUpgradeForm((p) => ({ ...p, setsFlag: e.target.value }))}
-                            className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                            disabled={flagsLoading}
+                            className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200 disabled:opacity-50"
                           >
-                            <option value="">None</option>
-                            {flags.map((flag) => (
+                            <option value="">
+                              {flagsLoading ? 'Loading flags...' : 'None'}
+                            </option>
+                            {!flagsLoading && flags.map((flag) => (
                               <option key={flag.id} value={flag.id}>
                                 {flag.name} ({flag.id})
                               </option>
                             ))}
                           </select>
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-semibold text-slate-300 mb-1">Requirements</label>
+                          <div className="space-y-2">
+                            <select
+                              multiple
+                              value={upgradeForm.requirementIds || []}
+                              onChange={(e) => {
+                                const selected = Array.from(e.target.selectedOptions, option => option.value);
+                                setUpgradeForm((p) => ({ ...p, requirementIds: selected }));
+                              }}
+                              disabled={flagsLoading || conditionsLoading}
+                              className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200 disabled:opacity-50 min-h-[80px]"
+                            >
+                              {!flagsLoading && !conditionsLoading && flags && conditions && (
+                                <>
+                              <optgroup label="🏁 Flags">
+                                {(flags || []).map((flag) => {
+                                  const cleanId = flag.id.startsWith('flag_') ? flag.id.substring(5) : flag.id;
+                                  return (
+                                    <option key={`flag_${flag.id}`} value={`flag_${cleanId}`}>
+                                      {flag.name}
+                                    </option>
+                                  );
+                                })}
+                              </optgroup>
+                              <optgroup label="📊 Conditions">
+                                {(conditions || []).map((condition) => {
+                                  const cleanId = condition.id.startsWith('condition_') ? condition.id.substring(10) : condition.id;
+                                  return (
+                                    <option key={`condition_${condition.id}`} value={`condition_${cleanId}`}>
+                                      {condition.name}
+                                    </option>
+                                  );
+                                })}
+                              </optgroup>
+                                </>
+                              )}
+                            </select>
+                            {(upgradeForm.requirementIds || []).length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {(upgradeForm.requirementIds || []).map((reqId) => {
+                                  const isFlag = reqId.startsWith('flag_');
+                                  const cleanId = isFlag ? reqId.substring(5) : reqId.substring(10);
+                                  const item = isFlag
+                                    ? flags.find(f => f.id === cleanId)
+                                    : conditions.find(c => c.id === cleanId);
+                                  return (
+                                    <span key={reqId} className="inline-flex items-center gap-1 px-2 py-1 bg-slate-700 text-xs rounded">
+                                      {isFlag ? '🏁' : '📊'} {item?.name || cleanId}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         <div className="md:col-span-2">
@@ -3621,9 +3796,10 @@ export default function AdminPage() {
             )}
           </div>
         </section>
+        )}
 
-        
-
+        {/* Services Section */}
+        {activeTab === 'services' && (
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
             <h2 className="text-2xl font-semibold">Services</h2>
@@ -3804,7 +3980,10 @@ export default function AdminPage() {
             )}
           </div>
         </section>
+        )}
 
+        {/* Staff Section */}
+        {activeTab === 'staff' && (
         <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-slate-800">
             <h2 className="text-2xl font-semibold">Staff</h2>
@@ -3892,15 +4071,75 @@ export default function AdminPage() {
                             <select
                               value={roleForm.setsFlag || ''}
                               onChange={(e) => setRoleForm((p) => ({ ...p, setsFlag: e.target.value }))}
-                              className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                              disabled={flagsLoading}
+                              className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200 disabled:opacity-50"
                             >
-                              <option value="">None</option>
-                              {flags.map((flag) => (
+                              <option value="">
+                                {flagsLoading ? 'Loading flags...' : 'None'}
+                              </option>
+                              {!flagsLoading && flags.map((flag) => (
                                 <option key={flag.id} value={flag.id}>
                                   {flag.name} ({flag.id})
                                 </option>
                               ))}
                             </select>
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-semibold text-slate-300 mb-1">Requirements</label>
+                            <div className="space-y-2">
+                              <select
+                                multiple
+                                value={roleForm.requirementIds || []}
+                                onChange={(e) => {
+                                  const selected = Array.from(e.target.selectedOptions, option => option.value);
+                                  setRoleForm((p) => ({ ...p, requirementIds: selected }));
+                                }}
+                                disabled={flagsLoading || conditionsLoading}
+                                className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200 disabled:opacity-50 min-h-[80px]"
+                              >
+                              {!flagsLoading && !conditionsLoading && flags && conditions && (
+                                <>
+                              <optgroup label="🏁 Flags">
+                                {(flags || []).map((flag) => {
+                                  const cleanId = flag.id.startsWith('flag_') ? flag.id.substring(5) : flag.id;
+                                  return (
+                                    <option key={`flag_${flag.id}`} value={`flag_${cleanId}`}>
+                                      {flag.name}
+                                    </option>
+                                  );
+                                })}
+                              </optgroup>
+                              <optgroup label="📊 Conditions">
+                                {(conditions || []).map((condition) => {
+                                  const cleanId = condition.id.startsWith('condition_') ? condition.id.substring(10) : condition.id;
+                                  return (
+                                    <option key={`condition_${condition.id}`} value={`condition_${cleanId}`}>
+                                      {condition.name}
+                                    </option>
+                                  );
+                                })}
+                              </optgroup>
+                                </>
+                              )}
+                              </select>
+                              {(roleForm.requirementIds || []).length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  {(roleForm.requirementIds || []).map((reqId) => {
+                                    const isFlag = reqId.startsWith('flag_');
+                                    const cleanId = isFlag ? reqId.substring(5) : reqId.substring(10);
+                                    const item = isFlag
+                                      ? flags.find(f => f.id === cleanId)
+                                      : conditions.find(c => c.id === cleanId);
+                                    return (
+                                      <span key={reqId} className="inline-flex items-center gap-1 px-2 py-1 bg-slate-700 text-xs rounded">
+                                        {isFlag ? '🏁' : '📊'} {item?.name || cleanId}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
                           </div>
 
                           <div className="md:col-span-2">
@@ -4172,6 +4411,7 @@ export default function AdminPage() {
             )}
           </div>
         </section>
+        )}
       </div>
     </div>
   );

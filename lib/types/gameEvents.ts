@@ -32,4 +32,5 @@ export interface GameEvent {
   category: EventCategory;
   summary: string;
   choices: GameEventChoice[];
+  requirementIds?: string[]; // References to flag/condition IDs that must be met
 }

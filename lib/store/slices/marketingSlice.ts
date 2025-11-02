@@ -19,6 +19,7 @@ export interface MarketingCampaign {
   cooldownSeconds: number; // How long before this campaign can be run again
   effects: CampaignEffect[];
   setsFlag?: string; // Optional flag to set when campaign is launched
+  requirementIds?: string[]; // References to flag/condition IDs that must be met
 }
 
 export interface MarketingSlice {
