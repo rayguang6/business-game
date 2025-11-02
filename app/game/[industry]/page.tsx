@@ -22,6 +22,7 @@ import { useRandomEventTrigger } from '@/hooks/useRandomEventTrigger';
 import Image from 'next/image';
 import { fetchGlobalSimulationConfig } from '@/lib/data/simulationConfigRepository';
 import { fetchMarketingCampaigns } from '@/lib/data/marketingRepository';
+import { fetchFlagsForIndustry } from '@/lib/data/flagRepository';
 import { fetchServicesForIndustry } from '@/lib/data/serviceRepository';
 import { fetchUpgradesForIndustry } from '@/lib/data/upgradeRepository';
 import { fetchEventsForIndustry } from '@/lib/data/eventRepository';
@@ -48,6 +49,7 @@ export default function GamePage() {
   const unpauseGame = useGameStore((state) => state.unpauseGame);
   const resetAllGame = useGameStore((state) => state.resetAllGame);
   const setAvailableConditions = useGameStore((state) => state.setAvailableConditions);
+  const setAvailableFlags = useGameStore((state) => state.setAvailableFlags);
   const router = useRouter();
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<TabType>('home');
@@ -111,12 +113,13 @@ export default function GamePage() {
     (async () => {
       const industryId = selectedIndustry.id as IndustryId;
       try {
-        const [servicesResult, upgradesResult, eventsResult, staffResult, conditionsResult] = await Promise.all([
+        const [servicesResult, upgradesResult, eventsResult, staffResult, conditionsResult, flagsResult] = await Promise.all([
           fetchServicesForIndustry(industryId),
           fetchUpgradesForIndustry(industryId),
           fetchEventsForIndustry(industryId),
           fetchStaffDataForIndustry(industryId),
           fetchConditionsForIndustry(industryId),
+          fetchFlagsForIndustry(industryId),
         ]);
 
         if (!isMounted) {
@@ -128,6 +131,7 @@ export default function GamePage() {
         const events = Array.isArray(eventsResult) ? eventsResult : [];
         const staffData = staffResult ?? null;
         const conditions = Array.isArray(conditionsResult) ? conditionsResult : [];
+        const flags = Array.isArray(flagsResult) ? flagsResult : [];
 
         const hasServices = services.length > 0;
         const hasUpgrades = upgrades.length > 0;
@@ -136,6 +140,7 @@ export default function GamePage() {
           staffData === null ||
           (Array.isArray(staffData.roles) && staffData.roles.length > 0);
         const hasConditions = conditions.length > 0;
+        const hasFlags = flags.length > 0;
 
         if (hasServices) {
           setIndustryServices(industryId, services);
@@ -158,8 +163,9 @@ export default function GamePage() {
           initializeStaffForIndustry(industryId);
         }
 
-        // Set conditions regardless of whether they exist (empty array is fine)
+        // Set conditions and flags regardless of whether they exist (empty array is fine)
         setAvailableConditions(conditions);
+        setAvailableFlags(flags);
 
         if (hasServices && hasUpgrades && hasEvents && hasStaff) {
           setDataLoadState('ready');

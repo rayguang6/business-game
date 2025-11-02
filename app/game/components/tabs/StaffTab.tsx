@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
 import type { Staff } from '@/lib/features/staff';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
+import { useRequirements } from '@/lib/hooks/useRequirements';
 
 const ROLE_STYLE_MAP: Record<
   string,
@@ -73,6 +74,117 @@ const formatEffect = (effect: { metric: GameMetric; type: EffectType; value: num
 
   return `${getTypeSymbol(effect.type, effect.value)} ${getMetricLabel(effect.metric)}`;
 };
+
+interface StaffCandidateCardProps {
+  candidate: Staff;
+  onHire: (staff: Staff) => void;
+}
+
+function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
+  const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(candidate.requirementIds);
+  const [showRequirementsModal, setShowRequirementsModal] = useState(false);
+  const styles = getRoleStyles(candidate.role);
+
+  const handleHire = () => {
+    if (requirementsMet) {
+      onHire(candidate);
+    }
+  };
+
+  const handleRequirementsClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowRequirementsModal(true);
+  };
+
+  return (
+    <div
+      className={`relative w-full bg-slate-900/80 rounded-2xl border border-slate-700 px-3 py-4 sm:px-4 sm:py-5 shadow-lg flex flex-col items-center text-center gap-3 overflow-hidden ${styles.badgeBg}`}
+    >
+      <div
+        className={`w-14 h-14 sm:w-16 sm:h-16 ${styles.avatarBg} rounded-full flex items-center justify-center border-[4px] border-white/15 shadow-inner`}
+      >
+        <span className="text-2xl sm:text-3xl leading-none">{candidate.emoji}</span>
+      </div>
+
+      <div className="space-y-1 w-full">
+        <h5 className="text-white font-semibold text-xs sm:text-sm tracking-tight truncate w-full">
+          {candidate.name}
+        </h5>
+        <p className={`${styles.accentText} text-[11px] sm:text-xs font-medium truncate`}>
+          {candidate.role}
+        </p>
+      </div>
+
+      <div className="w-full bg-black/30 border border-white/10 rounded-xl px-2 py-1.5 sm:px-3 sm:py-2.5">
+        <span className="block text-[9px] sm:text-[11px] text-white/60 uppercase tracking-[0.22em] mb-1">
+          Salary
+        </span>
+        <span className="text-white text-xs sm:text-sm font-semibold break-words">
+          ${Math.round(candidate.salary).toLocaleString()}/m
+        </span>
+      </div>
+
+
+      {/* Requirements Modal */}
+      {showRequirementsModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowRequirementsModal(false)}
+        >
+          <div
+            className="bg-slate-800 rounded-lg border border-slate-700 p-4 max-w-sm w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center text-slate-300 text-sm leading-relaxed space-y-1">
+              {requirementDescriptions.map((desc, idx) => (
+                <div key={idx}>{desc}</div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Staff Effects */}
+      {candidate.effects.length > 0 && (
+        <div className="w-full bg-black/20 border border-white/10 rounded-xl px-2 py-1.5 sm:px-3 sm:py-2">
+          <span className="block text-[9px] sm:text-[11px] text-white/60 uppercase tracking-[0.22em] mb-1">
+            Effects
+          </span>
+          <div className="space-y-0.5">
+            {candidate.effects.map((effect, index) => (
+              <div key={index} className="text-[9px] sm:text-[10px] text-green-300 font-medium leading-tight">
+                {formatEffect(effect)}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="relative">
+        <button
+          onClick={handleHire}
+          disabled={!requirementsMet}
+          className={`w-full font-semibold text-[11px] sm:text-xs py-2 rounded-xl transition-colors duration-200 shadow-md ${
+            requirementsMet
+              ? 'bg-indigo-500 hover:bg-indigo-600 text-white'
+              : 'bg-gray-600 text-gray-300 cursor-not-allowed'
+          }`}
+        >
+          {requirementsMet ? `Hire ${candidate.name}` : 'Requirements Not Met'}
+        </button>
+        {requirementDescriptions.length > 0 && !requirementsMet && (
+          <button
+            onClick={handleRequirementsClick}
+            className="absolute -top-1 -right-1 w-5 h-5 bg-black/60 hover:bg-black/80 text-white rounded-full text-xs font-bold shadow-md transition-colors flex items-center justify-center z-10"
+            title="Click to see requirements"
+          >
+            ?
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function StaffTab() {
   const hiredStaff = useGameStore((state) => state.hiredStaff);
@@ -173,62 +285,13 @@ export function StaffTab() {
           </p>
         </div>
         <div className="max-w-6xl mx-auto grid gap-4 grid-cols-[repeat(auto-fit,minmax(160px,1fr))] px-3 sm:px-4">
-          {availableStaff.map((candidate) => {
-            const styles = getRoleStyles(candidate.role);
-            return (
-              <div
-                key={candidate.id}
-                className={`relative w-full bg-slate-900/80 rounded-2xl border border-slate-700 px-3 py-4 sm:px-4 sm:py-5 shadow-lg flex flex-col items-center text-center gap-3 overflow-hidden ${styles.badgeBg}`}
-              >
-                <div
-                  className={`w-14 h-14 sm:w-16 sm:h-16 ${styles.avatarBg} rounded-full flex items-center justify-center border-[4px] border-white/15 shadow-inner`}
-                >
-                  <span className="text-2xl sm:text-3xl leading-none">{candidate.emoji}</span>
-                </div>
-
-                <div className="space-y-1 w-full">
-                  <h5 className="text-white font-semibold text-xs sm:text-sm tracking-tight truncate w-full">
-                    {candidate.name}
-                  </h5>
-                  <p className={`${styles.accentText} text-[11px] sm:text-xs font-medium truncate`}>
-                    {candidate.role}
-                  </p>
-                </div>
-
-                <div className="w-full bg-black/30 border border-white/10 rounded-xl px-2 py-1.5 sm:px-3 sm:py-2.5">
-                  <span className="block text-[9px] sm:text-[11px] text-white/60 uppercase tracking-[0.22em] mb-1">
-                    Salary
-                  </span>
-                  <span className="text-white text-xs sm:text-sm font-semibold break-words">
-                    ${Math.round(candidate.salary).toLocaleString()}/m
-                  </span>
-                </div>
-
-                {/* Staff Effects */}
-                {candidate.effects.length > 0 && (
-                  <div className="w-full bg-black/20 border border-white/10 rounded-xl px-2 py-1.5 sm:px-3 sm:py-2">
-                    <span className="block text-[9px] sm:text-[11px] text-white/60 uppercase tracking-[0.22em] mb-1">
-                      Effects
-                    </span>
-                    <div className="space-y-0.5">
-                      {candidate.effects.map((effect, index) => (
-                        <div key={index} className="text-[9px] sm:text-[10px] text-green-300 font-medium leading-tight">
-                          {formatEffect(effect)}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <button
-                  onClick={() => handleHireStaff(candidate)}
-                  className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold text-[11px] sm:text-xs py-2 rounded-xl transition-colors duration-200 shadow-md"
-                >
-                  Hire {candidate.name}
-                </button>
-              </div>
-            );
-          })}
+          {availableStaff.map((candidate) => (
+            <StaffCandidateCard
+              key={candidate.id}
+              candidate={candidate}
+              onHire={handleHireStaff}
+            />
+          ))}
           {availableStaff.length === 0 && (
             <div className="text-center text-gray-400 text-sm sm:text-base py-10">
               All available staff have joined your team. Check back later!

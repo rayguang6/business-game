@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
-import { CampaignEffect } from '@/lib/store/slices/marketingSlice';
+import { CampaignEffect, MarketingCampaign } from '@/lib/store/slices/marketingSlice';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
+import { useRequirements } from '@/lib/hooks/useRequirements';
 
 const formatSeconds = (seconds: number): string => {
   const clamped = Math.max(0, Math.floor(seconds));
@@ -79,6 +80,106 @@ const getToneClass = (effect: CampaignEffect): string => {
   }
 };
 
+interface CampaignCardProps {
+  campaign: MarketingCampaign;
+  canAfford: boolean;
+  isOnCooldown: boolean;
+  cooldownRemaining: number;
+  onLaunch: (campaignId: string) => void;
+}
+
+function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, onLaunch }: CampaignCardProps) {
+  const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(campaign.requirementIds);
+  const [showRequirementsModal, setShowRequirementsModal] = useState(false);
+
+  const descriptions = campaign.effects.map((effect) => ({
+    text: describeEffect(effect),
+    toneClass: getToneClass(effect),
+  }));
+
+  const buttonDisabled = isOnCooldown || !canAfford || !requirementsMet;
+
+  const handleRequirementsClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowRequirementsModal(true);
+  };
+
+  return (
+    <div className="rounded-lg border p-4 space-y-3 bg-gray-800 border-gray-700">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h4 className="text-white font-semibold">{campaign.name}</h4>
+          <p className="text-gray-300 text-sm">{campaign.description}</p>
+        </div>
+        <div className="text-right text-sm">
+          <div className="text-yellow-300 font-semibold">${campaign.cost}</div>
+        </div>
+      </div>
+
+
+      {/* Requirements Modal */}
+      {showRequirementsModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowRequirementsModal(false)}
+        >
+          <div
+            className="bg-slate-800 rounded-lg border border-slate-700 p-4 max-w-sm w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center text-slate-300 text-sm leading-relaxed space-y-1">
+              {requirementDescriptions.map((desc, idx) => (
+                <div key={idx}>{desc}</div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-3 text-xs text-gray-300">
+        {descriptions.every((item) => !item.text) ? (
+          <span className="text-gray-400">No stat changes</span>
+        ) : (
+          descriptions.map((item) => (
+            <span key={`${campaign.id}-${item.text}`} className={item.toneClass}>
+              {item.text}
+            </span>
+          ))
+        )}
+      </div>
+
+      <div className="relative">
+        <button
+          onClick={() => onLaunch(campaign.id)}
+          disabled={buttonDisabled}
+          className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors ${
+            buttonDisabled
+              ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+              : 'bg-green-600 hover:bg-green-500 text-white'
+          }`}
+        >
+          {isOnCooldown
+            ? `Cooldown: ${formatSeconds(cooldownRemaining)}`
+            : !requirementsMet
+              ? 'Requirements Not Met'
+              : canAfford
+                ? 'Launch Campaign'
+                : 'Not Enough Cash'}
+        </button>
+        {requirementDescriptions.length > 0 && !requirementsMet && !isOnCooldown && canAfford && (
+          <button
+            onClick={handleRequirementsClick}
+            className="absolute -top-1 -right-1 w-5 h-5 bg-black/60 hover:bg-black/80 text-white rounded-full text-xs font-bold shadow-md transition-colors flex items-center justify-center z-10"
+            title="Click to see requirements"
+          >
+            ?
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function MarketingTab() {
   const availableCampaigns = useGameStore((state) => state.availableCampaigns);
   const campaignCooldowns = useGameStore((state) => state.campaignCooldowns);
@@ -115,60 +216,18 @@ export function MarketingTab() {
           const isOnCooldown = !!(cooldownEnd && gameTime < cooldownEnd);
           const cooldownRemaining = isOnCooldown ? Math.max(0, cooldownEnd - gameTime) : 0;
 
-          const descriptions = campaign.effects.map((effect) => ({
-            text: describeEffect(effect),
-            toneClass: getToneClass(effect),
-          }));
-
           return (
-            <div
+            <CampaignCard
               key={campaign.id}
-              className="rounded-lg border p-4 space-y-3 bg-gray-800 border-gray-700"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h4 className="text-white font-semibold">{campaign.name}</h4>
-                  <p className="text-gray-300 text-sm">{campaign.description}</p>
-                </div>
-                <div className="text-right text-sm">
-                  <div className="text-yellow-300 font-semibold">${campaign.cost}</div>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3 text-xs text-gray-300">
-                {descriptions.every((item) => !item.text) ? (
-                  <span className="text-gray-400">No stat changes</span>
-                ) : (
-                  descriptions.map((item) => (
-                    <span key={`${campaign.id}-${item.text}`} className={item.toneClass}>
-                      {item.text}
-                    </span>
-                  ))
-                )}
-              </div>
-
-              <button
-                onClick={() => handleLaunch(campaign.id)}
-                disabled={isOnCooldown}
-                className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors ${
-                  isOnCooldown
-                    ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                    : canAfford
-                    ? 'bg-green-600 hover:bg-green-500 text-white'
-                    : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                {isOnCooldown
-                  ? `Cooldown: ${formatSeconds(cooldownRemaining)}`
-                  : canAfford
-                  ? 'Launch Campaign'
-                  : 'Not Enough Cash'}
-              </button>
-            </div>
+              campaign={campaign}
+              canAfford={canAfford}
+              isOnCooldown={isOnCooldown}
+              cooldownRemaining={cooldownRemaining}
+              onLaunch={handleLaunch}
+            />
           );
         })}
       </div>
-
     </div>
   );
 }

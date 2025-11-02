@@ -33,11 +33,21 @@ export function checkRequirements(requirementIds: string[], store: GameStore): b
     const { type, cleanId } = validation;
 
     if (type === 'flag') {
-      return store.flags[cleanId] === true;
+      // Flags are stored without prefix (normalized in setFlag)
+      // cleanId is the flag ID without the 'flag_' prefix
+      const flagValue = store.flags?.[cleanId];
+      return flagValue === true;
     } else if (type === 'condition') {
-      const condition = store.availableConditions.find(c => c.id === cleanId);
+      if (!store.availableConditions || !Array.isArray(store.availableConditions)) {
+        console.warn(`[Requirements] availableConditions not initialized`);
+        return false;
+      }
+      // Condition IDs can be stored with or without prefix, so check both
+      const condition = store.availableConditions.find(c => 
+        c.id === cleanId || c.id === reqId || c.id === `condition_${cleanId}`
+      );
       if (!condition) {
-        console.warn(`[Requirements] Condition not found: ${cleanId}`);
+        console.warn(`[Requirements] Condition not found: ${cleanId} (searched in ${store.availableConditions.length} conditions)`);
         return false;
       }
       return evaluateCondition(condition, store);
@@ -60,11 +70,27 @@ export function getRequirementDescription(reqId: string, store: GameStore): stri
   const { type, cleanId } = validation;
 
   if (type === 'flag') {
-    const flag = store.availableFlags.find(f => f.id === cleanId);
-    return flag ? `${flag.name} (Flag)` : `Flag: ${cleanId}`;
+    // Check availableFlags for human-readable names
+    if (store.availableFlags && Array.isArray(store.availableFlags)) {
+      const flag = store.availableFlags.find(f =>
+        f.id === cleanId || f.id === reqId || f.id === `flag_${cleanId}`
+      );
+      if (flag) {
+        return flag.name;
+      }
+    }
+    // Fallback to clean ID if flag name not found
+    return cleanId;
   } else if (type === 'condition') {
-    const condition = store.availableConditions.find(c => c.id === cleanId);
-    return condition ? `${condition.name} (Condition)` : `Condition: ${cleanId}`;
+    // Safely check availableConditions
+    if (!store.availableConditions || !Array.isArray(store.availableConditions)) {
+      return `Condition: ${cleanId}`;
+    }
+    // Condition IDs can be stored with or without prefix, so check both
+    const condition = store.availableConditions.find(c =>
+      c.id === cleanId || c.id === reqId || c.id === `condition_${cleanId}`
+    );
+    return condition ? condition.name : `Condition: ${cleanId}`;
   }
 
   return reqId;

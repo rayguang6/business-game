@@ -8,6 +8,7 @@ import {
 } from '@/lib/game/staffConfig';
 import { DEFAULT_INDUSTRY_ID, type IndustryId } from '@/lib/game/types';
 import { effectManager } from '@/lib/game/effectManager';
+import { checkRequirements } from '@/lib/game/requirementChecker';
 
 export interface StaffSlice {
   hiredStaff: Staff[];
@@ -26,26 +27,36 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
   return {
     hiredStaff: initialStaff,
     availableStaff: initialAvailable,
-    hireStaff: (staff: Staff) =>
+    hireStaff: (staff: Staff) => {
+      const store = get();
+      const industryId = (store.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+      const alreadyHired = store.hiredStaff.some((member) => member.id === staff.id);
+      const candidate = store.availableStaff.find((member) => member.id === staff.id);
+
+      if (alreadyHired || !candidate) {
+        return;
+      }
+
+      // Check requirements
+      if (candidate.requirementIds && candidate.requirementIds.length > 0) {
+        const requirementsMet = checkRequirements(candidate.requirementIds, store);
+        if (!requirementsMet) {
+          console.warn(`[Requirements] Cannot hire ${candidate.name}: requirements not met`);
+          return;
+        }
+      }
+
+      addStaffEffects(candidate);
+
+      // Set flag if staff role sets one
+      if (candidate.setsFlag) {
+        store.setFlag(candidate.setsFlag, true);
+        console.log(`[Flag System] Flag "${candidate.setsFlag}" set to true by hiring staff "${candidate.name}" (${candidate.role})`);
+      }
+
+      const replacement = createRandomStaffForIndustry(industryId, candidate.roleId);
+
       set((state) => {
-        const industryId = (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-        const alreadyHired = state.hiredStaff.some((member) => member.id === staff.id);
-        const candidate = state.availableStaff.find((member) => member.id === staff.id);
-
-        if (alreadyHired || !candidate) {
-          return {};
-        }
-
-        addStaffEffects(candidate);
-
-        // Set flag if staff role sets one
-        if (candidate.setsFlag) {
-          get().setFlag(candidate.setsFlag, true);
-          console.log(`[Flag System] Flag "${candidate.setsFlag}" set to true by hiring staff "${candidate.name}" (${candidate.role})`);
-        }
-
-        const replacement = createRandomStaffForIndustry(industryId, candidate.roleId);
-
         const updatedAvailable = state.availableStaff.map((member) =>
           member.id === staff.id ? replacement : member,
         );
@@ -54,7 +65,8 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
           hiredStaff: [...state.hiredStaff, candidate],
           availableStaff: updatedAvailable,
         };
-      }),
+      });
+    },
     resetStaff: () => {
       const store = get();
       const industryId = (store.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
