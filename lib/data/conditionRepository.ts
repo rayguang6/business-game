@@ -55,8 +55,15 @@ export async function upsertConditionForIndustry(
     return { success: false, message: 'Supabase client not configured.' };
   }
 
+  // Auto-generate ID with prefix if not provided or doesn't have prefix
+  let finalId = condition.id;
+  if (!finalId || !finalId.startsWith('condition_')) {
+    const baseSlug = finalId || condition.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    finalId = `condition_${baseSlug}`;
+  }
+
   const payload: ConditionRow = {
-    id: condition.id,
+    id: finalId,
     industry_id: industryId,
     name: condition.name,
     description: condition.description || '',

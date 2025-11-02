@@ -68,6 +68,7 @@ export interface UpgradeDefinition {
   maxLevel: number;
   effects: UpgradeEffect[];
   setsFlag?: string; // Optional flag to set when this upgrade is purchased
+  requirementIds?: string[]; // References to flag/condition IDs that must be met
 }
 
 export type UpgradeId = UpgradeDefinition['id'];

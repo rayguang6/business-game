@@ -15,6 +15,7 @@ interface EventRow {
   category: string;
   summary: string;
   choices: unknown;
+  requirement_ids: unknown;
 }
 
 type RawChoice = {
@@ -99,7 +100,7 @@ export async function fetchEventsForIndustry(industryId: IndustryId): Promise<Ga
 
   const { data, error } = await supabase
     .from('events')
-    .select('id, industry_id, title, category, summary, choices')
+    .select('id, industry_id, title, category, summary, choices, requirement_ids')
     .eq('industry_id', industryId);
 
   if (error) {
@@ -119,6 +120,7 @@ export async function fetchEventsForIndustry(industryId: IndustryId): Promise<Ga
       category: row.category as GameEvent['category'],
       summary: row.summary,
       choices: mapChoices(Array.isArray(row.choices) ? (row.choices as RawChoice[]) : undefined),
+      requirementIds: Array.isArray(row.requirement_ids) ? row.requirement_ids as string[] : [],
     }));
 }
 
@@ -207,6 +209,7 @@ export async function upsertEventForIndustry(
     category: event.category,
     summary: event.summary,
     choices: serializeChoices(event.choices),
+    requirement_ids: event.requirementIds || [],
   };
 
   const { error } = await supabase

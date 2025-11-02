@@ -91,8 +91,8 @@ export function HomeTab() {
                     <span className="text-slate-400 ml-2">
                       ({condition.metric} {getOperatorSymbol(condition.operator)} {condition.value})
                     </span>
-                  </span>
-                </div>
+                </span>
+              </div>
               );
             })}
           </div>
