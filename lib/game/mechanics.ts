@@ -26,6 +26,9 @@ import {
   startService,
   getAvailableRooms,
 } from '@/lib/features/customers';
+import { getServicesForIndustry } from '@/lib/game/config';
+import { checkRequirements } from '@/lib/game/requirementChecker';
+import type { GameStore } from '@/lib/store/gameStore';
 import {
   endOfMonth,
   getMonthlyBaseExpenses,
@@ -52,6 +55,9 @@ interface TickSnapshot {
   upgrades: Upgrades;
   industryId?: string;
   monthlyExpenseAdjustments: number;
+  flags?: Record<string, boolean>;
+  availableFlags?: any[];
+  availableConditions?: any[];
 }
 
 type TickResult = Omit<TickSnapshot, 'industryId'>;
@@ -499,7 +505,39 @@ export function tickOnce(state: TickSnapshot): TickResult {
 
   //If the customer should spawn, create a new customer.
   if (shouldSpawn) {
-    customers = [...customers, createCustomer(gameMetrics.serviceSpeedMultiplier, industryId)];
+    // Filter services by requirements (same pattern as upgrades/marketing)
+    const allServices = getServicesForIndustry(industryId);
+    
+    // Create a minimal store-like object for requirement checking
+    const storeContext: Partial<GameStore> = {
+      flags: state.flags || {},
+      availableFlags: state.availableFlags || [],
+      availableConditions: state.availableConditions || [],
+      metrics: state.metrics,
+      upgrades: state.upgrades,
+    };
+    
+    // Filter services that meet requirements
+    const availableServices = allServices.filter((service) => {
+      if (!service.requirements || service.requirements.length === 0) {
+        return true; // No requirements means always available
+      }
+      return checkRequirements(service.requirements, storeContext as GameStore);
+    });
+    
+    // If no services available, fall back to all services (shouldn't happen, but safety check)
+    const servicesToUse = availableServices.length > 0 ? availableServices : allServices;
+    
+    // Pick a random service from available ones
+    const randomIndex = Math.floor(Math.random() * servicesToUse.length);
+    const selectedService = servicesToUse[randomIndex];
+    
+    // Create customer with the selected service (override the randomly selected one)
+    const customer = createCustomer(gameMetrics.serviceSpeedMultiplier, industryId);
+    customers = [...customers, {
+      ...customer,
+      service: selectedService,
+    }];
   }
 
   //Process customers for the tick.

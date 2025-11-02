@@ -72,6 +72,7 @@ interface ServiceFormState {
   name: string;
   duration: string;
   price: string;
+  requirements: Requirement[];
 }
 
 const emptyServiceForm: ServiceFormState = {
@@ -79,6 +80,7 @@ const emptyServiceForm: ServiceFormState = {
   name: '',
   duration: '0',
   price: '0',
+  requirements: [],
 };
 
 export default function AdminPage() {
@@ -270,6 +272,7 @@ export default function AdminPage() {
       name: service.name,
       duration: service.duration.toString(),
       price: service.price.toString(),
+      requirements: service.requirements || [],
     });
     if (resetMessage) {
       setServiceStatus(null);
@@ -1627,7 +1630,7 @@ export default function AdminPage() {
 
     setIsCreatingService(true);
     setSelectedServiceId('');
-    setServiceForm({ ...emptyServiceForm });
+    setServiceForm({ ...emptyServiceForm, requirements: [] });
     setServiceStatus(null);
   };
 
@@ -1671,6 +1674,7 @@ export default function AdminPage() {
       name,
       duration: durationValue,
       price: priceValue,
+      requirements: serviceForm.requirements || undefined,
     };
 
     const result = await upsertServiceForIndustry(payload);
@@ -1715,7 +1719,7 @@ export default function AdminPage() {
     }
 
     setServices((prev) => prev.filter((item) => item.id !== serviceForm.id));
-    setServiceForm(emptyServiceForm);
+    setServiceForm({ ...emptyServiceForm, requirements: [] });
     setSelectedServiceId('');
     setIsCreatingService(false);
     setServiceStatus('Service deleted.');
@@ -3836,6 +3840,10 @@ export default function AdminPage() {
             serviceForm={serviceForm}
             serviceSaving={serviceSaving}
             serviceDeleting={serviceDeleting}
+            flags={flags}
+            flagsLoading={flagsLoading}
+            conditions={conditions}
+            conditionsLoading={conditionsLoading}
             onSelectService={(service) => selectService(service)}
             onCreateService={handleCreateService}
             onSaveService={handleServiceSave}
@@ -3845,7 +3853,7 @@ export default function AdminPage() {
                 const existing = services.find((item) => item.id === selectedServiceId);
                 if (existing) selectService(existing);
               } else {
-                setServiceForm({ id: '', name: '', duration: '0', price: '0' });
+                setServiceForm({ id: '', name: '', duration: '0', price: '0', requirements: [] });
                 setIsCreatingService(false);
                 setSelectedServiceId('');
               }

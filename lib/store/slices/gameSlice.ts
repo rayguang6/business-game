@@ -178,6 +178,9 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
         monthlyHistory: state.monthlyHistory,
         industryId: (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId,
         monthlyExpenseAdjustments: state.monthlyExpenseAdjustments,
+        flags: state.flags,
+        availableFlags: state.availableFlags,
+        availableConditions: state.availableConditions,
       });
       return { ...state, ...updated };
     });

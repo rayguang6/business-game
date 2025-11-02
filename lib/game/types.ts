@@ -113,6 +113,7 @@ export interface IndustryServiceDefinition {
   name: string;
   duration: number;
   price: number;
+  requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
 }
 
 export interface IndustrySimulationConfig {
