@@ -2,6 +2,7 @@ import { StateCreator } from 'zustand';
 import { GameStore } from '../gameStore';
 import { OneTimeCost, OneTimeCostCategory } from '../types';
 import { effectManager, GameMetric, EffectType, Effect } from '@/lib/game/effectManager';
+import { checkRequirements } from '@/lib/game/requirementChecker';
 
 // Marketing campaign effect (simplified from full Effect, no ID/source yet)
 export interface CampaignEffect {
@@ -210,6 +211,15 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
     const { metrics } = get();
     if (metrics.cash < campaign.cost) {
       return { success: false, message: `Need $${campaign.cost} to launch ${campaign.name}.` };
+    }
+
+    // Check requirements
+    if (campaign.requirementIds && campaign.requirementIds.length > 0) {
+      const store = get();
+      const requirementsMet = checkRequirements(campaign.requirementIds, store);
+      if (!requirementsMet) {
+        return { success: false, message: `Requirements not met to launch ${campaign.name}.` };
+      }
     }
 
     const { addOneTimeCost } = get();

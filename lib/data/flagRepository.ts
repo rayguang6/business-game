@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase/client';
 import { IndustryId } from '@/lib/game/types';
+import { cleanupFlagReferences } from './referenceCleanup';
 
 export interface GameFlag {
   id: string;
@@ -87,6 +88,13 @@ export async function deleteFlagById(id: string): Promise<{ success: boolean; me
     return { success: false, message: 'Supabase client not configured.' };
   }
 
+  // First, clean up all references to this flag in other tables
+  const cleanupResult = await cleanupFlagReferences(id);
+  if (!cleanupResult.success) {
+    console.warn('Failed to cleanup flag references, proceeding with deletion:', cleanupResult.message);
+  }
+
+  // Then delete the flag itself
   const { error } = await supabase.from('flags').delete().eq('id', id);
   if (error) {
     console.error('Failed to delete flag', error);

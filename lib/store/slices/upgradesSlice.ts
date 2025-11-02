@@ -12,6 +12,7 @@ import { getUpgradeLevel, canUpgradeMore } from '@/lib/features/upgrades';
 import { GameStore } from '../gameStore';
 import type { IndustryId } from '@/lib/game/types';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
+import { checkRequirements } from '@/lib/game/requirementChecker';
 
 export interface UpgradesSlice {
   upgrades: Upgrades;
@@ -96,6 +97,14 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
 
     if (!store.canAffordUpgrade(upgrade.cost)) {
       return { success: false, message: `Need $${upgrade.cost} to purchase ${upgrade.name}.` };
+    }
+
+    // Check requirements
+    if (upgrade.requirementIds && upgrade.requirementIds.length > 0) {
+      const requirementsMet = checkRequirements(upgrade.requirementIds, get() as GameStore);
+      if (!requirementsMet) {
+        return { success: false, message: `Requirements not met to purchase ${upgrade.name}.` };
+      }
     }
 
     // Define next upgrades state

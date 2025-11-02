@@ -45,6 +45,9 @@ export function RequirementsSelector({
     }
   };
 
+  // For now, keep the UI showing prefixed IDs for backward compatibility
+  // But we'll change this to store clean IDs
+
   return (
     <div className="space-y-4 bg-slate-800/50 rounded-lg p-4 border border-slate-700">
       {/* Search Filter */}
@@ -93,7 +96,7 @@ export function RequirementsSelector({
                         <span className="text-sm flex-1">{flag.name}</span>
                         {flag.description && (
                           <span
-                            className="text-xs text-slate-400 truncate max-w-[200px]"
+                            className="text-xs text-slate-400 truncate max-[200px]"
                             title={flag.description}
                           >
                             {flag.description}

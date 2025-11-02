@@ -101,6 +101,8 @@ function buildStaffFromRole(
     salary: overrides.salary ?? role.salary,
     effects: overrides.effects ?? role.effects.map(effect => ({ ...effect })), // Deep copy effects
     emoji: overrides.emoji ?? role.emoji,
+    setsFlag: overrides.setsFlag ?? role.setsFlag,
+    requirementIds: overrides.requirementIds ?? role.requirementIds,
   };
 }
 
@@ -189,6 +191,7 @@ export function createRandomStaffForIndustry(
     effects: role.effects.map(effect => ({ ...effect })), // Deep copy effects
     emoji: role.emoji,
     setsFlag: role.setsFlag,
+    requirementIds: role.requirementIds,
   };
 }
 

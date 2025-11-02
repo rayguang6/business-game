@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase/client';
 import { GameCondition } from '@/lib/types/conditions';
 import { IndustryId } from '@/lib/game/types';
+import { cleanupConditionReferences } from './referenceCleanup';
 
 interface ConditionRow {
   id: string;
@@ -89,6 +90,13 @@ export async function deleteConditionById(id: string): Promise<{ success: boolea
     return { success: false, message: 'Supabase client not configured.' };
   }
 
+  // First, clean up all references to this condition in other tables
+  const cleanupResult = await cleanupConditionReferences(id);
+  if (!cleanupResult.success) {
+    console.warn('Failed to cleanup condition references, proceeding with deletion:', cleanupResult.message);
+  }
+
+  // Then delete the condition itself
   const { error } = await supabase.from('conditions').delete().eq('id', id);
   if (error) {
     console.error('Failed to delete condition', error);
