@@ -88,7 +88,7 @@ interface UpgradeCardProps {
 
 function UpgradeCard({ upgrade }: UpgradeCardProps) {
   const { canAffordUpgrade, getUpgradeLevel, purchaseUpgrade } = useGameStore();
-  const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(upgrade.requirementIds);
+  const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(upgrade.requirements);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
 
   const currentLevel = getUpgradeLevel(upgrade.id);

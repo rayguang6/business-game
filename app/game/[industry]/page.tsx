@@ -21,7 +21,7 @@ import { FlagDebug } from '@/app/game/components/ui/FlagDebug';
 import { useRandomEventTrigger } from '@/hooks/useRandomEventTrigger';
 import Image from 'next/image';
 import { fetchGlobalSimulationConfig } from '@/lib/data/simulationConfigRepository';
-import { fetchMarketingCampaigns } from '@/lib/data/marketingRepository';
+import { fetchMarketingCampaignsForIndustry } from '@/lib/data/marketingRepository';
 import { fetchFlagsForIndustry } from '@/lib/data/flagRepository';
 import { fetchServicesForIndustry } from '@/lib/data/serviceRepository';
 import { fetchUpgradesForIndustry } from '@/lib/data/upgradeRepository';
@@ -71,7 +71,7 @@ export default function GamePage() {
       try {
         const [globalConfig, marketingCampaigns] = await Promise.all([
           fetchGlobalSimulationConfig(),
-          fetchMarketingCampaigns(),
+          selectedIndustry ? fetchMarketingCampaignsForIndustry(selectedIndustry.id) : Promise.resolve([]),
         ]);
         if (!isMounted) {
           return;

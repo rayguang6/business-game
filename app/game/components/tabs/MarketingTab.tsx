@@ -89,7 +89,7 @@ interface CampaignCardProps {
 }
 
 function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, onLaunch }: CampaignCardProps) {
-  const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(campaign.requirementIds);
+  const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(campaign.requirements);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
 
   const descriptions = campaign.effects.map((effect) => ({

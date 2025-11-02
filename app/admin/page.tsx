@@ -12,7 +12,7 @@ import {
   deleteServiceById,
 } from '@/lib/data/serviceRepository';
 import type { Industry } from '@/lib/features/industries';
-import type { IndustryServiceDefinition, BusinessMetrics, BusinessStats, MovementConfig } from '@/lib/game/types';
+import type { IndustryServiceDefinition, BusinessMetrics, BusinessStats, MovementConfig, Requirement } from '@/lib/game/types';
 import { fetchGlobalSimulationConfig, upsertGlobalSimulationConfig } from '@/lib/data/simulationConfigRepository';
 import { getGlobalSimulationConfigValues, setGlobalSimulationConfigValues } from '@/lib/game/industryConfigs';
 import {
@@ -26,7 +26,7 @@ import type { StaffRoleConfig, StaffPreset } from '@/lib/game/staffConfig';
 import { fetchUpgradesForIndustry, upsertUpgradeForIndustry, deleteUpgradeById } from '@/lib/data/upgradeRepository';
 import type { UpgradeDefinition, UpgradeEffect } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
-import { fetchMarketingCampaigns, upsertMarketingCampaign, deleteMarketingCampaign } from '@/lib/data/marketingRepository';
+import { fetchMarketingCampaignsForIndustry, upsertMarketingCampaignForIndustry, deleteMarketingCampaignById } from '@/lib/data/marketingRepository';
 import type { MarketingCampaign } from '@/lib/store/slices/marketingSlice';
 import { fetchEventsForIndustry, upsertEventForIndustry, deleteEventById } from '@/lib/data/eventRepository';
 import type { GameEvent, GameEventChoice, GameEventConsequence, GameEventEffect } from '@/lib/types/gameEvents';
@@ -86,6 +86,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<string>('industries');
 
   const [industries, setIndustries] = useState<Industry[]>([]);
+  const [selectedIndustryId, setSelectedIndustryId] = useState<string>('');
   const [form, setForm] = useState<FormState>(emptyForm);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -120,7 +121,7 @@ export default function AdminPage() {
   const [staffLoading, setStaffLoading] = useState<boolean>(false);
   const [staffStatus, setStaffStatus] = useState<string | null>(null);
 
-  const [roleForm, setRoleForm] = useState<{ id: string; name: string; salary: string; effects: Array<{ metric: GameMetric; type: EffectType; value: string }>; emoji: string; setsFlag?: string; requirementIds: string[] }>({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼', requirementIds: [] });
+  const [roleForm, setRoleForm] = useState<{ id: string; name: string; salary: string; effects: Array<{ metric: GameMetric; type: EffectType; value: string }>; emoji: string; setsFlag?: string; requirements: Requirement[] }>({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼', requirements: [] });
   const [selectedRoleId, setSelectedRoleId] = useState<string>('');
   const [roleSaving, setRoleSaving] = useState<boolean>(false);
   const [roleDeleting, setRoleDeleting] = useState<boolean>(false);
@@ -140,7 +141,7 @@ export default function AdminPage() {
   const [upgradeDeleting, setUpgradeDeleting] = useState<boolean>(false);
   const [upgradesLoading, setUpgradesLoading] = useState<boolean>(false);
   const [upgradeStatus, setUpgradeStatus] = useState<string | null>(null);
-  const [upgradeForm, setUpgradeForm] = useState<{ id: string; name: string; description: string; icon: string; cost: string; maxLevel: string; setsFlag?: string; requirementIds: string[] }>({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', requirementIds: [] });
+  const [upgradeForm, setUpgradeForm] = useState<{ id: string; name: string; description: string; icon: string; cost: string; maxLevel: string; setsFlag?: string; requirements: Requirement[] }>({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', requirements: [] });
   const [effectsForm, setEffectsForm] = useState<Array<{ metric: GameMetric; type: EffectType; value: string }>>([]);
 
   // Marketing management state
@@ -151,7 +152,7 @@ export default function AdminPage() {
   const [campaignDeleting, setCampaignDeleting] = useState<boolean>(false);
   const [campaignsLoading, setCampaignsLoading] = useState<boolean>(false);
   const [campaignStatus, setCampaignStatus] = useState<string | null>(null);
-  const [campaignForm, setCampaignForm] = useState<{ id: string; name: string; description: string; cost: string; cooldownSeconds: string; setsFlag?: string; requirementIds: string[] }>({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', requirementIds: [] });
+  const [campaignForm, setCampaignForm] = useState<{ id: string; name: string; description: string; cost: string; cooldownSeconds: string; setsFlag?: string; requirements: Requirement[] }>({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', requirements: [] });
   const [campaignEffectsForm, setCampaignEffectsForm] = useState<Array<{ metric: GameMetric; type: EffectType; value: string; durationSeconds: string }>>([]);
 
   // Events management state (base only for now)
@@ -297,6 +298,7 @@ export default function AdminPage() {
   };
 
   const selectIndustry = (industry: Industry) => {
+    setSelectedIndustryId(industry.id);
     setIsCreating(false);
     setForm({
       id: industry.id,
@@ -312,7 +314,7 @@ export default function AdminPage() {
     loadFlagsForIndustry(industry.id);  // Load flags first!
     loadStaffForIndustry(industry.id);
     loadUpgradesForIndustry(industry.id);
-    loadMarketingCampaigns();
+    loadMarketingCampaigns(industry.id);
     loadEventsForIndustry(industry.id);
     loadConditionsForIndustry(industry.id);
   };
@@ -399,9 +401,9 @@ export default function AdminPage() {
         if ('workloadReduction' in first && (first as any).workloadReduction > 0) {
           legacyEffects.push({ metric: GameMetric.FounderWorkingHours, type: EffectType.Add, value: String(-(first as any).workloadReduction) });
         }
-        setRoleForm({ id: first.id, name: first.name, salary: String(first.salary), effects: legacyEffects, emoji: first.emoji, setsFlag: first.setsFlag, requirementIds: first.requirementIds || [] });
+        setRoleForm({ id: first.id, name: first.name, salary: String(first.salary), effects: legacyEffects, emoji: first.emoji, setsFlag: first.setsFlag, requirements: first.requirements || [] });
       } else {
-        setRoleForm({ id: first.id, name: first.name, salary: String(first.salary), effects: effects.map(e => ({ metric: e.metric, type: e.type, value: String(e.value) })), emoji: first.emoji, setsFlag: first.setsFlag, requirementIds: first.requirementIds || [] });
+        setRoleForm({ id: first.id, name: first.name, salary: String(first.salary), effects: effects.map(e => ({ metric: e.metric, type: e.type, value: String(e.value) })), emoji: first.emoji, setsFlag: first.setsFlag, requirements: first.requirements || [] });
       }
     }
     if (presetsSorted.length > 0) {
@@ -417,7 +419,7 @@ export default function AdminPage() {
     setUpgrades([]);
     setSelectedUpgradeId('');
     setIsCreatingUpgrade(false);
-    setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', requirementIds: [] });
+    setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', requirements: [] });
     setEffectsForm([]);
     const result = await fetchUpgradesForIndustry(industryId);
     setUpgradesLoading(false);
@@ -430,7 +432,7 @@ export default function AdminPage() {
   const selectUpgrade = (upgrade: UpgradeDefinition, resetMsg = true) => {
     setSelectedUpgradeId(upgrade.id);
     setIsCreatingUpgrade(false);
-    setUpgradeForm({ id: upgrade.id, name: upgrade.name, description: upgrade.description, icon: upgrade.icon, cost: String(upgrade.cost), maxLevel: String(upgrade.maxLevel), setsFlag: upgrade.setsFlag, requirementIds: upgrade.requirementIds || [] });
+    setUpgradeForm({ id: upgrade.id, name: upgrade.name, description: upgrade.description, icon: upgrade.icon, cost: String(upgrade.cost), maxLevel: String(upgrade.maxLevel), setsFlag: upgrade.setsFlag, requirements: upgrade.requirements || [] });
     setEffectsForm(upgrade.effects.map((e) => ({ metric: e.metric, type: e.type, value: String(e.value) })));
     if (resetMsg) setUpgradeStatus(null);
   };
@@ -439,7 +441,7 @@ export default function AdminPage() {
     if (!form.id) { setUpgradeStatus('Save the industry first.'); return; }
     setIsCreatingUpgrade(true);
     setSelectedUpgradeId('');
-    setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', setsFlag: '', requirementIds: [] });
+    setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', setsFlag: '', requirements: [] });
     setEffectsForm([]);
     setUpgradeStatus(null);
   };
@@ -458,19 +460,19 @@ export default function AdminPage() {
       return;
     }
     const setsFlag = upgradeForm.setsFlag?.trim() || undefined;
-    const requirementIds = upgradeForm.requirementIds;
+    const requirements = upgradeForm.requirements;
     const effects: UpgradeEffect[] = effectsForm.map((ef) => ({
       metric: ef.metric,
       type: ef.type,
       value: Number(ef.value) || 0,
     }));
     setUpgradeSaving(true);
-    const result = await upsertUpgradeForIndustry(form.id, { id, name, description, icon, cost, maxLevel, effects, setsFlag, requirementIds });
+    const result = await upsertUpgradeForIndustry(form.id, { id, name, description, icon, cost, maxLevel, effects, setsFlag, requirements });
     setUpgradeSaving(false);
     if (!result.success) { setUpgradeStatus(result.message ?? 'Failed to save upgrade.'); return; }
     setUpgrades((prev) => {
       const exists = prev.some((u) => u.id === id);
-      const nextItem: UpgradeDefinition = { id, name, description, icon, cost, maxLevel, effects, setsFlag, requirementIds };
+      const nextItem: UpgradeDefinition = { id, name, description, icon, cost, maxLevel, effects, setsFlag, requirements };
       const next = exists ? prev.map((u) => (u.id === id ? nextItem : u)) : [...prev, nextItem];
       return next.sort((a, b) => a.name.localeCompare(b.name));
     });
@@ -488,22 +490,27 @@ export default function AdminPage() {
     if (!result.success) { setUpgradeStatus(result.message ?? 'Failed to delete upgrade.'); return; }
     setUpgrades((prev) => prev.filter((u) => u.id !== selectedUpgradeId));
     setSelectedUpgradeId('');
-    setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', setsFlag: '', requirementIds: [] });
+    setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', setsFlag: '', requirements: [] });
     setEffectsForm([]);
     setUpgradeStatus('Upgrade deleted.');
   };
 
-  const loadMarketingCampaigns = async () => {
+  const loadMarketingCampaigns = async (industryId: string) => {
+    console.log('Loading marketing campaigns for industry:', industryId);
     setCampaignsLoading(true);
     setCampaignStatus(null);
     setCampaigns([]);
     setSelectedCampaignId('');
     setIsCreatingCampaign(false);
-    setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', requirementIds: [] });
+    setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', requirements: [] });
     setCampaignEffectsForm([]);
-    const result = await fetchMarketingCampaigns();
+    const result = await fetchMarketingCampaignsForIndustry(industryId);
+    console.log('Marketing campaigns result:', result);
     setCampaignsLoading(false);
-    if (!result) return;
+    if (!result) {
+      console.log('No marketing campaigns returned');
+      return;
+    }
     setCampaigns(result);
     if (result.length > 0) selectCampaign(result[0], false);
   };
@@ -511,7 +518,7 @@ export default function AdminPage() {
   const selectCampaign = (campaign: MarketingCampaign, resetMsg = true) => {
     setSelectedCampaignId(campaign.id);
     setIsCreatingCampaign(false);
-    setCampaignForm({ id: campaign.id, name: campaign.name, description: campaign.description, cost: String(campaign.cost), cooldownSeconds: String(campaign.cooldownSeconds), setsFlag: campaign.setsFlag, requirementIds: campaign.requirementIds || [] });
+    setCampaignForm({ id: campaign.id, name: campaign.name, description: campaign.description, cost: String(campaign.cost), cooldownSeconds: String(campaign.cooldownSeconds), setsFlag: campaign.setsFlag, requirements: campaign.requirements || [] });
     setCampaignEffectsForm(campaign.effects.map((e) => ({ metric: e.metric, type: e.type, value: String(e.value), durationSeconds: String(e.durationSeconds ?? '') })));
     if (resetMsg) setCampaignStatus(null);
   };
@@ -519,7 +526,7 @@ export default function AdminPage() {
   const handleCreateCampaign = () => {
     setIsCreatingCampaign(true);
     setSelectedCampaignId('');
-    setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', setsFlag: '', requirementIds: [] });
+    setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', setsFlag: '', requirements: [] });
     setCampaignEffectsForm([]);
     setCampaignStatus(null);
   };
@@ -536,7 +543,7 @@ export default function AdminPage() {
       return;
     }
     const setsFlag = campaignForm.setsFlag?.trim() || undefined;
-    const requirementIds = campaignForm.requirementIds;
+    const requirements = campaignForm.requirements;
     const effects = campaignEffectsForm.map((ef) => ({
       metric: ef.metric,
       type: ef.type,
@@ -544,12 +551,12 @@ export default function AdminPage() {
       durationSeconds: ef.durationSeconds === '' ? null : Number(ef.durationSeconds) || null
     }));
     setCampaignSaving(true);
-    const result = await upsertMarketingCampaign({ id, name, description, cost, cooldownSeconds, effects, setsFlag, requirementIds });
+    const result = await upsertMarketingCampaignForIndustry(selectedIndustryId, { id, name, description, cost, cooldownSeconds, effects, setsFlag, requirements });
     setCampaignSaving(false);
     if (!result.success) { setCampaignStatus(result.message ?? 'Failed to save campaign.'); return; }
     setCampaigns((prev) => {
       const exists = prev.some((c) => c.id === id);
-      const nextItem: MarketingCampaign = { id, name, description, cost, cooldownSeconds, effects, setsFlag, requirementIds };
+      const nextItem: MarketingCampaign = { id, name, description, cost, cooldownSeconds, effects, setsFlag, requirements };
       const next = exists ? prev.map((c) => (c.id === id ? nextItem : c)) : [...prev, nextItem];
       return next.sort((a, b) => a.name.localeCompare(b.name));
     });
@@ -562,12 +569,12 @@ export default function AdminPage() {
     if (isCreatingCampaign || !selectedCampaignId) return;
     if (!window.confirm(`Delete campaign "${campaignForm.name || selectedCampaignId}"?`)) return;
     setCampaignDeleting(true);
-    const result = await deleteMarketingCampaign(selectedCampaignId);
+    const result = await deleteMarketingCampaignById(selectedCampaignId, selectedIndustryId);
     setCampaignDeleting(false);
     if (!result.success) { setCampaignStatus(result.message ?? 'Failed to delete campaign.'); return; }
     setCampaigns((prev) => prev.filter((c) => c.id !== selectedCampaignId));
     setSelectedCampaignId('');
-    setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', setsFlag: '', requirementIds: [] });
+    setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', setsFlag: '', requirements: [] });
     setCampaignEffectsForm([]);
     setCampaignStatus('Campaign deleted.');
   };
@@ -1308,9 +1315,9 @@ export default function AdminPage() {
       if ('workloadReduction' in role && (role as any).workloadReduction > 0) {
         legacyEffects.push({ metric: GameMetric.FounderWorkingHours, type: EffectType.Add, value: String(-(role as any).workloadReduction) });
       }
-      setRoleForm({ id: role.id, name: role.name, salary: String(role.salary), effects: legacyEffects, emoji: role.emoji, setsFlag: role.setsFlag, requirementIds: role.requirementIds || [] });
+      setRoleForm({ id: role.id, name: role.name, salary: String(role.salary), effects: legacyEffects, emoji: role.emoji, setsFlag: role.setsFlag, requirements: role.requirements || [] });
     } else {
-      setRoleForm({ id: role.id, name: role.name, salary: String(role.salary), effects: effects.map(e => ({ metric: e.metric, type: e.type, value: String(e.value) })), emoji: role.emoji, setsFlag: role.setsFlag, requirementIds: role.requirementIds || [] });
+      setRoleForm({ id: role.id, name: role.name, salary: String(role.salary), effects: effects.map(e => ({ metric: e.metric, type: e.type, value: String(e.value) })), emoji: role.emoji, setsFlag: role.setsFlag, requirements: role.requirements || [] });
     }
     setStaffStatus(null);
   };
@@ -1322,7 +1329,7 @@ export default function AdminPage() {
     }
     setIsCreatingRole(true);
     setSelectedRoleId('');
-    setRoleForm({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼', setsFlag: '', requirementIds: [] });
+    setRoleForm({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼', setsFlag: '', requirements: [] });
     setStaffStatus(null);
   };
 
@@ -1360,8 +1367,8 @@ export default function AdminPage() {
     }
     setRoleSaving(true);
     const setsFlag = roleForm.setsFlag?.trim() || undefined;
-    const requirementIds = roleForm.requirementIds;
-    const result = await upsertStaffRole({ id, industryId: form.id, name, salary, effects, emoji: roleForm.emoji.trim() || undefined, setsFlag, requirementIds });
+    const requirements = roleForm.requirements;
+    const result = await upsertStaffRole({ id, industryId: form.id, name, salary, effects, emoji: roleForm.emoji.trim() || undefined, setsFlag, requirements });
     setRoleSaving(false);
     if (!result.success) {
       setStaffStatus(result.message ?? 'Failed to save role.');
@@ -1369,7 +1376,7 @@ export default function AdminPage() {
     }
     setStaffRoles((prev) => {
       const exists = prev.some((r) => r.id === id);
-      const next = exists ? prev.map((r) => (r.id === id ? { id, name, salary, effects, emoji: roleForm.emoji.trim() || '🧑‍💼', setsFlag, requirementIds } : r)) : [...prev, { id, name, salary, effects, emoji: roleForm.emoji.trim() || '🧑‍💼', setsFlag, requirementIds }];
+      const next = exists ? prev.map((r) => (r.id === id ? { id, name, salary, effects, emoji: roleForm.emoji.trim() || '🧑‍💼', setsFlag, requirements } : r)) : [...prev, { id, name, salary, effects, emoji: roleForm.emoji.trim() || '🧑‍💼', setsFlag, requirements }];
       return next.sort((a, b) => a.name.localeCompare(b.name));
     });
     setStaffStatus('Role saved.');
@@ -1394,7 +1401,7 @@ export default function AdminPage() {
     }
     setStaffRoles((prev) => prev.filter((r) => r.id !== selectedRoleId));
     setSelectedRoleId('');
-    setRoleForm({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼', setsFlag: '', requirementIds: [] });
+    setRoleForm({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼', setsFlag: '', requirements: [] });
     setStaffStatus('Role deleted.');
   };
 
@@ -3275,7 +3282,7 @@ export default function AdminPage() {
               } else {
                 setIsCreatingCampaign(false);
                 setSelectedCampaignId('');
-                setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', requirementIds: [] });
+                setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', requirements: [] });
                 setCampaignEffectsForm([]);
               }
               setCampaignStatus(null);
@@ -3409,8 +3416,8 @@ export default function AdminPage() {
                         conditions={conditions}
                         flagsLoading={flagsLoading}
                         conditionsLoading={conditionsLoading}
-                        selectedIds={campaignForm.requirementIds || []}
-                        onSelectionChange={(ids) => setCampaignForm((p) => ({ ...p, requirementIds: ids }))}
+                        requirements={campaignForm.requirements || []}
+                        onRequirementsChange={(requirements) => setCampaignForm((p) => ({ ...p, requirements }))}
                       />
                     </div>
 
@@ -3495,7 +3502,7 @@ export default function AdminPage() {
                           } else {
                             setIsCreatingCampaign(false);
                             setSelectedCampaignId('');
-                            setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', requirementIds: [] });
+                            setCampaignForm({ id: '', name: '', description: '', cost: '0', cooldownSeconds: '15', requirements: [] });
                             setCampaignEffectsForm([]);
                           }
                           setCampaignStatus(null);
@@ -3556,7 +3563,7 @@ export default function AdminPage() {
               } else {
                 setIsCreatingUpgrade(false);
                 setSelectedUpgradeId('');
-                setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', requirementIds: [] });
+                setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', requirements: [] });
                 setEffectsForm([]);
               }
               setUpgradeStatus(null);
@@ -3703,8 +3710,8 @@ export default function AdminPage() {
                             conditions={conditions}
                             flagsLoading={flagsLoading}
                             conditionsLoading={conditionsLoading}
-                            selectedIds={upgradeForm.requirementIds || []}
-                            onSelectionChange={(ids) => setUpgradeForm((p) => ({ ...p, requirementIds: ids }))}
+                            requirements={upgradeForm.requirements || []}
+                            onRequirementsChange={(requirements) => setUpgradeForm((p) => ({ ...p, requirements }))}
                           />
                         </div>
 
@@ -3784,7 +3791,7 @@ export default function AdminPage() {
                               } else {
                                 setIsCreatingUpgrade(false);
                                 setSelectedUpgradeId('');
-                                setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', requirementIds: [] });
+                                setUpgradeForm({ id: '', name: '', description: '', icon: '⚙️', cost: '0', maxLevel: '1', requirements: [] });
                                 setEffectsForm([]);
                               }
                               setUpgradeStatus(null);
@@ -4065,7 +4072,7 @@ export default function AdminPage() {
               } else {
                 setIsCreatingRole(false);
                 setSelectedRoleId('');
-                setRoleForm({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼', requirementIds: [] });
+                setRoleForm({ id: '', name: '', salary: '0', effects: [], emoji: '🧑‍💼', requirements: [] });
               }
               setStaffStatus(null);
             }}

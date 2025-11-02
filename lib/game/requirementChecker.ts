@@ -1,97 +1,89 @@
 import type { GameStore } from '@/lib/store/gameStore';
 import { evaluateCondition } from './conditionEvaluator';
+import type { Requirement } from './types';
 
 /**
- * Validates if a requirement ID is properly formatted
- * @param reqId - The requirement ID to validate
- * @returns Object with type and cleanId, or null if invalid
+ * Evaluates a single requirement with explicit type and expected value
+ * @param req - The requirement to check
+ * @param store - The current game store state
+ * @returns true if the requirement matches the expected value
  */
-export function validateRequirementId(reqId: string): { type: 'flag' | 'condition', cleanId: string } | null {
-  if (reqId.startsWith('flag_')) {
-    return { type: 'flag', cleanId: reqId.substring(5) };
+function evaluateRequirement(req: Requirement, store: GameStore): boolean {
+  const { type, id, expected } = req;
+
+  // Default expected to true if not specified (must be met)
+  const isExpected = expected !== false;
+
+  let actualValue = false;
+
+  if (type === 'flag') {
+    // Flags are stored without prefix in the store
+    const flagValue = store.flags?.[id];
+    actualValue = flagValue === true;
+  } else if (type === 'condition') {
+    if (!store.availableConditions || !Array.isArray(store.availableConditions)) {
+      console.warn(`[Requirements] availableConditions not initialized`);
+      actualValue = false;
+    } else {
+      // Look for condition by clean ID (without prefix)
+      const condition = store.availableConditions.find(c =>
+        c.id === id || c.id === `condition_${id}`
+      );
+      if (!condition) {
+        console.warn(`[Requirements] Condition not found: ${id}`);
+        actualValue = false;
+      } else {
+        actualValue = evaluateCondition(condition, store);
+      }
+    }
+  } else {
+    console.warn(`[Requirements] Unknown requirement type: ${type}`);
+    actualValue = false;
   }
-  if (reqId.startsWith('condition_')) {
-    return { type: 'condition', cleanId: reqId.substring(10) };
-  }
-  return null; // Invalid ID
+
+  // Return true if actual value matches expected value
+  return actualValue === isExpected;
 }
 
 /**
- * Checks if all requirements are met for a given list of requirement IDs
- * @param requirementIds - Array of requirement IDs (prefixed with 'flag_' or 'condition_')
+ * Checks if all requirements are met
+ * @param requirements - Array of Requirement objects
  * @param store - The current game store state
  * @returns true if all requirements are met, false otherwise
  */
-export function checkRequirements(requirementIds: string[], store: GameStore): boolean {
-  return requirementIds.every(reqId => {
-    const validation = validateRequirementId(reqId);
-    if (!validation) {
-      console.warn(`[Requirements] Invalid requirement ID: ${reqId}`);
-      return false;
-    }
-
-    const { type, cleanId } = validation;
-
-    if (type === 'flag') {
-      // Flags are stored without prefix (normalized in setFlag)
-      // cleanId is the flag ID without the 'flag_' prefix
-      const flagValue = store.flags?.[cleanId];
-      return flagValue === true;
-    } else if (type === 'condition') {
-      if (!store.availableConditions || !Array.isArray(store.availableConditions)) {
-        console.warn(`[Requirements] availableConditions not initialized`);
-        return false;
-      }
-      // Condition IDs can be stored with or without prefix, so check both
-      const condition = store.availableConditions.find(c => 
-        c.id === cleanId || c.id === reqId || c.id === `condition_${cleanId}`
-      );
-      if (!condition) {
-        console.warn(`[Requirements] Condition not found: ${cleanId} (searched in ${store.availableConditions.length} conditions)`);
-        return false;
-      }
-      return evaluateCondition(condition, store);
-    }
-
-    return false;
-  });
+export function checkRequirements(requirements: Requirement[], store: GameStore): boolean {
+  return requirements.every(req => evaluateRequirement(req, store));
 }
 
 /**
  * Gets a human-readable description of a requirement
- * @param reqId - The requirement ID
+ * @param req - The requirement to describe
  * @param store - The current game store state
- * @returns Human-readable description or the ID if not found
+ * @returns Human-readable description
  */
-export function getRequirementDescription(reqId: string, store: GameStore): string {
-  const validation = validateRequirementId(reqId);
-  if (!validation) return reqId;
-
-  const { type, cleanId } = validation;
+export function getRequirementDescription(req: Requirement, store: GameStore): string {
+  const { type, id, expected } = req;
+  const prefix = expected === false ? "NOT " : "";
 
   if (type === 'flag') {
     // Check availableFlags for human-readable names
     if (store.availableFlags && Array.isArray(store.availableFlags)) {
-      const flag = store.availableFlags.find(f =>
-        f.id === cleanId || f.id === reqId || f.id === `flag_${cleanId}`
-      );
+      const flag = store.availableFlags.find(f => f.id === id || f.id === `flag_${id}`);
       if (flag) {
-        return flag.name;
+        return `${prefix}${flag.name}`;
       }
     }
-    // Fallback to clean ID if flag name not found
-    return cleanId;
+    return `${prefix}${id}`;
   } else if (type === 'condition') {
-    // Safely check availableConditions
-    if (!store.availableConditions || !Array.isArray(store.availableConditions)) {
-      return `Condition: ${cleanId}`;
+    // Check availableConditions for human-readable names
+    if (store.availableConditions && Array.isArray(store.availableConditions)) {
+      const condition = store.availableConditions.find(c => c.id === id || c.id === `condition_${id}`);
+      if (condition) {
+        return `${prefix}${condition.name}`;
+      }
     }
-    // Condition IDs can be stored with or without prefix, so check both
-    const condition = store.availableConditions.find(c =>
-      c.id === cleanId || c.id === reqId || c.id === `condition_${cleanId}`
-    );
-    return condition ? condition.name : `Condition: ${cleanId}`;
+    return `${prefix}Condition: ${id}`;
   }
 
-  return reqId;
+  return `${prefix}${id}`;
 }

@@ -1,13 +1,14 @@
 import { useMemo } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
 import { checkRequirements, getRequirementDescription } from '@/lib/game/requirementChecker';
+import type { Requirement } from '@/lib/game/types';
 
 /**
  * Hook to check if requirements are met and get descriptions
- * @param requirementIds - Array of requirement IDs to check
+ * @param requirements - Array of requirements to check
  * @returns Object with requirements met status and descriptions
  */
-export function useRequirements(requirementIds?: string[]) {
+export function useRequirements(requirements?: Requirement[]) {
   // Subscribe to specific parts of the store that affect requirements
   const flags = useGameStore((state) => state.flags);
   const availableConditions = useGameStore((state) => state.availableConditions);
@@ -17,7 +18,7 @@ export function useRequirements(requirementIds?: string[]) {
   const store = useGameStore();
 
   return useMemo(() => {
-    if (!requirementIds || requirementIds.length === 0) {
+    if (!requirements || requirements.length === 0) {
       return {
         areMet: true,
         descriptions: [],
@@ -25,14 +26,14 @@ export function useRequirements(requirementIds?: string[]) {
       };
     }
 
-    const areMet = checkRequirements(requirementIds, store);
-    const descriptions = requirementIds.map((id) => getRequirementDescription(id, store));
+    const areMet = checkRequirements(requirements, store);
+    const descriptions = requirements.map((req) => getRequirementDescription(req, store));
 
     return {
       areMet,
       descriptions,
       unmetDescriptions: areMet ? [] : descriptions, // If not met, all are considered unmet for UI display
     };
-  }, [requirementIds, flags, availableConditions, availableFlags, store]);
+  }, [requirements, flags, availableConditions, availableFlags, store]);
 }
 

@@ -7,6 +7,7 @@ import {
   getEventTriggerSecondsForIndustry,
 } from '../lib/game/config';
 import { IndustryId } from '../lib/game/types';
+import { checkRequirements } from '../lib/game/requirementChecker';
 
 export const useRandomEventTrigger = () => {
   const gameTime = useGameStore((state) => state.gameTime);
@@ -14,6 +15,7 @@ export const useRandomEventTrigger = () => {
   const setCurrentEvent = useGameStore((state) => state.setCurrentEvent);
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
   const currentMonth = useGameStore((state) => state.currentMonth);
+  const store = useGameStore();
   const triggerStateRef = useRef<{ month: number; triggered: Set<number>; key: string }>({
     month: 0,
     triggered: new Set<number>(),
@@ -55,13 +57,19 @@ export const useRandomEventTrigger = () => {
     for (const trigger of triggerPoints) {
       if (timeIntoRound >= trigger && !triggerStateRef.current.triggered.has(trigger)) {
         triggerStateRef.current.triggered.add(trigger);
-        const events = getEventsForIndustry(industryId);
-        if (events.length > 0) {
-          const randomIndex = Math.floor(Math.random() * events.length);
-          setCurrentEvent(events[randomIndex]);
+        const allEvents = getEventsForIndustry(industryId);
+
+        // Filter events based on their requirements
+        const eligibleEvents = allEvents.filter(event => {
+          return event.requirements ? checkRequirements(event.requirements, store) : true;
+        });
+
+        if (eligibleEvents.length > 0) {
+          const randomIndex = Math.floor(Math.random() * eligibleEvents.length);
+          setCurrentEvent(eligibleEvents[randomIndex]);
         }
         break;
       }
     }
-  }, [gameTime, currentEvent, selectedIndustry, setCurrentEvent, currentMonth]);
+  }, [gameTime, currentEvent, selectedIndustry, setCurrentEvent, currentMonth, store]);
 };

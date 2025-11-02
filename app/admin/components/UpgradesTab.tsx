@@ -1,7 +1,7 @@
 'use client';
 
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
-import type { UpgradeDefinition } from '@/lib/game/types';
+import type { UpgradeDefinition, Requirement } from '@/lib/game/types';
 import type { GameFlag } from '@/lib/data/flagRepository';
 import type { GameCondition } from '@/lib/types/conditions';
 import { RequirementsSelector } from './RequirementsSelector';
@@ -22,7 +22,7 @@ interface UpgradesTabProps {
     cost: string;
     maxLevel: string;
     setsFlag?: string;
-    requirementIds: string[];
+    requirements: Requirement[];
   };
   effectsForm: Array<{ metric: GameMetric; type: EffectType; value: string }>;
   upgradeSaving: boolean;
@@ -204,8 +204,8 @@ export function UpgradesTab({
                         conditions={conditions}
                         flagsLoading={flagsLoading}
                         conditionsLoading={conditionsLoading}
-                        selectedIds={upgradeForm.requirementIds || []}
-                        onSelectionChange={(ids) => onUpdateForm({ requirementIds: ids })}
+                        requirements={upgradeForm.requirements || []}
+                        onRequirementsChange={(requirements) => onUpdateForm({ requirements })}
                       />
                     </div>
 

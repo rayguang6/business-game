@@ -9,18 +9,18 @@ export async function cleanupFlagReferences(flagId: string): Promise<{ success: 
   }
 
   try {
-    // Tables that have requirement_ids (array of strings)
+    // Tables that have requirements (array of strings)
     const tablesWithRequirementIds = ['upgrades', 'marketing_campaigns', 'staff_roles', 'events'];
     
     // Tables that have sets_flag (string)
     const tablesWithSetsFlag = ['upgrades', 'marketing_campaigns', 'staff_roles'];
 
-    // Clean up requirement_ids arrays - remove the flag reference
+    // Clean up requirements arrays - remove the flag reference
     for (const table of tablesWithRequirementIds) {
       const { data: rows, error: fetchError } = await supabase
         .from(table)
-        .select('id, requirement_ids')
-        .not('requirement_ids', 'is', null);
+        .select('id, requirements')
+        .not('requirements', 'is', null);
 
       if (fetchError) {
         console.error(`Failed to fetch ${table} for cleanup:`, fetchError);
@@ -31,20 +31,20 @@ export async function cleanupFlagReferences(flagId: string): Promise<{ success: 
 
       // Find rows that need updating
       const rowsToUpdate = rows.filter((row: any) => {
-        const requirementIds = Array.isArray(row.requirement_ids) ? row.requirement_ids : [];
-        return requirementIds.includes(flagId);
+        const requirements = Array.isArray(row.requirements) ? row.requirements : [];
+        return requirements.some((req: any) => req.id === flagId && req.type === 'flag');
       });
 
       if (rowsToUpdate.length === 0) continue;
 
       // Update each row to remove the flag reference
       for (const row of rowsToUpdate) {
-        const requirementIds = Array.isArray(row.requirement_ids) ? row.requirement_ids : [];
-        const updatedIds = requirementIds.filter((id: string) => id !== flagId);
+        const requirements = Array.isArray(row.requirements) ? row.requirements : [];
+        const updatedRequirements = requirements.filter((req: any) => !(req.id === flagId && req.type === 'flag'));
 
         const { error: updateError } = await supabase
           .from(table)
-          .update({ requirement_ids: updatedIds })
+          .update({ requirements: updatedRequirements })
           .eq('id', row.id);
 
         if (updateError) {
@@ -113,15 +113,15 @@ export async function cleanupConditionReferences(conditionId: string): Promise<{
   }
 
   try {
-    // Tables that have requirement_ids (array of strings)
-    const tablesWithRequirementIds = ['upgrades', 'marketing_campaigns', 'staff_roles', 'events'];
+    // Tables that have requirements (array of objects)
+    const tablesWithRequirements = ['upgrades', 'marketing_campaigns', 'staff_roles', 'events'];
 
-    // Clean up requirement_ids arrays - remove the condition reference
-    for (const table of tablesWithRequirementIds) {
+    // Clean up requirements arrays - remove the condition reference
+    for (const table of tablesWithRequirements) {
       const { data: rows, error: fetchError } = await supabase
         .from(table)
-        .select('id, requirement_ids')
-        .not('requirement_ids', 'is', null);
+        .select('id, requirements')
+        .not('requirements', 'is', null);
 
       if (fetchError) {
         console.error(`Failed to fetch ${table} for cleanup:`, fetchError);
@@ -132,20 +132,20 @@ export async function cleanupConditionReferences(conditionId: string): Promise<{
 
       // Find rows that need updating
       const rowsToUpdate = rows.filter((row: any) => {
-        const requirementIds = Array.isArray(row.requirement_ids) ? row.requirement_ids : [];
-        return requirementIds.includes(conditionId);
+        const requirements = Array.isArray(row.requirements) ? row.requirements : [];
+        return requirements.some((req: any) => req.id === conditionId && req.type === 'condition');
       });
 
       if (rowsToUpdate.length === 0) continue;
 
       // Update each row to remove the condition reference
       for (const row of rowsToUpdate) {
-        const requirementIds = Array.isArray(row.requirement_ids) ? row.requirement_ids : [];
-        const updatedIds = requirementIds.filter((id: string) => id !== conditionId);
+        const requirements = Array.isArray(row.requirements) ? row.requirements : [];
+        const updatedRequirements = requirements.filter((req: any) => !(req.id === conditionId && req.type === 'condition'));
 
         const { error: updateError } = await supabase
           .from(table)
-          .update({ requirement_ids: updatedIds })
+          .update({ requirements: updatedRequirements })
           .eq('id', row.id);
 
         if (updateError) {

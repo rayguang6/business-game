@@ -1,5 +1,5 @@
 import type { Staff } from '@/lib/features/staff';
-import type { IndustryId } from '@/lib/game/types';
+import type { IndustryId, Requirement } from '@/lib/game/types';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 
@@ -12,7 +12,7 @@ export interface StaffRoleConfig {
   effects: UpgradeEffect[]; // Flexible effects like upgrades
   emoji: string;
   setsFlag?: string; // Optional flag to set when this staff role is hired
-  requirementIds?: string[]; // References to flag/condition IDs that must be met
+  requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
 }
 
 export interface StaffPreset {
@@ -102,7 +102,7 @@ function buildStaffFromRole(
     effects: overrides.effects ?? role.effects.map(effect => ({ ...effect })), // Deep copy effects
     emoji: overrides.emoji ?? role.emoji,
     setsFlag: overrides.setsFlag ?? role.setsFlag,
-    requirementIds: overrides.requirementIds ?? role.requirementIds,
+    requirements: overrides.requirements ?? role.requirements,
   };
 }
 
@@ -191,7 +191,7 @@ export function createRandomStaffForIndustry(
     effects: role.effects.map(effect => ({ ...effect })), // Deep copy effects
     emoji: role.emoji,
     setsFlag: role.setsFlag,
-    requirementIds: role.requirementIds,
+    requirements: role.requirements,
   };
 }
 

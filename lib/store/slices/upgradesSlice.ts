@@ -100,8 +100,8 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
     }
 
     // Check requirements
-    if (upgrade.requirementIds && upgrade.requirementIds.length > 0) {
-      const requirementsMet = checkRequirements(upgrade.requirementIds, get() as GameStore);
+    if (upgrade.requirements && upgrade.requirements.length > 0) {
+      const requirementsMet = checkRequirements(upgrade.requirements, get() as GameStore);
       if (!requirementsMet) {
         return { success: false, message: `Requirements not met to purchase ${upgrade.name}.` };
       }

@@ -1,4 +1,5 @@
 import { EffectType, GameMetric } from '@/lib/game/effectManager';
+import type { Requirement } from '@/lib/game/types';
 
 export type EventCategory = 'opportunity' | 'risk';
 
@@ -32,5 +33,5 @@ export interface GameEvent {
   category: EventCategory;
   summary: string;
   choices: GameEventChoice[];
-  requirementIds?: string[]; // References to flag/condition IDs that must be met
+  requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
 }

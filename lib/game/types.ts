@@ -59,6 +59,18 @@ export interface UpgradeEffect {
   // source removed - will be auto-generated when registering with effectManager
 }
 
+/**
+ * Requirement with explicit type and expected value support
+ * - type: specifies whether this is a flag or condition requirement
+ * - expected: true means the requirement must be met (YES), false means must NOT be met (NO)
+ * - id: clean ID without prefixes (e.g., "staff_trained", not "flag_staff_trained")
+ */
+export interface Requirement {
+  type: 'flag' | 'condition';  // Explicit type
+  id: string;                  // Clean ID without prefixes
+  expected?: boolean;          // true = must be met, false = must NOT be met
+}
+
 export interface UpgradeDefinition {
   id: string;
   name: string;
@@ -68,7 +80,7 @@ export interface UpgradeDefinition {
   maxLevel: number;
   effects: UpgradeEffect[];
   setsFlag?: string; // Optional flag to set when this upgrade is purchased
-  requirementIds?: string[]; // References to flag/condition IDs that must be met
+  requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
 }
 
 export type UpgradeId = UpgradeDefinition['id'];
