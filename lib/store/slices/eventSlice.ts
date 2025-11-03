@@ -385,7 +385,7 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
           const resolvedEffect: ResolvedEffect = {
             type: effect.type,
             amount: effect.amount,
-            label: effect.label,
+            label: effect.type === 'cash' ? effect.label : undefined,
           };
           pendingEffects.push(resolvedEffect);
         } else if (effect.type === 'metric') {
@@ -398,7 +398,7 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
             value: effect.value!,
             durationSeconds: effect.durationSeconds,
             priority: effect.priority,
-            label: effect.label,
+            label: undefined,
           };
           pendingEffects.push(resolvedEffect);
         }
