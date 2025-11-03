@@ -42,6 +42,13 @@ const METRIC_LABELS: Record<GameMetric, string> = {
   [GameMetric.ServiceRevenueMultiplier]: 'Service Revenue Multiplier',
   [GameMetric.ServiceRevenueFlatBonus]: 'Service Revenue Bonus',
   [GameMetric.FounderWorkingHours]: 'Founder Working Hours',
+  // Tier-specific metrics
+  [GameMetric.HighTierServiceRevenueMultiplier]: 'High-Tier Service Revenue',
+  [GameMetric.HighTierServiceWeightageMultiplier]: 'High-Tier Service Selection',
+  [GameMetric.MidTierServiceRevenueMultiplier]: 'Mid-Tier Service Revenue',
+  [GameMetric.MidTierServiceWeightageMultiplier]: 'Mid-Tier Service Selection',
+  [GameMetric.LowTierServiceRevenueMultiplier]: 'Low-Tier Service Revenue',
+  [GameMetric.LowTierServiceWeightageMultiplier]: 'Low-Tier Service Selection',
 };
 
 const formatDurationLabel = (durationSeconds: number | null | undefined) => {

@@ -16,7 +16,7 @@ import {
   DEFAULT_INDUSTRY_ID,
   getFounderWorkingHoursBase,
 } from '@/lib/game/config';
-import type { IndustryId } from '@/lib/game/types';
+import type { IndustryId, ServicePricingCategory } from '@/lib/game/types';
 
 import {
   Customer,
@@ -134,6 +134,23 @@ const summarizeRevenueByCategory = (entries: RevenueEntry[]): RevenueEntry[] => 
 // Recomputes monthlyExpenses for the new month: base + upgrade-driven expenses.
 // Resets monthlyExpenseAdjustments to 0 (any upgrade deltas have now been rolled forward).
 // metrics.totalExpenses goes up by the new expenses (minus any adjustments we already tracked mid-month).
+
+/**
+ * Gets the revenue multiplier for a service tier
+ */
+function getTierRevenueMultiplier(tier?: ServicePricingCategory): number {
+  switch (tier) {
+    case 'high':
+      return effectManager.calculate(GameMetric.HighTierServiceRevenueMultiplier, 1);
+    case 'mid':
+      return effectManager.calculate(GameMetric.MidTierServiceRevenueMultiplier, 1);
+    case 'low':
+      return effectManager.calculate(GameMetric.LowTierServiceRevenueMultiplier, 1);
+    default:
+      return 1;
+  }
+}
+
 function processMonthTransition({
   currentMonth,
   metrics,
@@ -298,7 +315,8 @@ function processCustomersForTick({
     // If customer is leaving happy, add revenue and reputation
     if (updatedCustomer.status === CustomerStatus.WalkingOutHappy) {
       const servicePrice = updatedCustomer.service.price;
-      const baseServiceValue = servicePrice + serviceRevenueFlatBonus;
+      const tierMultiplier = getTierRevenueMultiplier(updatedCustomer.service.pricingCategory);
+      const baseServiceValue = (servicePrice * tierMultiplier) + serviceRevenueFlatBonus;
       const serviceRevenue = Math.max(0, baseServiceValue) * serviceRevenueMultiplier * serviceRevenueScale;
       
       // Add revenue

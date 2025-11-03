@@ -127,6 +127,7 @@ export function getBaseUpgradeMetricsForIndustry(
     happyProbability: stats.baseHappyProbability,
     serviceRevenueMultiplier: stats.serviceRevenueMultiplier ?? 1,
     serviceRevenueFlatBonus: 0,
+    founderWorkingHours: getFounderWorkingHoursBase(industryId),
   };
 }
 

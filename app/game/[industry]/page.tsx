@@ -18,6 +18,7 @@ import { FullscreenToggle } from '@/app/game/components/ui/FullscreenToggle';
 import EventPopup from '@/app/game/components/ui/EventPopup';
 import GameOverPopup from '@/app/game/components/ui/GameOverPopup';
 import { FlagDebug } from '@/app/game/components/ui/FlagDebug';
+import { TierMultiplierDebug } from '@/app/game/components/ui/TierMultiplierDebug';
 import { useRandomEventTrigger } from '@/hooks/useRandomEventTrigger';
 import Image from 'next/image';
 import { fetchGlobalSimulationConfig } from '@/lib/data/simulationConfigRepository';
@@ -283,6 +284,7 @@ export default function GamePage() {
           <EventPopup />
           <GameOverPopup />
           <FlagDebug />
+          <TierMultiplierDebug />
         </div>
       </div>
 

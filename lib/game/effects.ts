@@ -123,6 +123,38 @@ const applyUpgradeEffectsToCombined = (
         result = { ...result, serviceRevenueFlatBonus: Math.max(-100000, updated) };
         break;
       }
+      // Tier-specific service revenue multipliers
+      case GameMetric.HighTierServiceRevenueMultiplier: {
+        const updated = Math.max(0, applyUpgradeEffectMetric(result.highTierServiceRevenueMultiplier || 1, effect));
+        result = { ...result, highTierServiceRevenueMultiplier: updated };
+        break;
+      }
+      case GameMetric.MidTierServiceRevenueMultiplier: {
+        const updated = Math.max(0, applyUpgradeEffectMetric(result.midTierServiceRevenueMultiplier || 1, effect));
+        result = { ...result, midTierServiceRevenueMultiplier: updated };
+        break;
+      }
+      case GameMetric.LowTierServiceRevenueMultiplier: {
+        const updated = Math.max(0, applyUpgradeEffectMetric(result.lowTierServiceRevenueMultiplier || 1, effect));
+        result = { ...result, lowTierServiceRevenueMultiplier: updated };
+        break;
+      }
+      // Tier-specific service weightage multipliers
+      case GameMetric.HighTierServiceWeightageMultiplier: {
+        const updated = Math.max(0, applyUpgradeEffectMetric(result.highTierServiceWeightageMultiplier || 1, effect));
+        result = { ...result, highTierServiceWeightageMultiplier: updated };
+        break;
+      }
+      case GameMetric.MidTierServiceWeightageMultiplier: {
+        const updated = Math.max(0, applyUpgradeEffectMetric(result.midTierServiceWeightageMultiplier || 1, effect));
+        result = { ...result, midTierServiceWeightageMultiplier: updated };
+        break;
+      }
+      case GameMetric.LowTierServiceWeightageMultiplier: {
+        const updated = Math.max(0, applyUpgradeEffectMetric(result.lowTierServiceWeightageMultiplier || 1, effect));
+        result = { ...result, lowTierServiceWeightageMultiplier: updated };
+        break;
+      }
       default:
         break;
     }
@@ -201,6 +233,50 @@ const applyMultipliersToCombined = (
         result = {
           ...result,
           serviceRevenueFlatBonus: Math.max(-100000, combined.serviceRevenueFlatBonus * safeMultiplier),
+        };
+        break;
+      }
+      // Tier-specific service revenue multipliers
+      case GameMetric.HighTierServiceRevenueMultiplier: {
+        result = {
+          ...result,
+          highTierServiceRevenueMultiplier: Math.max(0, (combined.highTierServiceRevenueMultiplier || 1) * safeMultiplier),
+        };
+        break;
+      }
+      case GameMetric.MidTierServiceRevenueMultiplier: {
+        result = {
+          ...result,
+          midTierServiceRevenueMultiplier: Math.max(0, (combined.midTierServiceRevenueMultiplier || 1) * safeMultiplier),
+        };
+        break;
+      }
+      case GameMetric.LowTierServiceRevenueMultiplier: {
+        result = {
+          ...result,
+          lowTierServiceRevenueMultiplier: Math.max(0, (combined.lowTierServiceRevenueMultiplier || 1) * safeMultiplier),
+        };
+        break;
+      }
+      // Tier-specific service weightage multipliers
+      case GameMetric.HighTierServiceWeightageMultiplier: {
+        result = {
+          ...result,
+          highTierServiceWeightageMultiplier: Math.max(0, (combined.highTierServiceWeightageMultiplier || 1) * safeMultiplier),
+        };
+        break;
+      }
+      case GameMetric.MidTierServiceWeightageMultiplier: {
+        result = {
+          ...result,
+          midTierServiceWeightageMultiplier: Math.max(0, (combined.midTierServiceWeightageMultiplier || 1) * safeMultiplier),
+        };
+        break;
+      }
+      case GameMetric.LowTierServiceWeightageMultiplier: {
+        result = {
+          ...result,
+          lowTierServiceWeightageMultiplier: Math.max(0, (combined.lowTierServiceWeightageMultiplier || 1) * safeMultiplier),
         };
         break;
       }

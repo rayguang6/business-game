@@ -7,6 +7,8 @@ import { fetchFlagsForIndustry } from '@/lib/data/flagRepository';
 import type { GameFlag } from '@/lib/data/flagRepository';
 import { fetchServicesForIndustry } from '@/lib/data/serviceRepository';
 import type { IndustryServiceDefinition } from '@/lib/game/types';
+import { getEffectiveServices, type EffectiveService } from '@/lib/features/services';
+import { effectManager } from '@/lib/game/effectManager';
 import { useState, useEffect } from 'react';
 import { useRequirements } from '@/lib/hooks/useRequirements';
 
@@ -19,7 +21,7 @@ export function HomeTab() {
 
   const [allFlags, setAllFlags] = useState<GameFlag[]>([]);
   const [flagsLoading, setFlagsLoading] = useState(false);
-  const [services, setServices] = useState<IndustryServiceDefinition[]>([]);
+  const [services, setServices] = useState<EffectiveService[]>([]);
   const [servicesLoading, setServicesLoading] = useState(false);
 
   // Load all available flags
@@ -43,17 +45,15 @@ export function HomeTab() {
     loadFlags();
   }, [selectedIndustry]);
 
-  // Load all services
+  // Load all services with effective values
   useEffect(() => {
     if (!selectedIndustry) return;
 
-    const loadServices = async () => {
+    const loadServices = () => {
       setServicesLoading(true);
       try {
-        const result = await fetchServicesForIndustry(selectedIndustry.id);
-        if (result) {
-          setServices(result);
-        }
+        const effectiveServices = getEffectiveServices(selectedIndustry.id);
+        setServices(effectiveServices);
       } catch (error) {
         console.error('Failed to load services:', error);
       } finally {
@@ -62,6 +62,11 @@ export function HomeTab() {
     };
 
     loadServices();
+
+    // Subscribe to effect manager changes to update services when tier multipliers change
+    const unsubscribe = effectManager.subscribe(loadServices);
+
+    return unsubscribe;
   }, [selectedIndustry]);
 
   return (
@@ -143,7 +148,7 @@ export function HomeTab() {
   );
 }
 
-function ServiceCard({ service }: { service: IndustryServiceDefinition }) {
+function ServiceCard({ service }: { service: EffectiveService }) {
   const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(service.requirements);
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -193,17 +198,20 @@ function ServiceCard({ service }: { service: IndustryServiceDefinition }) {
           </div>
           <div className="flex items-center gap-4 text-xs text-slate-400">
             <span>Duration: {service.duration}s</span>
-            <span className="text-green-400 font-semibold">${service.price.toFixed(2)}</span>
+            <div className="flex items-center gap-1">
+              <span className="text-green-400 font-semibold">${service.effectivePrice.toFixed(2)}</span>
+              {service.price !== service.effectivePrice && (
+                <span className="text-slate-500 line-through">${service.price.toFixed(2)}</span>
+              )}
+            </div>
             {service.pricingCategory && (
               <span className="capitalize text-purple-400">
                 {service.pricingCategory} end
               </span>
             )}
-            {service.weightage && service.weightage !== 1 && (
-              <span className="text-blue-400">
-                Weight: {service.weightage}
-              </span>
-            )}
+            <span className="text-blue-400">
+              Weight: {service.effectiveWeightage.toFixed(1)} ({service.selectionProbability}%)
+            </span>
           </div>
         </div>
         <div className={`text-xs font-semibold px-2 py-1 rounded ${

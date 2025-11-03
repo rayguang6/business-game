@@ -30,6 +30,14 @@ export interface UpgradeEffects {
   happyProbability: number;
   serviceRevenueMultiplier: number;
   serviceRevenueFlatBonus: number;
+  founderWorkingHours: number;
+  // Tier-specific service modifiers (defaults to 1 if not specified)
+  highTierServiceRevenueMultiplier?: number;
+  highTierServiceWeightageMultiplier?: number;
+  midTierServiceRevenueMultiplier?: number;
+  midTierServiceWeightageMultiplier?: number;
+  lowTierServiceRevenueMultiplier?: number;
+  lowTierServiceWeightageMultiplier?: number;
 }
 
 
@@ -71,6 +79,13 @@ export function getUpgradeEffects(
     serviceRevenueMultiplier: Math.max(0, effectManager.calculate(GameMetric.ServiceRevenueMultiplier, baseMetrics.serviceRevenueMultiplier)),
     serviceRevenueFlatBonus: effectManager.calculate(GameMetric.ServiceRevenueFlatBonus, baseMetrics.serviceRevenueFlatBonus),
     founderWorkingHours: Math.max(0, Math.round(effectManager.calculate(GameMetric.FounderWorkingHours, baseMetrics.founderWorkingHours))),
+    // Tier-specific service modifiers
+    highTierServiceRevenueMultiplier: effectManager.calculate(GameMetric.HighTierServiceRevenueMultiplier, baseMetrics.highTierServiceRevenueMultiplier || 1),
+    highTierServiceWeightageMultiplier: effectManager.calculate(GameMetric.HighTierServiceWeightageMultiplier, baseMetrics.highTierServiceWeightageMultiplier || 1),
+    midTierServiceRevenueMultiplier: effectManager.calculate(GameMetric.MidTierServiceRevenueMultiplier, baseMetrics.midTierServiceRevenueMultiplier || 1),
+    midTierServiceWeightageMultiplier: effectManager.calculate(GameMetric.MidTierServiceWeightageMultiplier, baseMetrics.midTierServiceWeightageMultiplier || 1),
+    lowTierServiceRevenueMultiplier: effectManager.calculate(GameMetric.LowTierServiceRevenueMultiplier, baseMetrics.lowTierServiceRevenueMultiplier || 1),
+    lowTierServiceWeightageMultiplier: effectManager.calculate(GameMetric.LowTierServiceWeightageMultiplier, baseMetrics.lowTierServiceWeightageMultiplier || 1),
   };
 }
 

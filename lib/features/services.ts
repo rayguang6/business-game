@@ -5,6 +5,16 @@
 
 import { getServicesForIndustry as getServiceDefinitionsForIndustry } from '@/lib/game/config';
 import { IndustryId, IndustryServiceDefinition } from '@/lib/game/types';
+import { effectManager, GameMetric } from '@/lib/game/effectManager';
+
+/**
+ * Represents a service with its effective values (after applying tier multipliers)
+ */
+export interface EffectiveService extends Service {
+  effectivePrice: number;
+  effectiveWeightage: number;
+  selectionProbability: number;
+}
 
 // Types
 export type Service = IndustryServiceDefinition;
@@ -40,22 +50,35 @@ export function getRandomService(industryId: IndustryId): Service {
 }
 
 /**
- * Selects a service using weighted random selection
+ * Selects a service using weighted random selection with tier-specific multipliers
  * @param services - Array of services to choose from
- * @returns Randomly selected service based on weightage
+ * @returns Randomly selected service based on weightage and tier multipliers
  */
 export function getWeightedRandomService(services: Service[]): Service {
-  // Calculate total weight
-  const totalWeight = services.reduce((sum, service) => sum + (service.weightage || 1), 0);
+  // Get tier multipliers from effect manager
+  const tierMultipliers = {
+    high: effectManager.calculate(GameMetric.HighTierServiceWeightageMultiplier, 1),
+    mid: effectManager.calculate(GameMetric.MidTierServiceWeightageMultiplier, 1),
+    low: effectManager.calculate(GameMetric.LowTierServiceWeightageMultiplier, 1),
+  };
+
+  // Calculate effective weights with tier multipliers
+  const servicesWithEffectiveWeights = services.map(service => ({
+    service,
+    effectiveWeight: (service.weightage || 1) * tierMultipliers[service.pricingCategory || 'mid']
+  }));
+
+  // Calculate total weight using effective weights
+  const totalWeight = servicesWithEffectiveWeights.reduce(
+    (sum, { effectiveWeight }) => sum + effectiveWeight, 0
+  );
 
   // Generate random number between 0 and total weight
   let random = Math.random() * totalWeight;
 
   // Find the service that corresponds to this random number
-  for (const service of services) {
-    const weight = service.weightage || 1;
-    random -= weight;
-
+  for (const { service, effectiveWeight } of servicesWithEffectiveWeights) {
+    random -= effectiveWeight;
     if (random <= 0) {
       return service;
     }
@@ -80,4 +103,45 @@ export function getAllServices(industryId: IndustryId): Service[] {
 export function getServiceById(id: string, industryId: IndustryId): Service | undefined {
   const services = getServicesForIndustry(industryId);
   return services.find((service: Service) => service.id === id);
+}
+
+/**
+ * Returns services with their effective values (price and weightage with multipliers applied)
+ * Includes selection probabilities for UI display
+ */
+export function getEffectiveServices(industryId: IndustryId): EffectiveService[] {
+  const services = getServicesForIndustry(industryId);
+
+  // Get tier multipliers from effect manager
+  const tierRevenueMultipliers = {
+    high: effectManager.calculate(GameMetric.HighTierServiceRevenueMultiplier, 1),
+    mid: effectManager.calculate(GameMetric.MidTierServiceRevenueMultiplier, 1),
+    low: effectManager.calculate(GameMetric.LowTierServiceRevenueMultiplier, 1),
+  };
+
+  const tierWeightageMultipliers = {
+    high: effectManager.calculate(GameMetric.HighTierServiceWeightageMultiplier, 1),
+    mid: effectManager.calculate(GameMetric.MidTierServiceWeightageMultiplier, 1),
+    low: effectManager.calculate(GameMetric.LowTierServiceWeightageMultiplier, 1),
+  };
+
+  // Calculate effective weights and prices
+  const servicesWithEffectiveValues = services.map(service => ({
+    service,
+    effectivePrice: service.price * tierRevenueMultipliers[service.pricingCategory || 'mid'],
+    effectiveWeightage: (service.weightage || 1) * tierWeightageMultipliers[service.pricingCategory || 'mid']
+  }));
+
+  // Calculate total weight for probability calculation
+  const totalWeight = servicesWithEffectiveValues.reduce(
+    (sum, { effectiveWeightage }) => sum + effectiveWeightage, 0
+  );
+
+  // Return services with all effective values and probabilities
+  return servicesWithEffectiveValues.map(({ service, effectivePrice, effectiveWeightage }) => ({
+    ...service,
+    effectivePrice: Math.round(effectivePrice * 100) / 100, // Round to 2 decimal places
+    effectiveWeightage: Math.round(effectiveWeightage * 100) / 100,
+    selectionProbability: totalWeight > 0 ? Math.round((effectiveWeightage / totalWeight) * 100) : 0
+  }));
 }

@@ -94,6 +94,14 @@ export interface BaseUpgradeMetrics {
   happyProbability: number;
   serviceRevenueMultiplier: number;
   serviceRevenueFlatBonus: number;
+  founderWorkingHours: number;
+  // Tier-specific service modifiers (default to 1 if not specified)
+  highTierServiceRevenueMultiplier?: number;
+  highTierServiceWeightageMultiplier?: number;
+  midTierServiceRevenueMultiplier?: number;
+  midTierServiceWeightageMultiplier?: number;
+  lowTierServiceRevenueMultiplier?: number;
+  lowTierServiceWeightageMultiplier?: number;
 }
 
 export interface GridPosition {
