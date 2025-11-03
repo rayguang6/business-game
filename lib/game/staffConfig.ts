@@ -11,6 +11,7 @@ export interface StaffRoleConfig {
   salary: number;
   effects: UpgradeEffect[]; // Flexible effects like upgrades
   emoji: string;
+  spriteImage?: string; // Optional sprite image path (falls back to default if not set)
   setsFlag?: string; // Optional flag to set when this staff role is hired
   requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
 }
@@ -101,6 +102,7 @@ function buildStaffFromRole(
     salary: overrides.salary ?? role.salary,
     effects: overrides.effects ?? role.effects.map(effect => ({ ...effect })), // Deep copy effects
     emoji: overrides.emoji ?? role.emoji,
+    spriteImage: overrides.spriteImage ?? role.spriteImage,
     setsFlag: overrides.setsFlag ?? role.setsFlag,
     requirements: overrides.requirements ?? role.requirements,
   };
@@ -190,6 +192,7 @@ export function createRandomStaffForIndustry(
     salary: role.salary,
     effects: role.effects.map(effect => ({ ...effect })), // Deep copy effects
     emoji: role.emoji,
+    spriteImage: role.spriteImage,
     setsFlag: role.setsFlag,
     requirements: role.requirements,
   };

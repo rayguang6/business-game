@@ -9,6 +9,7 @@ export interface Staff {
   emoji: string; // To represent the staff member
   role: string;
   roleId: string; // Reference to the role configuration
+  spriteImage?: string; // Optional sprite image path (from role, falls back to default if not set)
   setsFlag?: string; // Optional flag to set when this staff member is hired
   requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
 }
