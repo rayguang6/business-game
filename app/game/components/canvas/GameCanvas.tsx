@@ -10,7 +10,7 @@ import { SpriteCustomer } from './SpriteCustomer';
 import { SpriteStaff } from './SpriteStaff';
 import { GridOverlay } from './GridOverlay';
 import { DEFAULT_INDUSTRY_ID, getBusinessStats } from '@/lib/game/config';
-import { IndustryId } from '@/lib/game/types';
+import { IndustryId, GridPosition } from '@/lib/game/types';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import { getServiceRoomPositions, getStaffPositions } from '@/lib/game/positioning';
 
@@ -99,11 +99,32 @@ export function GameCanvas() {
   const serviceRooms = Math.max(1, Math.round(metrics.serviceRooms));
   const mapBackground = selectedIndustry.mapImage ?? '/images/maps/dental-map.png';
 
-  // Get service room positions for rendering beds
-  const serviceRoomPositions = useMemo(() => getServiceRoomPositions(industryId), [industryId]);
-  // Get staff positions for rendering staff
-  const staffPositions = useMemo(() => getStaffPositions(industryId), [industryId]);
+  // Get service room positions for rendering beds (from database or fallback)
+  const [serviceRoomPositions, setServiceRoomPositions] = useState<GridPosition[]>([]);
+  // Get staff positions for rendering staff (from database or fallback)
+  const [staffPositions, setStaffPositions] = useState<GridPosition[]>([]);
   const TILE_SIZE = 32;
+
+  // Load positions from database (async) with fallback to hardcoded
+  useEffect(() => {
+    let isMounted = true;
+    
+    (async () => {
+      const [rooms, staff] = await Promise.all([
+        getServiceRoomPositions(industryId),
+        getStaffPositions(industryId),
+      ]);
+      
+      if (isMounted) {
+        setServiceRoomPositions(rooms);
+        setStaffPositions(staff);
+      }
+    })();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [industryId]);
 
   const spawnIntervalSeconds = metrics.spawnIntervalSeconds;
   const customersPerMinute = spawnIntervalSeconds > 0 ? 60 / spawnIntervalSeconds : null;
@@ -226,6 +247,9 @@ export function GameCanvas() {
             const bedBottom = (position.y + 1) * TILE_SIZE; // Align bottom with grid cell bottom
             const bedTop = bedBottom - bedHeight; // Top extends upward
             
+            // Use bed image from database or fallback to default
+            const bedImagePath = selectedIndustry?.bedImage || '/images/beds/bed.png';
+            
             return (
               <div
                 key={`bed-${index}`}
@@ -235,7 +259,7 @@ export function GameCanvas() {
                   top: `${bedTop}px`,
                   width: `${TILE_SIZE}px`,
                   height: `${bedHeight}px`,
-                  backgroundImage: 'url(/images/beds/bed.png)',
+                  backgroundImage: `url(${bedImagePath})`,
                   backgroundSize: '100% auto', // Fill full width, maintain aspect ratio
                   backgroundPosition: 'bottom center', // Align to bottom so overflow goes up
                   backgroundRepeat: 'no-repeat',

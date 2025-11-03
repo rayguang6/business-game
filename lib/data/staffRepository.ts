@@ -15,6 +15,7 @@ interface StaffRoleRow {
   emoji: string | null;
   sets_flag: string | null;
   requirements: unknown;
+  sprite_image?: string | null; // Path to sprite image (can be local or Supabase Storage URL)
 }
 
 interface StaffPresetRow {
@@ -92,6 +93,7 @@ const mapRoleRows = (rows: StaffRoleRow[] | null | undefined): StaffRoleConfig[]
         salary: parseNumber(row.salary),
         effects,
         emoji: row.emoji && row.emoji.trim() ? row.emoji.trim() : '🧑‍💼',
+        spriteImage: row.sprite_image && row.sprite_image.trim() ? row.sprite_image.trim() : undefined,
         setsFlag: row.sets_flag || undefined,
         requirements: Array.isArray(row.requirements) ? row.requirements as any[] : [],
       };
@@ -129,7 +131,7 @@ export async function fetchStaffDataForIndustry(
   const [rolesResponse, presetsResponse] = await Promise.all([
     supabase
       .from('staff_roles')
-      .select('id, industry_id, name, salary, effects, service_speed, workload_reduction, emoji, sets_flag, requirements')
+      .select('id, industry_id, name, salary, effects, service_speed, workload_reduction, emoji, sets_flag, requirements, sprite_image')
       .eq('industry_id', industryId),
     supabase
       .from('staff_presets')
@@ -168,6 +170,7 @@ export async function upsertStaffRole(role: {
   salary: number;
   effects: UpgradeEffect[];
   emoji?: string;
+  spriteImage?: string;
   setsFlag?: string;
   requirements?: any[];
 }): Promise<{ success: boolean; message?: string }>
@@ -197,6 +200,7 @@ export async function upsertStaffRole(role: {
     service_speed: serviceSpeed, // Legacy compatibility
     workload_reduction: workloadReduction, // Legacy compatibility
     emoji: role.emoji ?? null,
+    sprite_image: role.spriteImage ?? null,
     sets_flag: role.setsFlag || null,
     requirements: role.requirements || [],
   };
