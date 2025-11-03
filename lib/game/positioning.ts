@@ -17,6 +17,10 @@ export function getServiceRoomPositions(industryId: IndustryId): GridPosition[] 
   return getLayoutConfig(industryId).serviceRoomPositions;
 }
 
+export function getStaffPositions(industryId: IndustryId): GridPosition[] {
+  return getLayoutConfig(industryId).staffPositions;
+}
+
 export function getEntryPosition(industryId: IndustryId): GridPosition {
   return getLayoutConfig(industryId).entryPosition;
 }

@@ -7,10 +7,12 @@ import { WaitingArea } from './WaitingArea';
 import { TreatmentRoom } from './TreatmentRoom';
 import { Character2D } from './Character2D';
 import { SpriteCustomer } from './SpriteCustomer';
+import { SpriteStaff } from './SpriteStaff';
 import { GridOverlay } from './GridOverlay';
 import { DEFAULT_INDUSTRY_ID, getBusinessStats } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
+import { getServiceRoomPositions, getStaffPositions } from '@/lib/game/positioning';
 
 // Canvas scaling configuration
 const CANVAS_CONFIG = {
@@ -36,6 +38,7 @@ export function GameCanvas() {
     selectedIndustry,
     customers,
     gameTime,
+    hiredStaff,
   } = useGameStore();
   const canvasRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState(350);
@@ -95,6 +98,12 @@ export function GameCanvas() {
   const serviceRoomsLabel = 'Service Rooms';
   const serviceRooms = Math.max(1, Math.round(metrics.serviceRooms));
   const mapBackground = selectedIndustry.mapImage ?? '/images/maps/dental-map.png';
+
+  // Get service room positions for rendering beds
+  const serviceRoomPositions = useMemo(() => getServiceRoomPositions(industryId), [industryId]);
+  // Get staff positions for rendering staff
+  const staffPositions = useMemo(() => getStaffPositions(industryId), [industryId]);
+  const TILE_SIZE = 32;
 
   const spawnIntervalSeconds = metrics.spawnIntervalSeconds;
   const customersPerMinute = spawnIntervalSeconds > 0 ? 60 / spawnIntervalSeconds : null;
@@ -195,6 +204,48 @@ export function GameCanvas() {
             transformOrigin: 'top left'
           }}
         >
+          {/* Render staff at staff positions (one per staff member) */}
+          {hiredStaff.slice(0, staffPositions.length).map((staff, index) => {
+            const position = staffPositions[index];
+            if (!position) return null;
+            
+            return (
+              <SpriteStaff
+                key={staff.id}
+                staff={staff}
+                position={position}
+                scaleFactor={scaleFactor}
+              />
+            );
+          })}
+
+          {/* Render beds at service room positions (only for active rooms) */}
+          {serviceRoomPositions.slice(0, serviceRooms).map((position, index) => {
+            // Bed dimensions: full width of grid, height overflows upward
+            const bedHeight = TILE_SIZE * 1.5; // 1.5x tile height for upward overflow
+            const bedBottom = (position.y + 1) * TILE_SIZE; // Align bottom with grid cell bottom
+            const bedTop = bedBottom - bedHeight; // Top extends upward
+            
+            return (
+              <div
+                key={`bed-${index}`}
+                className="absolute pointer-events-none"
+                style={{
+                  left: `${position.x * TILE_SIZE}px`,
+                  top: `${bedTop}px`,
+                  width: `${TILE_SIZE}px`,
+                  height: `${bedHeight}px`,
+                  backgroundImage: 'url(/images/beds/bed.png)',
+                  backgroundSize: '100% auto', // Fill full width, maintain aspect ratio
+                  backgroundPosition: 'bottom center', // Align to bottom so overflow goes up
+                  backgroundRepeat: 'no-repeat',
+                  imageRendering: 'pixelated',
+                  zIndex: 5 // Below customers (zIndex 10)
+                }}
+              />
+            );
+          })}
+
           {/* Render all customers as sprites */}
           {customers.map((customer) => (
             <SpriteCustomer
