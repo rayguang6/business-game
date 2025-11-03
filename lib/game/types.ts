@@ -105,6 +105,7 @@ export interface SimulationLayoutConfig {
   entryPosition: GridPosition;
   waitingPositions: GridPosition[];
   serviceRoomPositions: GridPosition[];
+  staffPositions: GridPosition[];
 }
 
 export type ServicePricingCategory = 'low' | 'mid' | 'high';

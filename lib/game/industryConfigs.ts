@@ -87,6 +87,16 @@ const DEFAULT_LAYOUT: SimulationLayoutConfig = {
     { x: 8, y: 2 },
     { x: 9, y: 2 },
   ],
+  staffPositions: [
+    { x: 4, y: 0 },
+    { x: 5, y: 0 },
+    { x: 6, y: 0 },
+    { x: 7, y: 0 },
+    { x: 8, y: 0 },
+    { x: 9, y: 0 },
+    { x: 4, y: 1 },
+    { x: 5, y: 1 },
+  ],
 } as const;
 
 const DEFAULT_CUSTOMER_IMAGES = [
@@ -439,6 +449,7 @@ function createSharedBase(): Omit<IndustrySimulationConfig, 'id' | 'services' | 
       entryPosition: { ...DEFAULT_LAYOUT.entryPosition },
       waitingPositions: DEFAULT_LAYOUT.waitingPositions.map((pos) => ({ ...pos })),
       serviceRoomPositions: DEFAULT_LAYOUT.serviceRoomPositions.map((pos) => ({ ...pos })),
+      staffPositions: DEFAULT_LAYOUT.staffPositions.map((pos) => ({ ...pos })),
     },
     customerImages: [...DEFAULT_CUSTOMER_IMAGES],
     defaultCustomerImage: DEFAULT_CUSTOMER_IMAGES[0],
@@ -467,6 +478,7 @@ function getStaticEventsForIndustry(industryId: IndustryId): GameEvent[] {
       consequences: choice.consequences.map((consequence) => ({
         ...consequence,
         effects: consequence.effects.map((effect) => ({ ...effect })),
+        temporaryEffects: (consequence.temporaryEffects ?? []).map((effect) => ({ ...effect })),
       })),
     })),
   }));
@@ -605,6 +617,7 @@ export function setIndustryEvents(industryId: IndustryId, events: GameEvent[]): 
       consequences: choice.consequences.map((consequence) => ({
         ...consequence,
         effects: consequence.effects.map((effect) => ({ ...effect })),
+        temporaryEffects: (consequence.temporaryEffects ?? []).map((effect) => ({ ...effect })),
       })),
     })),
   }));
@@ -616,6 +629,7 @@ export function setIndustryEvents(industryId: IndustryId, events: GameEvent[]): 
       consequences: choice.consequences.map((consequence) => ({
         ...consequence,
         effects: consequence.effects.map((effect) => ({ ...effect })),
+        temporaryEffects: (consequence.temporaryEffects ?? []).map((effect) => ({ ...effect })),
       })),
     })),
   }));
