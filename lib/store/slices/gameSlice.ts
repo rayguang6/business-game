@@ -82,6 +82,8 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     flags: {},
   
   startGame: () => {
+    const { resetEvents, resetMonthlyTracking, resetFlags } = get();
+
     // Reset to initial state but keep industry selection and start the game
     const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
     const baseMonthlyExpenses = getMonthlyBaseExpenses(industryId);
@@ -91,6 +93,17 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       monthlyExpenses: baseMonthlyExpenses,
       monthlyExpenseAdjustments: 0,
     });
+
+    // Reset state for a fresh game
+    if (resetEvents) {
+      resetEvents();
+    }
+    if (resetMonthlyTracking) {
+      resetMonthlyTracking();
+    }
+    if (resetFlags) {
+      resetFlags();
+    }
 
     // Restore effects for purchased upgrades and hired staff
     const gameState = get();
@@ -126,7 +139,9 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       resetStaff,
       resetUpgrades,
       resetMarketing,
-      setCurrentEvent,
+      resetEvents,
+      resetMonthlyTracking,
+      resetFlags,
     } = get();
 
     // Clear all active effects before rebuilding initial ones
@@ -138,11 +153,17 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     if (resetMarketing) {
       resetMarketing();
     }
-    if (setCurrentEvent) {
-      setCurrentEvent(null);
+    if (resetEvents) {
+      resetEvents();
     }
     if (resetStaff) {
       resetStaff();
+    }
+    if (resetMonthlyTracking) {
+      resetMonthlyTracking();
+    }
+    if (resetFlags) {
+      resetFlags();
     }
 
     // Reset everything to initial state including industry selection
@@ -150,7 +171,6 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       ...getInitialGameState(DEFAULT_INDUSTRY_ID, false), // keepIndustry = false
       monthlyExpenses: getMonthlyBaseExpenses(DEFAULT_INDUSTRY_ID),
       monthlyExpenseAdjustments: 0,
-      flags: {}, // Reset flags
     });
   },
   
