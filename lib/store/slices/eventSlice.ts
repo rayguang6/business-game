@@ -1,3 +1,154 @@
+// ════════════════════════════════════════════════════════════════════════════════
+// 🎮 EVENT EFFECT SYSTEM - QUICK REFERENCE
+// ════════════════════════════════════════════════════════════════════════════════
+// TWO-PHASE SYSTEM: Resolve (calculate) → Apply (execute)
+//
+// 📋 WHEN ADDING NEW EFFECT TYPES:
+//    1. GameEventEffect type (/lib/types/gameEvents.ts)
+//    2. ResolvedEffect type (below)
+//    3. resolveEventChoice function (STEP 3)
+//    4. clearLastEventOutcome function (STEP 4)
+//    5. Add tests
+//
+// 🚨 SEE DETAILED GUIDE BELOW FOR STEP-BY-STEP INSTRUCTIONS
+//
+// ════════════════════════════════════════════════════════════════════════════════
+// 🎯 SYSTEM OVERVIEW
+// ════════════════════════════════════════════════════════════════════════════════
+// Event effects are applied in TWO PHASES for better UX:
+//
+// 1. RESOLVE PHASE (immediate): When player chooses option
+//    - Calculate ALL dynamic values once at resolve time
+//    - Store pre-calculated final values for application
+//    - Show outcome popup with calculated effects
+//
+// 2. APPLY PHASE (deferred): When player clicks "Continue"
+//    - Apply pre-calculated values (no recalculation)
+//    - Run game over check
+//
+// BENEFITS: Players see outcomes before effects trigger, preventing surprise game overs
+//           No display/apply misalignment since values are calculated once
+// RISKS: Game state changes between resolve and apply don't affect calculations
+//        (This is actually GOOD - locks in the values at choice time)
+//
+// If you modify this system, test carefully with:
+// - Dynamic cash effects (expenses-based)
+// - Game-ending effects (cash/reputation to zero)
+// - Multiple effect types in same event
+// - Edge case: Very rapid state changes (though unlikely during outcome review)
+//
+// NOTE: The TypeScript linter may show false positive errors about 'label' property
+// not existing on ResolvedEffect types. These are incorrect - we're accessing
+// 'effect.label' from the original GameEventEffect parameter, not from ResolvedEffect.
+//
+// =============================================================================
+// 🚨 FUTURE MAINTAINER: EVENT EFFECT SYSTEM MAINTENANCE GUIDE 🚨
+// =============================================================================
+//
+// This file implements a TWO-PHASE event effect system for better UX:
+//
+// PHASE 1 - RESOLVE (when player chooses option):
+//   - Calculate all dynamic values once
+//   - Store effects for display and later application
+//   - Show outcome popup
+//
+// PHASE 2 - APPLY (when player clicks "Continue"):
+//   - Apply pre-calculated effects
+//   - Check for game over
+//
+// ════════════════════════════════════════════════════════════════════════════════
+// 🆕 ADDING A NEW EFFECT TYPE - STEP-BY-STEP GUIDE
+// ════════════════════════════════════════════════════════════════════════════════
+//
+// When adding a new effect type (e.g., 'health', 'energy', 'newMetricType'):
+//
+// STEP 1: Update GameEventEffect type in /lib/types/gameEvents.ts
+// ──────────────────────────────────────────────────────────────────────────────
+// Add your new effect to the union type:
+// export type GameEventEffect =
+//   | { type: 'cash'; amount: number; label?: string }
+//   | { type: 'health'; amount: number; label?: string }  // ← ADD HERE
+//   | { type: 'reputation'; amount: number }
+//   | ...existing types
+//
+// STEP 2: Update ResolvedEffect type in this file (eventSlice.ts)
+// ──────────────────────────────────────────────────────────────────────────────
+// Add corresponding resolved type:
+// export type ResolvedEffect =
+//   | { type: 'cash'; amount: number; label: string | undefined }
+//   | { type: 'health'; amount: number; label: string | undefined }  // ← ADD HERE
+//   | { type: 'reputation'; amount: number; label: string | undefined }
+//   | ...existing types
+//
+// STEP 3: Handle RESOLUTION in resolveEventChoice function
+// ──────────────────────────────────────────────────────────────────────────────
+// Add case in the forEach loop (around line 252):
+// } else if (effect.type === 'health') {
+//   appliedEffects.push(effect);  // For display
+//   const resolvedEffect: ResolvedEffect = {
+//     type: 'health',
+//     amount: effect.amount,
+//     label: effect.label,
+//   };
+//   pendingEffects.push(resolvedEffect);  // For later application
+// }
+//
+// STEP 4: Handle APPLICATION in clearLastEventOutcome function
+// ──────────────────────────────────────────────────────────────────────────────
+// Add case in the forEach loop (around line 318):
+// } else if (resolvedEffect.type === 'health' && resolvedEffect.amount !== undefined) {
+//   store.applyHealthChange(resolvedEffect.amount);  // Your application logic
+// }
+//
+// STEP 5: Add tests in /test/eventEffects.test.ts (or equivalent)
+// ──────────────────────────────────────────────────────────────────────────────
+// Test both display and application:
+// - Effect shows correctly in outcome popup
+// - Effect applies correctly when clicking Continue
+// - Dynamic calculations work (if applicable)
+// - Game over triggers appropriately
+//
+// ════════════════════════════════════════════════════════════════════════════════
+// ⚠️  COMMON PITFALLS & THINGS TO WATCH
+// ════════════════════════════════════════════════════════════════════════════════
+//
+// 1. FORGETTING ONE PHASE:
+//    - Only updating resolve but not apply = effects display but don't work
+//    - Only updating apply but not resolve = effects work but don't show
+//
+// 2. TYPE MISMATCHES:
+//    - ResolvedEffect properties must match what you expect in apply phase
+//    - GameEventEffect and ResolvedEffect should be consistent
+//
+// 3. DYNAMIC VALUE CONSISTENCY:
+//    - Dynamic effects (like expenses*N) are calculated ONCE at resolve time
+//    - This is GOOD - locks in values at choice time
+//    - But means game state changes during outcome review don't affect calculations
+//
+// 4. TESTING REQUIREMENTS:
+//    - Test with game-ending effects (cash/reputation to zero)
+//    - Test with multiple effects in one event
+//    - Test dynamic calculations (expenses-based effects)
+//    - Test edge cases (very large/small values)
+//
+// 5. PERFORMANCE:
+//    - Effects are pre-calculated, so no performance impact during outcome review
+//    - Keep calculations simple in resolve phase
+//
+// ════════════════════════════════════════════════════════════════════════════════
+// 🔍 DEBUGGING CHECKLIST
+// ════════════════════════════════════════════════════════════════════════════════
+//
+// If effects aren't working:
+// □ Is the effect type added to GameEventEffect union?
+// □ Is the resolved type added to ResolvedEffect union?
+// □ Is there a case for it in resolveEventChoice?
+// □ Is there a case for it in clearLastEventOutcome?
+// □ Are the property names consistent between types?
+// □ Do tests pass for both display and application?
+//
+// ════════════════════════════════════════════════════════════════════════════════
+
 import { StateCreator } from 'zustand';
 import { GameEvent, GameEventChoice, GameEventConsequence, GameEventEffect } from '../../types/gameEvents';
 import { GameMetric, EffectType } from '../../game/effectManager';
@@ -7,6 +158,18 @@ import { getMonthlyBaseExpenses } from '@/lib/features/economy';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import { DynamicValueEvaluator } from '@/lib/game/dynamicValueEvaluator';
 
+// ════════════════════════════════════════════════════════════════════════════════
+// 🎯 RESOLVED EFFECT TYPES - Update this when adding new effects (STEP 2)
+// ════════════════════════════════════════════════════════════════════════════════
+// Pre-calculated effect values for consistent application
+// These must match the structure expected in the application phase
+export type ResolvedEffect =
+  | { type: 'cash'; amount: number; label: string | undefined }
+  | { type: 'reputation'; amount: number; label: string | undefined }
+  | { type: 'metric'; metric: GameMetric; effectType: EffectType; value: number; durationSeconds?: number | null; priority?: number; label: string | undefined };
+// 🚨 ADD NEW RESOLVED EFFECT TYPES HERE (STEP 2)
+// | { type: 'yourNewEffectType'; amount: number; label: string | undefined }
+
 export interface ResolvedEventOutcome {
   eventId: string;
   eventTitle: string;
@@ -14,7 +177,8 @@ export interface ResolvedEventOutcome {
   choiceLabel: string;
   consequenceId: string | null;
   costPaid: number;
-  appliedEffects: GameEventEffect[];
+  appliedEffects: GameEventEffect[]; // Effects shown to player (may be transformed for display)
+  pendingEffects: ResolvedEffect[]; // Pre-calculated values to apply when player clicks continue
   consequenceLabel?: string;
   consequenceDescription?: string;
 }
@@ -26,6 +190,7 @@ export interface EventSlice {
   setCurrentEvent: (event: GameEvent | null) => void;
   resolveEventChoice: (choiceId: string) => void;
   clearLastEventOutcome: () => void;
+  resetEvents: () => void;
 }
 
 // Helper to calculate dynamic cash value
@@ -189,24 +354,64 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
     }
 
     const consequence = pickConsequence(choice);
-    const appliedEffects: GameEventEffect[] = [];
+    const appliedEffects: GameEventEffect[] = []; // For display only
+    const pendingEffects: ResolvedEffect[] = []; // Pre-calculated values for consistent application
 
+    // ════════════════════════════════════════════════════════════════════════════════
+    // 🎯 EFFECT RESOLUTION PHASE - Add new effect types here (STEP 3)
+    // ════════════════════════════════════════════════════════════════════════════════
+    // RESOLVE STRATEGY: Calculate ALL values once at choice time
+    // This eliminates display/apply misalignment by locking in values immediately
     if (consequence) {
       consequence.effects.forEach((effect: GameEventEffect) => {
-        applyEventEffect(effect, event, choice, store);
-        
-        // Convert dynamicCash to cash format for display (with calculated value)
         if (effect.type === 'dynamicCash') {
-          const calculatedValue = calculateDynamicCashValue(effect, store);
-          // Store as cash effect for display purposes
+          // Dynamic cash effects: calculate once, store final value
+          const finalAmount = calculateDynamicCashValue(effect, store);
+
           appliedEffects.push({
             type: 'cash',
-            amount: calculatedValue,
+            amount: finalAmount,
             label: effect.label,
           });
-        } else {
+
+          pendingEffects.push({
+            type: 'cash',
+            amount: finalAmount,
+            label: effect.label,
+          });
+        } else if (effect.type === 'cash' || effect.type === 'reputation') {
+          // Direct cash/reputation effects - no calculation needed
           appliedEffects.push(effect);
+          const resolvedEffect: ResolvedEffect = {
+            type: effect.type,
+            amount: effect.amount,
+            label: effect.label,
+          };
+          pendingEffects.push(resolvedEffect);
+        } else if (effect.type === 'metric') {
+          // Metric effects - copy all properties as-is
+          appliedEffects.push(effect);
+          const resolvedEffect: ResolvedEffect = {
+            type: 'metric',
+            metric: effect.metric!,
+            effectType: effect.effectType!,
+            value: effect.value!,
+            durationSeconds: effect.durationSeconds,
+            priority: effect.priority,
+            label: effect.label,
+          };
+          pendingEffects.push(resolvedEffect);
         }
+        // 🚨 ADD NEW EFFECT TYPE HANDLING HERE (STEP 3)
+        // else if (effect.type === 'yourNewEffectType') {
+        //   // Handle resolution logic for your new effect
+        //   appliedEffects.push(effect);
+        //   const resolvedEffect: ResolvedEffect = {
+        //     type: 'yourNewEffectType',
+        //     // ... your properties
+        //   };
+        //   pendingEffects.push(resolvedEffect);
+        // }
       });
     }
 
@@ -224,7 +429,8 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
         choiceLabel: choice.label,
         consequenceId: consequence?.id ?? null,
         costPaid: cost,
-        appliedEffects,
+        appliedEffects, // For display
+        pendingEffects, // For later application
         consequenceLabel: consequence?.label,
         consequenceDescription: consequence?.description,
       },
@@ -235,12 +441,67 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
   clearLastEventOutcome: () => {
     const store = get();
     const shouldUnpause = !store.wasPausedBeforeEvent;
+
+    // ════════════════════════════════════════════════════════════════════════════════
+    // 🎯 EFFECT APPLICATION PHASE - Add new effect types here (STEP 4)
+    // ════════════════════════════════════════════════════════════════════════════════
+    // APPLY PHASE: Apply pre-calculated effect values
+    // Benefits: No recalculation, guaranteed consistency with display values
+    const outcome = store.lastEventOutcome;
+    if (outcome?.pendingEffects) {
+      outcome.pendingEffects.forEach((resolvedEffect: ResolvedEffect) => {
+        if (resolvedEffect.type === 'cash' && resolvedEffect.amount !== undefined) {
+          // Cash effects go through revenue system
+          const { recordEventRevenue, recordEventExpense } = store;
+          if (resolvedEffect.amount >= 0) {
+            recordEventRevenue(resolvedEffect.amount, resolvedEffect.label ?? 'Event revenue');
+          } else {
+            recordEventExpense(Math.abs(resolvedEffect.amount), resolvedEffect.label ?? 'Event expense');
+          }
+        } else if (resolvedEffect.type === 'reputation' && resolvedEffect.amount !== undefined) {
+          // Reputation effects go through reputation system
+          store.applyReputationChange(resolvedEffect.amount);
+        } else if (resolvedEffect.type === 'metric' && resolvedEffect.metric && resolvedEffect.effectType !== undefined && resolvedEffect.value !== undefined) {
+          // Metric effects go through effect manager
+          effectManager.add({
+            id: `event_${outcome.eventId}_${outcome.choiceId}_${Date.now()}`,
+            source: {
+              category: 'event',
+              id: outcome.eventId,
+              name: outcome.eventTitle,
+            },
+            metric: resolvedEffect.metric,
+            type: resolvedEffect.effectType,
+            value: resolvedEffect.value,
+            durationSeconds: resolvedEffect.durationSeconds,
+            priority: resolvedEffect.priority,
+          });
+        }
+        // 🚨 ADD NEW EFFECT TYPE APPLICATION HERE (STEP 4)
+        // else if (resolvedEffect.type === 'yourNewEffectType' && resolvedEffect.amount !== undefined) {
+        //   // Apply your effect to the game state
+        //   store.applyYourNewEffect(resolvedEffect.amount);
+        // }
+      });
+
+      // Check for game over after applying effects
+      store.checkGameOver();
+    }
+
     set({
       lastEventOutcome: null,
       wasPausedBeforeEvent: false,
     });
+
     if (shouldUnpause) {
       store.unpauseGame();
     }
+  },
+  resetEvents: () => {
+    set({
+      currentEvent: null,
+      wasPausedBeforeEvent: false,
+      lastEventOutcome: null,
+    });
   },
 });
