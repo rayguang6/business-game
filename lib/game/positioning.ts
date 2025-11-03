@@ -24,17 +24,17 @@ const positionCache = new Map<string, {
 
 const CACHE_TTL = 60000; // 1 minute cache
 
-function getCachedOrFetch<T>(
+function getCachedOrFetch(
   cacheKey: string,
-  fetchFn: () => Promise<T | null>,
+  fetchFn: () => Promise<GridPosition[] | null>,
   field: 'staffPositions' | 'serviceRoomPositions',
-): Promise<T | null> {
+): Promise<GridPosition[] | null> {
   const cached = positionCache.get(cacheKey);
   const now = Date.now();
   
   // Return cached if valid
   if (cached && (now - cached.timestamp) < CACHE_TTL && cached[field] !== undefined) {
-    return Promise.resolve(cached[field] as T | null);
+    return Promise.resolve(cached[field]);
   }
   
   // Fetch and cache

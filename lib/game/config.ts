@@ -94,7 +94,6 @@ export function getEventsForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_I
       consequences: choice.consequences.map((consequence) => ({
         ...consequence,
         effects: consequence.effects.map((effect) => ({ ...effect })),
-        temporaryEffects: (consequence.temporaryEffects ?? []).map((effect) => ({ ...effect })),
       })),
     })),
   }));

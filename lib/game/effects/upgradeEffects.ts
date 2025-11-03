@@ -76,6 +76,7 @@ export const createUpgradeEffects = (
     metric: effect.metric,
     type: effect.type,
     value: scaleUpgradeEffectValue(effect, level),
+    createdAt: Date.now() / 1000, // Convert to seconds to match game time
   }));
 };
 
