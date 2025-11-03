@@ -38,6 +38,7 @@ type RawConsequence = {
 type RawEffect =
   | { type: 'cash'; amount: number; label?: string }
   | { type: 'reputation'; amount: number; label?: string }
+  | { type: 'dynamicCash'; expression: string; label?: string }
   | { type: 'metric'; metric?: string; effectType?: string; value?: number; durationSeconds?: number | null; priority?: number };
 
 const toNumber = (value: unknown, fallback = 0): number => {
@@ -58,7 +59,7 @@ const isRawEffect = (value: unknown): value is RawEffect => {
     return false;
   }
   const record = value as Record<string, unknown>;
-  return record.type === 'cash' || record.type === 'reputation' || record.type === 'metric';
+  return record.type === 'cash' || record.type === 'reputation' || record.type === 'metric' || record.type === 'dynamicCash';
 };
 
 const mapConsequences = (raw: RawConsequence[] | undefined): GameEventConsequence[] => {
@@ -137,6 +138,12 @@ const convertRawEffectToGameEventEffect = (rawEffect: RawEffect): GameEventEffec
         type: 'reputation',
         amount: rawEffect.amount ?? 0,
       };
+    case 'dynamicCash':
+      return {
+        type: 'dynamicCash',
+        expression: String(rawEffect.expression ?? ''),
+        label: rawEffect.label,
+      };
     case 'metric':
       return {
         type: 'metric',
@@ -161,6 +168,12 @@ const convertGameEventEffectToRawEffect = (effect: GameEventEffect): RawEffect =
       return {
         type: 'reputation',
         amount: effect.amount,
+      };
+    case 'dynamicCash':
+      return {
+        type: 'dynamicCash',
+        expression: effect.expression,
+        label: effect.label,
       };
     case 'metric':
       return {

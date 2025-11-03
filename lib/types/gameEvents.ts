@@ -7,6 +7,7 @@ export type EventCategory = 'opportunity' | 'risk';
 
 export type GameEventEffect =
   | { type: 'cash'; amount: number; label?: string }
+  | { type: 'dynamicCash'; expression: string; label?: string }
   | { type: 'reputation'; amount: number }
   | { type: 'metric'; metric: GameMetric; effectType: EffectType; value: number; durationSeconds?: number | null; priority?: number }
 

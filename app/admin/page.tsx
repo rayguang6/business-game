@@ -185,6 +185,7 @@ export default function AdminPage() {
     weight: string;
     effects: Array<
       | { type: 'cash'; amount: string; label?: string }
+      | { type: 'dynamicCash'; expression: string; label?: string }
       | { type: 'reputation'; amount: string }
       | { type: 'metric'; metric: GameMetric; effectType: EffectType; value: string; durationSeconds: string; priority?: string }
     >;
@@ -890,6 +891,8 @@ export default function AdminPage() {
       effects: (consequence.effects || []).map((ef: GameEventEffect) => {
         if (ef.type === 'cash') {
           return { type: 'cash', amount: String(ef.amount || 0), label: ef.label };
+        } else if (ef.type === 'dynamicCash') {
+          return { type: 'dynamicCash', expression: String(ef.expression || ''), label: ef.label };
         } else if (ef.type === 'reputation') {
           return { type: 'reputation', amount: String(ef.amount || 0) };
         } else if (ef.type === 'metric') {
@@ -927,6 +930,12 @@ export default function AdminPage() {
         return {
           type: 'cash' as const,
           amount: Number(ef.amount) || 0,
+          ...(ef.label ? { label: ef.label } : {}),
+        };
+      } else if (ef.type === 'dynamicCash') {
+        return {
+          type: 'dynamicCash' as const,
+          expression: String(ef.expression || ''),
           ...(ef.label ? { label: ef.label } : {}),
         };
       } else if (ef.type === 'reputation') {
@@ -1023,6 +1032,8 @@ export default function AdminPage() {
         for (const effect of consequence.effects) {
           if (effect.type === 'cash' || effect.type === 'reputation') {
             if (typeof effect.amount !== 'number') return false;
+          } else if (effect.type === 'dynamicCash') {
+            if (typeof effect.expression !== 'string' || !effect.expression.trim()) return false;
           } else {
             return false;
           }
@@ -1043,6 +1054,9 @@ export default function AdminPage() {
             if (effect.label !== undefined && typeof effect.label !== 'string') return false;
           } else if (effect.type === 'reputation') {
             if (typeof effect.amount !== 'number') return false;
+          } else if (effect.type === 'dynamicCash') {
+            if (typeof effect.expression !== 'string' || !effect.expression.trim()) return false;
+            if (effect.label !== undefined && typeof effect.label !== 'string') return false;
           } else {
             return false; // invalid effect type
           }
@@ -1162,8 +1176,15 @@ export default function AdminPage() {
                   if (effect.priority !== undefined && typeof effect.priority !== 'number') {
                     errors.push(`${effectPath}.priority: must be a number if provided`);
                   }
+                } else if (effect?.type === 'dynamicCash') {
+                  if (typeof effect.expression !== 'string' || !effect.expression.trim()) {
+                    errors.push(`${effectPath}.expression: must be a non-empty string`);
+                  }
+                  if (effect.label !== undefined && typeof effect.label !== 'string') {
+                    errors.push(`${effectPath}.label: must be a string if provided`);
+                  }
                 } else {
-                  errors.push(`${effectPath}.type: must be "cash", "reputation", or "metric"`);
+                  errors.push(`${effectPath}.type: must be "cash", "reputation", "metric", or "dynamicCash"`);
                 }
               });
             }
@@ -2956,6 +2977,13 @@ export default function AdminPage() {
                                             </button>
                                             <button
                                               type="button"
+                                              onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: 'dynamicCash', expression: 'expenses*1', label: '' }] }))}
+                                              className="px-2 py-1 text-xs rounded border border-purple-500 text-purple-200 hover:bg-purple-500/10"
+                                            >
+                                              + Dynamic Cash
+                                            </button>
+                                            <button
+                                              type="button"
                                               onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: 'metric', metric: METRIC_OPTIONS[0].value, effectType: EFFECT_TYPE_OPTIONS[0].value, value: '0', durationSeconds: '' }] }))}
                                               className="px-2 py-1 text-xs rounded border border-indigo-500 text-indigo-200 hover:bg-indigo-500/10"
                                             >
@@ -2965,7 +2993,7 @@ export default function AdminPage() {
                                         </div>
                                         <div className="space-y-2">
                                           {consequenceForm.effects.map((ef, idx) => (
-                                            <div key={idx} className={`grid gap-2 items-end ${ef.type === 'metric' ? 'grid-cols-1 sm:grid-cols-6' : 'grid-cols-1 sm:grid-cols-3'}`}>
+                                            <div key={idx} className={`grid gap-2 items-end ${ef.type === 'metric' ? 'grid-cols-1 sm:grid-cols-6' : ef.type === 'dynamicCash' ? 'grid-cols-1 sm:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3'}`}>
                                               <div>
                                                 <label className="block text-xs text-slate-400 mb-1">Type</label>
                                                 <select
@@ -2975,6 +3003,7 @@ export default function AdminPage() {
                                                     effects: p.effects.map((row, i) => i === idx ? (
                                                       e.target.value === 'cash' ? { type: 'cash' as const, amount: '0', label: '' } :
                                                       e.target.value === 'reputation' ? { type: 'reputation' as const, amount: '0' } :
+                                                      e.target.value === 'dynamicCash' ? { type: 'dynamicCash' as const, expression: 'expenses*1', label: '' } :
                                                       { type: 'metric' as const, metric: METRIC_OPTIONS[0].value, effectType: EFFECT_TYPE_OPTIONS[0].value, value: '0', durationSeconds: '', priority: '' }
                                                     ) : row),
                                                   }))}
@@ -2982,6 +3011,7 @@ export default function AdminPage() {
                                                 >
                                                   <option value="cash">Cash</option>
                                                   <option value="reputation">Reputation</option>
+                                                  <option value="dynamicCash">Dynamic Cash</option>
                                                   <option value="metric">Metric Effect</option>
                                                 </select>
                                               </div>
@@ -3013,6 +3043,33 @@ export default function AdminPage() {
                                                       />
                                                     </div>
                                                   )}
+                                                </>
+                                              ) : ef.type === 'dynamicCash' ? (
+                                                <>
+                                                  <div>
+                                                    <label className="block text-xs text-slate-400 mb-1">Expression</label>
+                                                    <input
+                                                      type="text"
+                                                      value={ef.expression}
+                                                      onChange={(e) => setConsequenceForm((p) => ({
+                                                        ...p,
+                                                        effects: p.effects.map((row, i) => i === idx ? { ...row, expression: e.target.value } : row),
+                                                      }))}
+                                                      placeholder="expenses*3"
+                                                      className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                    />
+                                                  </div>
+                                                  <div>
+                                                    <label className="block text-xs text-slate-400 mb-1">Label (optional)</label>
+                                                    <input
+                                                      value={ef.label ?? ''}
+                                                      onChange={(e) => setConsequenceForm((p) => ({
+                                                        ...p,
+                                                        effects: p.effects.map((row, i) => i === idx ? { ...row, label: e.target.value } : row),
+                                                      }))}
+                                                      className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                    />
+                                                  </div>
                                                 </>
                                               ) : ef.type === 'metric' ? (
                                                 <>

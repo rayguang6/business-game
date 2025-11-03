@@ -3,6 +3,9 @@ import { GameEvent, GameEventChoice, GameEventConsequence, GameEventEffect } fro
 import { GameMetric, EffectType } from '../../game/effectManager';
 import type { GameStore } from '../gameStore';
 import { effectManager } from '@/lib/game/effectManager';
+import { getMonthlyBaseExpenses } from '@/lib/features/economy';
+import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
+import { DynamicValueEvaluator } from '@/lib/game/dynamicValueEvaluator';
 
 export interface ResolvedEventOutcome {
   eventId: string;
@@ -25,6 +28,28 @@ export interface EventSlice {
   clearLastEventOutcome: () => void;
 }
 
+// Helper to calculate dynamic cash value
+const calculateDynamicCashValue = (
+  effect: GameEventEffect & { type: 'dynamicCash' },
+  store: GameStore,
+): number => {
+  const industryId = store.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
+  const baseExpenses = getMonthlyBaseExpenses(industryId);
+  const currentExpenses = effectManager.calculate(GameMetric.MonthlyExpenses, baseExpenses);
+
+  const evaluator = new DynamicValueEvaluator({ expenses: currentExpenses });
+  let value = evaluator.evaluate(effect.expression);
+
+  // Quick fix: Expenses expressions are always costs (negative cash)
+  // Since expenses*N is always positive, we negate it for expenses-based expressions
+  const isExpensesExpression = effect.expression.trim().toLowerCase().startsWith('expenses');
+  if (isExpensesExpression && value > 0) {
+    value = -value;
+  }
+
+  return value;
+};
+
 // Convert event effects to effectManager system
 const applyEventEffect = (
   effect: GameEventEffect,
@@ -42,6 +67,16 @@ const applyEventEffect = (
         recordEventExpense(Math.abs(effect.amount), effect.label ?? `${event.title} - ${choice.label}`);
       }
       return; // Don't use effectManager for cash (handled by revenue system)
+    }
+    case 'dynamicCash': {
+      const value = calculateDynamicCashValue(effect, store);
+      const { recordEventRevenue, recordEventExpense } = store;
+      if (value >= 0) {
+        recordEventRevenue(value, effect.label ?? `${event.title} - ${choice.label}`);
+      } else {
+        recordEventExpense(Math.abs(value), effect.label ?? `${event.title} - ${choice.label}`);
+      }
+      return;
     }
     case 'reputation': {
       // Reputation effects should directly modify reputation
@@ -159,7 +194,19 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
     if (consequence) {
       consequence.effects.forEach((effect: GameEventEffect) => {
         applyEventEffect(effect, event, choice, store);
-        appliedEffects.push(effect);
+        
+        // Convert dynamicCash to cash format for display (with calculated value)
+        if (effect.type === 'dynamicCash') {
+          const calculatedValue = calculateDynamicCashValue(effect, store);
+          // Store as cash effect for display purposes
+          appliedEffects.push({
+            type: 'cash',
+            amount: calculatedValue,
+            label: effect.label,
+          });
+        } else {
+          appliedEffects.push(effect);
+        }
       });
     }
 
