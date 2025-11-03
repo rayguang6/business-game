@@ -9,7 +9,9 @@ import {
 } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
 import { useGameStore } from '@/lib/store/gameStore';
+import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
 
 interface CustomerCardProps {
   customer: Customer;
@@ -22,6 +24,31 @@ export function CustomerCard({ customer, showPatience = false, showServiceProgre
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
   const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
+
+  // Force re-render when effect manager changes (tier multipliers update)
+  const [, forceUpdate] = useState(0);
+
+  useEffect(() => {
+    const unsubscribe = effectManager.subscribe(() => forceUpdate(prev => prev + 1));
+    return unsubscribe;
+  }, []);
+
+  // Calculate effective price with tier multipliers
+  const getEffectivePrice = (service: Customer['service']) => {
+    const tierMultiplier = (() => {
+      switch (service.pricingCategory) {
+        case 'high':
+          return effectManager.calculate(GameMetric.HighTierServiceRevenueMultiplier, 1);
+        case 'mid':
+          return effectManager.calculate(GameMetric.MidTierServiceRevenueMultiplier, 1);
+        case 'low':
+          return effectManager.calculate(GameMetric.LowTierServiceRevenueMultiplier, 1);
+        default:
+          return 1;
+      }
+    })();
+    return service.price * tierMultiplier;
+  };
 
   const getServiceProgress = (customer: Customer) => {
     const totalTicks = customer.service.duration * ticksPerSecond;
@@ -93,7 +120,7 @@ export function CustomerCard({ customer, showPatience = false, showServiceProgre
               className="text-gray-600"
               style={{ fontSize: `${10 * scaleFactor}px` }}
             >
-              ${customer.service.price}
+              ${getEffectivePrice(customer.service).toFixed(2)}
             </div>
           </div>
 

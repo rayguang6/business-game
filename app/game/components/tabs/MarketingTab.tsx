@@ -26,6 +26,13 @@ const METRIC_LABELS: Record<GameMetric, string> = {
   [GameMetric.ServiceRevenueMultiplier]: 'Service revenue',
   [GameMetric.ServiceRevenueFlatBonus]: 'Average ticket',
   [GameMetric.FounderWorkingHours]: 'Founder working hours',
+  // Tier-specific metrics
+  [GameMetric.HighTierServiceRevenueMultiplier]: 'High-tier revenue',
+  [GameMetric.HighTierServiceWeightageMultiplier]: 'High-tier selection',
+  [GameMetric.MidTierServiceRevenueMultiplier]: 'Mid-tier revenue',
+  [GameMetric.MidTierServiceWeightageMultiplier]: 'Mid-tier selection',
+  [GameMetric.LowTierServiceRevenueMultiplier]: 'Low-tier revenue',
+  [GameMetric.LowTierServiceWeightageMultiplier]: 'Low-tier selection',
 };
 
 const formatValue = (value: number): string => {

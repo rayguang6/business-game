@@ -21,6 +21,13 @@ const toMetricValues = (base: BaseUpgradeMetrics): MetricValues => ({
   [GameMetric.HappyProbability]: base.happyProbability,
   [GameMetric.ServiceRevenueMultiplier]: base.serviceRevenueMultiplier,
   [GameMetric.ServiceRevenueFlatBonus]: base.serviceRevenueFlatBonus,
+  [GameMetric.FounderWorkingHours]: base.founderWorkingHours,
+  [GameMetric.HighTierServiceRevenueMultiplier]: base.highTierServiceRevenueMultiplier || 1,
+  [GameMetric.HighTierServiceWeightageMultiplier]: base.highTierServiceWeightageMultiplier || 1,
+  [GameMetric.MidTierServiceRevenueMultiplier]: base.midTierServiceRevenueMultiplier || 1,
+  [GameMetric.MidTierServiceWeightageMultiplier]: base.midTierServiceWeightageMultiplier || 1,
+  [GameMetric.LowTierServiceRevenueMultiplier]: base.lowTierServiceRevenueMultiplier || 1,
+  [GameMetric.LowTierServiceWeightageMultiplier]: base.lowTierServiceWeightageMultiplier || 1,
 });
 
 const fromMetricValues = (values: MetricValues): BaseUpgradeMetrics => ({
@@ -32,6 +39,13 @@ const fromMetricValues = (values: MetricValues): BaseUpgradeMetrics => ({
   happyProbability: values[GameMetric.HappyProbability],
   serviceRevenueMultiplier: values[GameMetric.ServiceRevenueMultiplier],
   serviceRevenueFlatBonus: values[GameMetric.ServiceRevenueFlatBonus],
+  founderWorkingHours: values[GameMetric.FounderWorkingHours],
+  highTierServiceRevenueMultiplier: values[GameMetric.HighTierServiceRevenueMultiplier],
+  highTierServiceWeightageMultiplier: values[GameMetric.HighTierServiceWeightageMultiplier],
+  midTierServiceRevenueMultiplier: values[GameMetric.MidTierServiceRevenueMultiplier],
+  midTierServiceWeightageMultiplier: values[GameMetric.MidTierServiceWeightageMultiplier],
+  lowTierServiceRevenueMultiplier: values[GameMetric.LowTierServiceRevenueMultiplier],
+  lowTierServiceWeightageMultiplier: values[GameMetric.LowTierServiceWeightageMultiplier],
 });
 
 const scaleUpgradeEffectValue = (effect: UpgradeEffect, level: number): number => {

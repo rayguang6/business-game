@@ -258,6 +258,13 @@ export default function AdminPage() {
     { value: GameMetric.HappyProbability, label: 'Happy Probability' },
     { value: GameMetric.ReputationMultiplier, label: 'Reputation Multiplier' },
     { value: GameMetric.FounderWorkingHours, label: 'Founder Working Hours' },
+    // Tier-specific service metrics
+    { value: GameMetric.HighTierServiceRevenueMultiplier, label: 'High-Tier Service Revenue Multiplier' },
+    { value: GameMetric.HighTierServiceWeightageMultiplier, label: 'High-Tier Service Weightage Multiplier' },
+    { value: GameMetric.MidTierServiceRevenueMultiplier, label: 'Mid-Tier Service Revenue Multiplier' },
+    { value: GameMetric.MidTierServiceWeightageMultiplier, label: 'Mid-Tier Service Weightage Multiplier' },
+    { value: GameMetric.LowTierServiceRevenueMultiplier, label: 'Low-Tier Service Revenue Multiplier' },
+    { value: GameMetric.LowTierServiceWeightageMultiplier, label: 'Low-Tier Service Weightage Multiplier' },
   ];
 
   const EFFECT_TYPE_OPTIONS: { value: EffectType; label: string; hint: string }[] = [

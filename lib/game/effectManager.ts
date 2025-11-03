@@ -25,6 +25,13 @@ export enum GameMetric {
   ServiceRevenueMultiplier = 'serviceRevenueMultiplier',
   ServiceRevenueFlatBonus = 'serviceRevenueFlatBonus',
   FounderWorkingHours = 'founderWorkingHours',
+  // Tier-specific service metrics
+  HighTierServiceRevenueMultiplier = 'highTierServiceRevenueMultiplier',
+  HighTierServiceWeightageMultiplier = 'highTierServiceWeightageMultiplier',
+  MidTierServiceRevenueMultiplier = 'midTierServiceRevenueMultiplier',
+  MidTierServiceWeightageMultiplier = 'midTierServiceWeightageMultiplier',
+  LowTierServiceRevenueMultiplier = 'lowTierServiceRevenueMultiplier',
+  LowTierServiceWeightageMultiplier = 'lowTierServiceWeightageMultiplier',
 }
 
 // How effects are applied
