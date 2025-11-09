@@ -1,64 +1,37 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
 import { evaluateCondition } from '@/lib/game/conditionEvaluator';
-import { fetchFlagsForIndustry } from '@/lib/data/flagRepository';
-import type { GameFlag } from '@/lib/data/flagRepository';
-import { fetchServicesForIndustry } from '@/lib/data/serviceRepository';
-import type { IndustryServiceDefinition } from '@/lib/game/types';
-import { getEffectiveServices, type EffectiveService } from '@/lib/features/services';
-import { effectManager } from '@/lib/game/effectManager';
-import { useState, useEffect } from 'react';
 import { useRequirements } from '@/lib/hooks/useRequirements';
+import { effectManager } from '@/lib/game/effectManager';
+import { buildEffectiveServices, type EffectiveService } from '@/lib/features/services';
+import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
+import type { IndustryId } from '@/lib/game/types';
+import { useConfigStore, selectServicesForIndustry } from '@/lib/store/configStore';
 
 export function HomeTab() {
   const flags = useGameStore((state) => state.flags);
+  const availableFlags = useGameStore((state) => state.availableFlags);
   const conditions = useGameStore((state) => state.availableConditions);
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
-  // We don't need hasActiveFlags anymore since we show all flags
   const hasConditions = conditions.length > 0;
-
-  const [allFlags, setAllFlags] = useState<GameFlag[]>([]);
-  const [flagsLoading, setFlagsLoading] = useState(false);
+  const industryId = useMemo(
+    () => (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId,
+    [selectedIndustry],
+  );
+  const servicesSelector = useMemo(
+    () => selectServicesForIndustry(industryId),
+    [industryId],
+  );
+  const baseServices = useConfigStore(servicesSelector);
   const [services, setServices] = useState<EffectiveService[]>([]);
-  const [servicesLoading, setServicesLoading] = useState(false);
-
-  // Load all available flags
-  useEffect(() => {
-    if (!selectedIndustry) return;
-
-    const loadFlags = async () => {
-      setFlagsLoading(true);
-      try {
-        const result = await fetchFlagsForIndustry(selectedIndustry.id);
-        if (result) {
-          setAllFlags(result);
-        }
-      } catch (error) {
-        console.error('Failed to load flags:', error);
-      } finally {
-        setFlagsLoading(false);
-      }
-    };
-
-    loadFlags();
-  }, [selectedIndustry]);
 
   // Load all services with effective values
   useEffect(() => {
-    if (!selectedIndustry) return;
-
     const loadServices = () => {
-      setServicesLoading(true);
-      try {
-        const effectiveServices = getEffectiveServices(selectedIndustry.id);
-        setServices(effectiveServices);
-      } catch (error) {
-        console.error('Failed to load services:', error);
-      } finally {
-        setServicesLoading(false);
-      }
+      const effectiveServices = buildEffectiveServices(baseServices);
+      setServices(effectiveServices);
     };
 
     loadServices();
@@ -67,7 +40,7 @@ export function HomeTab() {
     const unsubscribe = effectManager.subscribe(loadServices);
 
     return unsubscribe;
-  }, [selectedIndustry]);
+  }, [baseServices]);
 
   return (
     <div className="space-y-6">
@@ -80,28 +53,24 @@ export function HomeTab() {
         </div>
       </section>
 
-      {allFlags.length > 0 && (
+      {availableFlags.length > 0 && (
         <section>
           <h4 className="text-md font-semibold text-white mb-3">Flags 🏁</h4>
           <div className="bg-slate-800 rounded-lg p-4 space-y-2">
-            {flagsLoading ? (
-              <div className="text-sm text-slate-400">Loading flags…</div>
-            ) : (
-              allFlags.map((flag) => {
-                const isActive = flags[flag.id] === true;
-                return (
-                  <div key={flag.id} className="flex items-center gap-2">
-                    <span className={isActive ? 'text-green-400 text-lg' : 'text-gray-500 text-lg'}>
-                      {isActive ? '✓' : '✗'}
-                    </span>
-                    <span className="text-slate-200 text-sm">
-                      <span className="font-semibold">{flag.name}</span>
-                      <span className="text-slate-400 ml-2 font-mono">({flag.id})</span>
-                    </span>
-                  </div>
-                );
-              })
-            )}
+            {availableFlags.map((flag) => {
+              const isActive = flags[flag.id] === true;
+              return (
+                <div key={flag.id} className="flex items-center gap-2">
+                  <span className={isActive ? 'text-green-400 text-lg' : 'text-gray-500 text-lg'}>
+                    {isActive ? '✓' : '✗'}
+                  </span>
+                  <span className="text-slate-200 text-sm">
+                    <span className="font-semibold">{flag.name}</span>
+                    <span className="text-slate-400 ml-2 font-mono">({flag.id})</span>
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </section>
       )}
@@ -134,13 +103,9 @@ export function HomeTab() {
         <section>
           <h4 className="text-md font-semibold text-white mb-3">Services 💼</h4>
           <div className="bg-slate-800 rounded-lg p-4 space-y-3">
-            {servicesLoading ? (
-              <div className="text-sm text-slate-400">Loading services…</div>
-            ) : (
-              services.map((service) => (
-                <ServiceCard key={service.id} service={service} />
-              ))
-            )}
+            {services.map((service) => (
+              <ServiceCard key={service.id} service={service} />
+            ))}
           </div>
         </section>
       )}

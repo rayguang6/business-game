@@ -1,0 +1,1 @@
+INSERT INTO "public"."staff_presets" ("industry_id", "id", "role_id", "name", "salary_override", "service_speed_override", "emoji_override") VALUES ('dental', 'staff-initial-1', 'assistant', 'Apple', null, null, null);

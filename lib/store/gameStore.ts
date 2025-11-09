@@ -12,7 +12,17 @@ import { createConditionSlice, ConditionSlice } from './slices/conditionSlice';
 import { createFlagSlice, FlagSlice } from './slices/flagSlice';
 
 // Combine all slices into the main store
-export type GameStore = IndustrySlice & GameSlice & MetricsSlice & MonthlySlice & CustomerSlice & UpgradesSlice & EventSlice & StaffSlice & MarketingSlice & ConditionSlice & FlagSlice;
+export type GameStore = IndustrySlice &
+  GameSlice &
+  MetricsSlice &
+  MonthlySlice &
+  CustomerSlice &
+  UpgradesSlice &
+  EventSlice &
+  StaffSlice &
+  MarketingSlice &
+  ConditionSlice &
+  FlagSlice;
 
 export const useGameStore = create<GameStore>()((...args) => ({
   ...createIndustrySlice(...args),

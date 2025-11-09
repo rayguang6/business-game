@@ -14,7 +14,7 @@ import {
 import type { Industry } from '@/lib/features/industries';
 import type { IndustryServiceDefinition, BusinessMetrics, BusinessStats, MovementConfig, Requirement } from '@/lib/game/types';
 import { fetchGlobalSimulationConfig, upsertGlobalSimulationConfig } from '@/lib/data/simulationConfigRepository';
-import { getGlobalSimulationConfigValues, setGlobalSimulationConfigValues } from '@/lib/game/industryConfigs';
+import { DEFAULT_GLOBAL_SIMULATION_CONFIG } from '@/lib/game/industryConfigs';
 import {
   fetchStaffDataForIndustry,
   upsertStaffRole,
@@ -110,7 +110,7 @@ export default function AdminPage() {
   const [isCreatingService, setIsCreatingService] = useState(false);
 
   // Global simulation config state (JSON textareas for careful, incremental rollout)
-  const initialGlobal = getGlobalSimulationConfigValues();
+  const initialGlobal = DEFAULT_GLOBAL_SIMULATION_CONFIG;
   const [metrics, setMetrics] = useState<BusinessMetrics>({ ...initialGlobal.businessMetrics });
   const [stats, setStats] = useState<BusinessStats>({ ...initialGlobal.businessStats });
   const [eventSecondsInput, setEventSecondsInput] = useState<string>(
@@ -1547,11 +1547,6 @@ export default function AdminPage() {
       return;
     }
 
-    setGlobalSimulationConfigValues({
-      businessMetrics,
-      businessStats,
-      movement,
-    });
     setGlobalStatus('Global config saved.');
   };
 

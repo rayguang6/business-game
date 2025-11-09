@@ -3,13 +3,12 @@ import { getMonthlyBaseExpenses } from '@/lib/features/economy';
 import { tickOnce } from '@/lib/game/mechanics';
 import { GameState, RevenueCategory, OneTimeCostCategory } from '../types';
 import { getInitialMetrics } from './metricsSlice';
-import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getUpgradesForIndustry } from '@/lib/game/config';
 import { GameStore } from '../gameStore';
 import { IndustryId } from '@/lib/game/types';
 import { effectManager } from '@/lib/game/effectManager';
 import { addStaffEffects } from '@/lib/features/staff';
 import { addUpgradeEffects } from './upgradesSlice';
-import { getUpgradeById } from '@/lib/game/config';
 
 // Shared initial game state - DRY principle
 const getInitialGameState = (
@@ -111,9 +110,11 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     const hiredStaff = gameState.hiredStaff;
 
     // Re-register upgrade effects
+    const availableUpgrades = getUpgradesForIndustry(industryId);
+    const upgradeMap = new Map(availableUpgrades.map((upgrade) => [upgrade.id, upgrade]));
     Object.entries(upgrades).forEach(([upgradeId, level]) => {
       if (level > 0) {
-        const upgrade = getUpgradeById(upgradeId, industryId);
+        const upgrade = upgradeMap.get(upgradeId);
         if (upgrade) {
           addUpgradeEffects(upgrade, level);
         }

@@ -6,6 +6,7 @@ import type { IndustryId } from '@/lib/game/types';
 import { GameStore } from '../gameStore';
 import { checkRequirements } from '@/lib/game/requirementChecker';
 import { getWeightedRandomService } from '@/lib/features/services';
+import { getServicesFromStore } from '@/lib/store/configStore';
 
 export interface CustomerSlice {
   customers: Customer[];
@@ -24,7 +25,9 @@ export const createCustomerSlice: StateCreator<GameState, [], [], CustomerSlice>
     const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
     
     // Get all services and filter by requirements (same pattern as upgrades/marketing)
-    const allServices = getServicesForIndustry(industryId);
+    const servicesFromStore = getServicesFromStore(industryId);
+    const allServices =
+      servicesFromStore.length > 0 ? servicesFromStore : getServicesForIndustry(industryId);
     const store = get() as GameStore;
 
     // Filter services that meet requirements

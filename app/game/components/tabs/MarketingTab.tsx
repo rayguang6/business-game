@@ -1,10 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
-import { CampaignEffect, MarketingCampaign } from '@/lib/store/slices/marketingSlice';
+import { CampaignEffect, MarketingCampaign, FALLBACK_CAMPAIGNS } from '@/lib/store/slices/marketingSlice';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import { useRequirements } from '@/lib/hooks/useRequirements';
+import { useConfigStore } from '@/lib/store/configStore';
+import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
+import type { IndustryId } from '@/lib/game/types';
 
 const formatSeconds = (seconds: number): string => {
   const clamped = Math.max(0, Math.floor(seconds));
@@ -188,7 +191,17 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, on
 }
 
 export function MarketingTab() {
-  const availableCampaigns = useGameStore((state) => state.availableCampaigns);
+  const selectedIndustry = useGameStore((state) => state.selectedIndustry);
+  const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+  const availableCampaigns = useConfigStore(
+    useCallback(
+      (state) => {
+        const campaigns = state.industryConfigs[industryId]?.marketingCampaigns;
+        return campaigns && campaigns.length > 0 ? campaigns : FALLBACK_CAMPAIGNS;
+      },
+      [industryId],
+    ),
+  );
   const campaignCooldowns = useGameStore((state) => state.campaignCooldowns);
   const startCampaign = useGameStore((state) => state.startCampaign);
   const metrics = useGameStore((state) => state.metrics);

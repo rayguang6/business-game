@@ -8,7 +8,7 @@ import {
   getBusinessMetrics,
   getBusinessStats,
   getBaseUpgradeMetricsForIndustry,
-  getUpgradeById,
+  getUpgradesForIndustry,
   UpgradeDefinition,
 } from '@/lib/game/config';
 import { IndustryId, UpgradeId } from '@/lib/game/types';
@@ -58,6 +58,8 @@ export function buildMonthlyExpenseBreakdown(
   industryId: IndustryId,
   staffMembers: Staff[] = [],
 ): ExpenseBreakdownItem[] {
+  const availableUpgrades = getUpgradesForIndustry(industryId);
+  const upgradeMap = new Map(availableUpgrades.map((upgrade) => [upgrade.id, upgrade]));
   const breakdown: ExpenseBreakdownItem[] = [
     {
       label: 'Base operations',
@@ -78,7 +80,7 @@ export function buildMonthlyExpenseBreakdown(
   Object.entries(upgrades)
     .filter(([_, level]) => level > 0)
     .forEach(([upgradeId, level]) => {
-      const upgrade = getUpgradeById(upgradeId as UpgradeId, industryId);
+      const upgrade = upgradeMap.get(upgradeId as UpgradeId);
       if (!upgrade) return;
       
       const additionalExpenses = calculateUpgradeExpenseFromDefinition(upgrade, industryId) * level;

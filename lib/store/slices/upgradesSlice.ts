@@ -4,8 +4,7 @@ import {
   DEFAULT_INDUSTRY_ID,
   UpgradeDefinition,
   UpgradeId,
-  getAllUpgrades,
-  getUpgradeById,
+  getUpgradesForIndustry,
 } from '@/lib/game/config';
 import { calculateUpgradeMonthlyExpenses, getMonthlyBaseExpenses } from '@/lib/features/economy';
 import { getUpgradeLevel, canUpgradeMore } from '@/lib/features/upgrades';
@@ -13,6 +12,10 @@ import { GameStore } from '../gameStore';
 import type { IndustryId } from '@/lib/game/types';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import { checkRequirements } from '@/lib/game/requirementChecker';
+
+const findUpgradeDefinition = (industryId: IndustryId, upgradeId: UpgradeId): UpgradeDefinition | undefined => {
+  return getUpgradesForIndustry(industryId).find((upgrade) => upgrade.id === upgradeId);
+};
 
 export interface UpgradesSlice {
   upgrades: Upgrades;
@@ -72,17 +75,17 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
 
   getUpgradeDefinition: (upgradeId: UpgradeId) => {
     const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-    return getUpgradeById(upgradeId, industryId) ?? null;
+    return findUpgradeDefinition(industryId, upgradeId) ?? null;
   },
 
   getAvailableUpgrades: () => {
     const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-    return getAllUpgrades(industryId);
+    return getUpgradesForIndustry(industryId);
   },
 
   purchaseUpgrade: (upgradeId: UpgradeId) => {
     const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-    const upgrade = getUpgradeById(upgradeId, industryId);
+    const upgrade = findUpgradeDefinition(industryId, upgradeId);
 
     if (!upgrade) {
       return { success: false, message: 'Upgrade not found.' };
@@ -173,7 +176,7 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
     const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
     
     // Remove all upgrade effects from effectManager
-    const availableUpgrades = getAllUpgrades(industryId);
+    const availableUpgrades = getUpgradesForIndustry(industryId);
     availableUpgrades.forEach(upgrade => {
       removeUpgradeEffects(upgrade.id);
     });

@@ -1,4 +1,4 @@
-import { getIndustrySimulationConfig, getAllSimulationConfigs } from './industryConfigs';
+import { createDefaultSimulationConfig } from './industryConfigs';
 import {
   BusinessMetrics,
   BusinessStats,
@@ -12,8 +12,15 @@ import {
   IndustryId,
   BaseUpgradeMetrics,
   IndustryServiceDefinition,
+  SimulationLayoutConfig,
   DEFAULT_INDUSTRY_ID,
 } from './types';
+import {
+  useConfigStore,
+  getServicesFromStore,
+  getUpgradesFromStore,
+  getEventsFromStore,
+} from '@/lib/store/configStore';
 
 export type {
   BusinessMetrics,
@@ -31,6 +38,58 @@ export type {
 
 export { DEFAULT_INDUSTRY_ID } from './types';
 
+const cloneServices = (services: IndustryServiceDefinition[]): IndustryServiceDefinition[] =>
+  services.map((service) => ({ ...service }));
+
+const cloneUpgrades = (upgrades: UpgradeDefinition[]): UpgradeDefinition[] =>
+  upgrades.map((upgrade) => ({
+    ...upgrade,
+    effects: upgrade.effects.map((effect) => ({ ...effect })),
+  }));
+
+const cloneEvents = (events: IndustrySimulationConfig['events']) =>
+  events.map((event) => ({
+    ...event,
+    choices: event.choices.map((choice) => ({
+      ...choice,
+      consequences: choice.consequences.map((consequence) => ({
+        ...consequence,
+        effects: consequence.effects.map((effect) => ({ ...effect })),
+      })),
+    })),
+  }));
+
+const cloneLayout = (layout: SimulationLayoutConfig): SimulationLayoutConfig => ({
+  entryPosition: { ...layout.entryPosition },
+  waitingPositions: layout.waitingPositions.map((pos) => ({ ...pos })),
+  serviceRoomPositions: layout.serviceRoomPositions.map((pos) => ({ ...pos })),
+  staffPositions: layout.staffPositions.map((pos) => ({ ...pos })),
+});
+
+const mergeLayout = (
+  base: SimulationLayoutConfig,
+  override: SimulationLayoutConfig,
+): SimulationLayoutConfig => ({
+  entryPosition: override.entryPosition ? { ...override.entryPosition } : { ...base.entryPosition },
+  waitingPositions:
+    override.waitingPositions && override.waitingPositions.length > 0
+      ? override.waitingPositions.map((pos) => ({ ...pos }))
+      : base.waitingPositions.map((pos) => ({ ...pos })),
+  serviceRoomPositions:
+    override.serviceRoomPositions && override.serviceRoomPositions.length > 0
+      ? override.serviceRoomPositions.map((pos) => ({ ...pos }))
+      : base.serviceRoomPositions.map((pos) => ({ ...pos })),
+  staffPositions:
+    override.staffPositions && override.staffPositions.length > 0
+      ? override.staffPositions.map((pos) => ({ ...pos }))
+      : base.staffPositions.map((pos) => ({ ...pos })),
+});
+
+const getIndustryOverride = (industryId: IndustryId) =>
+  useConfigStore.getState().industryConfigs[industryId];
+
+const getGlobalConfigOverride = () => useConfigStore.getState().globalConfig;
+
 /**
  * Centralized game configuration
  * ------------------------------
@@ -46,18 +105,30 @@ export { DEFAULT_INDUSTRY_ID } from './types';
 // exports above and remove the legacy constants.
 // -----------------------------------------------------------------------------
 
+const getFallbackSimulationConfig = (
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+): IndustrySimulationConfig => createDefaultSimulationConfig(industryId);
+
 export function getSimulationConfig(
   industryId: IndustryId = DEFAULT_INDUSTRY_ID,
 ): IndustrySimulationConfig {
-  return getIndustrySimulationConfig(industryId);
+  return getFallbackSimulationConfig(industryId);
 }
 
 export function getBusinessMetrics(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
-  return getSimulationConfig(industryId).businessMetrics;
+  const override = getGlobalConfigOverride()?.businessMetrics;
+  if (override) {
+    return { ...override };
+  }
+  return { ...getSimulationConfig(industryId).businessMetrics };
 }
 
 export function getBusinessStats(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
-  return getSimulationConfig(industryId).businessStats;
+  const override = getGlobalConfigOverride()?.businessStats;
+  if (override) {
+    return { ...override };
+  }
+  return { ...getSimulationConfig(industryId).businessStats };
 }
 
 export function getMapConfigForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
@@ -68,35 +139,51 @@ export function getMovementConfigForIndustry(industryId: IndustryId = DEFAULT_IN
   return getSimulationConfig(industryId).movement;
 }
 
+export function getGlobalMovementConfig(): MovementConfig {
+  const global = getGlobalConfigOverride()?.movement;
+  if (global) {
+    return { ...global };
+  }
+  return { ...getMovementConfigForIndustry(DEFAULT_INDUSTRY_ID) };
+}
+
 export function getLayoutConfig(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
-  return getSimulationConfig(industryId).layout;
+  const config = getSimulationConfig(industryId);
+  const baseLayout = cloneLayout(config.layout);
+  const override = getIndustryOverride(industryId)?.layout;
+  if (override) {
+    return mergeLayout(baseLayout, override);
+  }
+  return baseLayout;
 }
 
 export function getServicesForIndustry(
   industryId: IndustryId = DEFAULT_INDUSTRY_ID,
 ): IndustryServiceDefinition[] {
-  const config = getSimulationConfig(industryId);
-  return config.services.map((service) => ({ ...service }));
+  const stored = getServicesFromStore(industryId);
+  if (stored.length > 0) {
+    return stored;
+  }
+  const fallback = getFallbackSimulationConfig(industryId);
+  return cloneServices(fallback.services);
 }
 
 export function getUpgradesForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
-  return getSimulationConfig(industryId).upgrades.map((upgrade) => ({
-    ...upgrade,
-    effects: upgrade.effects.map((effect) => ({ ...effect })),
-  }));
+  const stored = getUpgradesFromStore(industryId);
+  if (stored.length > 0) {
+    return stored;
+  }
+  const fallback = getFallbackSimulationConfig(industryId);
+  return cloneUpgrades(fallback.upgrades);
 }
 
 export function getEventsForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
-  return getSimulationConfig(industryId).events.map((event) => ({
-    ...event,
-    choices: event.choices.map((choice) => ({
-      ...choice,
-      consequences: choice.consequences.map((consequence) => ({
-        ...consequence,
-        effects: consequence.effects.map((effect) => ({ ...effect })),
-      })),
-    })),
-  }));
+  const stored = getEventsFromStore(industryId);
+  if (stored.length > 0) {
+    return stored;
+  }
+  const fallback = getFallbackSimulationConfig(industryId);
+  return cloneEvents(fallback.events);
 }
 
 export function getCustomerImagesForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
@@ -157,24 +244,6 @@ export function getEventTriggerSecondsForIndustry(
     .filter((value) => value > 0 && value < duration);
 
   return [...new Set(configured)].sort((a, b) => a - b);
-}
-
-export function getAllSimulationConfigsList(): IndustrySimulationConfig[] {
-  return getAllSimulationConfigs();
-}
-
-export function getUpgradeById(
-  id: UpgradeId,
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
-): UpgradeDefinition | undefined {
-  return getUpgradesForIndustry(industryId).find((upgrade) => upgrade.id === id);
-}
-
-export function getAllUpgrades(industryId: IndustryId = DEFAULT_INDUSTRY_ID): UpgradeDefinition[] {
-  return getUpgradesForIndustry(industryId).map((upgrade) => ({
-    ...upgrade,
-    effects: upgrade.effects.map((effect) => ({ ...effect })),
-  }));
 }
 
 export function secondsToTicks(
