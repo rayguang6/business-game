@@ -1,9 +1,11 @@
 import { StateCreator } from 'zustand';
 import { GameStore } from '../gameStore';
 import { OneTimeCost, OneTimeCostCategory } from '../types';
-import { effectManager, GameMetric, EffectType, Effect } from '@/lib/game/effectManager';
+import { effectManager, GameMetric, EffectType } from '@/lib/game/effectManager';
 import { checkRequirements } from '@/lib/game/requirementChecker';
 import type { Requirement, IndustryId } from '@/lib/game/types';
+import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
+import { useConfigStore } from '@/lib/store/configStore';
 
 // Marketing campaign effect (simplified from full Effect, no ID/source yet)
 export interface CampaignEffect {
@@ -26,11 +28,9 @@ export interface MarketingCampaign {
 
 export interface MarketingSlice {
   campaignCooldowns: Record<string, number>; // campaignId -> cooldownEndTime
-  availableCampaigns: MarketingCampaign[];
   startCampaign: (campaignId: string) => { success: boolean; message: string };
   tickMarketing: (currentGameTime: number) => void;
   resetMarketing: () => void;
-  setAvailableCampaigns: (campaigns: MarketingCampaign[]) => void;
 }
 
 /**
@@ -61,7 +61,7 @@ function removeMarketingEffects(campaignId: string): void {
 }
 
 // Note: percent values now use whole numbers (e.g., 100 = +100%)
-const DEFAULT_CAMPAIGNS: MarketingCampaign[] = [
+export const FALLBACK_CAMPAIGNS: MarketingCampaign[] = [
   {
     id: 'neighborhood-flyers',
     name: 'Neighborhood Flyers',
@@ -171,31 +171,18 @@ const cloneCampaign = (campaign: MarketingCampaign): MarketingCampaign => ({
   effects: campaign.effects.map((effect) => ({ ...effect })),
 });
 
-export const getInitialMarketingState = (): Pick<
-  MarketingSlice,
-  'campaignCooldowns' | 'availableCampaigns'
-> => ({
-  campaignCooldowns: {},
-  availableCampaigns: DEFAULT_CAMPAIGNS.map(cloneCampaign),
-});
+const resolveCampaignBlueprints = (industryId: IndustryId): MarketingCampaign[] => {
+  const configCampaigns = useConfigStore.getState().industryConfigs[industryId]?.marketingCampaigns;
+  const source = configCampaigns && configCampaigns.length > 0 ? configCampaigns : FALLBACK_CAMPAIGNS;
+  return source.map(cloneCampaign);
+};
 
 export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlice> = (set, get) => ({
-  ...getInitialMarketingState(),
-  setAvailableCampaigns: (campaigns: MarketingCampaign[]) => {
-    // Clear all marketing effects when changing available campaigns
-    effectManager.clearCategory('marketing');
-
-    const nextBlueprints = campaigns.length > 0 ? campaigns : DEFAULT_CAMPAIGNS;
-    const cloned = nextBlueprints.map(cloneCampaign);
-
-    set({
-      campaignCooldowns: {},
-      availableCampaigns: cloned,
-    });
-  },
+  campaignCooldowns: {},
 
   startCampaign: (campaignId: string) => {
-    const campaign = get().availableCampaigns.find((item) => item.id === campaignId);
+    const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+    const campaign = resolveCampaignBlueprints(industryId).find((item) => item.id === campaignId);
     if (!campaign) {
       return { success: false, message: 'Campaign not found.' };
     }
@@ -276,12 +263,8 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
   resetMarketing: () => {
     // Clear all marketing effects
     effectManager.clearCategory('marketing');
-    set((state) => ({
+    set({
       campaignCooldowns: {},
-      availableCampaigns:
-        state.availableCampaigns.length > 0
-          ? state.availableCampaigns.map(cloneCampaign)
-          : DEFAULT_CAMPAIGNS.map(cloneCampaign),
-    }));
+    });
   },
 });

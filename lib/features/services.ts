@@ -109,9 +109,7 @@ export function getServiceById(id: string, industryId: IndustryId): Service | un
  * Returns services with their effective values (price and weightage with multipliers applied)
  * Includes selection probabilities for UI display
  */
-export function getEffectiveServices(industryId: IndustryId): EffectiveService[] {
-  const services = getServicesForIndustry(industryId);
-
+export function buildEffectiveServices(services: Service[]): EffectiveService[] {
   // Get tier multipliers from effect manager
   const tierRevenueMultipliers = {
     high: effectManager.calculate(GameMetric.HighTierServiceRevenueMultiplier, 1),
@@ -144,4 +142,9 @@ export function getEffectiveServices(industryId: IndustryId): EffectiveService[]
     effectiveWeightage: Math.round(effectiveWeightage * 100) / 100,
     selectionProbability: totalWeight > 0 ? Math.round((effectiveWeightage / totalWeight) * 100) : 0
   }));
+}
+
+export function getEffectiveServices(industryId: IndustryId): EffectiveService[] {
+  const services = getServicesForIndustry(industryId);
+  return buildEffectiveServices(services);
 }

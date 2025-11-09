@@ -2,6 +2,13 @@ import { supabase } from '@/lib/supabase/client';
 import type { IndustryId, UpgradeDefinition, UpgradeEffect } from '@/lib/game/types';
 import { EffectType, GameMetric } from '@/lib/game/effectManager';
 
+interface RawEffectRow {
+  metric?: string;
+  type?: string;
+  value?: number | string | null;
+  priority?: number | null;
+}
+
 interface UpgradeRow {
   id: string;
   industry_id: string;
@@ -10,13 +17,7 @@ interface UpgradeRow {
   icon: string;
   cost: number | string;
   max_level: number;
-  upgrade_effects: {
-    id: number;
-    metric: string;
-    type: string;
-    value: number | string;
-    priority: number | null;
-  }[] | null;
+  effects: unknown;
   sets_flag: string | null;
   requirements: unknown;
 }
@@ -32,16 +33,19 @@ function parseNumber(value: number | string | null | undefined): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function mapEffects(effectRows: UpgradeRow['upgrade_effects']): UpgradeEffect[] {
-  const safeRows = effectRows ?? [];
+function mapEffects(raw: unknown): UpgradeEffect[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
 
-  return safeRows
-    .filter((row) => row.metric && row.type)
+  return raw
+    .filter((row): row is RawEffectRow => Boolean(row) && typeof row === 'object')
+    .filter((row) => typeof row.metric === 'string' && typeof row.type === 'string')
     .map((row) => ({
       metric: row.metric as GameMetric,
       type: row.type as EffectType,
-      value: parseNumber(row.value),
-      priority: row.priority ?? undefined,
+      value: parseNumber(row.value ?? 0),
+      priority: typeof row.priority === 'number' ? row.priority : undefined,
     }));
 }
 
@@ -55,7 +59,7 @@ export async function fetchUpgradesForIndustry(
 
   const { data, error } = await supabase
     .from('upgrades')
-    .select('id, industry_id, name, description, icon, cost, max_level, upgrade_effects(id, metric, type, value, priority), sets_flag, requirements')
+    .select('id, industry_id, name, description, icon, cost, max_level, effects, sets_flag, requirements')
     .eq('industry_id', industryId);
 
   if (error) {
@@ -76,7 +80,7 @@ export async function fetchUpgradesForIndustry(
       icon: row.icon,
       cost: parseNumber(row.cost),
       maxLevel: row.max_level,
-      effects: mapEffects(row.upgrade_effects),
+      effects: mapEffects(row.effects),
       setsFlag: row.sets_flag || undefined,
       requirements: Array.isArray(row.requirements) ? row.requirements as any[] : [],
     }));
@@ -101,6 +105,12 @@ export async function upsertUpgradeForIndustry(
     max_level: upgrade.maxLevel,
     sets_flag: upgrade.setsFlag || null,
     requirements: upgrade.requirements || [],
+    effects: (upgrade.effects ?? []).map((effect) => ({
+      metric: effect.metric,
+      type: effect.type,
+      value: effect.value,
+      priority: effect.priority ?? null,
+    })),
   } as const;
 
   const { error: upsertError } = await supabase
@@ -112,36 +122,6 @@ export async function upsertUpgradeForIndustry(
     return { success: false, message: upsertError.message };
   }
 
-  // Replace effects for this upgrade id
-  const { error: deleteEffectsError } = await supabase
-    .from('upgrade_effects')
-    .delete()
-    .eq('upgrade_id', upgrade.id);
-
-  if (deleteEffectsError) {
-    console.error('Failed to clear upgrade effects', deleteEffectsError);
-    return { success: false, message: deleteEffectsError.message };
-  }
-
-  const effectRows = (upgrade.effects ?? []).map((e) => ({
-    upgrade_id: upgrade.id,
-    metric: e.metric,
-    type: e.type,
-    value: e.value,
-    priority: e.priority ?? null,
-  }));
-
-  if (effectRows.length > 0) {
-    const { error: insertEffectsError } = await supabase
-      .from('upgrade_effects')
-      .insert(effectRows);
-
-    if (insertEffectsError) {
-      console.error('Failed to insert upgrade effects', insertEffectsError);
-      return { success: false, message: insertEffectsError.message };
-    }
-  }
-
   return { success: true };
 }
 
@@ -149,13 +129,6 @@ export async function deleteUpgradeById(id: string): Promise<{ success: boolean;
 {
   if (!supabase) {
     return { success: false, message: 'Supabase client not configured.' };
-  }
-
-  // Remove effects then upgrade
-  const { error: effErr } = await supabase.from('upgrade_effects').delete().eq('upgrade_id', id);
-  if (effErr) {
-    console.error('Failed to delete upgrade effects', effErr);
-    return { success: false, message: effErr.message };
   }
 
   const { error } = await supabase.from('upgrades').delete().eq('id', id);

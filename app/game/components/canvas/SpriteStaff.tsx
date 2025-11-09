@@ -81,8 +81,8 @@ interface SpriteStaffProps {
  * INTEGRATION NOTES:
  * ============================================================================
  * - Staff data comes from: useGameStore().hiredStaff
- * - Positions come from: getStaffPositions(industryId) in positioning.ts
- * - Staff positions are configured in: lib/game/industryConfigs.ts (DEFAULT_LAYOUT.staffPositions)
+ * - Positions come from: layout config via useConfigStore/getLayoutConfig
+ * - Staff positions are configured in Supabase (fallback to defaults in config.ts)
  * - Staff emoji is stored in: Staff.emoji (from database staff_roles table)
  * 
  * ============================================================================
@@ -303,4 +303,3 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
     </div>
   );
 }
-

@@ -21,26 +21,12 @@ import { FlagDebug } from '@/app/game/components/ui/FlagDebug';
 import { TierMultiplierDebug } from '@/app/game/components/ui/TierMultiplierDebug';
 import { useRandomEventTrigger } from '@/hooks/useRandomEventTrigger';
 import Image from 'next/image';
-import { fetchGlobalSimulationConfig } from '@/lib/data/simulationConfigRepository';
-import { fetchMarketingCampaignsForIndustry } from '@/lib/data/marketingRepository';
-import { fetchFlagsForIndustry } from '@/lib/data/flagRepository';
-import { fetchServicesForIndustry } from '@/lib/data/serviceRepository';
-import { fetchUpgradesForIndustry } from '@/lib/data/upgradeRepository';
-import { fetchEventsForIndustry } from '@/lib/data/eventRepository';
-import { fetchStaffDataForIndustry } from '@/lib/data/staffRepository';
-import { fetchConditionsForIndustry } from '@/lib/data/conditionRepository';
-import {
-  setIndustryServices,
-  setIndustryUpgrades,
-  setIndustryEvents,
-  setGlobalSimulationConfigValues,
-} from '@/lib/game/industryConfigs';
-import {
-  setStaffRolesForIndustry,
-  setStaffNamePoolForIndustry,
-  setInitialStaffForIndustry,
-} from '@/lib/game/staffConfig';
 import { IndustryId } from '@/lib/game/types';
+import {
+  loadGlobalSimulationSettings,
+  loadIndustryContent,
+} from '@/lib/game/simulationConfigService';
+import { useConfigStore } from '@/lib/store/configStore';
 
 export default function GamePage() {
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
@@ -59,7 +45,9 @@ export default function GamePage() {
   const [globalConfigReady, setGlobalConfigReady] = useState(false);
   const [dataLoadState, setDataLoadState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const initializeStaffForIndustry = useGameStore((state) => state.initializeStaffForIndustry);
-  const setMarketingCampaigns = useGameStore((state) => state.setAvailableCampaigns);
+  const setGlobalConfigState = useConfigStore((state) => state.setGlobalConfig);
+  const setIndustryConfigState = useConfigStore((state) => state.setIndustryConfig);
+  const setConfigStatus = useConfigStore((state) => state.setConfigStatus);
   
 
   // Play game music when component mounts
@@ -68,25 +56,23 @@ export default function GamePage() {
   useEffect(() => {
     let isMounted = true;
 
+    setConfigStatus('loading');
+
     (async () => {
       try {
-        const [globalConfig, marketingCampaigns] = await Promise.all([
-          fetchGlobalSimulationConfig(),
-          selectedIndustry ? fetchMarketingCampaignsForIndustry(selectedIndustry.id) : Promise.resolve([]),
-        ]);
+        const globalConfig = await loadGlobalSimulationSettings();
         if (!isMounted) {
           return;
         }
 
         if (globalConfig) {
-          setGlobalSimulationConfigValues(globalConfig);
-        }
-
-        if (marketingCampaigns && marketingCampaigns.length > 0) {
-          setMarketingCampaigns(marketingCampaigns);
+          setGlobalConfigState(globalConfig);
         }
       } catch (error) {
         console.error('Failed to load global simulation config', error);
+        if (isMounted) {
+          setConfigStatus('error', 'Failed to load global simulation config');
+        }
       } finally {
         if (isMounted) {
           setGlobalConfigReady(true);
@@ -97,7 +83,7 @@ export default function GamePage() {
     return () => {
       isMounted = false;
     };
-  }, [setMarketingCampaigns]);
+  }, [setConfigStatus, setGlobalConfigState]);
 
   useEffect(() => {
     let isMounted = true;
@@ -110,59 +96,37 @@ export default function GamePage() {
     }
 
     setDataLoadState('loading');
+    setConfigStatus('loading');
 
     (async () => {
       const industryId = selectedIndustry.id as IndustryId;
       try {
-        const [servicesResult, upgradesResult, eventsResult, staffResult, conditionsResult, flagsResult] = await Promise.all([
-          fetchServicesForIndustry(industryId),
-          fetchUpgradesForIndustry(industryId),
-          fetchEventsForIndustry(industryId),
-          fetchStaffDataForIndustry(industryId),
-          fetchConditionsForIndustry(industryId),
-          fetchFlagsForIndustry(industryId),
-        ]);
+        const content = await loadIndustryContent(industryId);
 
         if (!isMounted) {
           return;
         }
 
-        const services = Array.isArray(servicesResult) ? servicesResult : [];
-        const upgrades = Array.isArray(upgradesResult) ? upgradesResult : [];
-        const events = Array.isArray(eventsResult) ? eventsResult : [];
-        const staffData = staffResult ?? null;
-        const conditions = Array.isArray(conditionsResult) ? conditionsResult : [];
-        const flags = Array.isArray(flagsResult) ? flagsResult : [];
+        if (!content) {
+          throw new Error('Industry content load failed');
+        }
+
+        const { services, upgrades, events, flags, conditions, marketingCampaigns, staffDataAvailable, staffRoles } = content;
 
         const hasServices = services.length > 0;
         const hasUpgrades = upgrades.length > 0;
         const hasEvents = events.length > 0;
-        const hasStaff =
-          staffData === null ||
-          (Array.isArray(staffData.roles) && staffData.roles.length > 0);
+        const hasStaff = !staffDataAvailable || (staffRoles?.length ?? 0) > 0;
         const hasConditions = conditions.length > 0;
         const hasFlags = flags.length > 0;
 
-        if (hasServices) {
-          setIndustryServices(industryId, services);
+        setIndustryConfigState(industryId, content);
+
+        if (!staffDataAvailable) {
+          console.warn('[Staff] No staff data available for industry', industryId);
         }
 
-        if (hasUpgrades) {
-          setIndustryUpgrades(industryId, upgrades);
-        }
-
-        if (hasEvents) {
-          setIndustryEvents(industryId, events);
-        }
-
-        if (staffData && staffData.roles.length > 0) {
-          setStaffRolesForIndustry(industryId, staffData.roles);
-          setStaffNamePoolForIndustry(industryId, staffData.namePool);
-          setInitialStaffForIndustry(industryId, staffData.initialStaff);
-          initializeStaffForIndustry(industryId);
-        } else if (!staffData) {
-          initializeStaffForIndustry(industryId);
-        }
+        initializeStaffForIndustry(industryId);
 
         // Set conditions and flags regardless of whether they exist (empty array is fine)
         setAvailableConditions(conditions);
@@ -170,6 +134,7 @@ export default function GamePage() {
 
         if (hasServices && hasUpgrades && hasEvents && hasStaff) {
           setDataLoadState('ready');
+          setConfigStatus('ready');
         } else {
           console.error('Missing industry data', {
             industry: industryId,
@@ -180,11 +145,13 @@ export default function GamePage() {
             hasConditions,
           });
           setDataLoadState('error');
+          setConfigStatus('error', 'Missing required industry data');
         }
       } catch (err) {
         console.error('Failed to load industry data', err);
         if (isMounted) {
           setDataLoadState('error');
+          setConfigStatus('error', err instanceof Error ? err.message : 'Failed to load industry data');
         }
       }
     })();
@@ -192,7 +159,15 @@ export default function GamePage() {
     return () => {
       isMounted = false;
     };
-  }, [selectedIndustry, initializeStaffForIndustry, globalConfigReady]);
+  }, [
+    selectedIndustry,
+    initializeStaffForIndustry,
+    globalConfigReady,
+    setAvailableConditions,
+    setAvailableFlags,
+    setConfigStatus,
+    setIndustryConfigState,
+  ]);
 
   // Guard to check if industry exists; otherwise redirect. If game is selected but not started, kick it off.
   useEffect(() => {

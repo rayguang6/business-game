@@ -3,12 +3,12 @@
 import React, { useMemo, useState } from 'react';
 import GameButton from '@/app/components/ui/GameButton';
 import { useGameStore } from '@/lib/store/gameStore';
-import { getUpgradeCatalog } from '@/lib/features/upgrades';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
-import type { UpgradeEffect } from '@/lib/game/config';
+import type { UpgradeEffect, UpgradeDefinition } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import { useRequirements } from '@/lib/hooks/useRequirements';
+import { useConfigStore, selectUpgradesForIndustry } from '@/lib/store/configStore';
 
 const METRIC_LABELS: Partial<Record<GameMetric, string>> = {
   [GameMetric.ServiceRooms]: 'Service Rooms',
@@ -83,7 +83,7 @@ const formatEffect = (effect: UpgradeEffect): string => {
 };
 
 interface UpgradeCardProps {
-  upgrade: ReturnType<typeof getUpgradeCatalog>[0];
+  upgrade: UpgradeDefinition;
 }
 
 function UpgradeCard({ upgrade }: UpgradeCardProps) {
@@ -199,15 +199,18 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
 export function UpgradesTab() {
   const { selectedIndustry } = useGameStore();
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-
-  const catalog = useMemo(() => getUpgradeCatalog(industryId), [industryId]);
+  const upgradesSelector = useMemo(
+    () => selectUpgradesForIndustry(industryId),
+    [industryId],
+  );
+  const availableUpgrades = useConfigStore(upgradesSelector);
 
   return (
     <div className="space-y-6">
       <section>
         <h4 className="text-md font-semibold text-white mb-3">Available Upgrades</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {catalog.map((upgrade) => (
+          {availableUpgrades.map((upgrade) => (
             <UpgradeCard key={upgrade.id} upgrade={upgrade} />
           ))}
         </div>

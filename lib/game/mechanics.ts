@@ -27,6 +27,7 @@ import {
   getAvailableRooms,
 } from '@/lib/features/customers';
 import { getServicesForIndustry } from '@/lib/game/config';
+import { getServicesFromStore } from '@/lib/store/configStore';
 import { checkRequirements } from '@/lib/game/requirementChecker';
 import type { GameStore } from '@/lib/store/gameStore';
 import { getWeightedRandomService } from '@/lib/features/services';
@@ -525,7 +526,9 @@ export function tickOnce(state: TickSnapshot): TickResult {
   //If the customer should spawn, create a new customer.
   if (shouldSpawn) {
     // Filter services by requirements (same pattern as upgrades/marketing)
-    const allServices = getServicesForIndustry(industryId);
+    const servicesFromStore = getServicesFromStore(industryId);
+    const allServices =
+      servicesFromStore.length > 0 ? servicesFromStore : getServicesForIndustry(industryId);
 
     // Create a minimal store-like object for requirement checking
     const storeContext: Partial<GameStore> = {

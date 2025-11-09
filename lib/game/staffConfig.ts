@@ -1,19 +1,18 @@
 import type { Staff } from '@/lib/features/staff';
-import type { IndustryId, Requirement } from '@/lib/game/types';
+import type { IndustryId, Requirement, UpgradeEffect } from '@/lib/game/types';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
-
-import type { UpgradeEffect } from '@/lib/game/types';
+import { useConfigStore } from '@/lib/store/configStore';
 
 export interface StaffRoleConfig {
   id: string;
   name: string;
   salary: number;
-  effects: UpgradeEffect[]; // Flexible effects like upgrades
+  effects: UpgradeEffect[];
   emoji: string;
-  spriteImage?: string; // Optional sprite image path (falls back to default if not set)
-  setsFlag?: string; // Optional flag to set when this staff role is hired
-  requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
+  spriteImage?: string;
+  setsFlag?: string;
+  requirements?: Requirement[];
 }
 
 export interface StaffPreset {
@@ -44,53 +43,85 @@ const DEFAULT_NAME_POOL = [
   'Ezra',
 ] as const;
 
-const STAFF_ROLES_BY_INDUSTRY: Record<string, StaffRoleConfig[]> = {};
-const STAFF_NAME_POOL_BY_INDUSTRY: Record<string, string[]> = {};
-const INITIAL_STAFF_BY_INDUSTRY: Record<string, Staff[]> = {};
-
 const createStaffId = (roleId: string): string =>
   `${roleId}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
 const cloneStaff = (staff: Staff): Staff => ({ ...staff });
 
-function getInternalRoles(industryId: IndustryId): StaffRoleConfig[] {
-  return STAFF_ROLES_BY_INDUSTRY[industryId] ?? STAFF_ROLES_BY_INDUSTRY[DEFAULT_INDUSTRY_ID] ?? [];
-}
+const cloneRole = (role: StaffRoleConfig): StaffRoleConfig => ({
+  ...role,
+  effects: role.effects.map((effect) => ({ ...effect })),
+});
 
-function getInternalNamePool(industryId: IndustryId): string[] {
-  return STAFF_NAME_POOL_BY_INDUSTRY[industryId] ??
-    STAFF_NAME_POOL_BY_INDUSTRY[DEFAULT_INDUSTRY_ID] ??
-    [...DEFAULT_NAME_POOL];
-}
+const clonePreset = (preset: StaffPreset): StaffPreset => ({ ...preset });
+
+const getIndustryStaffConfig = (industryId: IndustryId) =>
+  useConfigStore.getState().industryConfigs[industryId];
+
+const getRolesSource = (industryId: IndustryId): StaffRoleConfig[] => {
+  const config = getIndustryStaffConfig(industryId);
+  const roles = config?.staffRoles && config.staffRoles.length > 0 ? config.staffRoles : DEFAULT_ROLES;
+  return roles.map(cloneRole);
+};
+
+const getNamePoolSource = (industryId: IndustryId): string[] => {
+  const config = getIndustryStaffConfig(industryId);
+  const pool =
+    config?.staffNamePool && config.staffNamePool.length > 0
+      ? config.staffNamePool
+      : DEFAULT_NAME_POOL;
+  return pool.slice();
+};
+
+const getPresetSource = (industryId: IndustryId): StaffPreset[] => {
+  const config = getIndustryStaffConfig(industryId);
+  const presets =
+    config?.staffPresets && config.staffPresets.length > 0
+      ? config.staffPresets
+      : DEFAULT_INITIAL_STAFF;
+  return presets.map(clonePreset);
+};
 
 function resolveRole(industryId: IndustryId, roleId?: string): StaffRoleConfig | null {
-  const roles = STAFF_ROLES_BY_INDUSTRY[industryId];
-  if (roles && roles.length > 0) {
-    if (roleId) {
-      const match = roles.find((role) => role.id === roleId);
-      if (match) {
-        return match;
-      }
-    }
-    return roles[0];
+  const roles = getRolesSource(industryId);
+  if (roles.length === 0) {
+    return null;
   }
 
-  const defaultRoles = STAFF_ROLES_BY_INDUSTRY[DEFAULT_INDUSTRY_ID];
-  if (defaultRoles && defaultRoles.length > 0) {
-    if (roleId) {
-      const match = defaultRoles.find((role) => role.id === roleId);
-      if (match) {
-        return match;
-      }
+  if (roleId) {
+    const match = roles.find((role) => role.id === roleId);
+    if (match) {
+      return match;
     }
-    return defaultRoles[0];
   }
 
-  return null;
+  if (industryId !== DEFAULT_INDUSTRY_ID) {
+    const fallbackRoles = getRolesSource(DEFAULT_INDUSTRY_ID);
+    if (roleId) {
+      const fallbackMatch = fallbackRoles.find((role) => role.id === roleId);
+      if (fallbackMatch) {
+        return fallbackMatch;
+      }
+    }
+
+    if (fallbackRoles.length > 0) {
+      return fallbackRoles[0];
+    }
+  }
+
+  return roles[0];
+}
+
+function pickRandomName(industryId: IndustryId): string {
+  const pool = getNamePoolSource(industryId);
+  if (pool.length === 0) {
+    return 'Staff';
+  }
+  const randomIndex = Math.floor(Math.random() * pool.length);
+  return pool[randomIndex];
 }
 
 function buildStaffFromRole(
-  industryId: IndustryId,
   role: StaffRoleConfig,
   overrides: Partial<Staff> & { id: string; name: string },
 ): Staff {
@@ -100,7 +131,7 @@ function buildStaffFromRole(
     role: overrides.role ?? role.name,
     roleId: role.id,
     salary: overrides.salary ?? role.salary,
-    effects: overrides.effects ?? role.effects.map(effect => ({ ...effect })), // Deep copy effects
+    effects: overrides.effects ?? role.effects.map((effect) => ({ ...effect })),
     emoji: overrides.emoji ?? role.emoji,
     spriteImage: overrides.spriteImage ?? role.spriteImage,
     setsFlag: overrides.setsFlag ?? role.setsFlag,
@@ -108,71 +139,45 @@ function buildStaffFromRole(
   };
 }
 
-function pickRandomName(industryId: IndustryId): string {
-  const pool = getInternalNamePool(industryId);
-  if (pool.length === 0) {
-    return 'Staff';
-  }
-  const randomIndex = Math.floor(Math.random() * pool.length);
-  return pool[randomIndex];
-}
-
-export function setStaffRolesForIndustry(
-  industryId: IndustryId,
-  roles: StaffRoleConfig[],
-): void {
-  STAFF_ROLES_BY_INDUSTRY[industryId] = roles.map((role) => ({ ...role }));
-}
-
 export function getStaffRolesForIndustry(industryId: IndustryId): StaffRoleConfig[] {
-  return getInternalRoles(industryId).map((role) => ({ ...role }));
+  return getRolesSource(industryId);
 }
 
-export function setStaffNamePoolForIndustry(industryId: IndustryId, names: string[]): void {
-  const sanitized = names.map((name) => name.trim()).filter(Boolean);
-  STAFF_NAME_POOL_BY_INDUSTRY[industryId] = sanitized.length > 0 ? sanitized : [...DEFAULT_NAME_POOL];
+export function getStaffNamePoolForIndustry(industryId: IndustryId): string[] {
+  return getNamePoolSource(industryId);
 }
 
-export function setInitialStaffForIndustry(
-  industryId: IndustryId,
-  presets: StaffPreset[],
-): void {
-  const roles = getInternalRoles(industryId);
+export function getInitialStaffForIndustry(industryId: IndustryId): Staff[] {
+  const roles = getRolesSource(industryId);
+  const presets = getPresetSource(industryId);
+
+  if (roles.length === 0) {
+    return [];
+  }
+
   const roleMap = new Map(roles.map((role) => [role.id, role]));
 
-  const nextInitial = presets.map((preset) => {
+  return presets.map((preset) => {
     const role =
       roleMap.get(preset.roleId) ??
       resolveRole(industryId, preset.roleId) ??
       resolveRole(DEFAULT_INDUSTRY_ID, preset.roleId);
 
     if (!role) {
-      throw new Error(`No staff role configured for preset "${preset.id}" in industry "${industryId}"`);
+      throw new Error(
+        `No staff role configured for preset "${preset.id}" in industry "${industryId}"`,
+      );
     }
 
     const name = preset.name?.trim() || pickRandomName(industryId);
 
-    return buildStaffFromRole(industryId, role, {
+    return buildStaffFromRole(role, {
       id: preset.id,
       name,
       salary: preset.salary,
       emoji: preset.emoji,
     });
   });
-
-  INITIAL_STAFF_BY_INDUSTRY[industryId] = nextInitial.map(cloneStaff);
-}
-
-export function getInitialStaffForIndustry(industryId: IndustryId): Staff[] {
-  const initial =
-    INITIAL_STAFF_BY_INDUSTRY[industryId] ??
-    INITIAL_STAFF_BY_INDUSTRY[DEFAULT_INDUSTRY_ID] ??
-    [];
-  return initial.map(cloneStaff);
-}
-
-export function getStaffNamePoolForIndustry(industryId: IndustryId): string[] {
-  return [...getInternalNamePool(industryId)];
 }
 
 export function createRandomStaffForIndustry(
@@ -190,7 +195,7 @@ export function createRandomStaffForIndustry(
     role: role.name,
     roleId: role.id,
     salary: role.salary,
-    effects: role.effects.map(effect => ({ ...effect })), // Deep copy effects
+    effects: role.effects.map((effect) => ({ ...effect })),
     emoji: role.emoji,
     spriteImage: role.spriteImage,
     setsFlag: role.setsFlag,
@@ -199,18 +204,12 @@ export function createRandomStaffForIndustry(
 }
 
 export function createInitialAvailableStaff(industryId: IndustryId): Staff[] {
-  const roles = getInternalRoles(industryId);
+  const roles = getRolesSource(industryId);
   if (roles.length === 0) {
     return [];
   }
 
   return roles.map((role) => createRandomStaffForIndustry(industryId, role.id));
-}
-
-export function clearStaffDataForIndustry(industryId: IndustryId): void {
-  delete STAFF_ROLES_BY_INDUSTRY[industryId];
-  delete STAFF_NAME_POOL_BY_INDUSTRY[industryId];
-  delete INITIAL_STAFF_BY_INDUSTRY[industryId];
 }
 
 const DEFAULT_ROLES: StaffRoleConfig[] = [
@@ -262,7 +261,3 @@ const DEFAULT_INITIAL_STAFF: StaffPreset[] = [
     emoji: '👨‍🔬',
   },
 ];
-
-setStaffRolesForIndustry(DEFAULT_INDUSTRY_ID, DEFAULT_ROLES);
-setStaffNamePoolForIndustry(DEFAULT_INDUSTRY_ID, [...DEFAULT_NAME_POOL]);
-setInitialStaffForIndustry(DEFAULT_INDUSTRY_ID, DEFAULT_INITIAL_STAFF);

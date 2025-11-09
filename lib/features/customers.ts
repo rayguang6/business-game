@@ -10,9 +10,9 @@ import {
   getCustomerImagesForIndustry,
   getDefaultCustomerImageForIndustry,
   getLayoutConfig,
+  getGlobalMovementConfig,
   secondsToTicks,
 } from '@/lib/game/config';
-import { getGlobalMovementConfig } from '@/lib/game/industryConfigs';
 import { IndustryId, GridPosition } from '@/lib/game/types';
 
 // Types

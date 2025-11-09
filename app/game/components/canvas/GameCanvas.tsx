@@ -9,10 +9,10 @@ import { Character2D } from './Character2D';
 import { SpriteCustomer } from './SpriteCustomer';
 import { SpriteStaff } from './SpriteStaff';
 import { GridOverlay } from './GridOverlay';
-import { DEFAULT_INDUSTRY_ID, getBusinessStats } from '@/lib/game/config';
-import { IndustryId, GridPosition } from '@/lib/game/types';
+import { DEFAULT_INDUSTRY_ID, getBusinessStats, getLayoutConfig } from '@/lib/game/config';
+import { IndustryId } from '@/lib/game/types';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
-import { getServiceRoomPositions, getStaffPositions } from '@/lib/game/positioning';
+import { useConfigStore } from '@/lib/store/configStore';
 
 // Canvas scaling configuration
 const CANVAS_CONFIG = {
@@ -67,6 +67,8 @@ export function GameCanvas() {
 
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
   const businessStats = useMemo(() => getBusinessStats(industryId), [industryId]);
+  const layoutOverride = useConfigStore((state) => state.industryConfigs[industryId]?.layout);
+  const layout = useMemo(() => layoutOverride ?? getLayoutConfig(industryId), [layoutOverride, industryId]);
   
   const computeMetrics = useCallback(() => ({
     spawnIntervalSeconds: effectManager.calculate(
@@ -100,31 +102,9 @@ export function GameCanvas() {
   const mapBackground = selectedIndustry.mapImage ?? '/images/maps/dental-map.png';
 
   // Get service room positions for rendering beds (from database or fallback)
-  const [serviceRoomPositions, setServiceRoomPositions] = useState<GridPosition[]>([]);
-  // Get staff positions for rendering staff (from database or fallback)
-  const [staffPositions, setStaffPositions] = useState<GridPosition[]>([]);
+  const serviceRoomPositions = layout.serviceRoomPositions;
+  const staffPositions = layout.staffPositions;
   const TILE_SIZE = 32;
-
-  // Load positions from database (async) with fallback to hardcoded
-  useEffect(() => {
-    let isMounted = true;
-    
-    (async () => {
-      const [rooms, staff] = await Promise.all([
-        getServiceRoomPositions(industryId),
-        getStaffPositions(industryId),
-      ]);
-      
-      if (isMounted) {
-        setServiceRoomPositions(rooms);
-        setStaffPositions(staff);
-      }
-    })();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, [industryId]);
 
   const spawnIntervalSeconds = metrics.spawnIntervalSeconds;
   const customersPerMinute = spawnIntervalSeconds > 0 ? 60 / spawnIntervalSeconds : null;

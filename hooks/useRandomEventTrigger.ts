@@ -8,6 +8,7 @@ import {
 } from '../lib/game/config';
 import { IndustryId } from '../lib/game/types';
 import { checkRequirements } from '../lib/game/requirementChecker';
+import { getEventsFromStore } from '@/lib/store/configStore';
 
 export const useRandomEventTrigger = () => {
   const gameTime = useGameStore((state) => state.gameTime);
@@ -57,7 +58,9 @@ export const useRandomEventTrigger = () => {
     for (const trigger of triggerPoints) {
       if (timeIntoRound >= trigger && !triggerStateRef.current.triggered.has(trigger)) {
         triggerStateRef.current.triggered.add(trigger);
-        const allEvents = getEventsForIndustry(industryId);
+        const eventsFromStore = getEventsFromStore(industryId);
+        const allEvents =
+          eventsFromStore.length > 0 ? eventsFromStore : getEventsForIndustry(industryId);
 
         // Filter events based on their requirements
         const eligibleEvents = allEvents.filter(event => {

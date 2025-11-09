@@ -8,8 +8,7 @@ import {
   BaseUpgradeMetrics,
   UpgradeDefinition,
   UpgradeId,
-  getAllUpgrades,
-  getUpgradeById,
+  getUpgradesForIndustry,
   getBaseUpgradeMetricsForIndustry,
   secondsToTicks,
 } from '@/lib/game/config';
@@ -45,10 +44,12 @@ function resolveActiveUpgrades(
   upgrades: Upgrades,
   industryId: IndustryId,
 ): UpgradeLevelDefinition[] {
+  const definitions = getUpgradesForIndustry(industryId);
+  const definitionMap = new Map(definitions.map((upgrade) => [upgrade.id, upgrade]));
   return Object.entries(upgrades)
     .filter(([_, level]) => level > 0)
     .map(([id, level]) => {
-      const definition = getUpgradeById(id as UpgradeId, industryId);
+      const definition = definitionMap.get(id as UpgradeId);
       if (!definition) {
         return null;
       }
@@ -127,11 +128,6 @@ export function shouldSpawnCustomerWithUpgrades(
   return upgradeEffects.spawnIntervalTicks > 0 && gameTick % upgradeEffects.spawnIntervalTicks === 0;
 }
 
-export function getUpgradeCatalog(industryId: IndustryId): UpgradeDefinition[] {
-  return getAllUpgrades(industryId);
-}
-
-
 export function getUpgradeLevel(upgrades: Upgrades, upgradeId: UpgradeId): number {
   return upgrades[upgradeId] || 0;
 }
@@ -141,7 +137,7 @@ export function canUpgradeMore(
   upgradeId: UpgradeId,
   industryId: IndustryId,
 ): boolean {
-  const upgrade = getUpgradeById(upgradeId, industryId);
+  const upgrade = getUpgradesForIndustry(industryId).find((item) => item.id === upgradeId);
   if (!upgrade) return false;
   const currentLevel = getUpgradeLevel(upgrades, upgradeId);
   return currentLevel < upgrade.maxLevel;
