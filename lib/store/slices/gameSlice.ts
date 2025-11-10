@@ -285,7 +285,8 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     if (state.isGameOver) return; // Already game over
     
     const { cash, reputation, founderWorkingHours } = state.metrics;
-    const loseCondition = getLoseCondition();
+    const industryId = (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+    const loseCondition = getLoseCondition(industryId);
     
     // Only check lose conditions (win condition is checked at month end)
     if (cash <= loseCondition.cashThreshold) {
@@ -310,9 +311,10 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     
     const { founderWorkingHours } = state.metrics;
     const { monthlyHistory } = state;
+    const industryId = (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
     
     // Check win condition only at month end (after month is finalized)
-    const winCondition = getWinCondition();
+    const winCondition = getWinCondition(industryId);
     if (checkWinCondition(monthlyHistory, founderWorkingHours, winCondition)) {
       set({ isGameOver: true, gameOverReason: 'victory', isPaused: true });
     }

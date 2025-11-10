@@ -10,7 +10,6 @@ export interface Industry {
   description: string;
   image?: string; // Optional image path for industry cards
   mapImage?: string; // Optional map image path for industry map
-  bedImage?: string; // Optional bed image path for service rooms
   isAvailable?: boolean;
 }
 

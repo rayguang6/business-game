@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { fetchGlobalSimulationConfig, upsertGlobalSimulationConfig } from '@/lib/data/simulationConfigRepository';
 import { DEFAULT_GLOBAL_SIMULATION_CONFIG } from '@/lib/game/industryConfigs';
 import { DEFAULT_WIN_CONDITION, DEFAULT_LOSE_CONDITION, type WinCondition, type LoseCondition } from '@/lib/game/winConditions';
-import type { BusinessMetrics, BusinessStats, MovementConfig } from '@/lib/game/types';
+import type { BusinessMetrics, BusinessStats, MovementConfig, MapConfig, SimulationLayoutConfig } from '@/lib/game/types';
 import type { Operation } from './types';
 
 export function useGlobalConfig() {
@@ -13,6 +13,11 @@ export function useGlobalConfig() {
     (initialGlobal.businessStats.eventTriggerSeconds || []).join(',')
   );
   const [movementJSON, setMovementJSON] = useState<string>(JSON.stringify(initialGlobal.movement, null, 2));
+  const [mapConfigJSON, setMapConfigJSON] = useState<string>('');
+  const [layoutConfigJSON, setLayoutConfigJSON] = useState<string>('');
+  const [capacityImage, setCapacityImage] = useState<string>('');
+  const [customerImages, setCustomerImages] = useState<string[]>([]);
+  const [staffNamePool, setStaffNamePool] = useState<string[]>([]);
   const [winCondition, setWinCondition] = useState<WinCondition>({ ...DEFAULT_WIN_CONDITION });
   const [loseCondition, setLoseCondition] = useState<LoseCondition>({ ...DEFAULT_LOSE_CONDITION });
   const [status, setStatus] = useState<string | null>(null);
@@ -31,6 +36,13 @@ export function useGlobalConfig() {
             setEventSecondsInput((global.businessStats.eventTriggerSeconds || []).join(','));
           }
           if (global.movement) setMovementJSON(JSON.stringify(global.movement, null, 2));
+          if (global.mapConfig) {
+            setMapConfigJSON(JSON.stringify(global.mapConfig, null, 2));
+          }
+          if (global.layoutConfig) setLayoutConfigJSON(JSON.stringify(global.layoutConfig, null, 2));
+          if (global.capacityImage) setCapacityImage(global.capacityImage);
+          if (global.customerImages) setCustomerImages(global.customerImages);
+          if (global.staffNamePool) setStaffNamePool(global.staffNamePool);
           if (global.winCondition) setWinCondition(global.winCondition);
           if (global.loseCondition) setLoseCondition(global.loseCondition);
         }
@@ -66,11 +78,40 @@ export function useGlobalConfig() {
       return;
     }
 
+    // Parse map and layout configs
+    let mapConfig: MapConfig | undefined;
+    let layoutConfig: SimulationLayoutConfig | undefined;
+
+    if (mapConfigJSON.trim()) {
+      try {
+        mapConfig = JSON.parse(mapConfigJSON);
+      } catch (e) {
+        setStatus('Invalid JSON in Map Config.');
+        setOperation('idle');
+        return;
+      }
+    }
+
+    if (layoutConfigJSON.trim()) {
+      try {
+        layoutConfig = JSON.parse(layoutConfigJSON);
+      } catch (e) {
+        setStatus('Invalid JSON in Layout Config.');
+        setOperation('idle');
+        return;
+      }
+    }
+
     setOperation('saving');
     const result = await upsertGlobalSimulationConfig({
       businessMetrics,
       businessStats,
       movement,
+      mapConfig,
+      layoutConfig,
+      capacityImage: capacityImage || null,
+      customerImages: customerImages.length > 0 ? customerImages : null,
+      staffNamePool: staffNamePool.length > 0 ? staffNamePool : null,
       winCondition,
       loseCondition,
     });
@@ -82,7 +123,7 @@ export function useGlobalConfig() {
     }
 
     setStatus('Global config saved.');
-  }, [metrics, stats, eventSecondsInput, movementJSON, winCondition, loseCondition]);
+  }, [metrics, stats, eventSecondsInput, movementJSON, mapConfigJSON, layoutConfigJSON, capacityImage, customerImages, staffNamePool, winCondition, loseCondition]);
 
   const updateMetrics = useCallback((updates: Partial<BusinessMetrics>) => {
     setMetrics(prev => ({ ...prev, ...updates }));
@@ -105,6 +146,11 @@ export function useGlobalConfig() {
     stats,
     eventSecondsInput,
     movementJSON,
+    mapConfigJSON,
+    layoutConfigJSON,
+    capacityImage,
+    customerImages,
+    staffNamePool,
     winCondition,
     loseCondition,
     status,
@@ -113,6 +159,11 @@ export function useGlobalConfig() {
     operation,
     setEventSecondsInput,
     setMovementJSON,
+    setMapConfigJSON,
+    setLayoutConfigJSON,
+    setCapacityImage,
+    setCustomerImages,
+    setStaffNamePool,
     updateMetrics,
     updateStats,
     updateWinCondition,

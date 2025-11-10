@@ -8,6 +8,9 @@ import { useRequirements } from '@/lib/hooks/useRequirements';
 import { useConfigStore } from '@/lib/store/configStore';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { IndustryId } from '@/lib/game/types';
+import { Card } from '@/app/components/ui/Card';
+import { SectionHeading } from '@/app/components/ui/SectionHeading';
+import { Modal } from '@/app/components/ui/Modal';
 
 const formatSeconds = (seconds: number): string => {
   const clamped = Math.max(0, Math.floor(seconds));
@@ -115,40 +118,34 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, on
   };
 
   return (
-    <div className="rounded-lg border p-4 space-y-3 bg-gray-800 border-gray-700">
+    <Card className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h4 className="text-white font-semibold">{campaign.name}</h4>
-          <p className="text-gray-300 text-sm">{campaign.description}</p>
+          <h4 className="text-primary font-semibold">{campaign.name}</h4>
+          <p className="text-secondary text-sm">{campaign.description}</p>
         </div>
         <div className="text-right text-sm">
-          <div className="text-yellow-300 font-semibold">${campaign.cost}</div>
+          <div className="font-semibold" style={{ color: 'var(--game-secondary)' }}>${campaign.cost.toLocaleString()}</div>
         </div>
       </div>
 
-
       {/* Requirements Modal */}
-      {showRequirementsModal && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => setShowRequirementsModal(false)}
-        >
-          <div
-            className="bg-slate-800 rounded-lg border border-slate-700 p-4 max-w-sm w-full"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="text-center text-slate-300 text-sm leading-relaxed space-y-1">
-              {requirementDescriptions.map((desc, idx) => (
-                <div key={idx}>{desc}</div>
-              ))}
-            </div>
-          </div>
+      <Modal
+        isOpen={showRequirementsModal}
+        onClose={() => setShowRequirementsModal(false)}
+        maxWidth="sm"
+      >
+        <div className="text-center text-secondary text-sm leading-relaxed space-y-1">
+          <h3 className="text-primary font-semibold mb-3">Requirements</h3>
+          {requirementDescriptions.map((desc, idx) => (
+            <div key={idx}>{desc}</div>
+          ))}
         </div>
-      )}
+      </Modal>
 
-      <div className="flex flex-wrap items-center gap-3 text-xs text-gray-300">
+      <div className="flex flex-wrap items-center gap-3 text-xs text-secondary">
         {descriptions.every((item) => !item.text) ? (
-          <span className="text-gray-400">No stat changes</span>
+          <span className="text-muted">No stat changes</span>
         ) : (
           descriptions.map((item) => (
             <span key={`${campaign.id}-${item.text}`} className={item.toneClass}>
@@ -162,10 +159,10 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, on
         <button
           onClick={() => onLaunch(campaign.id)}
           disabled={buttonDisabled}
-          className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors ${
+          className={`w-full py-3 rounded-lg text-sm font-semibold transition-colors min-h-[44px] ${
             buttonDisabled
-              ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-              : 'bg-green-600 hover:bg-green-500 text-white'
+              ? 'bg-[var(--bg-tertiary)] text-tertiary cursor-not-allowed border-2 border-[var(--border-primary)]'
+              : 'bg-[var(--success)] hover:bg-[var(--success-dark)] text-white border-2 border-[var(--success)]'
           }`}
         >
           {isOnCooldown
@@ -179,14 +176,14 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, on
         {requirementDescriptions.length > 0 && !requirementsMet && !isOnCooldown && canAfford && (
           <button
             onClick={handleRequirementsClick}
-            className="absolute -top-1 -right-1 w-5 h-5 bg-black/60 hover:bg-black/80 text-white rounded-full text-xs font-bold shadow-md transition-colors flex items-center justify-center z-10"
+            className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--bg-tertiary)] hover:bg-[var(--game-primary)] text-white rounded-full text-xs font-bold shadow-md transition-colors flex items-center justify-center z-10 min-w-[20px] min-h-[20px]"
             title="Click to see requirements"
           >
             ?
           </button>
         )}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -215,18 +212,18 @@ export function MarketingTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-bold text-white">Marketing Campaigns</h3>
-        <p className="text-gray-300 text-sm">
+        <SectionHeading>Marketing Campaigns</SectionHeading>
+        <p className="text-secondary text-sm">
           Spend cash to run time-limited campaigns that boost demand and reputation.
         </p>
       </div>
 
       {message && (
-        <div className="bg-gray-800 border border-gray-700 text-gray-200 text-sm px-3 py-2 rounded">
-          {message}
-        </div>
+        <Card variant="info" className="border-[var(--info)] bg-[var(--info)]/10">
+          <p className="text-secondary text-sm">{message}</p>
+        </Card>
       )}
 
       <div className="space-y-3">

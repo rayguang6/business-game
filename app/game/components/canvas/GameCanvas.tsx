@@ -9,7 +9,7 @@ import { Character2D } from './Character2D';
 import { SpriteCustomer } from './SpriteCustomer';
 import { SpriteStaff } from './SpriteStaff';
 import { GridOverlay } from './GridOverlay';
-import { DEFAULT_INDUSTRY_ID, getBusinessStats, getLayoutConfig } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getBusinessStats, getLayoutConfig, getCapacityImageForIndustry } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import { useConfigStore } from '@/lib/store/configStore';
@@ -227,8 +227,9 @@ export function GameCanvas() {
             const bedBottom = (position.y + 1) * TILE_SIZE; // Align bottom with grid cell bottom
             const bedTop = bedBottom - bedHeight; // Top extends upward
             
-            // Use bed image from database or fallback to default
-            const bedImagePath = selectedIndustry?.bedImage || '/images/beds/bed.png';
+            // Use capacity image from config (industry-specific or global)
+            const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+            const bedImagePath = getCapacityImageForIndustry(industryId);
             
             return (
               <div
