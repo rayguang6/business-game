@@ -12,6 +12,7 @@ import type { MarketingCampaign } from '@/lib/store/slices/marketingSlice';
 import type { StaffPreset, StaffRoleConfig } from '@/lib/game/staffConfig';
 import type { GameFlag } from '@/lib/data/flagRepository';
 import type { GameCondition } from '@/lib/types/conditions';
+import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
 
 export type ConfigLoadStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -19,6 +20,8 @@ export interface GlobalSimulationConfigState {
   businessMetrics?: BusinessMetrics;
   businessStats?: BusinessStats;
   movement?: MovementConfig;
+  winCondition?: WinCondition;
+  loseCondition?: LoseCondition;
 }
 
 export interface IndustryContentConfig {

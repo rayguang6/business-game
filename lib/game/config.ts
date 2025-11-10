@@ -21,6 +21,7 @@ import {
   getUpgradesFromStore,
   getEventsFromStore,
 } from '@/lib/store/configStore';
+import { DEFAULT_WIN_CONDITION, DEFAULT_LOSE_CONDITION, type WinCondition, type LoseCondition } from './winConditions';
 
 export type {
   BusinessMetrics,
@@ -145,6 +146,22 @@ export function getGlobalMovementConfig(): MovementConfig {
     return { ...global };
   }
   return { ...getMovementConfigForIndustry(DEFAULT_INDUSTRY_ID) };
+}
+
+export function getWinCondition(): WinCondition {
+  const global = getGlobalConfigOverride()?.winCondition;
+  if (global) {
+    return { ...global };
+  }
+  return { ...DEFAULT_WIN_CONDITION };
+}
+
+export function getLoseCondition(): LoseCondition {
+  const global = getGlobalConfigOverride()?.loseCondition;
+  if (global) {
+    return { ...global };
+  }
+  return { ...DEFAULT_LOSE_CONDITION };
 }
 
 export function getLayoutConfig(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {

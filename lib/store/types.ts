@@ -71,7 +71,7 @@ export interface GameState {
   gameTick: number;
   currentMonth: number;
   isGameOver: boolean;
-  gameOverReason: 'cash' | 'reputation' | null;
+  gameOverReason: 'cash' | 'reputation' | 'founderHours' | 'victory' | null;
   
   // Business Metrics
   metrics: Metrics;

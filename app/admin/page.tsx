@@ -15,6 +15,7 @@ import type { Industry } from '@/lib/features/industries';
 import type { IndustryServiceDefinition, BusinessMetrics, BusinessStats, MovementConfig, Requirement } from '@/lib/game/types';
 import { fetchGlobalSimulationConfig, upsertGlobalSimulationConfig } from '@/lib/data/simulationConfigRepository';
 import { DEFAULT_GLOBAL_SIMULATION_CONFIG } from '@/lib/game/industryConfigs';
+import { DEFAULT_WIN_CONDITION, DEFAULT_LOSE_CONDITION, type WinCondition, type LoseCondition } from '@/lib/game/winConditions';
 import {
   fetchStaffDataForIndustry,
   upsertStaffRole,
@@ -117,6 +118,8 @@ export default function AdminPage() {
     (initialGlobal.businessStats.eventTriggerSeconds || []).join(',')
   );
   const [movementJSON, setMovementJSON] = useState<string>(JSON.stringify(initialGlobal.movement, null, 2));
+  const [winCondition, setWinCondition] = useState<WinCondition>({ ...DEFAULT_WIN_CONDITION });
+  const [loseCondition, setLoseCondition] = useState<LoseCondition>({ ...DEFAULT_LOSE_CONDITION });
   const [globalStatus, setGlobalStatus] = useState<string | null>(null);
   const [globalLoading, setGlobalLoading] = useState<boolean>(false);
   const [globalSaving, setGlobalSaving] = useState<boolean>(false);
@@ -354,6 +357,8 @@ export default function AdminPage() {
             setEventSecondsInput((global.businessStats.eventTriggerSeconds || []).join(','));
           }
           if (global.movement) setMovementJSON(JSON.stringify(global.movement, null, 2));
+          if (global.winCondition) setWinCondition(global.winCondition);
+          if (global.loseCondition) setLoseCondition(global.loseCondition);
         }
         setGlobalLoading(false);
 
@@ -1539,6 +1544,8 @@ export default function AdminPage() {
       businessMetrics,
       businessStats,
       movement,
+      winCondition,
+      loseCondition,
     });
     setGlobalSaving(false);
 
@@ -1857,10 +1864,14 @@ export default function AdminPage() {
             stats={stats}
             eventSecondsInput={eventSecondsInput}
             movementJSON={movementJSON}
+            winCondition={winCondition}
+            loseCondition={loseCondition}
             onUpdateMetrics={(updates) => setMetrics((p) => ({ ...p, ...updates }))}
             onUpdateStats={(updates) => setStats((p) => ({ ...p, ...updates }))}
             onUpdateEventSeconds={setEventSecondsInput}
             onUpdateMovementJSON={setMovementJSON}
+            onUpdateWinCondition={(updates) => setWinCondition((p) => ({ ...p, ...updates }))}
+            onUpdateLoseCondition={(updates) => setLoseCondition((p) => ({ ...p, ...updates }))}
             onSave={handleGlobalSave}
           />
         )}

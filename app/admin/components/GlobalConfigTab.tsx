@@ -1,6 +1,7 @@
 'use client';
 
 import type { BusinessMetrics, BusinessStats, MovementConfig } from '@/lib/game/types';
+import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
 
 interface GlobalConfigTabProps {
   globalLoading: boolean;
@@ -10,10 +11,14 @@ interface GlobalConfigTabProps {
   stats: BusinessStats;
   eventSecondsInput: string;
   movementJSON: string;
+  winCondition: WinCondition;
+  loseCondition: LoseCondition;
   onUpdateMetrics: (updates: Partial<BusinessMetrics>) => void;
   onUpdateStats: (updates: Partial<BusinessStats>) => void;
   onUpdateEventSeconds: (value: string) => void;
   onUpdateMovementJSON: (value: string) => void;
+  onUpdateWinCondition: (updates: Partial<WinCondition>) => void;
+  onUpdateLoseCondition: (updates: Partial<LoseCondition>) => void;
   onSave: () => Promise<void>;
 }
 
@@ -25,10 +30,14 @@ export function GlobalConfigTab({
   stats,
   eventSecondsInput,
   movementJSON,
+  winCondition,
+  loseCondition,
   onUpdateMetrics,
   onUpdateStats,
   onUpdateEventSeconds,
   onUpdateMovementJSON,
+  onUpdateWinCondition,
+  onUpdateLoseCondition,
   onSave,
 }: GlobalConfigTabProps) {
   return (
@@ -251,6 +260,82 @@ export function GlobalConfigTab({
               value={movementJSON}
               onChange={(e) => onUpdateMovementJSON(e.target.value)}
             />
+          </div>
+        </div>
+
+        <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
+          <label className="block text-sm font-semibold text-slate-300 mb-4">Win Condition</label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Founder Hours Max</label>
+              <input
+                type="number"
+                min="0"
+                className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
+                value={winCondition.founderHoursMax}
+                onChange={(e) => onUpdateWinCondition({ founderHoursMax: Number(e.target.value) })}
+              />
+              <p className="text-xs text-slate-500 mt-1">Maximum founder hours per month to win</p>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Monthly Profit Target</label>
+              <input
+                type="number"
+                min="0"
+                className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
+                value={winCondition.monthlyProfitTarget}
+                onChange={(e) => onUpdateWinCondition({ monthlyProfitTarget: Number(e.target.value) })}
+              />
+              <p className="text-xs text-slate-500 mt-1">Minimum profit per month required</p>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Consecutive Months Required</label>
+              <input
+                type="number"
+                min="1"
+                className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
+                value={winCondition.consecutiveMonthsRequired}
+                onChange={(e) => onUpdateWinCondition({ consecutiveMonthsRequired: Number(e.target.value) })}
+              />
+              <p className="text-xs text-slate-500 mt-1">Number of consecutive months needed</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
+          <label className="block text-sm font-semibold text-slate-300 mb-4">Lose Condition</label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Cash Threshold</label>
+              <input
+                type="number"
+                className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
+                value={loseCondition.cashThreshold}
+                onChange={(e) => onUpdateLoseCondition({ cashThreshold: Number(e.target.value) })}
+              />
+              <p className="text-xs text-slate-500 mt-1">Game over if cash &lt;= this value (default: 0)</p>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Reputation Threshold</label>
+              <input
+                type="number"
+                className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
+                value={loseCondition.reputationThreshold}
+                onChange={(e) => onUpdateLoseCondition({ reputationThreshold: Number(e.target.value) })}
+              />
+              <p className="text-xs text-slate-500 mt-1">Game over if reputation &lt;= this value (default: 0)</p>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Founder Hours Max (Burnout)</label>
+              <input
+                type="number"
+                min="0"
+                className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
+                value={loseCondition.founderHoursMax}
+                onChange={(e) => onUpdateLoseCondition({ founderHoursMax: Number(e.target.value) })}
+              />
+              <p className="text-xs text-slate-500 mt-1">Game over if founder hours &gt; this value (default: 400)</p>
+            </div>
           </div>
         </div>
 
