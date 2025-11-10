@@ -43,6 +43,15 @@ const cloneIndustryConfig = (
         staffPositions: config.layout.staffPositions.map((pos) => ({ ...pos })),
       }
     : undefined,
+  // Industry-specific simulation config overrides
+  businessMetrics: config.businessMetrics ? { ...config.businessMetrics } : undefined,
+  businessStats: config.businessStats ? { ...config.businessStats } : undefined,
+  movement: config.movement ? { ...config.movement } : undefined,
+  mapConfig: config.mapConfig ? { ...config.mapConfig, walls: [...config.mapConfig.walls] } : undefined,
+  capacityImage: config.capacityImage,
+  winCondition: config.winCondition ? { ...config.winCondition } : undefined,
+  loseCondition: config.loseCondition ? { ...config.loseCondition } : undefined,
+  customerImages: config.customerImages ? [...config.customerImages] : undefined,
   metadata: config.metadata ? { ...config.metadata } : undefined,
 });
 

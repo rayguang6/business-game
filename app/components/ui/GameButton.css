@@ -1,123 +1,290 @@
+/* ============================================
+   GAME BUTTON - Reusable Component
+   Uses design system colors and supports variants
+   ============================================ */
+
 .game-btn {
-    font-family: var(--font-open-sans), 'Arial', sans-serif;
-    font-size: clamp(1rem, 0.8rem + 1vw, 1.6rem);
-    font-weight: 800;
-    line-height: 1.1;
-    padding: clamp(0.65rem, 0.55rem + 0.6vw, 0.9rem) clamp(1.2rem, 0.95rem + 2.4vw, 2.7rem);
-    border-radius: clamp(0.75rem, 0.7rem + 0.4vw, 1.05rem);
-    position: relative;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35em;
-    text-align: center;
-    white-space: normal;
-    text-wrap: balance;
-    box-sizing: border-box;
-    max-width: min(100%, 22rem);
-    width: 100%;
-    min-height: clamp(2.75rem, 2.2rem + 1vw, 3.4rem);
-    transition: transform 0.1s, box-shadow 0.1s, filter 0.2s;
-    border: 4px solid #000; /* thick black outline */
-    overflow: hidden;
-    z-index: 1;
-    touch-action: manipulation;
-  }
+  /* Base Styles */
+  font-family: var(--font-open-sans), 'Arial', sans-serif;
+  font-weight: 800;
+  line-height: 1.1;
+  position: relative;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35em;
+  text-align: center;
+  white-space: normal;
+  text-wrap: balance;
+  box-sizing: border-box;
+  transition: transform 0.1s ease-out, box-shadow 0.1s ease-out, filter 0.2s ease-out;
+  border: 4px solid #000;
+  overflow: hidden;
+  z-index: 1;
+  touch-action: manipulation;
+  
+  /* Default size (md) */
+  font-size: clamp(1rem, 0.8rem + 1vw, 1.6rem);
+  padding: clamp(0.65rem, 0.55rem + 0.6vw, 0.9rem) clamp(1.2rem, 0.95rem + 2.4vw, 2.7rem);
+  border-radius: clamp(0.75rem, 0.7rem + 0.4vw, 1.05rem);
+  min-height: clamp(2.75rem, 2.2rem + 1vw, 3.4rem);
+  max-width: min(100%, 22rem);
+  width: 100%;
+}
 
-  /* 🔵 Blue button variant */
-  .game-btn.blue {
-    --text-stroke: #23AAF6;
-    background: linear-gradient(to bottom,
-      #26B3F7 0%,
-      #23AAF6 26%,
-      #1C95F9 64%,
-      #1989F9 100%
-    );
-  
-    /* drop + bevel shadows */
-    box-shadow: 0 6px 0 rgba(0, 0, 0, 0.6),
-                inset 0 -3px 0 #1057DA,
-                inset 0 3px 0 #23AAF6;
-  }
-  
-  /* 🟡 Gold button variant */
-  .game-btn.gold {
-    --text-stroke: #8B4513;
-    background: linear-gradient(to bottom,
-      #FFD700 0%,
-      #FFC107 26%,
-      #FF8F00 64%,
-      #E65100 100%
-    );
-  
-    box-shadow: 0 6px 0 rgba(0, 0, 0, 0.6),
-                inset 0 -3px 0 #B87333,
-                inset 0 3px 0 #FFA402;
-  }
-  
-  /* 🔵 Inner gradient border */
-  .game-btn.blue::before,
-  .game-btn.gold::before {
-    content: "";
-    position: absolute;
-    inset: -5px;
-    border-radius: inherit;
-    z-index: -1;
-  }
-  
-  .game-btn.blue::before {
-    background: linear-gradient(to bottom, #23AAF6, #1989F9);
-  }
-  
-  .game-btn.gold::before {
-    background: linear-gradient(to bottom, #FFD700, #FF8F00);
-  }
-  
-  /* 🔵 Gloss effect */
-  .game-btn.blue::after,
-  .game-btn.gold::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 50%;
-    background: rgba(255, 255, 255, 0.25);
-    border-top-left-radius: inherit;
-    border-top-right-radius: inherit;
-    pointer-events: none;
-  }
-  
-  /* Pressed states */
-  .game-btn.blue:active:not(:disabled) {
-    transform: translateY(3px);
-    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.6),
-                inset 0 -3px 0 #1057DA,
-                inset 0 3px 0 #23AAF6;
-  }
+/* Size Variants */
+.game-btn-sm {
+  font-size: clamp(0.875rem, 0.75rem + 0.8vw, 1.25rem);
+  padding: clamp(0.5rem, 0.45rem + 0.5vw, 0.7rem) clamp(1rem, 0.8rem + 2vw, 2.2rem);
+  border-radius: clamp(0.625rem, 0.6rem + 0.3vw, 0.875rem);
+  min-height: clamp(2.25rem, 1.9rem + 0.8vw, 2.75rem);
+  max-width: min(100%, 18rem);
+}
 
-  .game-btn.gold:active:not(:disabled) {
-    transform: translateY(3px);
-    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.6),
-                inset 0 -3px 0 #B87333,
-                inset 0 3px 0 #FFA402;
-  }
+.game-btn-lg {
+  font-size: clamp(1.125rem, 0.9rem + 1.2vw, 1.875rem);
+  padding: clamp(0.8rem, 0.65rem + 0.7vw, 1.1rem) clamp(1.4rem, 1.1rem + 2.8vw, 3.2rem);
+  border-radius: clamp(0.875rem, 0.8rem + 0.5vw, 1.25rem);
+  min-height: clamp(3.25rem, 2.5rem + 1.2vw, 4rem);
+  max-width: min(100%, 26rem);
+}
 
-  .game-btn:focus-visible {
-    outline: 3px solid rgba(255, 255, 255, 0.9);
-    outline-offset: 3px;
-  }
+/* Width Variant */
+.game-btn-full {
+  width: 100%;
+  max-width: 100%;
+}
 
-  .game-btn:disabled {
-    cursor: not-allowed;
-    filter: saturate(0.75) brightness(0.95);
-    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.45), inset 0 -2px 0 rgba(0, 0, 0, 0.35);
-  }
+/* Color Variants - Using Design System Colors */
+.game-btn-blue {
+  --btn-text-stroke: var(--game-primary-dark);
+  --btn-light: var(--game-primary-light);
+  --btn-base: var(--game-primary);
+  --btn-dark: var(--game-primary-dark);
+  --btn-mid: #1C95F9;
+  --btn-darkest: #1989F9;
+  
+  /* Override text-stroke color to use accent color */
+  --text-stroke: var(--btn-text-stroke);
+  
+  background: linear-gradient(to bottom,
+    var(--btn-light) 0%,
+    var(--btn-base) 26%,
+    var(--btn-mid) 64%,
+    var(--btn-darkest) 100%
+  );
+  
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.6),
+              inset 0 -3px 0 var(--btn-dark),
+              inset 0 3px 0 var(--btn-base);
+}
 
-  @media (min-width: 640px) {
-    .game-btn {
-      width: auto;
-    }
+.game-btn-gold {
+  --btn-text-stroke: #8B4513;
+  --btn-light: var(--game-secondary);
+  --btn-base: #FFC107;
+  --btn-dark: var(--game-secondary-dark);
+  --btn-mid: #FF8F00;
+  --btn-darkest: #E65100;
+  --btn-shadow-dark: #B87333;
+  --btn-shadow-light: #FFA402;
+  
+  /* Override text-stroke color to use accent color (dark brown/gold) */
+  --text-stroke: var(--btn-text-stroke);
+  
+  background: linear-gradient(to bottom,
+    var(--btn-light) 0%,
+    var(--btn-base) 26%,
+    var(--btn-mid) 64%,
+    var(--btn-darkest) 100%
+  );
+  
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.6),
+              inset 0 -3px 0 var(--btn-shadow-dark),
+              inset 0 3px 0 var(--btn-shadow-light);
+}
+
+.game-btn-purple {
+  --btn-text-stroke: #6B21A8;
+  --btn-light: #A855F7;
+  --btn-base: #9333EA;
+  --btn-dark: #7C3AED;
+  --btn-mid: #7E22CE;
+  --btn-darkest: #6B21A8;
+  --btn-shadow-dark: #581C87;
+  --btn-shadow-light: #C084FC;
+  
+  /* Override text-stroke color to use accent color */
+  --text-stroke: var(--btn-text-stroke);
+  
+  background: linear-gradient(to bottom,
+    var(--btn-light) 0%,
+    var(--btn-base) 26%,
+    var(--btn-mid) 64%,
+    var(--btn-darkest) 100%
+  );
+  
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.6),
+              inset 0 -3px 0 var(--btn-shadow-dark),
+              inset 0 3px 0 var(--btn-shadow-light);
+}
+
+.game-btn-green {
+  --btn-text-stroke: var(--success-dark);
+  --btn-light: #34D399; /* Lighter shade of success */
+  --btn-base: var(--success);
+  --btn-dark: var(--success-dark);
+  --btn-mid: var(--success-dark); /* Use design system color */
+  --btn-darkest: #047857; /* Slightly darker for depth */
+  --btn-shadow-dark: #065F46; /* Darker for shadow */
+  --btn-shadow-light: #6EE7B7; /* Lighter for highlight */
+  
+  /* Override text-stroke color to use accent color */
+  --text-stroke: var(--btn-text-stroke);
+  
+  background: linear-gradient(to bottom,
+    var(--btn-light) 0%,
+    var(--btn-base) 26%,
+    var(--btn-mid) 64%,
+    var(--btn-darkest) 100%
+  );
+  
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.6),
+              inset 0 -3px 0 var(--btn-shadow-dark),
+              inset 0 3px 0 var(--btn-shadow-light);
+}
+
+.game-btn-red {
+  --btn-text-stroke: var(--error-dark);
+  --btn-light: #F87171; /* Lighter shade of error */
+  --btn-base: var(--error);
+  --btn-dark: var(--error-dark);
+  --btn-mid: var(--error-dark); /* Use design system color */
+  --btn-darkest: #B91C1C; /* Slightly darker for depth */
+  --btn-shadow-dark: #991B1B; /* Darker for shadow */
+  --btn-shadow-light: #FCA5A5; /* Lighter for highlight */
+  
+  /* Override text-stroke color to use accent color */
+  --text-stroke: var(--btn-text-stroke);
+  
+  background: linear-gradient(to bottom,
+    var(--btn-light) 0%,
+    var(--btn-base) 26%,
+    var(--btn-mid) 64%,
+    var(--btn-darkest) 100%
+  );
+  
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.6),
+              inset 0 -3px 0 var(--btn-shadow-dark),
+              inset 0 3px 0 var(--btn-shadow-light);
+}
+
+/* Inner gradient border effect */
+.game-btn-blue::before,
+.game-btn-gold::before,
+.game-btn-purple::before,
+.game-btn-green::before,
+.game-btn-red::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: inherit;
+  z-index: -1;
+}
+
+.game-btn-blue::before {
+  background: linear-gradient(to bottom, var(--btn-base), var(--btn-darkest));
+}
+
+.game-btn-gold::before {
+  background: linear-gradient(to bottom, var(--btn-light), var(--btn-mid));
+}
+
+.game-btn-purple::before {
+  background: linear-gradient(to bottom, var(--btn-base), var(--btn-darkest));
+}
+
+.game-btn-green::before {
+  background: linear-gradient(to bottom, var(--btn-base), var(--btn-darkest));
+}
+
+.game-btn-red::before {
+  background: linear-gradient(to bottom, var(--btn-base), var(--btn-darkest));
+}
+
+/* Gloss effect overlay */
+.game-btn-blue::after,
+.game-btn-gold::after,
+.game-btn-purple::after,
+.game-btn-green::after,
+.game-btn-red::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+  pointer-events: none;
+}
+
+/* Active/Pressed States */
+.game-btn-blue:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.6),
+              inset 0 -3px 0 var(--btn-dark),
+              inset 0 3px 0 var(--btn-base);
+}
+
+.game-btn-gold:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.6),
+              inset 0 -3px 0 var(--btn-shadow-dark),
+              inset 0 3px 0 var(--btn-shadow-light);
+}
+
+.game-btn-purple:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.6),
+              inset 0 -3px 0 var(--btn-shadow-dark),
+              inset 0 3px 0 var(--btn-shadow-light);
+}
+
+.game-btn-green:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.6),
+              inset 0 -3px 0 var(--btn-shadow-dark),
+              inset 0 3px 0 var(--btn-shadow-light);
+}
+
+.game-btn-red:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.6),
+              inset 0 -3px 0 var(--btn-shadow-dark),
+              inset 0 3px 0 var(--btn-shadow-light);
+}
+
+/* Focus States */
+.game-btn:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 3px;
+}
+
+/* Disabled State */
+.game-btn:disabled {
+  cursor: not-allowed;
+  filter: saturate(0.75) brightness(0.95);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.45), 
+              inset 0 -2px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* Responsive Width - Auto width on larger screens unless fullWidth */
+@media (min-width: 640px) {
+  .game-btn:not(.game-btn-full) {
+    width: auto;
   }
+}
   

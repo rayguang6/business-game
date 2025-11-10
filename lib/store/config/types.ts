@@ -6,6 +6,7 @@ import type {
   MovementConfig,
   SimulationLayoutConfig,
   UpgradeDefinition,
+  MapConfig,
 } from '@/lib/game/types';
 import type { GameEvent } from '@/lib/types/gameEvents';
 import type { MarketingCampaign } from '@/lib/store/slices/marketingSlice';
@@ -20,8 +21,13 @@ export interface GlobalSimulationConfigState {
   businessMetrics?: BusinessMetrics;
   businessStats?: BusinessStats;
   movement?: MovementConfig;
+  mapConfig?: MapConfig;
+  layoutConfig?: SimulationLayoutConfig;
+  capacityImage?: string;
   winCondition?: WinCondition;
   loseCondition?: LoseCondition;
+  customerImages?: string[];
+  staffNamePool?: string[];
 }
 
 export interface IndustryContentConfig {
@@ -36,10 +42,15 @@ export interface IndustryContentConfig {
   flags: GameFlag[];
   conditions: GameCondition[];
   layout?: SimulationLayoutConfig;
-  metadata?: {
-    mapImage?: string;
-    bedImage?: string;
-  };
+  // Industry-specific simulation config overrides
+  businessMetrics?: BusinessMetrics;
+  businessStats?: BusinessStats;
+  movement?: MovementConfig;
+  mapConfig?: MapConfig;
+  capacityImage?: string;
+  winCondition?: WinCondition;
+  loseCondition?: LoseCondition;
+  customerImages?: string[];
 }
 
 export interface ConfigStoreState {

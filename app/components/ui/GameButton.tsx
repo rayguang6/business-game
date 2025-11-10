@@ -6,13 +6,20 @@ import "./GameButton.css";
 
 type GameButtonProps = {
   children: React.ReactNode;
-  color?: "blue" | "gold";
+  color?: "blue" | "gold" | "purple" | "green" | "red";
   href?: string;
   onClick?: () => void;
   className?: string;
   disabled?: boolean;
   type?: "button" | "submit" | "reset";
+  size?: "sm" | "md" | "lg";
+  fullWidth?: boolean;
 };
+
+// Utility function for conditional class names (consistent with Card component)
+function cn(...classes: (string | undefined | false)[]): string {
+  return classes.filter(Boolean).join(" ");
+}
 
 export default function GameButton({
   children,
@@ -22,6 +29,8 @@ export default function GameButton({
   className,
   disabled = false,
   type = "button",
+  size = "md",
+  fullWidth = false,
 }: GameButtonProps) {
   const router = useRouter();
   const { playSoundEffect } = useAudio('none', false);
@@ -40,14 +49,16 @@ export default function GameButton({
     playSoundEffect('buttonClick');
   };
 
-  const classes = ["game-btn", color, "text-stroke", className]
-    .filter(Boolean)
-    .join(" ");
-
   return (
     <button
       type={type}
-      className={classes}
+      className={cn(
+        "game-btn text-stroke",
+        `game-btn-${color}`,
+        `game-btn-${size}`,
+        fullWidth && "game-btn-full",
+        className
+      )}
       onClick={handleClick}
       disabled={disabled}
       aria-disabled={disabled}

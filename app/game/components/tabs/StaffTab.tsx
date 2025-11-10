@@ -5,6 +5,8 @@ import { useGameStore } from '@/lib/store/gameStore';
 import type { Staff } from '@/lib/features/staff';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import { useRequirements } from '@/lib/hooks/useRequirements';
+import { SectionHeading } from '@/app/components/ui/SectionHeading';
+import { Modal } from '@/app/components/ui/Modal';
 
 const ROLE_STYLE_MAP: Record<
   string,
@@ -126,23 +128,18 @@ function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
 
 
       {/* Requirements Modal */}
-      {showRequirementsModal && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => setShowRequirementsModal(false)}
-        >
-          <div
-            className="bg-slate-800 rounded-lg border border-slate-700 p-4 max-w-sm w-full"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="text-center text-slate-300 text-sm leading-relaxed space-y-1">
-              {requirementDescriptions.map((desc, idx) => (
-                <div key={idx}>{desc}</div>
-              ))}
-            </div>
-          </div>
+      <Modal
+        isOpen={showRequirementsModal}
+        onClose={() => setShowRequirementsModal(false)}
+        maxWidth="sm"
+      >
+        <div className="text-center text-secondary text-sm leading-relaxed space-y-1">
+          <h3 className="text-primary font-semibold mb-3">Requirements</h3>
+          {requirementDescriptions.map((desc, idx) => (
+            <div key={idx}>{desc}</div>
+          ))}
         </div>
-      )}
+      </Modal>
 
       {/* Staff Effects */}
       {candidate.effects.length > 0 && (
@@ -196,17 +193,19 @@ export function StaffTab() {
   };
 
   return (
-    <div className="relative">
-      <h3 className="text-2xl sm:text-3xl font-extrabold mb-4 sm:mb-6 text-white text-center">Staff Management</h3>
-      <p className="text-base sm:text-lg text-gray-300 mb-6 sm:mb-8 text-center px-2">
-        Oversee your talented team. Happy staff, happy customers!
-      </p>
+    <div className="space-y-6">
+      <div className="text-center">
+        <h3 className="text-2xl sm:text-3xl font-extrabold mb-4 sm:mb-6 text-primary text-center">Staff Management</h3>
+        <p className="text-base sm:text-lg text-secondary mb-6 sm:mb-8 text-center px-2">
+          Oversee your talented team. Happy staff, happy customers!
+        </p>
+      </div>
 
       {/* Current Staff */}
       <section className="space-y-4 sm:space-y-6">
         <div className="text-center">
-          <h4 className="text-lg sm:text-xl font-bold text-white">Our Staff</h4>
-          <p className="text-sm sm:text-base text-gray-400">
+          <SectionHeading>Our Staff</SectionHeading>
+          <p className="text-sm sm:text-base text-secondary">
             Meet the team running your clinic every day.
           </p>
         </div>
@@ -269,7 +268,7 @@ export function StaffTab() {
             );
           })}
           {hiredStaff.length === 0 && (
-            <div className="text-center text-gray-400 text-sm sm:text-base py-10">
+            <div className="text-center text-muted text-sm sm:text-base py-10">
               You haven&apos;t hired anyone yet. Pick a candidate below to build your team.
             </div>
           )}
@@ -277,10 +276,10 @@ export function StaffTab() {
       </section>
 
       {/* Available Staff */}
-      <section className="mt-10 space-y-4 sm:space-y-6">
+      <section className="space-y-4 sm:space-y-6">
         <div className="text-center">
-          <h4 className="text-lg sm:text-xl font-bold text-white">Available Staff</h4>
-          <p className="text-sm sm:text-base text-gray-400">
+          <SectionHeading>Available Staff</SectionHeading>
+          <p className="text-sm sm:text-base text-secondary">
             Choose who joins your clinic next. Hiring is instant and only adds their salary.
           </p>
         </div>
@@ -293,7 +292,7 @@ export function StaffTab() {
             />
           ))}
           {availableStaff.length === 0 && (
-            <div className="text-center text-gray-400 text-sm sm:text-base py-10">
+            <div className="text-center text-muted text-sm sm:text-base py-10">
               All available staff have joined your team. Check back later!
             </div>
           )}

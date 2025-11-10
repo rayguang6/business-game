@@ -88,7 +88,8 @@ export default function GamePage() {
   useEffect(() => {
     let isMounted = true;
 
-    if (!selectedIndustry || !globalConfigReady) {
+    // Check if selectedIndustry exists and has an id property
+    if (!selectedIndustry?.id || !globalConfigReady) {
       setDataLoadState('idle');
       return () => {
         isMounted = false;

@@ -117,26 +117,64 @@ export function getSimulationConfig(
 }
 
 export function getBusinessMetrics(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
-  const override = getGlobalConfigOverride()?.businessMetrics;
-  if (override) {
-    return { ...override };
+  // Check industry-specific override first
+  const industryConfig = getIndustryOverride(industryId);
+  if (industryConfig?.businessMetrics) {
+    return { ...industryConfig.businessMetrics };
   }
+  
+  // Check global config
+  const globalConfig = getGlobalConfigOverride();
+  if (globalConfig?.businessMetrics) {
+    return { ...globalConfig.businessMetrics };
+  }
+  
+  // Fallback to code defaults
   return { ...getSimulationConfig(industryId).businessMetrics };
 }
 
 export function getBusinessStats(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
-  const override = getGlobalConfigOverride()?.businessStats;
-  if (override) {
-    return { ...override };
+  // Check industry-specific override first
+  const industryConfig = getIndustryOverride(industryId);
+  if (industryConfig?.businessStats) {
+    return { ...industryConfig.businessStats };
   }
+  
+  // Check global config
+  const globalConfig = getGlobalConfigOverride();
+  if (globalConfig?.businessStats) {
+    return { ...globalConfig.businessStats };
+  }
+  
+  // Fallback to code defaults
   return { ...getSimulationConfig(industryId).businessStats };
 }
 
 export function getMapConfigForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
+  const industryConfig = getIndustryOverride(industryId);
+  if (industryConfig?.mapConfig) {
+    return industryConfig.mapConfig;
+  }
+  
+  const globalConfig = getGlobalConfigOverride();
+  if (globalConfig?.mapConfig) {
+    return globalConfig.mapConfig;
+  }
+  
   return getSimulationConfig(industryId).map;
 }
 
 export function getMovementConfigForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
+  const industryConfig = getIndustryOverride(industryId);
+  if (industryConfig?.movement) {
+    return { ...industryConfig.movement };
+  }
+  
+  const globalConfig = getGlobalConfigOverride();
+  if (globalConfig?.movement) {
+    return { ...globalConfig.movement };
+  }
+  
   return getSimulationConfig(industryId).movement;
 }
 
@@ -148,30 +186,60 @@ export function getGlobalMovementConfig(): MovementConfig {
   return { ...getMovementConfigForIndustry(DEFAULT_INDUSTRY_ID) };
 }
 
-export function getWinCondition(): WinCondition {
+export function getWinCondition(industryId?: IndustryId): WinCondition {
+  // If industryId provided, check industry-specific override
+  if (industryId) {
+    const industryConfig = getIndustryOverride(industryId);
+    if (industryConfig?.winCondition) {
+      return { ...industryConfig.winCondition };
+    }
+  }
+  
+  // Check global config
   const global = getGlobalConfigOverride()?.winCondition;
   if (global) {
     return { ...global };
   }
+  
+  // Fallback to code defaults
   return { ...DEFAULT_WIN_CONDITION };
 }
 
-export function getLoseCondition(): LoseCondition {
+export function getLoseCondition(industryId?: IndustryId): LoseCondition {
+  // If industryId provided, check industry-specific override
+  if (industryId) {
+    const industryConfig = getIndustryOverride(industryId);
+    if (industryConfig?.loseCondition) {
+      return { ...industryConfig.loseCondition };
+    }
+  }
+  
+  // Check global config
   const global = getGlobalConfigOverride()?.loseCondition;
   if (global) {
     return { ...global };
   }
+  
+  // Fallback to code defaults
   return { ...DEFAULT_LOSE_CONDITION };
 }
 
 export function getLayoutConfig(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
-  const config = getSimulationConfig(industryId);
-  const baseLayout = cloneLayout(config.layout);
-  const override = getIndustryOverride(industryId)?.layout;
-  if (override) {
-    return mergeLayout(baseLayout, override);
+  // Check industry-specific override first
+  const industryConfig = getIndustryOverride(industryId);
+  if (industryConfig?.layout) {
+    return cloneLayout(industryConfig.layout);
   }
-  return baseLayout;
+  
+  // Check global config
+  const globalConfig = getGlobalConfigOverride();
+  if (globalConfig?.layoutConfig) {
+    return cloneLayout(globalConfig.layoutConfig);
+  }
+  
+  // Fallback to code defaults
+  const config = getSimulationConfig(industryId);
+  return cloneLayout(config.layout);
 }
 
 export function getServicesForIndustry(
@@ -203,12 +271,62 @@ export function getEventsForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_I
   return cloneEvents(fallback.events);
 }
 
-export function getCustomerImagesForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
-  return getSimulationConfig(industryId).customerImages;
+export function getCustomerImagesForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): string[] {
+  // Check industry-specific override first
+  const industryConfig = getIndustryOverride(industryId);
+  if (industryConfig?.customerImages && industryConfig.customerImages.length > 0) {
+    return [...industryConfig.customerImages];
+  }
+  
+  // Check global config
+  const globalConfig = getGlobalConfigOverride();
+  if (globalConfig?.customerImages && globalConfig.customerImages.length > 0) {
+    return [...globalConfig.customerImages];
+  }
+  
+  // Fallback to code defaults
+  return [...getSimulationConfig(industryId).customerImages];
 }
 
 export function getDefaultCustomerImageForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
-  return getSimulationConfig(industryId).defaultCustomerImage;
+  const images = getCustomerImagesForIndustry(industryId);
+  return images[0] ?? '/images/customer/customer1.png';
+}
+
+export function getStaffNamePoolForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): string[] {
+  // Check industry-specific override first
+  const industryConfig = getIndustryOverride(industryId);
+  if (industryConfig?.staffNamePool && industryConfig.staffNamePool.length > 0) {
+    return [...industryConfig.staffNamePool];
+  }
+  
+  // Check global config
+  const globalConfig = getGlobalConfigOverride();
+  if (globalConfig?.staffNamePool && globalConfig.staffNamePool.length > 0) {
+    return [...globalConfig.staffNamePool];
+  }
+  
+  // Fallback to code defaults (from staffConfig)
+  const fallback = getFallbackSimulationConfig(industryId);
+  // Note: staffNamePool is not in IndustrySimulationConfig, so use DEFAULT_NAME_POOL from staffConfig
+  return ['Ava', 'Noah', 'Mia', 'Ethan', 'Liam', 'Zara', 'Kai', 'Riya', 'Owen', 'Sage', 'Nico', 'Luna', 'Milo', 'Iris', 'Ezra'];
+}
+
+export function getCapacityImageForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): string {
+  // Check industry-specific override first
+  const industryConfig = getIndustryOverride(industryId);
+  if (industryConfig?.capacityImage) {
+    return industryConfig.capacityImage;
+  }
+  
+  // Check global config
+  const globalConfig = getGlobalConfigOverride();
+  if (globalConfig?.capacityImage) {
+    return globalConfig.capacityImage;
+  }
+  
+  // Fallback to default
+  return '/images/beds/bed.png';
 }
 
 export function getTickIntervalMsForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): number {

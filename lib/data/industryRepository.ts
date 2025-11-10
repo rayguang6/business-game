@@ -9,9 +9,6 @@ interface IndustryRow {
   image: string | null;
   map_image: string | null;
   is_available: boolean | null;
-  staff_positions?: unknown; // JSONB column for staff positions array
-  service_room_positions?: unknown; // JSONB column for service room positions array
-  bed_image?: string | null; // Path to bed image for service rooms
 }
 
 export async function fetchIndustriesFromSupabase(): Promise<Industry[] | null> {
@@ -19,7 +16,7 @@ export async function fetchIndustriesFromSupabase(): Promise<Industry[] | null> 
 
   const { data, error } = await supabase
     .from('industries')
-    .select('id,name,icon,description,image,map_image,is_available,staff_positions,service_room_positions,bed_image');
+    .select('id,name,icon,description,image,map_image,is_available');
 
   if (error || !data) {
     return null;
@@ -35,16 +32,11 @@ const mapRowToIndustry = (row: IndustryRow): Industry => ({
   description: row.description,
   image: row.image ?? undefined,
   mapImage: row.map_image ?? undefined,
-  bedImage: row.bed_image ?? undefined,
   isAvailable: row.is_available ?? undefined,
 });
 
 export async function upsertIndustryToSupabase(
   industry: Industry,
-  layout?: {
-    staffPositions?: Array<{ x: number; y: number }>;
-    serviceRoomPositions?: Array<{ x: number; y: number }>;
-  },
 ): Promise<{ success: boolean; data?: Industry; message?: string }> {
   if (!supabase) {
     return { success: false, message: 'Supabase client not configured.' };
@@ -57,10 +49,7 @@ export async function upsertIndustryToSupabase(
     description: industry.description,
     image: industry.image ?? null,
     map_image: industry.mapImage ?? null,
-    bed_image: industry.bedImage ?? null,
     is_available: industry.isAvailable ?? true,
-    staff_positions: layout?.staffPositions ? (layout.staffPositions as unknown) : undefined,
-    service_room_positions: layout?.serviceRoomPositions ? (layout.serviceRoomPositions as unknown) : undefined,
   };
 
   const { data, error } = await supabase
