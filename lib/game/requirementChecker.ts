@@ -17,7 +17,7 @@ function evaluateRequirement(req: Requirement, store: GameStore): boolean {
   let actualValue = false;
 
   if (type === 'flag') {
-    // Flags are stored without prefix in the store
+    // Flags use clean IDs (no prefix) - check directly
     const flagValue = store.flags?.[id];
     actualValue = flagValue === true;
   } else if (type === 'condition') {
@@ -25,10 +25,8 @@ function evaluateRequirement(req: Requirement, store: GameStore): boolean {
       console.warn(`[Requirements] availableConditions not initialized`);
       actualValue = false;
     } else {
-      // Look for condition by clean ID (without prefix)
-      const condition = store.availableConditions.find(c =>
-        c.id === id || c.id === `condition_${id}`
-      );
+      // Conditions use clean IDs (no prefix) - find by exact match
+      const condition = store.availableConditions.find(c => c.id === id);
       if (!condition) {
         console.warn(`[Requirements] Condition not found: ${id}`);
         actualValue = false;
@@ -66,18 +64,18 @@ export function getRequirementDescription(req: Requirement, store: GameStore): s
   const prefix = expected === false ? "NOT " : "";
 
   if (type === 'flag') {
-    // Check availableFlags for human-readable names
+    // Flags use clean IDs - find by exact match
     if (store.availableFlags && Array.isArray(store.availableFlags)) {
-      const flag = store.availableFlags.find(f => f.id === id || f.id === `flag_${id}`);
+      const flag = store.availableFlags.find(f => f.id === id);
       if (flag) {
         return `${prefix}${flag.name}`;
       }
     }
     return `${prefix}${id}`;
   } else if (type === 'condition') {
-    // Check availableConditions for human-readable names
+    // Conditions use clean IDs - find by exact match
     if (store.availableConditions && Array.isArray(store.availableConditions)) {
-      const condition = store.availableConditions.find(c => c.id === id || c.id === `condition_${id}`);
+      const condition = store.availableConditions.find(c => c.id === id);
       if (condition) {
         return `${prefix}${condition.name}`;
       }

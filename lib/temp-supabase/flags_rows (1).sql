@@ -1,1 +1,1 @@
-INSERT INTO "public"."flags" ("id", "industry_id", "name", "description") VALUES ('flag_hired-assistant', 'dental', 'Hired Assistant', null), ('flag_hired-specialist', 'dental', 'Hired Specialist', null);
+INSERT INTO "public"."flags" ("id", "industry_id", "name", "description") VALUES ('hired-assistant', 'dental', 'Hired Assistant', null), ('hired-specialist', 'dental', 'Hired Specialist', null);

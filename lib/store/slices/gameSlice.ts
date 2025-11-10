@@ -318,19 +318,15 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     }
   },
 
-  // Flag management methods
+  // Flag management methods - use clean IDs directly (no prefix handling)
   setFlag: (flagId, value) => {
-    // Normalize flag ID - remove 'flag_' prefix if present to ensure consistency
-    const normalizedId = flagId.startsWith('flag_') ? flagId.substring(5) : flagId;
     set((state) => ({
-      flags: { ...state.flags, [normalizedId]: value }
+      flags: { ...state.flags, [flagId]: value }
     }));
   },
 
   hasFlag: (flagId) => {
-    // Normalize flag ID - remove 'flag_' prefix if present
-    const normalizedId = flagId.startsWith('flag_') ? flagId.substring(5) : flagId;
-    return get().flags[normalizedId] === true;
+    return get().flags[flagId] === true;
   },
 
   resetFlags: () => {

@@ -57,11 +57,10 @@ export async function upsertFlagForIndustry(
     return { success: false, message: 'Supabase client not configured.' };
   }
 
-  // Auto-generate ID with prefix if not provided or doesn't have prefix
+  // Auto-generate clean ID if not provided (no prefix)
   let finalId = flag.id;
-  if (!finalId || !finalId.startsWith('flag_')) {
-    const baseSlug = finalId || flag.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
-    finalId = `flag_${baseSlug}`;
+  if (!finalId) {
+    finalId = flag.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   }
 
   const payload: FlagRow = {

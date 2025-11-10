@@ -96,7 +96,7 @@ export function FlagsTab({
                           disabled={true}
                           className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-400 cursor-not-allowed"
                         />
-                        <p className="text-xs text-slate-500 mt-1">ID will be auto-generated with 'flag_' prefix</p>
+                        <p className="text-xs text-slate-500 mt-1">ID will be auto-generated from name</p>
                       </div>
                       <div className="md:col-span-2">
                         <label className="block text-sm font-semibold text-slate-300 mb-1">Name</label>
@@ -109,7 +109,7 @@ export function FlagsTab({
                             if (isCreatingFlag && e.target.value.trim()) {
                               const base = slugify(e.target.value.trim());
                               const unique = makeUniqueId(base, new Set(flags.map((f) => f.id)));
-                              onUpdateForm({ id: `flag_${unique}` });
+                              onUpdateForm({ id: unique });
                             }
                           }}
                           className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
