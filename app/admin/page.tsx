@@ -2484,7 +2484,7 @@ export default function AdminPage() {
                             disabled={true}
                             className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-400 cursor-not-allowed"
                           />
-                          <p className="text-xs text-slate-500 mt-1">ID will be auto-generated with 'condition_' prefix</p>
+                          <p className="text-xs text-slate-500 mt-1">ID will be auto-generated from name</p>
                         </div>
                         <div>
                           <label className="block text-sm font-semibold text-slate-300 mb-1">Name</label>
@@ -2495,7 +2495,7 @@ export default function AdminPage() {
                               if (isCreatingCondition && conditionForm.name.trim()) {
                                 const base = slugify(conditionForm.name.trim());
                                 const unique = makeUniqueId(base, new Set(conditions.map((c) => c.id)));
-                                setConditionForm((prev) => ({ ...prev, id: `condition_${unique}` }));
+                                setConditionForm((prev) => ({ ...prev, id: unique }));
                               }
                             }}
                             className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"

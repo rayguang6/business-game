@@ -73,8 +73,7 @@ export function RequirementsSelector({
     onRequirementsChange(updated);
   };
 
-  // For now, keep the UI showing prefixed IDs for backward compatibility
-  // But we'll change this to store clean IDs
+  // All IDs are clean (no prefixes) - use directly
 
   return (
     <div className="space-y-4 bg-slate-800/50 rounded-lg p-4 border border-slate-700">
@@ -103,9 +102,9 @@ export function RequirementsSelector({
               <div className="max-h-48 overflow-y-auto pr-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {filteredFlags.map((flag) => {
-                    const cleanId = flag.id.startsWith('flag_') ? flag.id.substring(5) : flag.id;
-                    const isSelected = isRequirementSelected(cleanId, 'flag');
-                    const expected = getRequirementExpected(cleanId, 'flag');
+                    // Use flag ID directly (no prefix handling)
+                    const isSelected = isRequirementSelected(flag.id, 'flag');
+                    const expected = getRequirementExpected(flag.id, 'flag');
 
                     return (
                       <div
@@ -120,7 +119,7 @@ export function RequirementsSelector({
                           <input
                             type="checkbox"
                             checked={isSelected}
-                            onChange={() => handleToggle(cleanId, 'flag')}
+                            onChange={() => handleToggle(flag.id, 'flag')}
                             className="w-4 h-4 rounded border-slate-500 bg-slate-800 text-purple-600 focus:ring-purple-500 focus:ring-2"
                           />
                           <span className="text-sm flex-1">{flag.name}</span>
@@ -138,7 +137,7 @@ export function RequirementsSelector({
                             <span className="text-xs text-slate-400">Must be:</span>
                             <button
                               type="button"
-                              onClick={() => handleToggleExpected(cleanId, 'flag')}
+                              onClick={() => handleToggleExpected(flag.id, 'flag')}
                               className={`px-2 py-1 text-xs rounded border transition-colors ${
                                 expected === false
                                   ? 'bg-red-500/20 border-red-500 text-red-200'
@@ -167,11 +166,9 @@ export function RequirementsSelector({
               <div className="max-h-48 overflow-y-auto pr-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {filteredConditions.map((condition) => {
-                    const cleanId = condition.id.startsWith('condition_')
-                      ? condition.id.substring(10)
-                      : condition.id;
-                    const isSelected = isRequirementSelected(cleanId, 'condition');
-                    const expected = getRequirementExpected(cleanId, 'condition');
+                    // Use condition ID directly (no prefix handling)
+                    const isSelected = isRequirementSelected(condition.id, 'condition');
+                    const expected = getRequirementExpected(condition.id, 'condition');
 
                     return (
                       <div
@@ -186,7 +183,7 @@ export function RequirementsSelector({
                           <input
                             type="checkbox"
                             checked={isSelected}
-                            onChange={() => handleToggle(cleanId, 'condition')}
+                            onChange={() => handleToggle(condition.id, 'condition')}
                             className="w-4 h-4 rounded border-slate-500 bg-slate-800 text-blue-600 focus:ring-blue-500 focus:ring-2"
                           />
                           <span className="text-sm flex-1">{condition.name}</span>
@@ -209,7 +206,7 @@ export function RequirementsSelector({
                             <span className="text-xs text-slate-400">Must be:</span>
                             <button
                               type="button"
-                              onClick={() => handleToggleExpected(cleanId, 'condition')}
+                              onClick={() => handleToggleExpected(condition.id, 'condition')}
                               className={`px-2 py-1 text-xs rounded border transition-colors ${
                                 expected === false
                                   ? 'bg-red-500/20 border-red-500 text-red-200'
