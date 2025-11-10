@@ -31,6 +31,8 @@ export async function loadGlobalSimulationSettings(): Promise<GlobalSimulationCo
     businessMetrics: result.businessMetrics,
     businessStats: result.businessStats,
     movement: result.movement,
+    winCondition: result.winCondition,
+    loseCondition: result.loseCondition,
   };
 }
 

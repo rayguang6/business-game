@@ -3,12 +3,13 @@ import { getMonthlyBaseExpenses } from '@/lib/features/economy';
 import { tickOnce } from '@/lib/game/mechanics';
 import { GameState, RevenueCategory, OneTimeCostCategory } from '../types';
 import { getInitialMetrics } from './metricsSlice';
-import { DEFAULT_INDUSTRY_ID, getUpgradesForIndustry } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getUpgradesForIndustry, getWinCondition, getLoseCondition } from '@/lib/game/config';
 import { GameStore } from '../gameStore';
 import { IndustryId } from '@/lib/game/types';
 import { effectManager } from '@/lib/game/effectManager';
 import { addStaffEffects } from '@/lib/features/staff';
 import { addUpgradeEffects } from './upgradesSlice';
+import { checkWinCondition } from '@/lib/game/winConditions';
 
 // Shared initial game state - DRY principle
 const getInitialGameState = (
@@ -47,7 +48,7 @@ export interface GameSlice {
   gameTick: number;
   currentMonth: number;
   isGameOver: boolean;
-  gameOverReason: 'cash' | 'reputation' | null;
+  gameOverReason: 'cash' | 'reputation' | 'founderHours' | 'victory' | null;
   
   // Flag management
   flags: Record<string, boolean>;
@@ -62,6 +63,7 @@ export interface GameSlice {
   recordEventRevenue: (amount: number, label?: string) => void;
   recordEventExpense: (amount: number, label: string) => void;
   checkGameOver: () => void;
+  checkWinConditionAtMonthEnd: () => void;
   
   // Flag management methods
   setFlag: (flagId: string, value: boolean) => void;
@@ -176,7 +178,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
   },
   
   tickGame: () => {
-    const { isPaused } = get();
+    const { isPaused, currentMonth: previousMonth } = get();
 
     if (isPaused) {
       return;
@@ -206,8 +208,9 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       return { ...state, ...updated };
     });
     
-    // Check for game over after tick updates
-    const { checkGameOver, tickMarketing, gameTime } = get();
+    // Check if a new month just started (month transition happened)
+    const { currentMonth, checkGameOver, checkWinConditionAtMonthEnd, tickMarketing, gameTime } = get();
+    const monthJustEnded = currentMonth > previousMonth;
 
     // Handle effect expiration through unified effect manager
     effectManager.tick(gameTime);
@@ -217,7 +220,13 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       tickMarketing(gameTime);
     }
 
+    // Check lose conditions (cash, reputation) continuously
     checkGameOver();
+    
+    // Check win condition only at month end (after month is finalized)
+    if (monthJustEnded && checkWinConditionAtMonthEnd) {
+      checkWinConditionAtMonthEnd();
+    }
   },
 
   //adjust cash or reputation immediately and run checkGameOver afterward.
@@ -275,12 +284,37 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     const state = get();
     if (state.isGameOver) return; // Already game over
     
-    const { cash, reputation } = state.metrics;
+    const { cash, reputation, founderWorkingHours } = state.metrics;
+    const loseCondition = getLoseCondition();
     
-    if (cash <= 0) {
+    // Only check lose conditions (win condition is checked at month end)
+    if (cash <= loseCondition.cashThreshold) {
       set({ isGameOver: true, gameOverReason: 'cash', isPaused: true });
-    } else if (reputation <= 0) {
+      return;
+    }
+    
+    if (reputation <= loseCondition.reputationThreshold) {
       set({ isGameOver: true, gameOverReason: 'reputation', isPaused: true });
+      return;
+    }
+    
+    if (founderWorkingHours > loseCondition.founderHoursMax) {
+      set({ isGameOver: true, gameOverReason: 'founderHours', isPaused: true });
+      return;
+    }
+  },
+
+  checkWinConditionAtMonthEnd: () => {
+    const state = get();
+    if (state.isGameOver) return; // Already game over
+    
+    const { founderWorkingHours } = state.metrics;
+    const { monthlyHistory } = state;
+    
+    // Check win condition only at month end (after month is finalized)
+    const winCondition = getWinCondition();
+    if (checkWinCondition(monthlyHistory, founderWorkingHours, winCondition)) {
+      set({ isGameOver: true, gameOverReason: 'victory', isPaused: true });
     }
   },
 

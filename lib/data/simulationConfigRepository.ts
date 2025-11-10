@@ -1,16 +1,21 @@
 import { supabase } from '@/lib/supabase/client';
 import type { BusinessMetrics, BusinessStats, MovementConfig } from '@/lib/game/types';
+import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
 
 export interface GlobalSimulationConfigRow {
   business_metrics: BusinessMetrics | null;
   business_stats: BusinessStats | null;
   movement: MovementConfig | null;
+  win_condition: WinCondition | null;
+  lose_condition: LoseCondition | null;
 }
 
 export interface GlobalSimulationConfigResult {
   businessMetrics?: BusinessMetrics;
   businessStats?: BusinessStats;
   movement?: MovementConfig;
+  winCondition?: WinCondition;
+  loseCondition?: LoseCondition;
 }
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -70,6 +75,44 @@ const mapMovementConfig = (raw: unknown): MovementConfig | undefined => {
   return undefined;
 };
 
+const mapWinCondition = (raw: unknown): WinCondition | undefined => {
+  if (!isObject(raw)) {
+    return undefined;
+  }
+  const candidate = raw as unknown as WinCondition;
+  if (
+    typeof candidate.founderHoursMax === 'number' &&
+    typeof candidate.monthlyProfitTarget === 'number' &&
+    typeof candidate.consecutiveMonthsRequired === 'number'
+  ) {
+    return {
+      founderHoursMax: candidate.founderHoursMax,
+      monthlyProfitTarget: candidate.monthlyProfitTarget,
+      consecutiveMonthsRequired: candidate.consecutiveMonthsRequired,
+    };
+  }
+  return undefined;
+};
+
+const mapLoseCondition = (raw: unknown): LoseCondition | undefined => {
+  if (!isObject(raw)) {
+    return undefined;
+  }
+  const candidate = raw as unknown as LoseCondition;
+  if (
+    typeof candidate.cashThreshold === 'number' &&
+    typeof candidate.reputationThreshold === 'number' &&
+    typeof candidate.founderHoursMax === 'number'
+  ) {
+    return {
+      cashThreshold: candidate.cashThreshold,
+      reputationThreshold: candidate.reputationThreshold,
+      founderHoursMax: candidate.founderHoursMax,
+    };
+  }
+  return undefined;
+};
+
 export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationConfigResult | null> {
   if (!supabase) {
     console.error('Supabase client not configured. Unable to fetch global simulation config.');
@@ -78,7 +121,7 @@ export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationCon
 
   const { data, error } = await supabase
     .from('global_simulation_config')
-    .select('business_metrics, business_stats, movement')
+    .select('business_metrics, business_stats, movement, win_condition, lose_condition')
     .limit(1)
     .maybeSingle();
 
@@ -94,8 +137,10 @@ export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationCon
   const businessMetrics = mapBusinessMetrics(data.business_metrics);
   const businessStats = mapBusinessStats(data.business_stats);
   const movement = mapMovementConfig(data.movement);
+  const winCondition = mapWinCondition(data.win_condition);
+  const loseCondition = mapLoseCondition(data.lose_condition);
 
-  if (!businessMetrics && !businessStats && !movement) {
+  if (!businessMetrics && !businessStats && !movement && !winCondition && !loseCondition) {
     return null;
   }
 
@@ -109,6 +154,12 @@ export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationCon
   if (movement) {
     result.movement = movement;
   }
+  if (winCondition) {
+    result.winCondition = winCondition;
+  }
+  if (loseCondition) {
+    result.loseCondition = loseCondition;
+  }
 
   return result;
 }
@@ -117,6 +168,8 @@ export async function upsertGlobalSimulationConfig(config: {
   businessMetrics?: BusinessMetrics;
   businessStats?: BusinessStats;
   movement?: MovementConfig;
+  winCondition?: WinCondition;
+  loseCondition?: LoseCondition;
 }): Promise<{ success: boolean; message?: string }>
 {
   if (!supabase) {
@@ -142,6 +195,8 @@ export async function upsertGlobalSimulationConfig(config: {
     business_metrics: config.businessMetrics ?? null,
     business_stats: config.businessStats ?? null,
     movement: config.movement ?? null,
+    win_condition: config.winCondition ?? null,
+    lose_condition: config.loseCondition ?? null,
   };
 
   const { error: upsertError } = await supabase
