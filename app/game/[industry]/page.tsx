@@ -258,8 +258,12 @@ export default function GamePage() {
           <GameCanvas />
           <EventPopup />
           <GameOverPopup />
-          <FlagDebug />
-          <TierMultiplierDebug />
+          {process.env.NODE_ENV === 'development' && (
+            <>
+              <FlagDebug />
+              <TierMultiplierDebug />
+            </>
+          )}
         </div>
       </div>
 
