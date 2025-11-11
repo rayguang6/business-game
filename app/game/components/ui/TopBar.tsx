@@ -33,8 +33,8 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
       {/* Main TopBar Container */}
       <div className="flex items-center px-2 md:px-4 py-1 md:py-2 h-14 md:h-16 mt-4">
         
-        {/* Left Section: Industry Details and Progress (50% width) */}
-        <div className="flex items-center w-1/2 pr-1 md:pr-2">
+        {/* Left Section: Industry Details and Progress (40% width) */}
+        <div className="flex items-center w-[40%] pr-1 md:pr-2">
           {/* Circular Industry Image */}
           <button
             onClick={openSettings}
@@ -58,30 +58,30 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
           {/* Industry Banner and Progress */}
           <div className="flex flex-col flex-1 min-w-0">
             {/* Industry Banner */}
-            <div className="flex items-center bg-gradient-to-r from-blue-600 to-blue-600/40 py-0.5 pl-4 md:pl-6 pr-0.5 md:pr-1">
-              <div className="text-stroke text-stroke-thin text-white mr-0.5 md:mr-1 flex-shrink-0 text-xs md:text-sm">{selectedIndustry.icon}</div>
-              <span className="text-stroke text-stroke-thin text-white font-bold text-[12px] md:text-sm truncate">{selectedIndustry.name}</span>
-              <span className="text-stroke text-stroke-thin text-white font-bold text-[10px] md:text-[12px] ml-1 md:ms-2 flex-shrink-0">(Stage 1)</span>
+            <div className="flex items-center bg-gradient-to-r from-blue-600 to-blue-600/40 py-1 pl-4 md:pl-6 pr-1">
+              <div className="text-white mr-1 md:mr-1.5 flex-shrink-0 text-xs md:text-sm">{selectedIndustry.icon}</div>
+              <span className="text-white font-bold text-xs md:text-sm truncate">{selectedIndustry.name}</span>
+              <span className="text-white/90 font-semibold text-[10px] md:text-xs ml-1.5 md:ml-2 flex-shrink-0">(Stage 1)</span>
             </div>
             
             {/* Progress Section */}
-            <div className="flex items-center space-x-0.5 md:space-x-1 bg-black/45 py-0.5 pl-4 md:pl-6">
-              <span className="text-stroke text-stroke-thin text-yellow-400 text-[10px] md:text-xs font-bold flex-shrink-0">Month {currentMonth}</span>
-              <div className="w-1/2 bg-gray-600 rounded-xs h-1 md:h-1.5 overflow-hidden flex-shrink-0">
+            <div className="flex items-center gap-1 md:gap-1.5 bg-black/45 py-1 pl-4 md:pl-6">
+              <span className="text-yellow-400 text-[11px] md:text-xs font-bold flex-shrink-0 whitespace-nowrap">Month {currentMonth}</span>
+              <div className="w-20 md:w-28 bg-gray-600 rounded-full h-1.5 md:h-2 overflow-hidden flex-shrink-0">
                 <div 
-                  className="bg-green-500 h-1 md:h-1.5 rounded-xs transition-all duration-300"
+                  className="bg-green-500 h-full rounded-full transition-all duration-300"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
-              <div className="text-stroke text-stroke-thin text-white text-[8px] md:text-[10px] leading-none font-bold flex-shrink-0">
+              <div className="text-white text-[10px] md:text-xs leading-none font-bold flex-shrink-0 whitespace-nowrap">
                 {roundDurationSeconds - Math.floor(gameTime % roundDurationSeconds)}s
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Section: Key Metrics (50% width) */}
-        <div className="w-1/2 pl-1 md:pl-2">
+        {/* Right Section: Key Metrics (60% width) */}
+        <div className="flex-1 pl-1 md:pl-2 min-w-0 mt-3">
           <KeyMetrics />
         </div>
       </div>

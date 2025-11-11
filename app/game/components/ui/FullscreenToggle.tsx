@@ -118,12 +118,58 @@ export function FullscreenToggle({ targetId }: FullscreenToggleProps) {
     <button
       type="button"
       onClick={toggleFullscreen}
-      className="cursor-pointer hover:bg-black/20 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/55 px-3 py-1.5 text-[11px] font-semibold text-white shadow-lg backdrop-blur-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+      className="cursor-pointer hover:bg-black/30 active:scale-95 inline-flex items-center justify-center rounded-lg border-2 border-white/30 bg-black/70 px-2.5 py-2 text-white shadow-lg backdrop-blur-sm transition-all duration-200 hover:border-[var(--game-primary)]/50 hover:shadow-[0_0_10px_rgba(35,170,246,0.3)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--game-primary)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
       aria-pressed={isFullscreen}
+      aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
     >
-      <span className="text-base leading-none" aria-hidden="true">
-        {isFullscreen ? "⤡" : "⤢"}
-      </span>
+      {isFullscreen ? (
+        // Exit fullscreen icon (compress)
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="text-white"
+          aria-hidden="true"
+        >
+          <path
+            d="M5 3H3V5M11 3H13V5M5 13H3V11M11 13H13V11"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <rect
+            x="6"
+            y="6"
+            width="4"
+            height="4"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            fill="none"
+          />
+        </svg>
+      ) : (
+        // Enter fullscreen icon (expand)
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="text-white"
+          aria-hidden="true"
+        >
+          <path
+            d="M5 3H3V5M11 3H13V5M5 13H3V11M11 13H13V11"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      )}
     </button>
   );
 }

@@ -109,6 +109,9 @@ const EventPopup: React.FC = () => {
       return;
     }
 
+    // DISABLED: Auto-select timer for easier testing and tweaking
+    // Uncomment below to re-enable auto-select after 10 seconds
+    /*
     setCountdown(10);
 
     // Schedule auto-selection using the captured choice id
@@ -122,6 +125,7 @@ const EventPopup: React.FC = () => {
         return prev > 0 ? prev - 1 : 0;
       });
     }, 1_000);
+    */
 
     return () => {
       if (timeoutRef.current) {
@@ -138,38 +142,32 @@ const EventPopup: React.FC = () => {
   // Prioritize showing the outcome if present
   if (lastEventOutcome && !currentEvent) {
     return (
-      <div className="absolute inset-0 z-30 flex items-center justify-center px-2 sm:px-6 py-3 sm:py-6 pointer-events-none">
-        <div className="absolute inset-0 bg-black/35 sm:bg-black/50 pointer-events-auto" />
-        <div className="relative z-10 w-full max-w-xs sm:max-w-md pointer-events-auto">
-          <div className="bg-white/95 rounded-2xl shadow-xl p-4 sm:p-6 border-t-4 border-blue-500 max-h-[65vh] sm:max-h-[70vh] overflow-y-auto">
-            <div className="flex items-center justify-center mb-3 text-blue-700 text-xl sm:text-2xl font-semibold">
-              🎲 Outcome
+      <div className="absolute inset-0 z-30 flex items-start md:items-center justify-center px-2 md:px-6 pt-16 md:pt-6 pb-2 md:pb-6 pointer-events-none">
+        <div className="absolute inset-0 bg-black/35 md:bg-black/50 pointer-events-auto" />
+        <div className="relative z-10 w-full max-w-[70%] md:max-w-md pointer-events-auto">
+          <div className="bg-white/95 rounded-md md:rounded-2xl shadow-xl p-2.5 md:p-6 border-t-2 md:border-t-4 border-blue-500 max-h-[calc(100vh-5rem)] md:max-h-[70vh] overflow-y-auto">
+            <div className="flex items-center gap-1 md:gap-1.5 mb-1.5 md:mb-3">
+              <span className="text-blue-700 text-sm md:text-xl">🎲</span>
+              <h3 className="text-xs md:text-lg font-semibold text-gray-900 leading-tight flex-1">
+                {lastEventOutcome.eventTitle}
+              </h3>
             </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 text-center mb-2">
-              {lastEventOutcome.eventTitle}
-            </h3>
-            <p className="text-sm sm:text-base text-gray-700 text-center mb-4">
-              You chose <span className="font-semibold text-gray-900">{lastEventOutcome.choiceLabel}</span>.
+            <p className="text-[10px] md:text-sm text-gray-600 mb-1.5 md:mb-3 leading-snug">
+              You chose <span className="font-semibold text-gray-800">{lastEventOutcome.choiceLabel}</span>
+              {lastEventOutcome.costPaid > 0 && <span className="text-red-600 ml-1">(-${lastEventOutcome.costPaid})</span>}
             </p>
-            {lastEventOutcome.costPaid > 0 && (
-              <div className="mb-3 text-sm sm:text-base text-red-700 text-center font-semibold">
-                Upfront cost paid: -${lastEventOutcome.costPaid}
-              </div>
-            )}
             {lastEventOutcome.consequenceLabel && (
-              <div className="mb-2 text-sm text-gray-700 text-center">
-                Outcome: <span className="font-medium text-gray-900">{lastEventOutcome.consequenceLabel}</span>
+              <div className="text-[10px] md:text-xs text-gray-700 mb-1 md:mb-2">
+                <span className="font-medium">{lastEventOutcome.consequenceLabel}</span>
+                {lastEventOutcome.consequenceDescription && (
+                  <span className="text-gray-600 ml-1">• {lastEventOutcome.consequenceDescription}</span>
+                )}
               </div>
             )}
-            {lastEventOutcome.consequenceDescription && (
-              <p className="text-xs sm:text-sm text-gray-600 text-center mb-3">
-                {lastEventOutcome.consequenceDescription}
-              </p>
-            )}
-            <div className="bg-gray-100 rounded-lg p-3 sm:p-4">
-              <h4 className="text-sm sm:text-base font-semibold text-gray-800 mb-2">Effects</h4>
-              {lastEventOutcome.appliedEffects.length > 0 ? (
-                <ul className="space-y-1.5 text-xs sm:text-sm">
+            {lastEventOutcome.appliedEffects.length > 0 && (
+              <div className="bg-gray-100 rounded p-1.5 md:p-3 mb-1 md:mb-2">
+                <div className="text-[10px] md:text-xs font-semibold text-gray-800 mb-0.5 md:mb-1">Effects:</div>
+                <ul className="space-y-0.5 text-[9px] md:text-xs">
                   {lastEventOutcome.appliedEffects.map((effect, index) => {
                     if (effect.type === 'cash' || effect.type === 'reputation') {
                       return (
@@ -178,18 +176,15 @@ const EventPopup: React.FC = () => {
                         </li>
                       );
                     }
-                    // Metric effects are shown in the separate section below
                     return null;
                   }).filter(Boolean)}
                 </ul>
-              ) : (
-                <p className="text-xs sm:text-sm text-gray-600">No additional changes.</p>
-              )}
-            </div>
+              </div>
+            )}
             {lastEventOutcome.appliedEffects.some(effect => effect.type === 'metric') && (
-              <div className="bg-blue-50 rounded-lg p-3 sm:p-4 mt-3 sm:mt-4 border border-blue-200">
-                <h4 className="text-sm sm:text-base font-semibold text-blue-800 mb-2">Active Effects</h4>
-                <ul className="space-y-1.5 text-xs sm:text-sm text-blue-800">
+              <div className="bg-blue-50 rounded p-1.5 md:p-3 mb-1 md:mb-2 border border-blue-200">
+                <div className="text-[10px] md:text-xs font-semibold text-blue-800 mb-0.5">Active:</div>
+                <ul className="space-y-0.5 text-[9px] md:text-xs text-blue-800">
                   {lastEventOutcome.appliedEffects
                     .filter((effect): effect is Extract<GameEventEffect, { type: 'metric' }> => effect.type === 'metric')
                     .map((effect, index) => (
@@ -201,7 +196,7 @@ const EventPopup: React.FC = () => {
             <button
               type="button"
               onClick={clearLastEventOutcome}
-              className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-semibold py-2 sm:py-2.5 rounded-lg transition"
+              className="mt-1.5 md:mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white text-[10px] md:text-sm font-semibold py-1.5 md:py-2 rounded transition"
             >
               Continue
             </button>
@@ -231,42 +226,53 @@ const EventPopup: React.FC = () => {
   const defaultChoiceId = currentEvent.choices[0]?.id;
 
   return (
-    <div className="absolute inset-0 z-30 flex items-center justify-center px-2 sm:px-6 py-3 sm:py-6 pointer-events-none">
-      <div className="absolute inset-0 bg-black/35 sm:bg-black/50 pointer-events-auto" />
-      <div className="relative z-10 w-full max-w-xs sm:max-w-lg pointer-events-auto">
+    <div className="absolute inset-0 z-30 flex items-start md:items-center justify-center px-2 md:px-6 pt-16 md:pt-6 pb-2 md:pb-6 pointer-events-none">
+      <div className="absolute inset-0 bg-black/35 md:bg-black/50 pointer-events-auto" />
+      <div className="relative z-10 w-full max-w-[70%] md:max-w-lg pointer-events-auto">
         <div
-          className={`bg-white/90 rounded-2xl shadow-xl p-3 sm:p-5 md:p-6 border-t-4 ${eventTypeColorClass.split(' ')[0]} max-h-[65vh] sm:max-h-[80vh] overflow-y-auto`}
+          className={`bg-white/95 rounded-md md:rounded-2xl shadow-xl p-2.5 md:p-5 lg:p-6 border-t-2 md:border-t-4 ${eventTypeColorClass.split(' ')[0]} max-h-[calc(100vh-5rem)] md:max-h-[80vh] overflow-y-auto`}
         >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center text-center sm:text-left mb-3 gap-1.5 sm:gap-3">
-            <span className={`text-xl sm:text-3xl sm:mr-1 ${eventTypeColorClass.split(' ')[1]}`}>{eventIcon}</span>
-            <h2 className={`text-xl sm:text-3xl font-semibold sm:font-bold ${eventTitleColor}`}>{currentEvent.title}</h2>
+          {/* Ultra Compact Header */}
+          <div className="flex items-center gap-1 md:gap-1 mb-1.5 md:mb-3">
+            <span className={`text-sm md:text-2xl ${eventTypeColorClass.split(' ')[1]} flex-shrink-0`}>{eventIcon}</span>
+            <h2 className={`text-xs md:text-2xl font-semibold md:font-bold ${eventTitleColor} leading-tight flex-1 line-clamp-2`}>
+              {currentEvent.title}
+            </h2>
           </div>
-          <p className="text-gray-700 text-center sm:text-left mb-4 sm:mb-5 text-xs sm:text-sm leading-relaxed">{currentEvent.summary}</p>
+          
+          {/* Compact Summary - Single line if possible */}
+          <p className="text-[10px] md:text-sm text-gray-700 mb-1.5 md:mb-4 leading-tight line-clamp-2">{currentEvent.summary}</p>
 
-          <div className="space-y-2.5 sm:space-y-4">
+          {/* Ultra Compact Choices - Optimized for 2-3 choices */}
+          <div className="space-y-1.5 md:space-y-2.5">
             {currentEvent.choices.map((choice) => (
               <button
                 key={choice.id}
                 onClick={() => handleUserChoice(choice)}
-                className={`w-full text-left p-2.5 sm:p-4 rounded-lg transition duration-200 border text-sm sm:text-base
+                className={`w-full text-left p-1.5 md:p-3 rounded transition duration-200 border text-[10px] md:text-sm
                 ${currentEvent.category === 'opportunity'
                   ? (choice.id === defaultChoiceId ? 'bg-green-100 hover:bg-green-200 border-green-300 text-green-900' : 'bg-green-300 hover:bg-green-400 border-green-500 text-green-900')
                   : (choice.id === defaultChoiceId ? 'bg-red-100 hover:bg-red-200 border-red-300 text-red-900' : 'bg-red-300 hover:bg-red-400 border-red-500 text-red-900')
                 }
                 flex flex-col items-start`}
               >
-                <span className="font-semibold text-sm sm:text-lg mb-1">{choice.label}</span>
-                <span className="text-gray-800 text-xs sm:text-sm mb-2 leading-relaxed">{choice.description}</span>
-                {choice.cost !== undefined && choice.cost > 0 && (
-                  <span className="text-xs sm:text-sm font-semibold text-red-700 mb-1">
-                    Upfront cost: ${choice.cost}
-                  </span>
+                <div className="flex items-center justify-between w-full gap-1 md:gap-1">
+                  <span className="font-semibold text-[10px] md:text-base leading-tight flex-1">{choice.label}</span>
+                  {choice.cost !== undefined && choice.cost > 0 && (
+                    <span className="text-[9px] md:text-xs font-semibold text-red-700 flex-shrink-0 whitespace-nowrap">
+                      ${choice.cost}
+                    </span>
+                  )}
+                </div>
+                {choice.description && (
+                  <span className="text-gray-800 text-[9px] md:text-xs leading-tight line-clamp-1 mt-0.5">{choice.description}</span>
                 )}
-                {choice.id === defaultChoiceId && countdown !== null && countdown > 0 && (
-                  <span className="mt-2 text-xs sm:text-sm font-semibold text-gray-700 block animate-pulse">
-                    Auto-selecting in {countdown}s...
+                {/* Auto-select countdown - disabled for testing */}
+                {/* Uncomment to re-enable: {choice.id === defaultChoiceId && countdown !== null && countdown > 0 && (
+                  <span className="mt-0.5 text-[8px] md:text-xs font-semibold text-gray-700 animate-pulse">
+                    Auto {countdown}s
                   </span>
-                )}
+                )} */}
               </button>
             ))}
           </div>
