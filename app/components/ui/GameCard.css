@@ -1,0 +1,267 @@
+/* ============================================
+   GAME CARD - Reusable Component
+   Uses design system colors and supports variants
+   ============================================ */
+
+.game-card {
+  /* Base Styles */
+  font-family: var(--font-open-sans), 'Arial', sans-serif;
+  position: relative;
+  box-sizing: border-box;
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, filter 0.2s ease-out;
+  overflow: hidden;
+  z-index: 1;
+  
+  /* Default size (md) */
+  padding: clamp(1rem, 0.8rem + 1vw, 1.5rem);
+  border-radius: clamp(0.75rem, 0.7rem + 0.4vw, 1.05rem);
+  border: 3px solid #000;
+}
+
+/* Size Variants */
+.game-card-sm {
+  padding: clamp(0.75rem, 0.6rem + 0.8vw, 1.125rem);
+  border-radius: clamp(0.625rem, 0.6rem + 0.3vw, 0.875rem);
+  border-width: 2px;
+}
+
+.game-card-lg {
+  padding: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
+  border-radius: clamp(0.875rem, 0.8rem + 0.5vw, 1.25rem);
+  border-width: 4px;
+}
+
+/* Variant Styles */
+.game-card-default {
+  /* Default solid variant */
+}
+
+.game-card-outlined {
+  background: transparent !important;
+  border-width: 3px;
+}
+
+.game-card-elevated {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.game-card-sm.game-card-outlined {
+  border-width: 2px;
+}
+
+.game-card-lg.game-card-outlined {
+  border-width: 4px;
+}
+
+/* Interactive State */
+.game-card-interactive {
+  cursor: pointer;
+  user-select: none;
+}
+
+.game-card-interactive:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.game-card-interactive:active {
+  transform: translateY(0);
+  filter: brightness(0.95);
+}
+
+.game-card-interactive:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+/* Color Variants - Using Design System Colors */
+.game-card-blue {
+  --card-text-stroke: var(--game-primary-dark);
+  --card-light: var(--game-primary-light);
+  --card-base: var(--game-primary);
+  --card-dark: var(--game-primary-dark);
+  --card-mid: var(--game-primary-dark);
+  --card-darkest: #0A4A8C;
+  --card-shadow-dark: #083A6F;
+  --card-shadow-light: #4A9FFF;
+  
+  background: linear-gradient(to bottom,
+    var(--card-light) 0%,
+    var(--card-base) 26%,
+    var(--card-mid) 64%,
+    var(--card-darkest) 100%
+  );
+  
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5),
+              inset 0 -2px 0 var(--card-shadow-dark),
+              inset 0 2px 0 var(--card-shadow-light);
+  
+  color: white;
+}
+
+.game-card-gold {
+  --card-text-stroke: #B8860B;
+  --card-light: #FFD700;
+  --card-base: #FFA500;
+  --card-dark: #FF8C00;
+  --card-mid: #FF8C00;
+  --card-darkest: #CC6600;
+  --card-shadow-dark: #996600;
+  --card-shadow-light: #FFE44D;
+  
+  background: linear-gradient(to bottom,
+    var(--card-light) 0%,
+    var(--card-base) 26%,
+    var(--card-mid) 64%,
+    var(--card-darkest) 100%
+  );
+  
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5),
+              inset 0 -2px 0 var(--card-shadow-dark),
+              inset 0 2px 0 var(--card-shadow-light);
+  
+  color: #000;
+}
+
+.game-card-purple {
+  --card-text-stroke: #6B21A8;
+  --card-light: #C084FC;
+  --card-base: var(--accent);
+  --card-dark: #9333EA;
+  --card-mid: #9333EA;
+  --card-darkest: #6B21A8;
+  --card-shadow-dark: #581C87;
+  --card-shadow-light: #D8B4FE;
+  
+  background: linear-gradient(to bottom,
+    var(--card-light) 0%,
+    var(--card-base) 26%,
+    var(--card-mid) 64%,
+    var(--card-darkest) 100%
+  );
+  
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5),
+              inset 0 -2px 0 var(--card-shadow-dark),
+              inset 0 2px 0 var(--card-shadow-light);
+  
+  color: white;
+}
+
+.game-card-green {
+  --card-text-stroke: var(--success-dark);
+  --card-light: #34D399;
+  --card-base: var(--success);
+  --card-dark: var(--success-dark);
+  --card-mid: var(--success-dark);
+  --card-darkest: #047857;
+  --card-shadow-dark: #065F46;
+  --card-shadow-light: #6EE7B7;
+  
+  background: linear-gradient(to bottom,
+    var(--card-light) 0%,
+    var(--card-base) 26%,
+    var(--card-mid) 64%,
+    var(--card-darkest) 100%
+  );
+  
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5),
+              inset 0 -2px 0 var(--card-shadow-dark),
+              inset 0 2px 0 var(--card-shadow-light);
+  
+  color: white;
+}
+
+.game-card-red {
+  --card-text-stroke: var(--error-dark);
+  --card-light: #F87171;
+  --card-base: var(--error);
+  --card-dark: var(--error-dark);
+  --card-mid: var(--error-dark);
+  --card-darkest: #B91C1C;
+  --card-shadow-dark: #991B1B;
+  --card-shadow-light: #FCA5A5;
+  
+  background: linear-gradient(to bottom,
+    var(--card-light) 0%,
+    var(--card-base) 26%,
+    var(--card-mid) 64%,
+    var(--card-darkest) 100%
+  );
+  
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5),
+              inset 0 -2px 0 var(--card-shadow-dark),
+              inset 0 2px 0 var(--card-shadow-light);
+  
+  color: white;
+}
+
+/* Outlined variant overrides */
+.game-card-outlined.game-card-blue {
+  background: transparent !important;
+  border-color: var(--card-base);
+  color: var(--card-base);
+}
+
+.game-card-outlined.game-card-gold {
+  background: transparent !important;
+  border-color: var(--card-base);
+  color: var(--card-base);
+}
+
+.game-card-outlined.game-card-purple {
+  background: transparent !important;
+  border-color: var(--card-base);
+  color: var(--card-base);
+}
+
+.game-card-outlined.game-card-green {
+  background: transparent !important;
+  border-color: var(--card-base);
+  color: var(--card-base);
+}
+
+.game-card-outlined.game-card-red {
+  background: transparent !important;
+  border-color: var(--card-base);
+  color: var(--card-base);
+}
+
+/* Inner gradient border effect */
+.game-card-blue::before,
+.game-card-gold::before,
+.game-card-purple::before,
+.game-card-green::before,
+.game-card-red::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0.3;
+}
+
+.game-card-blue::before {
+  background: linear-gradient(to bottom, var(--card-base), var(--card-darkest));
+}
+
+.game-card-gold::before {
+  background: linear-gradient(to bottom, var(--card-light), var(--card-mid));
+}
+
+.game-card-purple::before {
+  background: linear-gradient(to bottom, var(--card-base), var(--card-darkest));
+}
+
+.game-card-green::before {
+  background: linear-gradient(to bottom, var(--card-base), var(--card-darkest));
+}
+
+.game-card-red::before {
+  background: linear-gradient(to bottom, var(--card-base), var(--card-darkest));
+}
+
+/* Disable border effect for outlined variant */
+.game-card-outlined::before {
+  display: none;
+}
+
