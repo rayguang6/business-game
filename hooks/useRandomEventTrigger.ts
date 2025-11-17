@@ -38,10 +38,21 @@ export const useRandomEventTrigger = () => {
     const triggerPoints = getEventTriggerSecondsForIndustry(industryId);
     const triggerKey = triggerPoints.join(',');
 
+    // Debug: Log event trigger state on first run or when industry changes
     if (
       triggerStateRef.current.month !== currentMonth ||
       triggerStateRef.current.key !== triggerKey
     ) {
+      const eventsFromStore = getEventsFromStore(industryId);
+      const allEvents = eventsFromStore.length > 0 ? eventsFromStore : getEventsForIndustry(industryId);
+      
+      console.log(`[Event Trigger] Industry: "${industryId}"`, {
+        triggerPoints,
+        roundDuration,
+        totalEvents: allEvents.length,
+        events: allEvents.map(e => ({ id: e.id, title: e.title, requirements: e.requirements?.length || 0 })),
+      });
+
       triggerStateRef.current = {
         month: currentMonth,
         triggered: new Set<number>(),
@@ -50,6 +61,11 @@ export const useRandomEventTrigger = () => {
     }
 
     if (triggerPoints.length === 0) {
+      // Debug: Log when no trigger points are configured (only once per month)
+      if (triggerStateRef.current.month === currentMonth && triggerStateRef.current.triggered.size === 0) {
+        console.warn(`[Event Trigger] ⚠️ No trigger points configured for industry "${industryId}". Events will not trigger. Check Global Config > Event Trigger Seconds.`);
+        triggerStateRef.current.triggered.add(-1); // Mark as logged
+      }
       return;
     }
 
@@ -62,13 +78,25 @@ export const useRandomEventTrigger = () => {
         const allEvents =
           eventsFromStore.length > 0 ? eventsFromStore : getEventsForIndustry(industryId);
 
+        // Debug: Log event loading
+        if (allEvents.length === 0) {
+          console.warn(`[Event Trigger] No events found for industry "${industryId}" at trigger point ${trigger}s.`);
+        }
+
         // Filter events based on their requirements
         const eligibleEvents = allEvents.filter(event => {
-          return event.requirements ? checkRequirements(event.requirements, store) : true;
+          const meetsRequirements = event.requirements ? checkRequirements(event.requirements, store) : true;
+          if (!meetsRequirements && event.requirements) {
+            console.debug(`[Event Trigger] Event "${event.title}" does not meet requirements:`, event.requirements);
+          }
+          return meetsRequirements;
         });
 
-        if (eligibleEvents.length > 0) {
+        if (eligibleEvents.length === 0) {
+          console.warn(`[Event Trigger] No eligible events for industry "${industryId}" at trigger point ${trigger}s. Total events: ${allEvents.length}, Eligible: 0`);
+        } else {
           const randomIndex = Math.floor(Math.random() * eligibleEvents.length);
+          console.log(`[Event Trigger] Triggering event "${eligibleEvents[randomIndex].title}" for industry "${industryId}" at ${trigger}s`);
           setCurrentEvent(eligibleEvents[randomIndex]);
         }
         break;

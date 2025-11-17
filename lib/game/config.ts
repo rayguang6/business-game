@@ -134,16 +134,29 @@ export function getBusinessMetrics(industryId: IndustryId = DEFAULT_INDUSTRY_ID)
 }
 
 export function getBusinessStats(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
-  // Check industry-specific override first
+  // Get global config first (as base)
+  const globalConfig = getGlobalConfigOverride();
+  const globalStats = globalConfig?.businessStats;
+  
+  // Check industry-specific override
   const industryConfig = getIndustryOverride(industryId);
-  if (industryConfig?.businessStats) {
-    return { ...industryConfig.businessStats };
+  const industryStats = industryConfig?.businessStats;
+  
+  // Merge: industry-specific overrides global, but preserve eventTriggerSeconds from global if not set in industry
+  if (industryStats) {
+    const merged = { ...industryStats };
+    // If industry config doesn't have eventTriggerSeconds or it's empty, use global
+    if (!merged.eventTriggerSeconds || merged.eventTriggerSeconds.length === 0) {
+      if (globalStats?.eventTriggerSeconds && globalStats.eventTriggerSeconds.length > 0) {
+        merged.eventTriggerSeconds = [...globalStats.eventTriggerSeconds];
+      }
+    }
+    return merged;
   }
   
-  // Check global config
-  const globalConfig = getGlobalConfigOverride();
-  if (globalConfig?.businessStats) {
-    return { ...globalConfig.businessStats };
+  // Use global config if available
+  if (globalStats) {
+    return { ...globalStats };
   }
   
   // Fallback to code defaults

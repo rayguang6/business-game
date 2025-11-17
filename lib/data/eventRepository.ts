@@ -99,21 +99,29 @@ export async function fetchEventsForIndustry(industryId: IndustryId): Promise<Ga
     return null;
   }
 
+  console.log(`[Events] fetchEventsForIndustry called with: ${industryId}`);
+
   const { data, error } = await supabase
     .from('events')
     .select('id, industry_id, title, category, summary, choices, requirements')
     .eq('industry_id', industryId);
 
   if (error) {
-    console.error('Failed to fetch events from Supabase', error);
+    console.error('[Events] Failed to fetch events from Supabase', error);
     return null;
   }
 
+  console.log(`[Events] Supabase query result for "${industryId}":`, { 
+    count: data?.length || 0, 
+    events: data?.map(e => ({ id: e.id, title: e.title })) || [] 
+  });
+
   if (!data || data.length === 0) {
+    console.warn(`[Events] ⚠️ No events found for industry "${industryId}"`);
     return [];
   }
 
-  return data
+  const mapped = data
     .filter((row) => row.id && row.title && row.category && row.summary)
     .map((row) => ({
       id: row.id,
@@ -123,6 +131,9 @@ export async function fetchEventsForIndustry(industryId: IndustryId): Promise<Ga
       choices: mapChoices(Array.isArray(row.choices) ? (row.choices as RawChoice[]) : undefined),
       requirements: Array.isArray(row.requirements) ? row.requirements as Requirement[] : undefined,
     }));
+
+  console.log(`[Events] Mapped ${mapped.length} events for industry "${industryId}"`);
+  return mapped;
 }
 
 const convertRawEffectToGameEventEffect = (rawEffect: RawEffect): GameEventEffect => {
