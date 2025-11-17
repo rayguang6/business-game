@@ -103,6 +103,7 @@ export function useServices(industryId: string) {
     setOperation('saving');
     const payload: IndustryServiceDefinition = {
       id,
+      industryId,
       name,
       duration,
       price,
@@ -110,7 +111,7 @@ export function useServices(industryId: string) {
       pricingCategory: form.pricingCategory || undefined,
       weightage,
     };
-    const result = await upsertServiceForIndustry(industryId, payload);
+    const result = await upsertServiceForIndustry(payload);
     setOperation('idle');
     if (!result.success) {
       setStatus(result.message ?? 'Failed to save service.');

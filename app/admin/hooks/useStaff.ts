@@ -206,7 +206,7 @@ export function useStaff(industryId: string) {
     const role = roles.find(r => r.id === selectedRoleId);
     if (!window.confirm(`Delete role "${role?.name || selectedRoleId}"?`)) return;
     setRoleOperation('deleting');
-    const result = await deleteStaffRole(selectedRoleId);
+    const result = await deleteStaffRole(selectedRoleId, industryId);
     setRoleOperation('idle');
     if (!result.success) {
       setStatus(result.message ?? 'Failed to delete role.');
@@ -306,7 +306,7 @@ export function useStaff(industryId: string) {
     const preset = presets.find(p => p.id === selectedPresetId);
     if (!window.confirm(`Delete preset "${preset?.name || selectedPresetId}"?`)) return;
     setPresetOperation('deleting');
-    const result = await deleteStaffPreset(selectedPresetId);
+    const result = await deleteStaffPreset(selectedPresetId, industryId);
     setPresetOperation('idle');
     if (!result.success) {
       setStatus(result.message ?? 'Failed to delete preset.');

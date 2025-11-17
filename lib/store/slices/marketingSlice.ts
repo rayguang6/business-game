@@ -36,7 +36,7 @@ export interface MarketingSlice {
 /**
  * Add marketing campaign effects to the effect manager
  */
-function addMarketingEffects(campaign: MarketingCampaign): void {
+function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: number): void {
   campaign.effects.forEach((effect, index) => {
     effectManager.add({
       id: `marketing_${campaign.id}_${index}`,
@@ -49,7 +49,7 @@ function addMarketingEffects(campaign: MarketingCampaign): void {
       type: effect.type,
       value: effect.value,
       durationSeconds: effect.durationSeconds,
-    });
+    }, currentGameTime);
   });
 }
 
@@ -222,7 +222,7 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
     }
 
     // Register effects to effectManager (expiration handled automatically)
-    addMarketingEffects(campaign);
+    addMarketingEffects(campaign, gameTime);
 
     // Set flag if campaign sets one
     if (campaign.setsFlag) {

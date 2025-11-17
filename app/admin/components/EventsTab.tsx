@@ -638,7 +638,7 @@ export function EventsTab({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={onCreateEvent}
-                    className="px-3 py-2 text-sm font-medium rounded-lg border border-fuchsia-500 text-fuchsia-200 hover:bg-fuchsia-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-2 text-sm font-medium rounded-lg border border-slate-500 text-slate-200 hover:bg-slate-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={!industryId}
                   >
                     + New Event
@@ -669,21 +669,49 @@ export function EventsTab({
                 <div className="text-sm text-slate-400">No events configured yet.</div>
               ) : (
                 <div className="space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    {events.map((ev) => (
-                      <button
-                        key={ev.id}
-                        onClick={() => onSelectEvent(ev)}
-                        className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
-                          selectedEventId === ev.id && !isCreatingEvent
-                            ? 'border-fuchsia-400 bg-fuchsia-500/10 text-fuchsia-200'
-                            : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
-                        }`}
-                      >
-                        {ev.title}
-                      </button>
-                    ))}
-                  </div>
+                  {/* Group events by category */}
+                  {['opportunity', 'risk'].map((category) => {
+                    const categoryEvents = events.filter((ev) => ev.category === category);
+                    if (categoryEvents.length === 0) return null;
+                    
+                    const isOpportunity = category === 'opportunity';
+                    const categoryLabel = isOpportunity ? 'Opportunities' : 'Risks';
+                    
+                    return (
+                      <div key={category} className="space-y-2">
+                        <h3 className={`text-sm font-semibold flex items-center gap-2 ${
+                          isOpportunity ? 'text-green-300' : 'text-red-300'
+                        }`}>
+                          <span className={`w-2 h-2 rounded-full ${
+                            isOpportunity ? 'bg-green-500' : 'bg-red-500'
+                          }`}></span>
+                          {categoryLabel} ({categoryEvents.length})
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {categoryEvents.map((ev) => {
+                            const isSelected = selectedEventId === ev.id && !isCreatingEvent;
+                            return (
+                              <button
+                                key={ev.id}
+                                onClick={() => onSelectEvent(ev)}
+                                className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
+                                  isOpportunity
+                                    ? isSelected
+                                      ? 'border-green-400 bg-green-500/20 text-green-200'
+                                      : 'border-green-700 bg-green-900/30 hover:bg-green-800/40 text-green-200'
+                                    : isSelected
+                                      ? 'border-red-400 bg-red-500/20 text-red-200'
+                                      : 'border-red-700 bg-red-900/30 hover:bg-red-800/40 text-red-200'
+                                }`}
+                              >
+                                {ev.title}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
 
                   {(selectedEventId || isCreatingEvent) && (
                     <div>
@@ -704,10 +732,14 @@ export function EventsTab({
                           <select
                             value={eventForm.category}
                             onChange={(e) => onUpdateEventForm({ category: e.target.value as 'opportunity' | 'risk' })}
-                            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                            className={`w-full rounded-lg bg-slate-800 border px-3 py-2 text-slate-200 ${
+                              eventForm.category === 'opportunity' 
+                                ? 'border-green-600 focus:border-green-500' 
+                                : 'border-red-600 focus:border-red-500'
+                            }`}
                           >
-                            <option value="opportunity">Opportunity</option>
-                            <option value="risk">Risk</option>
+                            <option value="opportunity">🟢 Opportunity</option>
+                            <option value="risk">🔴 Risk</option>
                           </select>
                         </div>
                         <div className="md:col-span-2">
@@ -741,7 +773,9 @@ export function EventsTab({
                             onClick={onSaveEvent}
                             disabled={eventSaving || eventDeleting}
                             className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                              eventSaving ? 'bg-fuchsia-900 text-fuchsia-200 cursor-wait' : 'bg-fuchsia-600 hover:bg-fuchsia-500 text-white'
+                              eventSaving 
+                                ? (eventForm.category === 'opportunity' ? 'bg-green-900 text-green-200 cursor-wait' : 'bg-red-900 text-red-200 cursor-wait')
+                                : (eventForm.category === 'opportunity' ? 'bg-green-600 hover:bg-green-500 text-white' : 'bg-red-600 hover:bg-red-500 text-white')
                             }`}
                           >
                             {eventSaving ? 'Saving…' : 'Save Event'}
@@ -771,11 +805,17 @@ export function EventsTab({
 
                       <div className="pt-4 mt-4 border-t border-slate-800">
                         <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-lg font-semibold text-fuchsia-300">Choices</h3>
+                          <h3 className={`text-lg font-semibold ${
+                            eventForm.category === 'opportunity' ? 'text-green-300' : 'text-red-300'
+                          }`}>Choices</h3>
                           <button
                             type="button"
                             onClick={handleCreateChoice}
-                            className="px-3 py-2 text-sm font-medium rounded-lg border border-fuchsia-500 text-fuchsia-200 hover:bg-fuchsia-500/10"
+                            className={`px-3 py-2 text-sm font-medium rounded-lg border hover:bg-opacity-10 ${
+                              eventForm.category === 'opportunity'
+                                ? 'border-green-500 text-green-200 hover:bg-green-500'
+                                : 'border-red-500 text-red-200 hover:bg-red-500'
+                            }`}
                           >
                             + Add Choice
                           </button>

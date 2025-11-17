@@ -61,8 +61,10 @@ export interface Effect {
   createdAt: number;       // When effect was added (for expiration calculation)
 }
 
-// Input for creating new effects (without createdAt)
-export interface EffectInput extends Omit<Effect, 'createdAt'> {}
+// Input for creating new effects (without createdAt, but can optionally provide it)
+export interface EffectInput extends Omit<Effect, 'createdAt'> {
+  createdAt?: number; // Optional: if provided, use this instead of current game time
+}
 
 // Constraints for each metric (optional - only add when needed)
 export interface MetricConstraints {
@@ -245,11 +247,13 @@ class EffectManager {
 
   /**
    * Add a new effect to the system
+   * @param effect The effect to add
+   * @param currentGameTime Optional: current game time in seconds. If not provided, will use Date.now() / 1000 (real-world time)
    */
-  add(effect: EffectInput): void {
+  add(effect: EffectInput, currentGameTime?: number): void {
     const effectWithTimestamp: Effect = {
       ...effect,
-      createdAt: Date.now() / 1000, // Convert to seconds to match game time
+      createdAt: effect.createdAt ?? (currentGameTime ?? Date.now() / 1000),
     };
     this.effects.set(effect.id, effectWithTimestamp);
     this.notifyListeners();

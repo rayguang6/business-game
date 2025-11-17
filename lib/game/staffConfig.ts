@@ -60,7 +60,8 @@ const getIndustryStaffConfig = (industryId: IndustryId) =>
 
 const getRolesSource = (industryId: IndustryId): StaffRoleConfig[] => {
   const config = getIndustryStaffConfig(industryId);
-  const roles = config?.staffRoles && config.staffRoles.length > 0 ? config.staffRoles : DEFAULT_ROLES;
+  // Only use industry-specific roles, no fallback to defaults
+  const roles = config?.staffRoles && config.staffRoles.length > 0 ? config.staffRoles : [];
   return roles.map(cloneRole);
 };
 
@@ -75,10 +76,11 @@ const getNamePoolSource = (industryId: IndustryId): string[] => {
 
 const getPresetSource = (industryId: IndustryId): StaffPreset[] => {
   const config = getIndustryStaffConfig(industryId);
+  // Only use industry-specific presets, no fallback to defaults
   const presets =
     config?.staffPresets && config.staffPresets.length > 0
       ? config.staffPresets
-      : DEFAULT_INITIAL_STAFF;
+      : [];
   return presets.map(clonePreset);
 };
 
@@ -93,22 +95,11 @@ function resolveRole(industryId: IndustryId, roleId?: string): StaffRoleConfig |
     if (match) {
       return match;
     }
+    // No fallback - return null if role not found in this industry
+    return null;
   }
 
-  if (industryId !== DEFAULT_INDUSTRY_ID) {
-    const fallbackRoles = getRolesSource(DEFAULT_INDUSTRY_ID);
-    if (roleId) {
-      const fallbackMatch = fallbackRoles.find((role) => role.id === roleId);
-      if (fallbackMatch) {
-        return fallbackMatch;
-      }
-    }
-
-    if (fallbackRoles.length > 0) {
-      return fallbackRoles[0];
-    }
-  }
-
+  // Return first role if no specific roleId requested
   return roles[0];
 }
 
@@ -158,14 +149,12 @@ export function getInitialStaffForIndustry(industryId: IndustryId): Staff[] {
   const roleMap = new Map(roles.map((role) => [role.id, role]));
 
   return presets.map((preset) => {
-    const role =
-      roleMap.get(preset.roleId) ??
-      resolveRole(industryId, preset.roleId) ??
-      resolveRole(DEFAULT_INDUSTRY_ID, preset.roleId);
+    // Only look for roles in the current industry, no fallback to default industry
+    const role = roleMap.get(preset.roleId) ?? resolveRole(industryId, preset.roleId);
 
     if (!role) {
       throw new Error(
-        `No staff role configured for preset "${preset.id}" in industry "${industryId}"`,
+        `No staff role "${preset.roleId}" found for preset "${preset.id}" in industry "${industryId}". Please ensure the role exists for this industry.`,
       );
     }
 

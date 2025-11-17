@@ -463,6 +463,7 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
           store.applyReputationChange(resolvedEffect.amount);
         } else if (resolvedEffect.type === 'metric' && resolvedEffect.metric && resolvedEffect.effectType !== undefined && resolvedEffect.value !== undefined) {
           // Metric effects go through effect manager
+          const { gameTime } = store;
           effectManager.add({
             id: `event_${outcome.eventId}_${outcome.choiceId}_${Date.now()}`,
             source: {
@@ -475,7 +476,7 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
             value: resolvedEffect.value,
             durationSeconds: resolvedEffect.durationSeconds,
             priority: resolvedEffect.priority,
-          });
+          }, gameTime);
         }
         // 🚨 ADD NEW EFFECT TYPE APPLICATION HERE (STEP 4)
         // else if (resolvedEffect.type === 'yourNewEffectType' && resolvedEffect.amount !== undefined) {

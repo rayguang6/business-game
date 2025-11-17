@@ -217,13 +217,18 @@ export async function upsertStaffRole(role: {
   return { success: true };
 }
 
-export async function deleteStaffRole(id: string): Promise<{ success: boolean; message?: string }>
+export async function deleteStaffRole(id: string, industryId: IndustryId): Promise<{ success: boolean; message?: string }>
 {
   if (!supabase) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
-  const { error } = await supabase.from('staff_roles').delete().eq('id', id);
+  // Delete only from the specific industry to ensure isolation
+  const { error } = await supabase
+    .from('staff_roles')
+    .delete()
+    .eq('id', id)
+    .eq('industry_id', industryId);
   if (error) {
     console.error('Failed to delete staff role', error);
     return { success: false, message: error.message };
@@ -267,13 +272,18 @@ export async function upsertStaffPreset(preset: {
   return { success: true };
 }
 
-export async function deleteStaffPreset(id: string): Promise<{ success: boolean; message?: string }>
+export async function deleteStaffPreset(id: string, industryId: IndustryId): Promise<{ success: boolean; message?: string }>
 {
   if (!supabase) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
-  const { error } = await supabase.from('staff_presets').delete().eq('id', id);
+  // Delete only from the specific industry to ensure isolation
+  const { error } = await supabase
+    .from('staff_presets')
+    .delete()
+    .eq('id', id)
+    .eq('industry_id', industryId);
   if (error) {
     console.error('Failed to delete staff preset', error);
     return { success: false, message: error.message };

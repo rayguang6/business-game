@@ -225,7 +225,7 @@ function processCustomersForTick({
   gameMetrics,
   industryId,
 }: ProcessCustomersParams): ProcessCustomersResult {
-  const roomsRemaining = [...getAvailableRooms(customers, gameMetrics.serviceRooms)];
+  const roomsRemaining = [...getAvailableRooms(customers, gameMetrics.serviceRooms, industryId)];
   const updatedCustomers: Customer[] = [];
   let metricsAccumulator: Metrics = { ...metrics };
   let revenueAccumulator = monthlyRevenue;
@@ -292,7 +292,8 @@ function processCustomersForTick({
     }
 
     // If customer is waiting and there are available rooms, assign them to a room
-    if (updatedCustomer.status === CustomerStatus.Waiting && roomsRemaining.length > 0) {
+    // Only assign to customers who were ALREADY waiting (not those who just transitioned to waiting)
+    if (customer.status === CustomerStatus.Waiting && updatedCustomer.status === CustomerStatus.Waiting && roomsRemaining.length > 0) {
       const assignedRoom = roomsRemaining.shift()!;
       const customerWithService = startService(updatedCustomer, assignedRoom);
       
@@ -307,6 +308,11 @@ function processCustomersForTick({
           { additionalWalls: dynamicWallsForCustomer, industryId }
         );
         customerWithService.path = pathToRoom.length > 0 ? pathToRoom : undefined;
+      } else {
+        // If no valid service position for this room, don't assign the customer
+        // This prevents assigning to rooms beyond configured positions
+        updatedCustomers.push(updatedCustomer);
+        return;
       }
 
       updatedCustomers.push(customerWithService);
