@@ -262,7 +262,14 @@ export function getAvailableSlots(customers: Customer[], maxRooms?: number, indu
     .filter(c => (c.status === CustomerStatus.InService || c.status === CustomerStatus.WalkingToRoom) && c.roomId)
     .map(c => c.roomId!);
   
-  const roomCount = maxRooms || getBusinessStats(industryId).treatmentRooms;
+  // Get the actual number of service room positions configured
+  const serviceRoomPositions = getLayoutConfig(industryId).serviceRoomPositions;
+  const maxAvailableRooms = serviceRoomPositions.length;
+  
+  // Cap roomCount to the actual number of service room positions
+  const requestedRoomCount = maxRooms || getBusinessStats(industryId).treatmentRooms;
+  const roomCount = Math.min(requestedRoomCount, maxAvailableRooms);
+  
   return Array.from({ length: roomCount }, (_, i) => i + 1)
     .filter(roomId => !occupiedRooms.includes(roomId));
 }

@@ -98,11 +98,11 @@ export function GameCanvas() {
 
   if (!selectedIndustry) return null;
   const serviceRoomsLabel = 'Service Rooms';
-  const serviceRooms = Math.max(1, Math.round(metrics.serviceRooms));
-  const mapBackground = selectedIndustry.mapImage ?? '/images/maps/dental-map.png';
-
   // Get service room positions for rendering beds (from database or fallback)
   const serviceRoomPositions = layout.serviceRoomPositions;
+  // Cap serviceRooms to the actual number of service room positions available
+  const serviceRooms = Math.max(1, Math.min(Math.round(metrics.serviceRooms), serviceRoomPositions.length));
+  const mapBackground = selectedIndustry.mapImage ?? '/images/maps/dental-map.png';
   const staffPositions = layout.staffPositions;
   const TILE_SIZE = 32;
 

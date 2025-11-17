@@ -80,8 +80,15 @@ export function useEvents(industryId: string) {
     const title = form.title.trim();
     const summary = form.summary.trim();
     const category = form.category;
-    if (!id || !title || !summary) {
-      setStatus('Saved locally. Fill required fields to persist.');
+    
+    // Check which required fields are missing and provide specific error message
+    const missingFields: string[] = [];
+    if (!id) missingFields.push('ID');
+    if (!title) missingFields.push('Title');
+    if (!summary) missingFields.push('Summary');
+    
+    if (missingFields.length > 0) {
+      setStatus(`Saved locally. Missing required fields: ${missingFields.join(', ')}. Fill them to persist.`);
       return;
     }
     const payload: GameEvent = { id, title, category, summary, choices: nextChoices } as GameEvent;

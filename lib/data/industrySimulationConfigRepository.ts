@@ -157,7 +157,12 @@ export async function fetchIndustrySimulationConfig(
   }
   
   // Build map config from separate columns (preferred) or fallback to map_config JSONB
-  if ((data.map_width !== null && data.map_width !== undefined) || (data.map_height !== null && data.map_height !== undefined)) {
+  // Check if we have any map data: width, height, or walls
+  const hasMapWidth = data.map_width !== null && data.map_width !== undefined;
+  const hasMapHeight = data.map_height !== null && data.map_height !== undefined;
+  const hasMapWalls = data.map_walls !== null && data.map_walls !== undefined && Array.isArray(data.map_walls) && (data.map_walls as Array<unknown>).length > 0;
+  
+  if (hasMapWidth || hasMapHeight || hasMapWalls) {
     const mapConfig: MapConfig = {
       width: data.map_width ?? 10,
       height: data.map_height ?? 10,
