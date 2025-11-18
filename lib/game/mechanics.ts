@@ -98,11 +98,13 @@ interface ProcessCustomersParams {
   monthlyRevenue: number;
   monthlyRevenueDetails: RevenueEntry[];
   gameMetrics: {
-    serviceRooms: number;
-    reputationMultiplier: number;
-    serviceRevenueMultiplier: number;
-    serviceRevenueFlatBonus: number;
-    serviceRevenueScale: number;
+    // Using GameMetric enum values ensures consistency with effectManager
+    [GameMetric.ServiceSpeedMultiplier]: number;
+    [GameMetric.ServiceRooms]: number;
+    [GameMetric.ReputationMultiplier]: number;
+    [GameMetric.ServiceRevenueMultiplier]: number;
+    [GameMetric.ServiceRevenueFlatBonus]: number;
+    serviceRevenueScale: number; // Not in GameMetric enum (config value, not an effect)
   };
   industryId: string;
 }
@@ -256,7 +258,8 @@ function processCustomersForTick({
 
   const baseDynamicWalls = occupiedWaitingPositions.map(pos => ({ x: pos.x, y: pos.y }));
 
-  customers.forEach((customer) => {
+  // Use for...of loop instead of forEach to allow proper control flow
+  for (const customer of customers) {
     const updatedCustomer = tickCustomer(customer);
     const currentTile = { x: Math.round(updatedCustomer.x), y: Math.round(updatedCustomer.y) };
     const dynamicWallsForCustomer = baseDynamicWalls.filter(
@@ -294,12 +297,17 @@ function processCustomersForTick({
     // If customer is waiting and there are available rooms, assign them to a room
     // Only assign to customers who were ALREADY waiting (not those who just transitioned to waiting)
     if (customer.status === CustomerStatus.Waiting && updatedCustomer.status === CustomerStatus.Waiting && roomsRemaining.length > 0) {
-      const assignedRoom = roomsRemaining.shift()!;
-      const customerWithService = startService(updatedCustomer, assignedRoom);
+      // Check if service position exists BEFORE consuming a room slot
+      const potentialRoom = roomsRemaining[0]; // Peek at first room without removing it
+      const servicePosition = getServiceRoomPosition(potentialRoom, industryId);
       
-      // Assign target service room position
-      const servicePosition = getServiceRoomPosition(assignedRoom, industryId);
       if (servicePosition) {
+        // Only consume room slot if we can actually assign it
+        const assignedRoom = roomsRemaining.shift()!;
+        // Recalculate service time with current service speed multiplier (fixes bug where upgrades don't apply to waiting customers)
+        // Using GameMetric enum value ensures consistency - enum value is 'serviceSpeedMultiplier'
+        const customerWithService = startService(updatedCustomer, assignedRoom, gameMetrics.serviceSpeedMultiplier, industryId);
+        
         customerWithService.targetX = servicePosition.x;
         customerWithService.targetY = servicePosition.y;
         const pathToRoom = findPath(
@@ -308,15 +316,14 @@ function processCustomersForTick({
           { additionalWalls: dynamicWallsForCustomer, industryId }
         );
         customerWithService.path = pathToRoom.length > 0 ? pathToRoom : undefined;
+        updatedCustomers.push(customerWithService);
+        continue; // Skip to next customer
       } else {
-        // If no valid service position for this room, don't assign the customer
-        // This prevents assigning to rooms beyond configured positions
+        // If no valid service position for this room, keep customer waiting
+        // Don't consume room slot - it will be available for next customer
         updatedCustomers.push(updatedCustomer);
-        return;
+        continue; // Skip to next customer
       }
-
-      updatedCustomers.push(customerWithService);
-      return;
     }
 
     // If customer is leaving happy, add revenue and reputation
@@ -347,7 +354,7 @@ function processCustomersForTick({
       // Play sound effect for service finished
       audioManager.playSoundEffect('serviceFinished');
       // Customer leaves happy - remove from game (don't push to updatedCustomers)
-      return;
+      continue; // Skip to next customer
     }
 
     // If customer is leaving angry, deduct reputation and keep in game for exit animation
@@ -359,7 +366,7 @@ function processCustomersForTick({
         reputation: Math.max(0, metricsAccumulator.reputation - reputationLoss),
       };
       updatedCustomers.push(updatedCustomer);
-      return;
+      continue; // Skip to next customer
     }
 
     // If customer is leaving angry, keep in game for exit animation
@@ -367,15 +374,15 @@ function processCustomersForTick({
       const leavingTicks = (customer.leavingTicks ?? 0) + 1;
       if (leavingTicks >= stats.leavingAngryDurationTicks) {
         // Exit animation complete - remove from game
-        return;
+        continue; // Skip to next customer
       }
       // Still leaving - keep in game to show animation
       updatedCustomers.push({ ...updatedCustomer, leavingTicks });
-      return;
+      continue; // Skip to next customer
     }
 
     updatedCustomers.push(updatedCustomer);
-  });
+  }
 
   return {
     customers: updatedCustomers,
@@ -553,18 +560,26 @@ export function tickOnce(state: TickSnapshot): TickResult {
       return checkRequirements(service.requirements, storeContext as GameStore);
     });
 
-    // If no services available, fall back to all services (shouldn't happen, but safety check)
-    const servicesToUse = availableServices.length > 0 ? availableServices : allServices;
-
-    // Pick a weighted random service from available ones
-    const selectedService = getWeightedRandomService(servicesToUse);
-    
-    // Create customer with the selected service (override the randomly selected one)
-    const customer = createCustomer(gameMetrics.serviceSpeedMultiplier, industryId);
-    customers = [...customers, {
-      ...customer,
-      service: selectedService,
-    }];
+    // If no services available, prevent customer spawn and log warning
+    // This prevents spawning customers with services they shouldn't have access to
+    if (availableServices.length === 0) {
+      console.warn(
+        `[Game Mechanics] No services available for industry ${industryId}. ` +
+        `All ${allServices.length} services have unmet requirements. ` +
+        `Skipping customer spawn this tick.`
+      );
+      // Don't spawn customer - skip to next tick
+    } else {
+      // Pick a weighted random service from available ones
+      const selectedService = getWeightedRandomService(availableServices);
+      
+      // Create customer with the selected service (override the randomly selected one)
+      const customer = createCustomer(gameMetrics.serviceSpeedMultiplier, industryId);
+      customers = [...customers, {
+        ...customer,
+        service: selectedService,
+      }];
+    }
   }
 
   //Process customers for the tick.

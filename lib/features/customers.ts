@@ -245,12 +245,25 @@ export function tickCustomer(customer: Customer): Customer {
 
 /**
  * Starts service for a customer (assigns to a room)
+ * Recalculates serviceTimeLeft based on current serviceSpeedMultiplier
+ * This ensures service speed upgrades apply to waiting customers
  */
-export function startService(customer: Customer, roomId: number): Customer {
+export function startService(
+  customer: Customer,
+  roomId: number,
+  serviceSpeedMultiplier: number = 1,
+  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
+): Customer {
+  // Recalculate service time based on current service speed multiplier
+  // This ensures that service speed upgrades apply to customers who were waiting
+  const effectiveDuration = customer.service.duration / Math.max(serviceSpeedMultiplier, 0.1);
+  const newServiceTimeLeft = secondsToTicks(effectiveDuration, industryId);
+  
   return {
     ...customer,
     status: CustomerStatus.WalkingToRoom, // First walk to room, then service starts
     roomId,
+    serviceTimeLeft: newServiceTimeLeft,
   };
 }
 
