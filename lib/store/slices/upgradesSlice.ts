@@ -19,7 +19,7 @@ const findUpgradeDefinition = (industryId: IndustryId, upgradeId: UpgradeId): Up
 
 export interface UpgradesSlice {
   upgrades: Upgrades;
-  canAffordUpgrade: (cost: number) => boolean;
+  canAffordUpgrade: (cost: number, timeCost?: number) => boolean;
   getUpgradeLevel: (upgradeId: UpgradeId) => number;
   canUpgradeMore: (upgradeId: UpgradeId) => boolean;
   getUpgradeDefinition: (upgradeId: UpgradeId) => UpgradeDefinition | null;
@@ -59,9 +59,12 @@ function removeUpgradeEffects(upgradeId: string): void {
 export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice> = (set, get) => ({
   upgrades: {},
 
-  canAffordUpgrade: (cost: number) => {
+  canAffordUpgrade: (cost: number, timeCost?: number) => {
     const { metrics } = get();
-    return metrics.cash >= cost;
+    // Check both cash and time if both are required
+    const hasCash = cost === 0 || metrics.cash >= cost;
+    const hasTime = timeCost === undefined || timeCost === 0 || metrics.time >= timeCost;
+    return hasCash && hasTime;
   },
 
   getUpgradeLevel: (upgradeId: UpgradeId) => {
@@ -98,8 +101,22 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
       return { success: false, message: `${upgrade.name} is already at max level.` };
     }
 
-    if (!store.canAffordUpgrade(upgrade.cost)) {
+    // Check affordability for both cash and time costs
+    const needsCash = upgrade.cost > 0;
+    const needsTime = upgrade.timeCost !== undefined && upgrade.timeCost > 0;
+    const { metrics } = get();
+    
+    if (needsCash && metrics.cash < upgrade.cost) {
       return { success: false, message: `Need $${upgrade.cost} to purchase ${upgrade.name}.` };
+    }
+    
+    if (needsTime && metrics.time < upgrade.timeCost!) {
+      return { success: false, message: `Need ${upgrade.timeCost}h to purchase ${upgrade.name}.` };
+    }
+    
+    // If both are needed, check both
+    if (needsCash && needsTime && (metrics.cash < upgrade.cost || metrics.time < upgrade.timeCost!)) {
+      return { success: false, message: `Need $${upgrade.cost} and ${upgrade.timeCost}h to purchase ${upgrade.name}.` };
     }
 
     // Check requirements
@@ -132,16 +149,28 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
       ? `${upgrade.name} (Lvl ${newLevel})`
       : upgrade.name;
 
-    const { addOneTimeCost } = get();
-    if (addOneTimeCost) {
-      addOneTimeCost(
-        {
-          label: upgradeLabel,
-          amount: upgrade.cost,
-          category: OneTimeCostCategory.Upgrade,
+    // Deduct both cash and time if both are required
+    if (needsCash) {
+      const { addOneTimeCost } = get();
+      if (addOneTimeCost) {
+        addOneTimeCost(
+          {
+            label: upgradeLabel,
+            amount: upgrade.cost,
+            category: OneTimeCostCategory.Upgrade,
+          },
+          { deductNow: true },
+        );
+      }
+    }
+    
+    if (needsTime) {
+      set((state) => ({
+        metrics: {
+          ...state.metrics,
+          time: state.metrics.time - upgrade.timeCost!,
         },
-        { deductNow: true },
-      );
+      }));
     }
 
     set((state) => {
@@ -168,8 +197,12 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
       console.log(`[Flag System] Flag "${upgrade.setsFlag}" set to true by purchasing upgrade "${upgrade.name}"`);
     }
 
-    const levelText = upgrade.maxLevel > 1 ? ` Level ${newLevel}` : '';
-    return { success: true, message: `${upgrade.name}${levelText} unlocked! Cost: $${upgrade.cost}` };
+    const levelText = upgrade.maxLevel > 1 ? ` (Level ${newLevel})` : '';
+    const costParts: string[] = [];
+    if (needsCash) costParts.push(`$${upgrade.cost}`);
+    if (needsTime) costParts.push(`${upgrade.timeCost}h`);
+    const costText = costParts.join(' + ');
+    return { success: true, message: `${upgrade.name}${levelText} unlocked! Cost: ${costText}` };
   },
 
   resetUpgrades: () => {

@@ -6,6 +6,7 @@ export const DEFAULT_INDUSTRY_ID: IndustryId = 'dental';
 
 export interface BusinessMetrics {
   startingCash: number;
+  startingTime?: number; // Optional monthly time budget (hours)
   monthlyExpenses: number;
   startingReputation: number;
   founderWorkHours: number;
@@ -76,7 +77,8 @@ export interface UpgradeDefinition {
   name: string;
   description: string;
   icon: string;
-  cost: number;
+  cost: number; // Cash cost (or time cost if timeCost is specified)
+  timeCost?: number; // Optional time cost (hours) - if specified, uses time instead of cash
   maxLevel: number;
   effects: UpgradeEffect[];
   setsFlag?: string; // Optional flag to set when this upgrade is purchased

@@ -90,13 +90,21 @@ interface UpgradeCardProps {
 }
 
 function UpgradeCard({ upgrade }: UpgradeCardProps) {
-  const { canAffordUpgrade, getUpgradeLevel, purchaseUpgrade } = useGameStore();
+  const { canAffordUpgrade, getUpgradeLevel, purchaseUpgrade, metrics } = useGameStore();
   const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(upgrade.requirements);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
 
   const currentLevel = getUpgradeLevel(upgrade.id);
-  const canAfford = canAffordUpgrade(upgrade.cost);
+  const needsCash = upgrade.cost > 0;
+  const needsTime = upgrade.timeCost !== undefined && upgrade.timeCost > 0;
+  const canAfford = canAffordUpgrade(upgrade.cost, upgrade.timeCost);
   const isMaxed = currentLevel >= upgrade.maxLevel;
+  
+  // Determine what's missing for button text
+  const missing: string[] = [];
+  if (needsCash && metrics.cash < upgrade.cost) missing.push('Cash');
+  if (needsTime && metrics.time < upgrade.timeCost!) missing.push('Time');
+  const needText = missing.length > 0 ? `Need ${missing.join(' + ')}` : 'Need Cash';
   const effects = upgrade.effects.map(formatEffect);
   const buttonDisabled = isMaxed || !canAfford || !requirementsMet;
 
@@ -129,7 +137,12 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
               )}
             </div>
             <span className={`text-sm font-semibold ${isMaxed ? '' : ''}`} style={{ color: isMaxed ? 'var(--success)' : 'var(--game-secondary)' }}>
-              {isMaxed ? 'Max' : `$${upgrade.cost.toLocaleString()}`}
+              {isMaxed ? 'Max' : (() => {
+                const costParts: string[] = [];
+                if (needsCash) costParts.push(`$${upgrade.cost.toLocaleString()}`);
+                if (needsTime) costParts.push(`${upgrade.timeCost}h`);
+                return costParts.join(' + ') || 'Free';
+              })()}
             </span>
           </div>
           <p className="text-secondary text-sm mt-1 mb-3">{upgrade.description}</p>
@@ -177,7 +190,7 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
                 ? currentLevel > 0
                   ? 'Upgrade'
                   : 'Buy'
-                : 'Need Cash'}
+                : needText}
         </GameButton>
         {requirementDescriptions.length > 0 && !requirementsMet && (
           <button

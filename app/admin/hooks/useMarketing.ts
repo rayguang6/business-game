@@ -10,6 +10,7 @@ interface CampaignForm {
   name: string;
   description: string;
   cost: string;
+  timeCost?: string; // Optional time cost
   cooldownSeconds: string;
   setsFlag?: string;
   requirements: Requirement[];
@@ -33,6 +34,7 @@ export function useMarketing(industryId: string) {
     name: '',
     description: '',
     cost: '0',
+    timeCost: '',
     cooldownSeconds: '15',
     requirements: [],
   });
@@ -62,6 +64,7 @@ export function useMarketing(industryId: string) {
       name: campaign.name,
       description: campaign.description,
       cost: String(campaign.cost),
+      timeCost: campaign.timeCost !== undefined ? String(campaign.timeCost) : '',
       cooldownSeconds: String(campaign.cooldownSeconds),
       setsFlag: campaign.setsFlag,
       requirements: campaign.requirements || [],
@@ -83,6 +86,7 @@ export function useMarketing(industryId: string) {
       name: '',
       description: '',
       cost: '0',
+      timeCost: '',
       cooldownSeconds: '15',
       requirements: [],
     });
@@ -99,6 +103,7 @@ export function useMarketing(industryId: string) {
     const name = form.name.trim();
     const description = form.description.trim();
     const cost = Number(form.cost);
+    const timeCost = form.timeCost?.trim() ? Number(form.timeCost) : undefined;
     const cooldownSeconds = Number(form.cooldownSeconds);
     if (!id || !name) {
       setStatus('Campaign id and name are required.');
@@ -106,6 +111,10 @@ export function useMarketing(industryId: string) {
     }
     if (!Number.isFinite(cost) || cost < 0 || !Number.isFinite(cooldownSeconds) || cooldownSeconds < 0) {
       setStatus('Cost must be >= 0 and Cooldown >= 0 seconds (recommended: 10-30 seconds).');
+      return;
+    }
+    if (timeCost !== undefined && (!Number.isFinite(timeCost) || timeCost < 0)) {
+      setStatus('Time cost must be >= 0 if specified.');
       return;
     }
     const setsFlag = form.setsFlag?.trim() || undefined;
@@ -122,6 +131,7 @@ export function useMarketing(industryId: string) {
       name,
       description,
       cost,
+      timeCost,
       cooldownSeconds,
       effects,
       setsFlag,
@@ -134,7 +144,7 @@ export function useMarketing(industryId: string) {
     }
     setCampaigns((prev) => {
       const exists = prev.some((c) => c.id === id);
-      const nextItem: MarketingCampaign = { id, name, description, cost, cooldownSeconds, effects, setsFlag, requirements };
+      const nextItem: MarketingCampaign = { id, name, description, cost, timeCost, cooldownSeconds, effects, setsFlag, requirements };
       const next = exists ? prev.map((c) => (c.id === id ? nextItem : c)) : [...prev, nextItem];
       return next.sort((a, b) => a.name.localeCompare(b.name));
     });

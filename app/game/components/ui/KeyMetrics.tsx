@@ -4,13 +4,23 @@ import React, { useState, useEffect } from 'react';
 import { useFinanceData } from '@/hooks/useFinanceData';
 import { useMetricChanges } from '@/hooks/useMetricChanges';
 import { MetricFeedback, FeedbackItem } from './MetricFeedback';
+import { useGameStore } from '@/lib/store/gameStore';
+import { DEFAULT_INDUSTRY_ID, getStartingTime } from '@/lib/game/config';
+import type { IndustryId } from '@/lib/game/types';
 import Image from 'next/image';
 
 export function KeyMetrics() {
   const { metrics, monthlyRevenue, monthlyExpenses } = useFinanceData();
   const changes = useMetricChanges();
+  const selectedIndustry = useGameStore((state) => state.selectedIndustry);
+  const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+  // Show time metric if startingTime is configured or if time > 0
+  const startingTime = getStartingTime(industryId);
+  const showTime = startingTime > 0 || metrics.time > 0;
+  
   const [feedbackByMetric, setFeedbackByMetric] = useState<Record<string, FeedbackItem[]>>({
     cash: [],
+    time: [],
     revenue: [],
     reputation: [],
     expenses: [],
@@ -24,6 +34,7 @@ export function KeyMetrics() {
     setFeedbackByMetric((prev) => {
       const newFeedback: Record<string, FeedbackItem[]> = {
         cash: [...prev.cash],
+        time: [...prev.time],
         revenue: [...prev.revenue],
         reputation: [...prev.reputation],
         expenses: [...prev.expenses],
@@ -36,6 +47,15 @@ export function KeyMetrics() {
           id: `cash-${Date.now()}`,
           value: changes.cash,
           color: changes.cash > 0 ? 'green' : 'red',
+        });
+      }
+
+      // Add time change feedback
+      if (changes.time !== undefined && changes.time !== 0) {
+        newFeedback.time.push({
+          id: `time-${Date.now()}`,
+          value: changes.time,
+          color: changes.time > 0 ? 'blue' : 'red', // Blue when gained, red when spent
         });
       }
 
@@ -96,6 +116,16 @@ export function KeyMetrics() {
       color: 'text-green-400',
       feedback: feedbackByMetric.cash,
     },
+    // Conditionally show time if configured
+    ...(showTime ? [{
+      key: 'time',
+      icon: '⏱️',
+      image: '/images/icons/upgrades.png',
+      value: `${metrics.time}h`,
+      label: 'Available Time',
+      color: 'text-cyan-400',
+      feedback: feedbackByMetric.time,
+    }] : []),
     {
       key: 'revenue',
       icon: '💎',

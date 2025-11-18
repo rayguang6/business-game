@@ -1,0 +1,6 @@
+Campaign ID,Industry ID,Name,Description,Cash Cost ($),Time Cost (hours),Cooldown (seconds),Effects (JSON),Sets Flag,Requirements (JSON)
+local-ad,dental,Local Advertisement,Advertise in local newspaper,500,0,600,"[{""metric"": ""reputationMultiplier"", ""type"": ""add"", ""value"": 0.1, ""durationSeconds"": 3600}]",,[]
+promotion,dental,Special Promotion,Run a special discount promotion,300,0,300,"[{""metric"": ""reputationMultiplier"", ""type"": ""add"", ""value"": 0.15, ""durationSeconds"": 1800}]",,[]
+networking,dental,Professional Networking,Attend dental association meetings,0,8,900,"[{""metric"": ""reputationMultiplier"", ""type"": ""add"", ""value"": 0.12, ""durationSeconds"": 3600}]",,[]
+social-media-post,freelance,Post on Social Media,Share your work on social platforms,0,2,180,"[{""metric"": ""reputationMultiplier"", ""type"": ""add"", ""value"": 0.05, ""durationSeconds"": 1800}]",,[]
+

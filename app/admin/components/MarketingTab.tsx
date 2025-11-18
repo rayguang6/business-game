@@ -19,6 +19,7 @@ interface MarketingTabProps {
     name: string;
     description: string;
     cost: string;
+    timeCost?: string;
     cooldownSeconds: string;
     setsFlag?: string;
     requirements: Requirement[];
@@ -149,7 +150,7 @@ export function MarketingTab({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-1">Cost</label>
+                  <label className="block text-sm font-semibold text-slate-300 mb-1">Cost (Cash)</label>
                   <input
                     type="number"
                     min="0"
@@ -157,6 +158,19 @@ export function MarketingTab({
                     onChange={(e) => onUpdateForm({ cost: e.target.value })}
                     className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   />
+                  <p className="text-xs text-slate-400 mt-1">Cash cost (can be combined with time cost)</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-1">Time Cost (Hours, Optional)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={campaignForm.timeCost || ''}
+                    onChange={(e) => onUpdateForm({ timeCost: e.target.value })}
+                    placeholder="Leave empty for cash-only"
+                    className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                  />
+                  <p className="text-xs text-slate-400 mt-1">Time cost (can be combined with cash cost)</p>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-300 mb-1">Cooldown (seconds)</label>

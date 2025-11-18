@@ -8,6 +8,7 @@ import { UpgradeId } from '@/lib/game/config';
 
 export interface Metrics {
   cash: number;
+  time: number; // Monthly time budget (refreshes monthly)
   totalRevenue: number;
   totalExpenses: number;
   reputation: number;

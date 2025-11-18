@@ -15,6 +15,7 @@ import {
   UpgradeEffect,
   DEFAULT_INDUSTRY_ID,
   getFounderWorkingHoursBase,
+  getStartingTime,
 } from '@/lib/game/config';
 import type { IndustryId, ServicePricingCategory } from '@/lib/game/types';
 
@@ -180,9 +181,13 @@ function processMonthTransition({
   const alreadyAccounted = monthlyExpenseAdjustments ?? 0;
   const netExpensesForMetrics = Math.max(0, monthResult.totalExpenses - alreadyAccounted);
 
+  // Refresh time budget at start of new month
+  const timeBudget = getStartingTime(industryId);
+
   const updatedMetrics: Metrics = {
     ...metrics,
     cash: monthResult.cash,
+    time: timeBudget, // Refresh time budget each month
     totalExpenses: metrics.totalExpenses + netExpensesForMetrics,
   };
 

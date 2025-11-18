@@ -16,6 +16,7 @@ interface UpgradeRow {
   description: string;
   icon: string;
   cost: number | string;
+  time_cost?: number | string | null; // Optional time cost column
   max_level: number;
   effects: unknown;
   sets_flag: string | null;
@@ -59,7 +60,7 @@ export async function fetchUpgradesForIndustry(
 
   const { data, error } = await supabase
     .from('upgrades')
-    .select('id, industry_id, name, description, icon, cost, max_level, effects, sets_flag, requirements')
+    .select('id, industry_id, name, description, icon, cost, time_cost, max_level, effects, sets_flag, requirements')
     .eq('industry_id', industryId);
 
   if (error) {
@@ -79,6 +80,7 @@ export async function fetchUpgradesForIndustry(
       description: row.description,
       icon: row.icon,
       cost: parseNumber(row.cost),
+      timeCost: row.time_cost !== null && row.time_cost !== undefined ? parseNumber(row.time_cost) : undefined,
       maxLevel: row.max_level,
       effects: mapEffects(row.effects),
       setsFlag: row.sets_flag || undefined,
@@ -102,6 +104,7 @@ export async function upsertUpgradeForIndustry(
     description: upgrade.description,
     icon: upgrade.icon,
     cost: upgrade.cost,
+    time_cost: upgrade.timeCost ?? null,
     max_level: upgrade.maxLevel,
     sets_flag: upgrade.setsFlag || null,
     requirements: upgrade.requirements || [],
