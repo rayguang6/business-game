@@ -379,6 +379,13 @@ export function getFounderWorkingHoursBase(industryId: IndustryId = DEFAULT_INDU
   return getBusinessMetrics(industryId).founderWorkHours;
 }
 
+/**
+ * Get starting time budget for an industry
+ */
+export function getStartingTime(industryId: IndustryId = DEFAULT_INDUSTRY_ID): number {
+  return getBusinessMetrics(industryId).startingTime ?? 0;
+}
+
 export function getEventTriggerSecondsForIndustry(
   industryId: IndustryId = DEFAULT_INDUSTRY_ID,
 ): number[] {

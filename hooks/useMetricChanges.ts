@@ -3,6 +3,7 @@ import { useGameStore } from '@/lib/store/gameStore';
 
 export interface MetricChange {
   cash?: number;
+  time?: number;
   reputation?: number;
   revenue?: number;
   expenses?: number;
@@ -13,6 +14,7 @@ export function useMetricChanges() {
   const { metrics, monthlyRevenue, monthlyExpenses } = useGameStore();
   const prevMetrics = useRef({
     cash: metrics.cash,
+    time: metrics.time,
     reputation: metrics.reputation,
     revenue: monthlyRevenue,
     expenses: monthlyExpenses,
@@ -26,6 +28,11 @@ export function useMetricChanges() {
     // Track cash changes
     if (metrics.cash !== prevMetrics.current.cash) {
       newChanges.cash = metrics.cash - prevMetrics.current.cash;
+    }
+
+    // Track time changes
+    if (metrics.time !== prevMetrics.current.time) {
+      newChanges.time = metrics.time - prevMetrics.current.time;
     }
 
     // Track reputation changes
@@ -51,6 +58,7 @@ export function useMetricChanges() {
     // Update previous values
     prevMetrics.current = {
       cash: metrics.cash,
+      time: metrics.time,
       reputation: metrics.reputation,
       revenue: monthlyRevenue,
       expenses: monthlyExpenses,
@@ -68,7 +76,7 @@ export function useMetricChanges() {
 
       return () => clearTimeout(timer);
     }
-  }, [metrics.cash, metrics.reputation, metrics.founderWorkingHours, monthlyRevenue, monthlyExpenses]);
+  }, [metrics.cash, metrics.time, metrics.reputation, metrics.founderWorkingHours, monthlyRevenue, monthlyExpenses]);
 
   return changes;
 }

@@ -101,9 +101,17 @@ interface CampaignCardProps {
   onLaunch: (campaignId: string) => void;
 }
 
-function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, onLaunch }: CampaignCardProps) {
+function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, onLaunch, metrics }: CampaignCardProps & { metrics: { cash: number; time: number } }) {
   const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(campaign.requirements);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
+  const needsCash = campaign.cost > 0;
+  const needsTime = campaign.timeCost !== undefined && campaign.timeCost > 0;
+  
+  // Determine what's missing for button text
+  const missing: string[] = [];
+  if (needsCash && metrics.cash < campaign.cost) missing.push('Cash');
+  if (needsTime && metrics.time < campaign.timeCost!) missing.push('Time');
+  const needText = missing.length > 0 ? `Not Enough ${missing.join(' + ')}` : 'Not Enough Cash';
 
   const descriptions = campaign.effects.map((effect) => ({
     text: describeEffect(effect),
@@ -125,7 +133,14 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, on
           <p className="text-secondary text-sm">{campaign.description}</p>
         </div>
         <div className="text-right text-sm">
-          <div className="font-semibold" style={{ color: 'var(--game-secondary)' }}>${campaign.cost.toLocaleString()}</div>
+          <div className="font-semibold" style={{ color: 'var(--game-secondary)' }}>
+            {(() => {
+              const costParts: string[] = [];
+              if (needsCash) costParts.push(`$${campaign.cost.toLocaleString()}`);
+              if (needsTime) costParts.push(`${campaign.timeCost}h`);
+              return costParts.join(' + ') || 'Free';
+            })()}
+          </div>
         </div>
       </div>
 
@@ -171,7 +186,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, on
               ? 'Requirements Not Met'
               : canAfford
                 ? 'Launch Campaign'
-                : 'Not Enough Cash'}
+                : needText}
         </button>
         {requirementDescriptions.length > 0 && !requirementsMet && !isOnCooldown && canAfford && (
           <button
@@ -228,7 +243,11 @@ export function MarketingTab() {
 
       <div className="space-y-3">
         {availableCampaigns.map((campaign) => {
-          const canAfford = metrics.cash >= campaign.cost;
+          const needsCash = campaign.cost > 0;
+          const needsTime = campaign.timeCost !== undefined && campaign.timeCost > 0;
+          const hasCash = !needsCash || metrics.cash >= campaign.cost;
+          const hasTime = !needsTime || metrics.time >= campaign.timeCost!;
+          const canAfford = hasCash && hasTime;
           const cooldownEnd = campaignCooldowns[campaign.id];
           const isOnCooldown = !!(cooldownEnd && gameTime < cooldownEnd);
           const cooldownRemaining = isOnCooldown ? Math.max(0, cooldownEnd - gameTime) : 0;
@@ -241,6 +260,7 @@ export function MarketingTab() {
               isOnCooldown={isOnCooldown}
               cooldownRemaining={cooldownRemaining}
               onLaunch={handleLaunch}
+              metrics={metrics}
             />
           );
         })}

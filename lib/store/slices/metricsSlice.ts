@@ -9,6 +9,7 @@ export const getInitialMetrics = (industryId: IndustryId = DEFAULT_INDUSTRY_ID):
   const metrics = getBusinessMetrics(industryId);
   return {
     cash: metrics.startingCash,
+    time: metrics.startingTime ?? 0, // Monthly time budget, defaults to 0
     totalRevenue: 0,
     totalExpenses: 0,
     reputation: metrics.startingReputation,

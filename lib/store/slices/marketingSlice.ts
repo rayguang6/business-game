@@ -19,7 +19,8 @@ export interface MarketingCampaign {
   id: string;
   name: string;
   description: string;
-  cost: number;
+  cost: number; // Cash cost (or time cost if timeCost is specified)
+  timeCost?: number; // Optional time cost (hours) - if specified, uses time instead of cash
   cooldownSeconds: number; // How long before this campaign can be run again
   effects: CampaignEffect[];
   setsFlag?: string; // Optional flag to set when campaign is launched
@@ -197,8 +198,21 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
     }
 
     const { metrics } = get();
-    if (metrics.cash < campaign.cost) {
+    const needsCash = campaign.cost > 0;
+    const needsTime = campaign.timeCost !== undefined && campaign.timeCost > 0;
+    
+    // Check affordability for both cash and time costs
+    if (needsCash && metrics.cash < campaign.cost) {
       return { success: false, message: `Need $${campaign.cost} to launch ${campaign.name}.` };
+    }
+    
+    if (needsTime && metrics.time < campaign.timeCost!) {
+      return { success: false, message: `Need ${campaign.timeCost}h to launch ${campaign.name}.` };
+    }
+    
+    // If both are needed, check both
+    if (needsCash && needsTime && (metrics.cash < campaign.cost || metrics.time < campaign.timeCost!)) {
+      return { success: false, message: `Need $${campaign.cost} and ${campaign.timeCost}h to launch ${campaign.name}.` };
     }
 
     // Check requirements
@@ -210,15 +224,26 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       }
     }
 
-    const { addOneTimeCost } = get();
-
-    if (addOneTimeCost) {
-      const costEntry: OneTimeCost = {
-        label: campaign.name,
-        amount: campaign.cost,
-        category: OneTimeCostCategory.Marketing,
-      };
-      addOneTimeCost(costEntry, { deductNow: true });
+    // Deduct both cash and time if both are required
+    if (needsCash) {
+      const { addOneTimeCost } = get();
+      if (addOneTimeCost) {
+        const costEntry: OneTimeCost = {
+          label: campaign.name,
+          amount: campaign.cost,
+          category: OneTimeCostCategory.Marketing,
+        };
+        addOneTimeCost(costEntry, { deductNow: true });
+      }
+    }
+    
+    if (needsTime) {
+      set((state) => ({
+        metrics: {
+          ...state.metrics,
+          time: state.metrics.time - campaign.timeCost!,
+        },
+      }));
     }
 
     // Register effects to effectManager (expiration handled automatically)

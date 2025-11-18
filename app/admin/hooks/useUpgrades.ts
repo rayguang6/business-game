@@ -11,6 +11,7 @@ interface UpgradeForm {
   description: string;
   icon: string;
   cost: string;
+  timeCost?: string; // Optional time cost
   maxLevel: string;
   setsFlag?: string;
   requirements: Requirement[];
@@ -34,6 +35,7 @@ export function useUpgrades(industryId: string) {
     description: '',
     icon: '⚙️',
     cost: '0',
+    timeCost: '',
     maxLevel: '1',
     requirements: [],
   });
@@ -65,6 +67,7 @@ export function useUpgrades(industryId: string) {
       description: upgrade.description,
       icon: upgrade.icon,
       cost: String(upgrade.cost),
+      timeCost: upgrade.timeCost !== undefined ? String(upgrade.timeCost) : '',
       maxLevel: String(upgrade.maxLevel),
       setsFlag: upgrade.setsFlag,
       requirements: upgrade.requirements || [],
@@ -90,6 +93,7 @@ export function useUpgrades(industryId: string) {
       description: '',
       icon: '⚙️',
       cost: '0',
+      timeCost: '',
       maxLevel: '1',
       requirements: [],
     });
@@ -107,6 +111,7 @@ export function useUpgrades(industryId: string) {
     const description = form.description.trim();
     const icon = form.icon.trim() || '⚙️';
     const cost = Number(form.cost);
+    const timeCost = form.timeCost?.trim() ? Number(form.timeCost) : undefined;
     const maxLevel = Number(form.maxLevel);
     if (!id || !name) {
       setStatus('Upgrade id and name are required.');
@@ -114,6 +119,10 @@ export function useUpgrades(industryId: string) {
     }
     if (!Number.isFinite(cost) || cost < 0 || !Number.isFinite(maxLevel) || maxLevel < 1) {
       setStatus('Cost must be >= 0 and Max Level >= 1.');
+      return;
+    }
+    if (timeCost !== undefined && (!Number.isFinite(timeCost) || timeCost < 0)) {
+      setStatus('Time cost must be >= 0 if specified.');
       return;
     }
     const setsFlag = form.setsFlag?.trim() || undefined;
@@ -130,6 +139,7 @@ export function useUpgrades(industryId: string) {
       description,
       icon,
       cost,
+      timeCost,
       maxLevel,
       effects,
       setsFlag,
@@ -142,7 +152,7 @@ export function useUpgrades(industryId: string) {
     }
     setUpgrades((prev) => {
       const exists = prev.some((u) => u.id === id);
-      const nextItem: UpgradeDefinition = { id, name, description, icon, cost, maxLevel, effects, setsFlag, requirements };
+      const nextItem: UpgradeDefinition = { id, name, description, icon, cost, timeCost, maxLevel, effects, setsFlag, requirements };
       const next = exists ? prev.map((u) => (u.id === id ? nextItem : u)) : [...prev, nextItem];
       return next.sort((a, b) => a.name.localeCompare(b.name));
     });

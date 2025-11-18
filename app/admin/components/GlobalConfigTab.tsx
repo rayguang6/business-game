@@ -95,6 +95,20 @@ export function GlobalConfigTab({
                   onChange={(e) => onUpdateMetrics({ founderWorkHours: Number(e.target.value) })}
                 />
               </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Starting Time (Hours)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                  value={metrics.startingTime ?? ''}
+                  onChange={(e) => onUpdateMetrics({ startingTime: e.target.value ? Number(e.target.value) : undefined })}
+                  placeholder="0 (leave empty to disable)"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Monthly time budget (refreshes each month). Set to enable time currency.
+                </p>
+              </div>
             </div>
           </div>
           <div className="space-y-2">

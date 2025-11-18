@@ -33,7 +33,10 @@ const mapBusinessMetrics = (raw: unknown): BusinessMetrics | undefined => {
     typeof c.startingReputation === 'number' &&
     typeof c.founderWorkHours === 'number'
   ) {
-    return c;
+    return {
+      ...c,
+      startingTime: typeof c.startingTime === 'number' ? c.startingTime : undefined,
+    };
   }
   return undefined;
 };

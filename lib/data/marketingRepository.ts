@@ -9,6 +9,7 @@ interface MarketingCampaignRow {
   name: string;
   description: string;
   cost: number | string | null;
+  time_cost?: number | string | null; // Optional time cost column
   cooldown_seconds: number | null;
   effects: unknown;
   sets_flag: string | null;
@@ -58,7 +59,7 @@ export async function fetchMarketingCampaignsForIndustry(industryId: IndustryId)
 
   const { data, error } = await supabase
     .from('marketing_campaigns')
-    .select('id, industry_id, name, description, cost, cooldown_seconds, effects, sets_flag, requirements')
+    .select('id, industry_id, name, description, cost, time_cost, cooldown_seconds, effects, sets_flag, requirements')
     .eq('industry_id', industryId)
     .order('name', { ascending: true });
 
@@ -81,7 +82,8 @@ export async function fetchMarketingCampaignsForIndustry(industryId: IndustryId)
       name: row.name,
       description: row.description ?? '',
       cost: parseNumber(row.cost),
-      cooldownSeconds: parseNumber(row.cooldown_seconds, 60), // Default to 300s if not set
+      timeCost: row.time_cost !== null && row.time_cost !== undefined ? parseNumber(row.time_cost) : undefined,
+      cooldownSeconds: parseNumber(row.cooldown_seconds, 60), // Default to 60s if not set
       effects: mapEffects(row.effects),
       setsFlag: row.sets_flag || undefined,
       requirements: Array.isArray(row.requirements) ? row.requirements as any[] : [],
@@ -103,6 +105,7 @@ export async function upsertMarketingCampaignForIndustry(industryId: string, cam
     name: campaign.name,
     description: campaign.description,
     cost: campaign.cost,
+    time_cost: campaign.timeCost ?? null,
     cooldown_seconds: campaign.cooldownSeconds,
     effects: campaign.effects.map((e) => ({ metric: e.metric, type: e.type, value: e.value, durationSeconds: e.durationSeconds })),
     sets_flag: campaign.setsFlag || null,

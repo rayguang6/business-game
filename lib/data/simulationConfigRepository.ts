@@ -51,6 +51,7 @@ const mapBusinessMetrics = (raw: unknown): BusinessMetrics | undefined => {
   ) {
     return {
       startingCash: candidate.startingCash,
+      startingTime: typeof candidate.startingTime === 'number' ? candidate.startingTime : undefined,
       monthlyExpenses: candidate.monthlyExpenses,
       startingReputation: candidate.startingReputation,
       founderWorkHours: candidate.founderWorkHours,

@@ -1,0 +1,5 @@
+Staff ID,Industry ID,Name,Salary ($/month),Effects (JSON),Emoji,Sets Flag,Requirements (JSON)
+dental-assistant,dental,Dental Assistant,2500,"[{""metric"": ""serviceSpeedMultiplier"", ""type"": ""percent"", ""value"": 8}, {""metric"": ""founderWorkingHours"", ""type"": ""add"", ""value"": -15}]",👩‍⚕️,has-assistant,[]
+receptionist,dental,Receptionist,2000,"[{""metric"": ""reputationMultiplier"", ""type"": ""add"", ""value"": 0.1}, {""metric"": ""founderWorkingHours"", ""type"": ""add"", ""value"": -10}]",👨‍💼,has-receptionist,[]
+virtual-assistant,freelance,Virtual Assistant,800,"[{""metric"": ""serviceSpeedMultiplier"", ""type"": ""percent"", ""value"": 5}, {""metric"": ""founderWorkingHours"", ""type"": ""add"", ""value"": -20}]",👩‍💼,,[]
+

@@ -1,0 +1,9 @@
+Service ID,Industry ID,Name,Duration (hours),Price ($),Pricing Category,Weightage (%),Requirements (JSON)
+cleaning,dental,Teeth Cleaning,3,100,low,40,[]
+checkup,dental,Dental Checkup,2,80,low,35,[]
+filling,dental,Cavity Filling,5,200,mid,20,[]
+root-canal,dental,Root Canal,8,800,high,10,[]
+crown,dental,Dental Crown,10,1200,high,8,[]
+logo-quick,freelance,Quick Logo Design,4,200,low,25,[]
+brand-consultation,freelance,Brand Consultation,2,150,low,30,[]
+
