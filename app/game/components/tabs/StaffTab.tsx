@@ -80,10 +80,12 @@ const getRoleStyles = (role: string) => ROLE_STYLE_MAP[role] ?? FALLBACK_STYLE;
 const formatEffect = (effect: { metric: GameMetric; type: EffectType; value: number }) => {
   const getMetricLabel = (metric: GameMetric) => {
     switch (metric) {
+      case GameMetric.Cash: return 'Cash';
+      case GameMetric.Time: return 'Available Time';
       case GameMetric.ServiceSpeedMultiplier: return 'Service Speed';
-      case GameMetric.FounderWorkingHours: return 'Founder Workload';
+      case GameMetric.FreedomScore: return 'Freedom Score';
       case GameMetric.MonthlyExpenses: return 'Monthly Expenses';
-      case GameMetric.ReputationMultiplier: return 'Reputation';
+      case GameMetric.SkillLevel: return 'Skill Level';
       case GameMetric.ServiceRevenueMultiplier: return 'Revenue';
       case GameMetric.ServiceRevenueFlatBonus: return 'Revenue Bonus';
       default: return metric;
@@ -128,11 +130,13 @@ function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
   // Get icon for effect
   const getEffectIcon = (metric: GameMetric) => {
     switch (metric) {
+      case GameMetric.Cash: return '💵';
+      case GameMetric.Time: return '⏰';
       case GameMetric.ServiceSpeedMultiplier: return '⚡';
-      case GameMetric.ReputationMultiplier: return '⭐';
+      case GameMetric.SkillLevel: return '⭐';
       case GameMetric.ServiceRevenueMultiplier: return '💰';
       case GameMetric.ServiceRevenueFlatBonus: return '💵';
-      case GameMetric.FounderWorkingHours: return '⏰';
+      case GameMetric.FreedomScore: return '⏰';
       case GameMetric.MonthlyExpenses: return '💸';
       default: return '✨';
     }
@@ -290,11 +294,13 @@ export function StaffTab() {
             // Get icon for effect
             const getEffectIcon = (metric: GameMetric) => {
               switch (metric) {
+                case GameMetric.Cash: return '💵';
+                case GameMetric.Time: return '⏰';
                 case GameMetric.ServiceSpeedMultiplier: return '⚡';
-                case GameMetric.ReputationMultiplier: return '⭐';
+                case GameMetric.SkillLevel: return '⭐';
                 case GameMetric.ServiceRevenueMultiplier: return '💰';
                 case GameMetric.ServiceRevenueFlatBonus: return '💵';
-                case GameMetric.FounderWorkingHours: return '⏰';
+                case GameMetric.FreedomScore: return '⏰';
                 case GameMetric.MonthlyExpenses: return '💸';
                 default: return '✨';
               }

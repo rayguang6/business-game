@@ -23,10 +23,10 @@ export interface UpgradeEffects {
   spawnIntervalSeconds: number;
   spawnIntervalTicks: number;
   serviceSpeedMultiplier: number;
-  reputationMultiplier: number;
+  skillLevel: number; // Direct skill level (effects modify this directly)
   treatmentRooms: number;
   monthlyExpenses: number;
-  happyProbability: number;
+  // happyProbability removed - not used in game mechanics
   serviceRevenueMultiplier: number;
   serviceRevenueFlatBonus: number;
   founderWorkingHours: number;
@@ -73,13 +73,13 @@ export function getUpgradeEffects(
     spawnIntervalSeconds,
     spawnIntervalTicks,
     serviceSpeedMultiplier: Math.max(0.1, effectManager.calculate(GameMetric.ServiceSpeedMultiplier, baseMetrics.serviceSpeedMultiplier)),
-    reputationMultiplier: Math.max(0, effectManager.calculate(GameMetric.ReputationMultiplier, baseMetrics.reputationMultiplier)),
+    skillLevel: baseMetrics.skillLevel, // Skill level is modified directly, not calculated here
     treatmentRooms: Math.max(1, Math.round(effectManager.calculate(GameMetric.ServiceRooms, baseMetrics.treatmentRooms))),
     monthlyExpenses: effectManager.calculate(GameMetric.MonthlyExpenses, baseMetrics.monthlyExpenses),
-    happyProbability: Math.min(1, Math.max(0, effectManager.calculate(GameMetric.HappyProbability, baseMetrics.happyProbability))),
+    // happyProbability removed - not used in game mechanics
     serviceRevenueMultiplier: Math.max(0, effectManager.calculate(GameMetric.ServiceRevenueMultiplier, baseMetrics.serviceRevenueMultiplier)),
     serviceRevenueFlatBonus: effectManager.calculate(GameMetric.ServiceRevenueFlatBonus, baseMetrics.serviceRevenueFlatBonus),
-    founderWorkingHours: Math.max(0, Math.round(effectManager.calculate(GameMetric.FounderWorkingHours, baseMetrics.founderWorkingHours))),
+    founderWorkingHours: Math.max(0, Math.round(effectManager.calculate(GameMetric.FreedomScore, baseMetrics.founderWorkingHours))),
     // Tier-specific service modifiers
     highTierServiceRevenueMultiplier: effectManager.calculate(GameMetric.HighTierServiceRevenueMultiplier, baseMetrics.highTierServiceRevenueMultiplier || 1),
     highTierServiceWeightageMultiplier: effectManager.calculate(GameMetric.HighTierServiceWeightageMultiplier, baseMetrics.highTierServiceWeightageMultiplier || 1),
@@ -104,11 +104,11 @@ export function getEffectiveServiceSpeedMultiplier(
   return getUpgradeEffects(upgrades, industryId).serviceSpeedMultiplier;
 }
 
-export function getEffectiveReputationMultiplier(
+export function getEffectiveSkillLevel(
   upgrades: Upgrades,
   industryId: IndustryId,
 ): number {
-  return getUpgradeEffects(upgrades, industryId).reputationMultiplier;
+  return getUpgradeEffects(upgrades, industryId).skillLevel;
 }
 
 export function getEffectiveTreatmentRooms(

@@ -8,7 +8,7 @@ const getEffectIcon = (type: GameEventEffect['type']) => {
   switch (type) {
     case 'cash':
       return '💰';
-    case 'reputation':
+    case 'skillLevel': // Previously: 'reputation'
       return '⭐';
     default:
       return '';
@@ -16,14 +16,14 @@ const getEffectIcon = (type: GameEventEffect['type']) => {
 };
 
 const getEffectColorClass = (type: GameEventEffect['type'], amount: number) => {
-  if (type === 'reputation') {
+  if (type === 'skillLevel') { // Previously: 'reputation'
     return amount > 0 ? 'text-green-400' : 'text-red-400';
   }
   return amount > 0 ? 'text-green-400' : 'text-red-400';
 };
 
 const formatEffect = (effect: GameEventEffect) => {
-  if (effect.type === 'cash' || effect.type === 'reputation') {
+  if (effect.type === 'cash' || effect.type === 'skillLevel') { // Previously: 'reputation'
     const prefix = effect.type === 'cash' ? '$' : '';
     const sign = effect.amount > 0 ? '+' : effect.amount < 0 ? '-' : '';
     const value = Math.abs(effect.amount);
@@ -33,15 +33,17 @@ const formatEffect = (effect: GameEventEffect) => {
 };
 
 const METRIC_LABELS: Record<GameMetric, string> = {
+  [GameMetric.Cash]: 'Cash',
+  [GameMetric.Time]: 'Available Time',
   [GameMetric.SpawnIntervalSeconds]: 'Customer Spawn Speed',
   [GameMetric.ServiceSpeedMultiplier]: 'Service Speed',
   [GameMetric.ServiceRooms]: 'Service Rooms',
-  [GameMetric.ReputationMultiplier]: 'Reputation Gain',
-  [GameMetric.HappyProbability]: 'Customer Happiness',
+  [GameMetric.SkillLevel]: 'Skill Level',
+  // [GameMetric.HappyProbability] removed - not used in game mechanics
   [GameMetric.MonthlyExpenses]: 'Monthly Expenses',
   [GameMetric.ServiceRevenueMultiplier]: 'Service Revenue Multiplier',
   [GameMetric.ServiceRevenueFlatBonus]: 'Service Revenue Bonus',
-  [GameMetric.FounderWorkingHours]: 'Founder Working Hours',
+  [GameMetric.FreedomScore]: 'Freedom Score',
   // Tier-specific metrics
   [GameMetric.HighTierServiceRevenueMultiplier]: 'High-Tier Service Revenue',
   [GameMetric.HighTierServiceWeightageMultiplier]: 'High-Tier Service Selection',
@@ -174,7 +176,7 @@ const EventPopup: React.FC = () => {
                 <div className="text-[10px] md:text-xs font-semibold text-[var(--text-primary)] mb-0.5 md:mb-1">Effects:</div>
                 <ul className="space-y-0.5 text-[9px] md:text-xs">
                   {lastEventOutcome.appliedEffects.map((effect, index) => {
-                    if (effect.type === 'cash' || effect.type === 'reputation') {
+                    if (effect.type === 'cash' || effect.type === 'skillLevel') { // Previously: 'reputation'
                       return (
                         <li key={index} className={`flex items-center gap-1 ${getEffectColorClass(effect.type, effect.amount)}`}>
                           <span>{getEffectIcon(effect.type)}</span>
@@ -278,6 +280,7 @@ const EventPopup: React.FC = () => {
             {currentEvent.choices.map((choice, index) => {
               const isDefault = choice.id === defaultChoiceId;
               const hasCost = choice.cost !== undefined && choice.cost > 0;
+              const hasTimeCost = choice.timeCost !== undefined && choice.timeCost > 0;
               
               // Choice button colors based on category
               const choiceBg = isOpportunity
@@ -317,6 +320,11 @@ const EventPopup: React.FC = () => {
                     {hasCost && choice.cost !== undefined && (
                       <div className="flex-shrink-0 px-1.5 md:px-2 py-0.5 md:py-1 bg-black/40 border border-black/60 rounded text-[9px] md:text-xs font-semibold text-red-300 whitespace-nowrap">
                         ${choice.cost.toLocaleString()}
+                      </div>
+                    )}
+                    {hasTimeCost && choice.timeCost !== undefined && (
+                      <div className="flex-shrink-0 px-1.5 md:px-2 py-0.5 md:py-1 bg-black/40 border border-black/60 rounded text-[9px] md:text-xs font-semibold text-blue-300 whitespace-nowrap">
+                        ⏱ {choice.timeCost.toLocaleString()}h
                       </div>
                     )}
                   </div>

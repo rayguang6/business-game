@@ -61,15 +61,17 @@ export default function AdminPage() {
 
   // Constants
   const METRIC_OPTIONS: { value: GameMetric; label: string }[] = [
+    { value: GameMetric.Cash, label: 'Cash' },
+    { value: GameMetric.Time, label: 'Available Time' },
+    { value: GameMetric.SkillLevel, label: 'Skill Level' },
+    { value: GameMetric.FreedomScore, label: 'Freedom Score' },
     { value: GameMetric.ServiceRooms, label: 'Service Rooms' },
     { value: GameMetric.MonthlyExpenses, label: 'Monthly Expenses' },
     { value: GameMetric.ServiceSpeedMultiplier, label: 'Service Speed Multiplier' },
     { value: GameMetric.SpawnIntervalSeconds, label: 'Spawn Interval (seconds)' },
     { value: GameMetric.ServiceRevenueFlatBonus, label: 'Service Revenue (flat bonus)' },
     { value: GameMetric.ServiceRevenueMultiplier, label: 'Service Revenue Multiplier' },
-    { value: GameMetric.HappyProbability, label: 'Happy Probability' },
-    { value: GameMetric.ReputationMultiplier, label: 'Reputation Multiplier' },
-    { value: GameMetric.FounderWorkingHours, label: 'Founder Working Hours' },
+    // HappyProbability removed - not used in game mechanics
     { value: GameMetric.HighTierServiceRevenueMultiplier, label: 'High-Tier Service Revenue Multiplier' },
     { value: GameMetric.HighTierServiceWeightageMultiplier, label: 'High-Tier Service Weightage Multiplier' },
     { value: GameMetric.MidTierServiceRevenueMultiplier, label: 'Mid-Tier Service Revenue Multiplier' },
@@ -498,6 +500,8 @@ export default function AdminPage() {
                 flagsLoading={flags.loading}
                 conditions={conditions.conditions}
                 conditionsLoading={conditions.loading}
+                metricOptions={METRIC_OPTIONS}
+                effectTypeOptions={EFFECT_TYPE_OPTIONS}
                 onSelectRole={staff.selectRole}
                 onCreateRole={staff.createRole}
                 onSaveRole={staff.saveRole}

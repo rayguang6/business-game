@@ -68,7 +68,7 @@
 // export type GameEventEffect =
 //   | { type: 'cash'; amount: number; label?: string }
 //   | { type: 'health'; amount: number; label?: string }  // ← ADD HERE
-//   | { type: 'reputation'; amount: number }
+//   | { type: 'skillLevel'; amount: number } // Previously: 'reputation'
 //   | ...existing types
 //
 // STEP 2: Update ResolvedEffect type in this file (eventSlice.ts)
@@ -165,7 +165,7 @@ import { DynamicValueEvaluator } from '@/lib/game/dynamicValueEvaluator';
 // These must match the structure expected in the application phase
 export type ResolvedEffect =
   | { type: 'cash'; amount: number; label: string | undefined }
-  | { type: 'reputation'; amount: number; label: string | undefined }
+  | { type: 'skillLevel'; amount: number; label: string | undefined } // Previously: 'reputation'
   | { type: 'metric'; metric: GameMetric; effectType: EffectType; value: number; durationSeconds?: number | null; priority?: number; label: string | undefined };
 // 🚨 ADD NEW RESOLVED EFFECT TYPES HERE (STEP 2)
 // | { type: 'yourNewEffectType'; amount: number; label: string | undefined }
@@ -177,6 +177,7 @@ export interface ResolvedEventOutcome {
   choiceLabel: string;
   consequenceId: string | null;
   costPaid: number;
+  timeCostPaid: number;
   appliedEffects: GameEventEffect[]; // Effects shown to player (may be transformed for display)
   pendingEffects: ResolvedEffect[]; // Pre-calculated values to apply when player clicks continue
   consequenceLabel?: string;
@@ -243,14 +244,38 @@ const applyEventEffect = (
       }
       return;
     }
-    case 'reputation': {
-      // Reputation effects should directly modify reputation
-      const { applyReputationChange } = store;
-      applyReputationChange(effect.amount);
-      return; // Don't use effectManager for reputation (handled directly)
+    case 'skillLevel': {
+      // Skill level effects directly modify skill level
+      const { applySkillLevelChange } = store;
+      applySkillLevelChange(effect.amount);
+      return; // Don't use effectManager for skill level (handled directly)
     }
     case 'metric': {
-      // Direct metric effect
+      // For direct state metrics (Cash, Time, SkillLevel, FreedomScore) with Add effects, apply directly
+      // These are one-time permanent effects (no duration tracking)
+      if ((effect.metric === GameMetric.Cash || effect.metric === GameMetric.Time || 
+           effect.metric === GameMetric.SkillLevel || effect.metric === GameMetric.FreedomScore) 
+          && effect.effectType === EffectType.Add) {
+        if (effect.metric === GameMetric.Cash) {
+          const { recordEventRevenue, recordEventExpense } = store;
+          if (effect.value >= 0) {
+            recordEventRevenue(effect.value, `${event.title} - ${choice.label}`);
+          } else {
+            recordEventExpense(Math.abs(effect.value), `${event.title} - ${choice.label}`);
+          }
+        } else if (effect.metric === GameMetric.Time) {
+          store.applyTimeChange(effect.value);
+        } else if (effect.metric === GameMetric.SkillLevel) {
+          store.applySkillLevelChange(effect.value);
+        } else if (effect.metric === GameMetric.FreedomScore) {
+          store.applyFreedomScoreChange(effect.value);
+        }
+        // Direct state metrics are always permanent (one-time add/subtract)
+        // Duration is ignored for these metrics - content should not use temporary effects
+        return;
+      }
+      
+      // For other metrics or effect types, use effect manager
       effectManager.add({
         id: `event_${event.id}_${choice.id}_${Date.now()}`,
         source: {
@@ -264,6 +289,26 @@ const applyEventEffect = (
         durationSeconds: effect.durationSeconds,
         priority: effect.priority,
       });
+      
+      // For direct state metrics with non-Add effects, calculate and apply the change
+      const { metrics } = store;
+      if (effect.metric === GameMetric.Cash) {
+        const currentCash = metrics.cash;
+        const newCash = effectManager.calculate(GameMetric.Cash, currentCash);
+        store.applyCashChange(newCash - currentCash);
+      } else if (effect.metric === GameMetric.Time) {
+        const currentTime = metrics.time;
+        const newTime = effectManager.calculate(GameMetric.Time, currentTime);
+        store.applyTimeChange(newTime - currentTime);
+      } else if (effect.metric === GameMetric.SkillLevel) {
+        const currentSkillLevel = metrics.skillLevel;
+        const newSkillLevel = effectManager.calculate(GameMetric.SkillLevel, currentSkillLevel);
+        store.applySkillLevelChange(newSkillLevel - currentSkillLevel);
+      } else if (effect.metric === GameMetric.FreedomScore) {
+        const currentFreedomScore = metrics.freedomScore;
+        const newFreedomScore = effectManager.calculate(GameMetric.FreedomScore, currentFreedomScore);
+        store.applyFreedomScoreChange(newFreedomScore - currentFreedomScore);
+      }
       break;
     }
   }
@@ -353,6 +398,11 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
       store.recordEventExpense(cost, `${event.title} - ${choice.label} (cost)`);
     }
 
+    const timeCost = Math.max(0, choice.timeCost ?? 0);
+    if (timeCost > 0) {
+      store.applyTimeChange(-timeCost);
+    }
+
     const consequence = pickConsequence(choice);
     const appliedEffects: GameEventEffect[] = []; // For display only
     const pendingEffects: ResolvedEffect[] = []; // Pre-calculated values for consistent application
@@ -379,8 +429,8 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
             amount: finalAmount,
             label: effect.label,
           });
-        } else if (effect.type === 'cash' || effect.type === 'reputation') {
-          // Direct cash/reputation effects - no calculation needed
+        } else if (effect.type === 'cash' || effect.type === 'skillLevel') {
+          // Direct cash/skillLevel effects - no calculation needed
           appliedEffects.push(effect);
           const resolvedEffect: ResolvedEffect = {
             type: effect.type,
@@ -429,6 +479,7 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
         choiceLabel: choice.label,
         consequenceId: consequence?.id ?? null,
         costPaid: cost,
+        timeCostPaid: timeCost,
         appliedEffects, // For display
         pendingEffects, // For later application
         consequenceLabel: consequence?.label,
@@ -458,25 +509,57 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
           } else {
             recordEventExpense(Math.abs(resolvedEffect.amount), resolvedEffect.label ?? 'Event expense');
           }
-        } else if (resolvedEffect.type === 'reputation' && resolvedEffect.amount !== undefined) {
-          // Reputation effects go through reputation system
-          store.applyReputationChange(resolvedEffect.amount);
+        } else if (resolvedEffect.type === 'skillLevel' && resolvedEffect.amount !== undefined) {
+          // Skill level effects directly modify skill level
+          store.applySkillLevelChange(resolvedEffect.amount);
         } else if (resolvedEffect.type === 'metric' && resolvedEffect.metric && resolvedEffect.effectType !== undefined && resolvedEffect.value !== undefined) {
           // Metric effects go through effect manager
-          const { gameTime } = store;
-          effectManager.add({
-            id: `event_${outcome.eventId}_${outcome.choiceId}_${Date.now()}`,
-            source: {
-              category: 'event',
-              id: outcome.eventId,
-              name: outcome.eventTitle,
-            },
-            metric: resolvedEffect.metric,
-            type: resolvedEffect.effectType,
-            value: resolvedEffect.value,
-            durationSeconds: resolvedEffect.durationSeconds,
-            priority: resolvedEffect.priority,
-          }, gameTime);
+          const { gameTime, metrics } = store;
+          
+          // For direct state metrics (Cash, Time, SkillLevel, FreedomScore), apply immediately if Add effect
+          if (resolvedEffect.metric === GameMetric.Cash && resolvedEffect.effectType === EffectType.Add) {
+            store.applyCashChange(resolvedEffect.value);
+          } else if (resolvedEffect.metric === GameMetric.Time && resolvedEffect.effectType === EffectType.Add) {
+            store.applyTimeChange(resolvedEffect.value);
+          } else if (resolvedEffect.metric === GameMetric.SkillLevel && resolvedEffect.effectType === EffectType.Add) {
+            store.applySkillLevelChange(resolvedEffect.value);
+          } else if (resolvedEffect.metric === GameMetric.FreedomScore && resolvedEffect.effectType === EffectType.Add) {
+            store.applyFreedomScoreChange(resolvedEffect.value);
+          } else {
+            // For other metrics or effect types, use effect manager
+            effectManager.add({
+              id: `event_${outcome.eventId}_${outcome.choiceId}_${Date.now()}`,
+              source: {
+                category: 'event',
+                id: outcome.eventId,
+                name: outcome.eventTitle,
+              },
+              metric: resolvedEffect.metric,
+              type: resolvedEffect.effectType,
+              value: resolvedEffect.value,
+              durationSeconds: resolvedEffect.durationSeconds,
+              priority: resolvedEffect.priority,
+            }, gameTime);
+            
+            // For direct state metrics with non-Add effects, calculate and apply the change
+            if (resolvedEffect.metric === GameMetric.Cash) {
+              const currentCash = metrics.cash;
+              const newCash = effectManager.calculate(GameMetric.Cash, currentCash);
+              store.applyCashChange(newCash - currentCash);
+            } else if (resolvedEffect.metric === GameMetric.Time) {
+              const currentTime = metrics.time;
+              const newTime = effectManager.calculate(GameMetric.Time, currentTime);
+              store.applyTimeChange(newTime - currentTime);
+            } else if (resolvedEffect.metric === GameMetric.SkillLevel) {
+              const currentSkillLevel = metrics.skillLevel;
+              const newSkillLevel = effectManager.calculate(GameMetric.SkillLevel, currentSkillLevel);
+              store.applySkillLevelChange(newSkillLevel - currentSkillLevel);
+            } else if (resolvedEffect.metric === GameMetric.FreedomScore) {
+              const currentFreedomScore = metrics.freedomScore;
+              const newFreedomScore = effectManager.calculate(GameMetric.FreedomScore, currentFreedomScore);
+              store.applyFreedomScoreChange(newFreedomScore - currentFreedomScore);
+            }
+          }
         }
         // 🚨 ADD NEW EFFECT TYPE APPLICATION HERE (STEP 4)
         // else if (resolvedEffect.type === 'yourNewEffectType' && resolvedEffect.amount !== undefined) {

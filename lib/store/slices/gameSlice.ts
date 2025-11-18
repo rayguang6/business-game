@@ -3,7 +3,7 @@ import { getMonthlyBaseExpenses } from '@/lib/features/economy';
 import { tickOnce } from '@/lib/game/mechanics';
 import { GameState, RevenueCategory, OneTimeCostCategory } from '../types';
 import { getInitialMetrics } from './metricsSlice';
-import { DEFAULT_INDUSTRY_ID, getUpgradesForIndustry, getWinCondition, getLoseCondition } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getUpgradesForIndustry, getWinCondition, getLoseCondition, getStartingTime } from '@/lib/game/config';
 import { GameStore } from '../gameStore';
 import { IndustryId } from '@/lib/game/types';
 import { effectManager } from '@/lib/game/effectManager';
@@ -48,7 +48,7 @@ export interface GameSlice {
   gameTick: number;
   currentMonth: number;
   isGameOver: boolean;
-  gameOverReason: 'cash' | 'reputation' | 'founderHours' | 'victory' | null;
+  gameOverReason: 'cash' | 'time' | 'victory' | null;
   
   // Flag management
   flags: Record<string, boolean>;
@@ -59,7 +59,9 @@ export interface GameSlice {
   resetAllGame: () => void;
   tickGame: () => void;
   applyCashChange: (amount: number) => void;
-  applyReputationChange: (amount: number) => void;
+  applyTimeChange: (amount: number) => void;
+  applySkillLevelChange: (amount: number) => void; // Previously: applyReputationChange
+  applyFreedomScoreChange: (amount: number) => void;
   recordEventRevenue: (amount: number, label?: string) => void;
   recordEventExpense: (amount: number, label: string) => void;
   checkGameOver: () => void;
@@ -107,9 +109,9 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     }
 
     // Restore effects for purchased upgrades and hired staff
-    const gameState = get();
-    const upgrades = gameState.upgrades;
-    const hiredStaff = gameState.hiredStaff;
+    const currentState = get();
+    const upgrades = currentState.upgrades;
+    const hiredStaff = currentState.hiredStaff;
 
     // Re-register upgrade effects
     const availableUpgrades = getUpgradesForIndustry(industryId);
@@ -118,14 +120,28 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       if (level > 0) {
         const upgrade = upgradeMap.get(upgradeId);
         if (upgrade) {
-          addUpgradeEffects(upgrade, level);
+          addUpgradeEffects(upgrade, level, {
+            applyCashChange: currentState.applyCashChange,
+            applyTimeChange: currentState.applyTimeChange,
+            applySkillLevelChange: currentState.applySkillLevelChange,
+            applyFreedomScoreChange: currentState.applyFreedomScoreChange,
+            recordEventRevenue: currentState.recordEventRevenue,
+            recordEventExpense: currentState.recordEventExpense,
+          });
         }
       }
     });
 
     // Re-register staff effects
     hiredStaff.forEach((staff) => {
-      addStaffEffects(staff);
+      addStaffEffects(staff, {
+        applyCashChange: currentState.applyCashChange,
+        applyTimeChange: currentState.applyTimeChange,
+        applySkillLevelChange: currentState.applySkillLevelChange,
+        applyFreedomScoreChange: currentState.applyFreedomScoreChange,
+        recordEventRevenue: currentState.recordEventRevenue,
+        recordEventExpense: currentState.recordEventExpense,
+      });
     });
   },
   
@@ -220,7 +236,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       tickMarketing(gameTime);
     }
 
-    // Check lose conditions (cash, reputation) continuously
+    // Check lose conditions (cash, skillLevel) continuously
     checkGameOver();
     
     // Check win condition only at month end (after month is finalized)
@@ -229,7 +245,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     }
   },
 
-  //adjust cash or reputation immediately and run checkGameOver afterward.
+  //adjust cash, time, or skillLevel immediately and run checkGameOver afterward.
   applyCashChange: (amount: number) => {
     set((state) => ({
       metrics: { ...state.metrics, cash: state.metrics.cash + amount },
@@ -239,14 +255,29 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       checkGameOver();
     }
   },
-  applyReputationChange: (amount: number) => {
+  applyTimeChange: (amount: number) => {
     set((state) => ({
-      metrics: { ...state.metrics, reputation: state.metrics.reputation + amount },
+      metrics: { ...state.metrics, time: state.metrics.time + amount },
     }));
     const { checkGameOver } = get();
     if (checkGameOver) {
       checkGameOver();
     }
+  },
+  applySkillLevelChange: (amount: number) => {
+    set((state) => ({
+      metrics: { ...state.metrics, skillLevel: state.metrics.skillLevel + amount },
+    }));
+    const { checkGameOver } = get();
+    if (checkGameOver) {
+      checkGameOver();
+    }
+  },
+  applyFreedomScoreChange: (amount: number) => {
+    set((state) => ({
+      metrics: { ...state.metrics, freedomScore: state.metrics.freedomScore + amount },
+    }));
+    // FreedomScore doesn't trigger game over, but we could add it if needed
   },
 
   //adds a revenue ledger entry, bumps monthly revenue, and updates cash/total revenue.
@@ -284,23 +315,21 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     const state = get();
     if (state.isGameOver) return; // Already game over
     
-    const { cash, reputation, founderWorkingHours } = state.metrics;
+    const { cash, time } = state.metrics;
     const industryId = (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
     const loseCondition = getLoseCondition(industryId);
     
-    // Only check lose conditions (win condition is checked at month end)
+    // Check lose conditions: cash or time
     if (cash <= loseCondition.cashThreshold) {
       set({ isGameOver: true, gameOverReason: 'cash', isPaused: true });
       return;
     }
     
-    if (reputation <= loseCondition.reputationThreshold) {
-      set({ isGameOver: true, gameOverReason: 'reputation', isPaused: true });
-      return;
-    }
-    
-    if (founderWorkingHours > loseCondition.founderHoursMax) {
-      set({ isGameOver: true, gameOverReason: 'founderHours', isPaused: true });
+    // Check time condition: only if time system is enabled (startingTime > 0)
+    // If time <= 0 and time system is enabled, game over
+    const startingTime = getStartingTime(industryId);
+    if (startingTime > 0 && time <= loseCondition.timeThreshold) {
+      set({ isGameOver: true, gameOverReason: 'time', isPaused: true });
       return;
     }
   },
@@ -309,13 +338,12 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     const state = get();
     if (state.isGameOver) return; // Already game over
     
-    const { founderWorkingHours } = state.metrics;
-    const { monthlyHistory } = state;
+    const { cash } = state.metrics;
     const industryId = (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
     
-    // Check win condition only at month end (after month is finalized)
+    // Check win condition: cash target reached
     const winCondition = getWinCondition(industryId);
-    if (checkWinCondition(monthlyHistory, founderWorkingHours, winCondition)) {
+    if (checkWinCondition(cash, winCondition)) {
       set({ isGameOver: true, gameOverReason: 'victory', isPaused: true });
     }
   },

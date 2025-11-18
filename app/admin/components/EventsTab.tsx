@@ -81,9 +81,10 @@ export function EventsTab({
     label: string;
     description: string;
     cost: string;
+    timeCost: string;
     setsFlag?: string;
     requirements: any[];
-  }>({ id: '', label: '', description: '', cost: '', requirements: [] });
+  }>({ id: '', label: '', description: '', cost: '', timeCost: '', requirements: [] });
 
   const [selectedConsequenceId, setSelectedConsequenceId] = useState<string>('');
   const [isCreatingConsequence, setIsCreatingConsequence] = useState<boolean>(false);
@@ -95,7 +96,7 @@ export function EventsTab({
     effects: Array<
       | { type: 'cash'; amount: string; label?: string }
       | { type: 'dynamicCash'; expression: string; label?: string }
-      | { type: 'reputation'; amount: string }
+      | { type: 'skillLevel'; amount: string } // Previously: 'reputation'
       | { type: 'metric'; metric: GameMetric; effectType: EffectType; value: string; durationSeconds: string; priority?: string }
     >;
   }>({ id: '', label: '', description: '', weight: '1', effects: [] });
@@ -104,7 +105,7 @@ export function EventsTab({
   useEffect(() => {
     setSelectedChoiceId('');
     setIsCreatingChoice(false);
-    setChoiceForm({ id: '', label: '', description: '', cost: '', requirements: [] });
+    setChoiceForm({ id: '', label: '', description: '', cost: '', timeCost: '', requirements: [] });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
     setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
@@ -119,6 +120,7 @@ export function EventsTab({
       label: choice.label,
       description: choice.description ?? '',
       cost: choice.cost !== undefined ? String(choice.cost) : '',
+      timeCost: choice.timeCost !== undefined ? String(choice.timeCost) : '',
       setsFlag: choice.setsFlag,
       requirements: (choice as any).requirements || [],
     });
@@ -134,7 +136,7 @@ export function EventsTab({
     }
     setIsCreatingChoice(true);
     setSelectedChoiceId('');
-    setChoiceForm({ id: '', label: '', description: '', cost: '', setsFlag: '', requirements: [] });
+    setChoiceForm({ id: '', label: '', description: '', cost: '', timeCost: '', setsFlag: '', requirements: [] });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
     setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
@@ -145,6 +147,7 @@ export function EventsTab({
     const label = choiceForm.label.trim();
     const description = choiceForm.description.trim();
     const cost = choiceForm.cost.trim() === '' ? undefined : Number(choiceForm.cost);
+    const timeCost = choiceForm.timeCost.trim() === '' ? undefined : Number(choiceForm.timeCost);
     const setsFlag = choiceForm.setsFlag?.trim() || undefined;
     if (!id || !label) {
       onUpdateStatus('Choice id and label are required.');
@@ -154,6 +157,10 @@ export function EventsTab({
       onUpdateStatus('Choice cost must be a non-negative number.');
       return;
     }
+    if (timeCost !== undefined && (!Number.isFinite(timeCost) || timeCost < 0)) {
+      onUpdateStatus('Choice time cost must be a non-negative number.');
+      return;
+    }
 
     const exists = eventChoices.some((c) => c.id === id);
     const nextItem: any = {
@@ -161,6 +168,7 @@ export function EventsTab({
       label,
       description: description || undefined,
       cost,
+      timeCost,
       setsFlag,
       consequences: exists ? eventChoices.find((c) => c.id === id)!.consequences : [],
       requirements: choiceForm.requirements || [],
@@ -178,7 +186,7 @@ export function EventsTab({
     const next = eventChoices.filter((c) => c.id !== selectedChoiceId);
     onUpdateEventChoices(next);
     setSelectedChoiceId('');
-    setChoiceForm({ id: '', label: '', description: '', cost: '', setsFlag: '', requirements: [] });
+    setChoiceForm({ id: '', label: '', description: '', cost: '', timeCost: '', setsFlag: '', requirements: [] });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
     setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
@@ -192,7 +200,7 @@ export function EventsTab({
     } else {
       setIsCreatingChoice(false);
       setSelectedChoiceId('');
-      setChoiceForm({ id: '', label: '', description: '', cost: '', setsFlag: '', requirements: [] });
+      setChoiceForm({ id: '', label: '', description: '', cost: '', timeCost: '', setsFlag: '', requirements: [] });
     }
     onUpdateStatus(null);
   };
@@ -212,8 +220,8 @@ export function EventsTab({
           return { type: 'cash', amount: String(ef.amount || 0), label: ef.label };
         } else if (ef.type === 'dynamicCash') {
           return { type: 'dynamicCash', expression: String(ef.expression || ''), label: ef.label };
-        } else if (ef.type === 'reputation') {
-          return { type: 'reputation', amount: String(ef.amount || 0) };
+        } else if (ef.type === 'skillLevel') { // Previously: 'reputation'
+          return { type: 'skillLevel', amount: String(ef.amount || 0) };
         } else if (ef.type === 'metric') {
           return {
             type: 'metric',
@@ -266,9 +274,9 @@ export function EventsTab({
           expression: String(ef.expression || ''),
           ...(ef.label ? { label: ef.label } : {}),
         };
-      } else if (ef.type === 'reputation') {
+      } else if (ef.type === 'reputation' || ef.type === 'skillLevel') { // Support legacy 'reputation' type
         return {
-          type: 'reputation' as const,
+          type: 'skillLevel' as const,
           amount: Number(ef.amount) || 0,
         };
       } else if (ef.type === 'metric') {
@@ -382,7 +390,7 @@ export function EventsTab({
           } else if (effect.type === 'cash') {
             if (typeof effect.amount !== 'number') return false;
             if (effect.label !== undefined && typeof effect.label !== 'string') return false;
-          } else if (effect.type === 'reputation') {
+          } else if (effect.type === 'reputation' || effect.type === 'skillLevel') { // Support legacy 'reputation'
             if (typeof effect.amount !== 'number') return false;
           } else if (effect.type === 'dynamicCash') {
             if (typeof effect.expression !== 'string' || !effect.expression.trim()) return false;
@@ -486,7 +494,7 @@ export function EventsTab({
                   if (effect.label !== undefined && typeof effect.label !== 'string') {
                     errors.push(`${effectPath}.label: must be a string if provided`);
                   }
-                } else if (effect?.type === 'reputation') {
+                } else if (effect?.type === 'reputation' || effect?.type === 'skillLevel') { // Support legacy 'reputation'
                   if (typeof effect.amount !== 'number') {
                     errors.push(`${effectPath}.amount: must be a number`);
                   }
@@ -514,7 +522,7 @@ export function EventsTab({
                     errors.push(`${effectPath}.label: must be a string if provided`);
                   }
                 } else {
-                  errors.push(`${effectPath}.type: must be "cash", "reputation", "metric", or "dynamicCash"`);
+                  errors.push(`${effectPath}.type: must be "cash", "skillLevel", "metric", or "dynamicCash"`);
                 }
               });
             }
@@ -880,7 +888,7 @@ export function EventsTab({
                                   />
                                 </div>
                                 <div>
-                                  <label className="block text-sm font-semibold text-slate-300 mb-1">Cost (optional)</label>
+                                  <label className="block text-sm font-semibold text-slate-300 mb-1">Cost (Cash, Optional)</label>
                                   <input
                                     type="number"
                                     min="0"
@@ -888,6 +896,18 @@ export function EventsTab({
                                     onChange={(e) => setChoiceForm((p) => ({ ...p, cost: e.target.value }))}
                                     className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
                                   />
+                                  <p className="text-xs text-gray-400 mt-1">Upfront cash cost (can be combined with time cost)</p>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-slate-300 mb-1">Time Cost (Hours, Optional)</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={choiceForm.timeCost}
+                                    onChange={(e) => setChoiceForm((p) => ({ ...p, timeCost: e.target.value }))}
+                                    className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                                  />
+                                  <p className="text-xs text-gray-400 mt-1">Upfront time cost (can be combined with cash cost)</p>
                                 </div>
                                 <div>
                                   <label className="block text-sm font-semibold text-slate-300 mb-1">Sets Flag (optional)</label>
@@ -1028,10 +1048,10 @@ export function EventsTab({
                                           </button>
                                           <button
                                             type="button"
-                                            onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: 'reputation', amount: '0' }] }))}
+                                            onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: 'skillLevel', amount: '0' }] }))}
                                             className="px-2 py-1 text-xs rounded border border-emerald-500 text-emerald-200 hover:bg-emerald-500/10"
                                           >
-                                            + Reputation
+                                            + Skill Level
                                           </button>
                                           <button
                                             type="button"
@@ -1058,7 +1078,7 @@ export function EventsTab({
                                                 value={ef.type}
                                                 onChange={(e) => {
                                                   const newEffect = e.target.value === 'cash' ? { type: 'cash' as const, amount: '0', label: '' } :
-                                                    e.target.value === 'reputation' ? { type: 'reputation' as const, amount: '0' } :
+                                                    e.target.value === 'skillLevel' ? { type: 'skillLevel' as const, amount: '0' } : // Previously: 'reputation'
                                                     e.target.value === 'dynamicCash' ? { type: 'dynamicCash' as const, expression: 'expenses*1', label: '' } :
                                                     { type: 'metric' as const, metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationSeconds: '', priority: '' };
                                                   const newEffects = [...consequenceForm.effects];
@@ -1068,13 +1088,13 @@ export function EventsTab({
                                                 className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
                                               >
                                                 <option value="cash">Cash</option>
-                                                <option value="reputation">Reputation</option>
+                                                <option value="skillLevel">Skill Level</option>
                                                 <option value="dynamicCash">Dynamic Cash</option>
                                                 <option value="metric">Metric Effect</option>
                                               </select>
                                             </div>
 
-                                            {ef.type === 'cash' || ef.type === 'reputation' ? (
+                                            {ef.type === 'cash' || ef.type === 'skillLevel' ? ( // Previously: 'reputation'
                                               <>
                                                 <div>
                                                   <label className="block text-xs text-slate-400 mb-1">Amount</label>
@@ -1271,7 +1291,7 @@ export function EventsTab({
                 <p>Paste JSON for a single event to auto-fill the form, or an array of events for bulk import.</p>
                 <p><strong>Valid metrics:</strong> {Object.values(GameMetric).join(', ')}</p>
                 <p><strong>Valid effect types:</strong> {Object.values(EffectType).join(', ')}</p>
-                <p><strong>Immediate effects:</strong> "cash", "reputation"</p>
+                <p><strong>Immediate effects:</strong> "cash", "skillLevel"</p>
               </div>
             </div>
             <div className="p-6 space-y-4">
@@ -1318,7 +1338,7 @@ export function EventsTab({
           "weight": 85,
           "effects": [
             {
-              "type": "reputation",
+              "type": "skillLevel",
               "amount": 3
             },
             {

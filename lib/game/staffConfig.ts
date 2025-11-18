@@ -208,7 +208,7 @@ const DEFAULT_ROLES: StaffRoleConfig[] = [
     salary: 2600,
     effects: [
       { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 8 },
-      { metric: GameMetric.FounderWorkingHours, type: EffectType.Add, value: -8 },
+      { metric: GameMetric.FreedomScore, type: EffectType.Add, value: -8 },
     ],
     emoji: '👩‍⚕️',
   },
@@ -218,7 +218,7 @@ const DEFAULT_ROLES: StaffRoleConfig[] = [
     salary: 3000,
     effects: [
       { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 10 },
-      { metric: GameMetric.FounderWorkingHours, type: EffectType.Add, value: -10 },
+      { metric: GameMetric.FreedomScore, type: EffectType.Add, value: -10 },
     ],
     emoji: '👨‍🔧',
   },
@@ -228,7 +228,7 @@ const DEFAULT_ROLES: StaffRoleConfig[] = [
     salary: 3600,
     effects: [
       { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 14 },
-      { metric: GameMetric.FounderWorkingHours, type: EffectType.Add, value: -14 },
+      { metric: GameMetric.FreedomScore, type: EffectType.Add, value: -14 },
     ],
     emoji: '👨‍🔬',
   },

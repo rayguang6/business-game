@@ -6,6 +6,7 @@ import type { GameFlag } from '@/lib/data/flagRepository';
 import type { GameCondition } from '@/lib/types/conditions';
 import type { Requirement } from '@/lib/game/types';
 import { RequirementsSelector } from './RequirementsSelector';
+import { EffectsList } from './EffectsList';
 import { makeUniqueId, slugify } from './utils';
 
 interface StaffTabProps {
@@ -43,6 +44,8 @@ interface StaffTabProps {
   flagsLoading: boolean;
   conditions: GameCondition[];
   conditionsLoading: boolean;
+  metricOptions: Array<{ value: GameMetric; label: string }>;
+  effectTypeOptions: Array<{ value: EffectType; label: string; hint: string }>;
   onSelectRole: (role: StaffRoleConfig) => void;
   onCreateRole: () => void;
   onSaveRole: () => Promise<void>;
@@ -77,6 +80,8 @@ export function StaffTab({
   flagsLoading,
   conditions,
   conditionsLoading,
+  metricOptions,
+  effectTypeOptions,
   onSelectRole,
   onCreateRole,
   onSaveRole,
@@ -205,79 +210,20 @@ export function StaffTab({
                         />
                       </div>
 
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-semibold text-slate-300 mb-1">Effects</label>
-                        <div className="space-y-2">
-                          {roleForm.effects.map((effect, index) => (
-                            <div key={index} className="flex items-center gap-2 p-2 bg-slate-800 rounded border">
-                              <select
-                                value={effect.metric}
-                                onChange={(e) => {
-                                  const newEffects = [...roleForm.effects];
-                                  newEffects[index] = { ...newEffects[index], metric: e.target.value as GameMetric };
-                                  onUpdateRoleForm({ effects: newEffects });
-                                }}
-                                className="flex-1 rounded bg-slate-700 border border-slate-600 px-2 py-1 text-sm"
-                              >
-                                <option value={GameMetric.ServiceSpeedMultiplier}>Service Speed</option>
-                                <option value={GameMetric.FounderWorkingHours}>Founder Workload</option>
-                                <option value={GameMetric.MonthlyExpenses}>Monthly Expenses</option>
-                                <option value={GameMetric.ReputationMultiplier}>Reputation</option>
-                                <option value={GameMetric.ServiceRevenueMultiplier}>Revenue Multiplier</option>
-                                <option value={GameMetric.ServiceRevenueFlatBonus}>Revenue Bonus</option>
-                              </select>
-                              <select
-                                value={effect.type}
-                                onChange={(e) => {
-                                  const newEffects = [...roleForm.effects];
-                                  newEffects[index] = { ...newEffects[index], type: e.target.value as EffectType };
-                                  onUpdateRoleForm({ effects: newEffects });
-                                }}
-                                className="w-20 rounded bg-slate-700 border border-slate-600 px-2 py-1 text-sm"
-                              >
-                                <option value={EffectType.Add}>Add</option>
-                                <option value={EffectType.Percent}>%</option>
-                                <option value={EffectType.Multiply}>×</option>
-                              </select>
-                              <input
-                                type="number"
-                                value={effect.value}
-                                onChange={(e) => {
-                                  const newEffects = [...roleForm.effects];
-                                  newEffects[index] = { ...newEffects[index], value: e.target.value };
-                                  onUpdateRoleForm({ effects: newEffects });
-                                }}
-                                className="w-20 rounded bg-slate-700 border border-slate-600 px-2 py-1 text-sm"
-                                placeholder="Value"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newEffects = roleForm.effects.filter((_, i) => i !== index);
-                                  onUpdateRoleForm({ effects: newEffects });
-                                }}
-                                className="text-red-400 hover:text-red-300"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ))}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newEffect = {
-                                metric: GameMetric.ServiceSpeedMultiplier,
-                                type: EffectType.Percent,
-                                value: '20',
-                              };
-                              onUpdateRoleForm({ effects: [...roleForm.effects, newEffect] });
-                            }}
-                            className="w-full py-1 px-3 bg-slate-700 hover:bg-slate-600 rounded text-sm text-slate-300"
-                          >
-                            + Add Effect
-                          </button>
-                        </div>
-                      </div>
+                      <EffectsList
+                        effects={roleForm.effects}
+                        metricOptions={metricOptions}
+                        effectTypeOptions={effectTypeOptions}
+                        showDuration={false}
+                        title="Effects (permanent)"
+                        description="Staff effects are permanent while hired. Add = flat, Percent = +/-%, Multiply = × factor, Set = exact value."
+                        defaultEffect={{
+                          metric: metricOptions[0]?.value ?? GameMetric.ServiceSpeedMultiplier,
+                          type: EffectType.Add,
+                          value: '0',
+                        }}
+                        onEffectsChange={(effects) => onUpdateRoleForm({ effects })}
+                      />
                       <div className="md:col-span-2">
                         <label className="block text-sm font-semibold text-slate-300 mb-1">Emoji</label>
                         <input

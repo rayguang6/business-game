@@ -157,8 +157,8 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
       const current = prev || {
         startingCash: 0,
         monthlyExpenses: 0,
-        startingReputation: 0,
-        founderWorkHours: 0,
+        startingSkillLevel: 0, // Previously: startingReputation
+        startingFreedomScore: 0, // Previously: founderWorkHours
       };
       return { ...current, ...updates };
     });
@@ -174,9 +174,9 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
         leavingAngryDurationTicks: 10,
         customerSpawnPosition: { x: 4, y: 9 },
         treatmentRooms: 2,
-        reputationGainPerHappyCustomer: 1,
-        reputationLossPerAngryCustomer: 1,
-        baseHappyProbability: 1,
+        skillLevelGainPerHappyCustomer: 1, // Previously: reputationGainPerHappyCustomer
+        skillLevelLossPerAngryCustomer: 1, // Previously: reputationLossPerAngryCustomer
+        // baseHappyProbability removed - not used in game mechanics
         eventTriggerSeconds: [],
         serviceRevenueMultiplier: 1,
         serviceRevenueScale: 10,

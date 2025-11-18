@@ -100,9 +100,9 @@ interface ProcessCustomersParams {
   monthlyRevenueDetails: RevenueEntry[];
   gameMetrics: {
     // Using GameMetric enum values ensures consistency with effectManager
+    // Note: SkillLevel is handled directly (like cash), not through effect system
     [GameMetric.ServiceSpeedMultiplier]: number;
     [GameMetric.ServiceRooms]: number;
-    [GameMetric.ReputationMultiplier]: number;
     [GameMetric.ServiceRevenueMultiplier]: number;
     [GameMetric.ServiceRevenueFlatBonus]: number;
     serviceRevenueScale: number; // Not in GameMetric enum (config value, not an effect)
@@ -191,7 +191,7 @@ function processMonthTransition({
     totalExpenses: metrics.totalExpenses + netExpensesForMetrics,
   };
 
-  const previousReputation = monthlyHistory.length > 0 ? monthlyHistory[monthlyHistory.length - 1].reputation : 0;
+  const previousSkillLevel = monthlyHistory.length > 0 ? monthlyHistory[monthlyHistory.length - 1].skillLevel : 0;
   const updatedHistory: MonthlyHistoryEntry[] = [
     ...monthlyHistory,
     {
@@ -201,9 +201,9 @@ function processMonthTransition({
       oneTimeCosts: monthlyOneTimeCostDetails,
       revenueBreakdown,
       profit: monthResult.profit,
-      reputation: updatedMetrics.reputation,
-      reputationChange: updatedMetrics.reputation - previousReputation,
-      founderWorkingHours: metrics.founderWorkingHours,
+      skillLevel: updatedMetrics.skillLevel,
+      skillLevelChange: updatedMetrics.skillLevel - previousSkillLevel,
+      freedomScore: metrics.freedomScore,
     },
   ];
 
@@ -238,7 +238,7 @@ function processCustomersForTick({
   let revenueAccumulator = monthlyRevenue;
   const revenueDetails = [...monthlyRevenueDetails];
   const stats = getBusinessStats(industryId);
-  const reputationMultiplier = gameMetrics.reputationMultiplier;
+  // Skill level effects are applied directly in the effect system
   const serviceRevenueMultiplier = gameMetrics.serviceRevenueMultiplier > 0
     ? gameMetrics.serviceRevenueMultiplier
     : 1;
@@ -331,7 +331,7 @@ function processCustomersForTick({
       }
     }
 
-    // If customer is leaving happy, add revenue and reputation
+    // If customer is leaving happy, add revenue and skill level
     if (updatedCustomer.status === CustomerStatus.WalkingOutHappy) {
       const servicePrice = updatedCustomer.service.price;
       const tierMultiplier = getTierRevenueMultiplier(updatedCustomer.service.pricingCategory);
@@ -341,13 +341,14 @@ function processCustomersForTick({
       // Add revenue
       const newCash = metricsAccumulator.cash + serviceRevenue;
       
-      // Customers always leave satisfied, so apply the full reputation gain
-      const reputationGain = Math.floor(stats.reputationGainPerHappyCustomer * reputationMultiplier);
+      // Customers always leave satisfied, so apply the base skill level gain
+      // Skill level is modified directly (like cash), not through effect multipliers
+      const skillLevelGain = stats.skillLevelGainPerHappyCustomer;
 
       metricsAccumulator = {
         ...metricsAccumulator,
         cash: newCash,
-        reputation: metricsAccumulator.reputation + reputationGain,
+        skillLevel: metricsAccumulator.skillLevel + skillLevelGain,
         totalRevenue: metricsAccumulator.totalRevenue + serviceRevenue,
       };
       revenueAccumulator += serviceRevenue;
@@ -362,13 +363,13 @@ function processCustomersForTick({
       continue; // Skip to next customer
     }
 
-    // If customer is leaving angry, deduct reputation and keep in game for exit animation
+    // If customer is leaving angry, deduct skill level and keep in game for exit animation
     if (customer.status !== CustomerStatus.LeavingAngry && updatedCustomer.status === CustomerStatus.LeavingAngry) {
-      // Customer just became angry - deduct reputation and keep in game for exit animation
-      const reputationLoss = stats.reputationLossPerAngryCustomer;
+      // Customer just became angry - deduct skill level and keep in game for exit animation
+      const skillLevelLoss = stats.skillLevelLossPerAngryCustomer;
       metricsAccumulator = {
         ...metricsAccumulator,
-        reputation: Math.max(0, metricsAccumulator.reputation - reputationLoss),
+        skillLevel: Math.max(0, metricsAccumulator.skillLevel - skillLevelLoss),
       };
       updatedCustomers.push(updatedCustomer);
       continue; // Skip to next customer
@@ -515,7 +516,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
     spawnIntervalSeconds: effectManager.calculate(GameMetric.SpawnIntervalSeconds, baseStats.customerSpawnIntervalSeconds),
     serviceSpeedMultiplier: effectManager.calculate(GameMetric.ServiceSpeedMultiplier, 1.0),
     serviceRooms: effectManager.calculate(GameMetric.ServiceRooms, baseStats.treatmentRooms),
-    reputationMultiplier: effectManager.calculate(GameMetric.ReputationMultiplier, 1.0),
+    // Skill level is handled directly (like cash), not through effect system
     serviceRevenueMultiplier: effectManager.calculate(
       GameMetric.ServiceRevenueMultiplier,
       baseStats.serviceRevenueMultiplier ?? 1,
@@ -530,7 +531,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
       getMonthlyBaseExpenses(industryId),
     ),
     founderWorkingHours: effectManager.calculate(
-      GameMetric.FounderWorkingHours,
+      GameMetric.FreedomScore,
       getFounderWorkingHoursBase(industryId),
     ),
   };
@@ -602,11 +603,9 @@ export function tickOnce(state: TickSnapshot): TickResult {
   monthlyRevenue = processedCustomersForTick.monthlyRevenue;
   monthlyRevenueDetails = processedCustomersForTick.monthlyRevenueDetails;
 
-  // Update founder working hours with calculated value (includes staff/upgrade effects)
-  metrics = {
-    ...metrics,
-    founderWorkingHours: gameMetrics.founderWorkingHours,
-  };
+  // FreedomScore is now direct state (like Cash/Time/SkillLevel)
+  // It's modified directly via applyFreedomScoreChange(), not calculated here
+  // Staff/upgrade effects on FreedomScore are applied directly when hired/purchased
 
   return {
     gameTick: nextTick,

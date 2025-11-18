@@ -80,7 +80,7 @@ const mapRoleRows = (rows: StaffRoleRow[] | null | undefined): StaffRoleConfig[]
 
         if (workloadReduction > 0) {
           effects.push({
-            metric: GameMetric.FounderWorkingHours,
+            metric: GameMetric.FreedomScore,
             type: EffectType.Add,
             value: -workloadReduction, // Negative because it reduces hours
           });

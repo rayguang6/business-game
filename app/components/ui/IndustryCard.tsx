@@ -13,7 +13,7 @@ export default function IndustryCard({ industry, onClick }: IndustryCardProps) {
   // Get starting stats for this industry
   const metrics = getBusinessMetrics(industry.id);
   const startingCash = metrics.startingCash || 15000;
-  const startingReputation = metrics.startingReputation || 10;
+  const startingSkillLevel = metrics.startingSkillLevel || 10; // Previously: startingReputation
 
   return (
     <button
@@ -79,12 +79,12 @@ export default function IndustryCard({ industry, onClick }: IndustryCardProps) {
               </div>
             </div>
 
-            {/* Starting Reputation */}
+            {/* Starting Skill Level */}
             <div className="flex flex-col items-center p-2 bg-gradient-to-br from-[var(--game-secondary)]/10 to-[var(--game-secondary)]/5 rounded-lg border border-[var(--game-secondary)]/20 group-hover:border-[var(--game-secondary)]/40 transition-all duration-300">
-              <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Reputation</div>
+              <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Skill Level</div>
               <div className="text-lg sm:text-xl font-bold text-[var(--game-secondary-dark)] flex items-center gap-1">
                 <span>⭐</span>
-                <span>{startingReputation}</span>
+                <span>{startingSkillLevel}</span>
               </div>
             </div>
           </div>

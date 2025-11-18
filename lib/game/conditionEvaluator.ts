@@ -44,14 +44,14 @@ function getMetricValue(metric: ConditionMetric, store: GameStore): number {
   switch (metric) {
     case ConditionMetric.Cash:
       return metrics.cash;
-    case ConditionMetric.Reputation:
-      return metrics.reputation;
+    case ConditionMetric.SkillLevel:
+      return metrics.skillLevel;
     case ConditionMetric.Expenses:
       return metrics.totalExpenses;
     case ConditionMetric.GameTime:
       return gameTime; // in seconds
-    case ConditionMetric.FounderWorkingHours:
-      return metrics.founderWorkingHours;
+    case ConditionMetric.FreedomScore:
+      return metrics.freedomScore;
     default:
       console.warn(`[Condition System] Unknown metric: ${metric}`);
       return 0;

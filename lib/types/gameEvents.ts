@@ -8,7 +8,7 @@ export type EventCategory = 'opportunity' | 'risk';
 export type GameEventEffect =
   | { type: 'cash'; amount: number; label?: string }
   | { type: 'dynamicCash'; expression: string; label?: string }
-  | { type: 'reputation'; amount: number }
+  | { type: 'skillLevel'; amount: number } // Previously: 'reputation'
   | { type: 'metric'; metric: GameMetric; effectType: EffectType; value: number; durationSeconds?: number | null; priority?: number }
 
 export interface GameEventConsequence {
@@ -24,6 +24,7 @@ export interface GameEventChoice {
   label: string;
   description?: string;
   cost?: number; // upfront cash cost (positive number) shown before selection
+  timeCost?: number; // upfront time cost (positive number) shown before selection
   consequences: GameEventConsequence[];
   setsFlag?: string; // Optional flag to set when this choice is selected
 }

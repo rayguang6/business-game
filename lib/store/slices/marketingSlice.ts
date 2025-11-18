@@ -36,9 +36,46 @@ export interface MarketingSlice {
 
 /**
  * Add marketing campaign effects to the effect manager
+ * For direct state metrics (Cash, Time, SkillLevel, FreedomScore), apply directly
  */
-function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: number): void {
+function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: number, store?: {
+  applyCashChange?: (amount: number) => void;
+  applyTimeChange?: (amount: number) => void;
+  applySkillLevelChange?: (amount: number) => void;
+  applyFreedomScoreChange?: (amount: number) => void;
+  recordEventRevenue?: (amount: number, label?: string) => void;
+  recordEventExpense?: (amount: number, label: string) => void;
+}): void {
   campaign.effects.forEach((effect, index) => {
+    // Direct state metrics (Cash, Time, SkillLevel, FreedomScore) with Add effects are applied directly
+    // These are one-time permanent effects (no duration tracking)
+    if ((effect.metric === GameMetric.Cash || effect.metric === GameMetric.Time || 
+         effect.metric === GameMetric.SkillLevel || effect.metric === GameMetric.FreedomScore) 
+        && effect.type === EffectType.Add && store) {
+      // Apply directly to state
+      if (effect.metric === GameMetric.Cash) {
+        if (store.recordEventRevenue && store.recordEventExpense) {
+          if (effect.value >= 0) {
+            store.recordEventRevenue(effect.value, campaign.name);
+          } else {
+            store.recordEventExpense(Math.abs(effect.value), campaign.name);
+          }
+        } else if (store.applyCashChange) {
+          store.applyCashChange(effect.value);
+        }
+      } else if (effect.metric === GameMetric.Time && store.applyTimeChange) {
+        store.applyTimeChange(effect.value);
+      } else if (effect.metric === GameMetric.SkillLevel && store.applySkillLevelChange) {
+        store.applySkillLevelChange(effect.value);
+      } else if (effect.metric === GameMetric.FreedomScore && store.applyFreedomScoreChange) {
+        store.applyFreedomScoreChange(effect.value);
+      }
+      // Direct state metrics are always permanent (one-time add/subtract)
+      // Duration is ignored for these metrics - content should not use temporary effects
+      return;
+    }
+    
+    // For other metrics or effect types, use effect manager
     effectManager.add({
       id: `marketing_${campaign.id}_${index}`,
       source: {
@@ -51,6 +88,14 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
       value: effect.value,
       durationSeconds: effect.durationSeconds,
     }, currentGameTime);
+    
+    // For direct state metrics with non-Add effects, calculate and apply the change
+    if (store && (effect.metric === GameMetric.Cash || effect.metric === GameMetric.Time || 
+                  effect.metric === GameMetric.SkillLevel || effect.metric === GameMetric.FreedomScore)) {
+      // Get current values from store (would need to pass metrics or calculate)
+      // For now, non-Add effects on direct state metrics go through effectManager
+      // and would need to be applied elsewhere if needed
+    }
   });
 }
 
@@ -86,9 +131,9 @@ export const FALLBACK_CAMPAIGNS: MarketingCampaign[] = [
     cooldownSeconds: 15, // 15 seconds cooldown
     effects: [
       {
-        metric: GameMetric.ReputationMultiplier,
-        type: EffectType.Percent,
-        value: 200, // +200% reputation gain
+        metric: GameMetric.SkillLevel,
+        type: EffectType.Add,
+        value: 5, // +5 skill level per customer (direct add)
         durationSeconds: 45, // 45 seconds effect
       },
     ],
@@ -247,7 +292,16 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
     }
 
     // Register effects to effectManager (expiration handled automatically)
-    addMarketingEffects(campaign, gameTime);
+    // For direct state metrics, apply them directly
+    const store = get();
+    addMarketingEffects(campaign, gameTime, {
+      applyCashChange: store.applyCashChange,
+      applyTimeChange: store.applyTimeChange,
+      applySkillLevelChange: store.applySkillLevelChange,
+      applyFreedomScoreChange: store.applyFreedomScoreChange,
+      recordEventRevenue: store.recordEventRevenue,
+      recordEventExpense: store.recordEventExpense,
+    });
 
     // Set flag if campaign sets one
     if (campaign.setsFlag) {

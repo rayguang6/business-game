@@ -14,14 +14,17 @@ import { SectionHeading } from '@/app/components/ui/SectionHeading';
 import { Modal } from '@/app/components/ui/Modal';
 
 const METRIC_LABELS: Partial<Record<GameMetric, string>> = {
+  [GameMetric.Cash]: 'Cash',
+  [GameMetric.Time]: 'Available Time',
   [GameMetric.ServiceRooms]: 'Service Rooms',
   [GameMetric.MonthlyExpenses]: 'Monthly Expenses',
   [GameMetric.ServiceSpeedMultiplier]: 'Service Speed',
   [GameMetric.SpawnIntervalSeconds]: 'Customer Spawn',
-  [GameMetric.ReputationMultiplier]: 'Reputation',
-  [GameMetric.HappyProbability]: 'Happy Chance',
+  [GameMetric.SkillLevel]: 'Skill Level',
+  // [GameMetric.HappyProbability] removed - not used in game mechanics
   [GameMetric.ServiceRevenueMultiplier]: 'Service Price',
   [GameMetric.ServiceRevenueFlatBonus]: 'Service Price',
+  [GameMetric.FreedomScore]: 'Freedom Score',
 };
 
 const formatMagnitude = (value: number): string => {
@@ -43,9 +46,12 @@ const formatEffect = (effect: UpgradeEffect): string => {
 
   if (type === EffectType.Add) {
     switch (metric) {
+      case GameMetric.Cash:
       case GameMetric.MonthlyExpenses:
       case GameMetric.ServiceRevenueFlatBonus:
         return `${sign}${formatCurrency(value)} ${label}`;
+      case GameMetric.Time:
+        return `${sign}${formatMagnitude(value)}h ${label}`;
       case GameMetric.SpawnIntervalSeconds:
         return `${sign}${formatMagnitude(value)}s ${label} Interval`;
       case GameMetric.ServiceRooms:

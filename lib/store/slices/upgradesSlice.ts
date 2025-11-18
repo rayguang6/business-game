@@ -10,12 +10,39 @@ import { calculateUpgradeMonthlyExpenses, getMonthlyBaseExpenses } from '@/lib/f
 import { getUpgradeLevel, canUpgradeMore } from '@/lib/features/upgrades';
 import { GameStore } from '../gameStore';
 import type { IndustryId } from '@/lib/game/types';
-import { effectManager, GameMetric } from '@/lib/game/effectManager';
+import { effectManager, GameMetric, EffectType } from '@/lib/game/effectManager';
 import { checkRequirements } from '@/lib/game/requirementChecker';
 
 const findUpgradeDefinition = (industryId: IndustryId, upgradeId: UpgradeId): UpgradeDefinition | undefined => {
   return getUpgradesForIndustry(industryId).find((upgrade) => upgrade.id === upgradeId);
 };
+
+// Direct state metrics that are stored in game state and modified directly
+// These bypass effectManager for Add effects to enable immediate updates and PnL tracking
+const DIRECT_STATE_METRICS = [
+  GameMetric.Cash,
+  GameMetric.Time,
+  GameMetric.SkillLevel,
+  GameMetric.FreedomScore,
+] as const;
+
+/**
+ * Check if a metric is a direct state metric
+ */
+function isDirectStateMetric(metric: GameMetric): boolean {
+  return DIRECT_STATE_METRICS.includes(metric as any);
+}
+
+/**
+ * Calculate the delta value for direct state metrics when leveling up upgrades
+ * @param effectValue - The effect value per level
+ * @param level - Current level
+ * @param previousLevel - Previous level (0 if first purchase)
+ * @returns The delta to apply (difference between new and old effect)
+ */
+function calculateDirectStateDelta(effectValue: number, level: number, previousLevel: number = 0): number {
+  return effectValue * level - effectValue * previousLevel;
+}
 
 export interface UpgradesSlice {
   upgrades: Upgrades;
@@ -33,8 +60,76 @@ export interface UpgradesSlice {
  * @param upgrade - The upgrade definition
  * @param level - The level of the upgrade (effects are multiplied by level)
  */
-export function addUpgradeEffects(upgrade: UpgradeDefinition, level: number): void {
+export interface UpgradeEffectStore {
+  applyCashChange?: (amount: number) => void;
+  applyTimeChange?: (amount: number) => void;
+  applySkillLevelChange?: (amount: number) => void;
+  applyFreedomScoreChange?: (amount: number) => void;
+  recordEventRevenue?: (amount: number, label?: string) => void;
+  recordEventExpense?: (amount: number, label: string) => void;
+  previousLevel?: number; // Previous level for calculating delta (0 if first purchase)
+}
+
+/**
+ * Register upgrade effects with effectManager
+ * For direct state metrics (Cash, Time, SkillLevel, FreedomScore) with Add effects:
+ *   - Applied directly to game state for immediate updates
+ *   - Delta calculation prevents stacking when leveling up
+ * For other metrics or effect types:
+ *   - Applied via effectManager (calculated on-demand)
+ * 
+ * @param upgrade - The upgrade definition
+ * @param level - The level of the upgrade (effects are multiplied by level)
+ * @param store - Optional store functions for direct state metric updates
+ */
+export function addUpgradeEffects(upgrade: UpgradeDefinition, level: number, store?: UpgradeEffectStore): void {
   upgrade.effects.forEach((effect, index) => {
+    const effectValue = effect.value * level;
+    
+    // Direct state metrics with Add effects: apply directly to state
+    // This enables immediate updates for game over checks and PnL tracking
+    if (isDirectStateMetric(effect.metric) && effect.type === EffectType.Add && store) {
+      // Calculate delta to prevent stacking when leveling up
+      const previousLevel = store.previousLevel ?? 0;
+      const delta = calculateDirectStateDelta(effect.value, level, previousLevel);
+      
+      // Only apply if there's a change
+      if (delta !== 0) {
+        switch (effect.metric) {
+          case GameMetric.Cash:
+            if (store.recordEventRevenue && store.recordEventExpense) {
+              if (delta >= 0) {
+                store.recordEventRevenue(delta, `Upgrade: ${upgrade.name}`);
+              } else {
+                store.recordEventExpense(Math.abs(delta), `Upgrade: ${upgrade.name}`);
+              }
+            } else if (store.applyCashChange) {
+              store.applyCashChange(delta);
+            }
+            break;
+          case GameMetric.Time:
+            if (store.applyTimeChange) {
+              store.applyTimeChange(delta);
+            }
+            break;
+          case GameMetric.SkillLevel:
+            if (store.applySkillLevelChange) {
+              store.applySkillLevelChange(delta);
+            }
+            break;
+          case GameMetric.FreedomScore:
+            if (store.applyFreedomScoreChange) {
+              store.applyFreedomScoreChange(delta);
+            }
+            break;
+        }
+      }
+      // Direct state metrics bypass effectManager for Add effects
+      // (they're permanent one-time changes, not calculated metrics)
+      return;
+    }
+    
+    // Calculated metrics: add to effectManager for on-demand calculation
     effectManager.add({
       id: `upgrade_${upgrade.id}_${index}`,
       source: {
@@ -44,7 +139,7 @@ export function addUpgradeEffects(upgrade: UpgradeDefinition, level: number): vo
       },
       metric: effect.metric,
       type: effect.type,
-      value: effect.value * level, // Multiply by level
+      value: effectValue, // Multiply by level
     });
   });
 }
@@ -94,8 +189,8 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
       return { success: false, message: 'Upgrade not found.' };
     }
 
-    const store = get() as GameState & UpgradesSlice;
-    const currentLevel = store.getUpgradeLevel(upgradeId);
+    const currentStore = get() as GameState & UpgradesSlice;
+    const currentLevel = currentStore.getUpgradeLevel(upgradeId);
 
     if (currentLevel >= upgrade.maxLevel) {
       return { success: false, message: `${upgrade.name} is already at max level.` };
@@ -129,7 +224,7 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
 
     // Define next upgrades state
     const nextUpgrades: Upgrades = {
-      ...store.upgrades,
+      ...currentStore.upgrades,
       [upgradeId]: currentLevel + 1,
     };
 
@@ -138,6 +233,7 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
     const currentExpenses = effectManager.calculate(GameMetric.MonthlyExpenses, baseExpenses);
 
     // Temporarily add the new upgrade effect to calculate new expenses
+    // Note: We don't pass store here because we're only calculating expenses, not applying direct state changes
     addUpgradeEffects(upgrade, currentLevel + 1);
     const newExpenses = effectManager.calculate(GameMetric.MonthlyExpenses, baseExpenses);
     removeUpgradeEffects(upgradeId); // Remove the temporary effect
@@ -189,7 +285,17 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
     // Remove old effects first (if upgrading from previous level)
     removeUpgradeEffects(upgradeId);
     // Add new effects with multiplied values based on new level
-    addUpgradeEffects(upgrade, newLevel);
+    // Pass previousLevel to calculate delta for direct state metrics (prevents stacking)
+    const store = get() as GameStore;
+    addUpgradeEffects(upgrade, newLevel, {
+      applyCashChange: store.applyCashChange,
+      applyTimeChange: store.applyTimeChange,
+      applySkillLevelChange: store.applySkillLevelChange,
+      applyFreedomScoreChange: store.applyFreedomScoreChange,
+      recordEventRevenue: store.recordEventRevenue,
+      recordEventExpense: store.recordEventExpense,
+      previousLevel: currentLevel, // Pass previous level to calculate delta
+    });
 
     // Set flag if upgrade sets one
     if (upgrade.setsFlag) {

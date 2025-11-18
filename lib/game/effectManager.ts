@@ -16,15 +16,17 @@ import { getTicksPerSecondForIndustry } from './config';
 
 // All game metrics that can be affected by effects
 export enum GameMetric {
+  Cash = 'cash', // Direct cash modification (add/subtract)
+  Time = 'time', // Direct time modification (add/subtract)
   SpawnIntervalSeconds = 'spawnIntervalSeconds',
   ServiceSpeedMultiplier = 'serviceSpeedMultiplier',
   ServiceRooms = 'serviceRooms',
-  ReputationMultiplier = 'reputationMultiplier',
-  HappyProbability = 'happyProbability',
+  SkillLevel = 'skillLevel', // Direct skill level modification (add/subtract)
+  // HappyProbability removed - not used in game mechanics (customers happy/angry based on patience)
   MonthlyExpenses = 'monthlyExpenses',
   ServiceRevenueMultiplier = 'serviceRevenueMultiplier',
   ServiceRevenueFlatBonus = 'serviceRevenueFlatBonus',
-  FounderWorkingHours = 'founderWorkingHours',
+  FreedomScore = 'freedomScore', // Previously: FounderWorkingHours
   // Tier-specific service metrics
   HighTierServiceRevenueMultiplier = 'highTierServiceRevenueMultiplier',
   HighTierServiceWeightageMultiplier = 'highTierServiceWeightageMultiplier',
@@ -76,17 +78,26 @@ export interface MetricConstraints {
 // Constraints definition (optional - metrics without constraints will work fine)
 export const METRIC_CONSTRAINTS: Partial<Record<GameMetric, MetricConstraints>> = {
   // Only add constraints where they're actually needed
+  [GameMetric.Cash]: {
+    min: 0,           // Can't have negative cash (game over condition)
+    roundToInt: true, // Must be whole number
+  },
+  [GameMetric.Time]: {
+    min: 0,           // Can't have negative time (game over condition)
+    roundToInt: true, // Must be whole number
+  },
   [GameMetric.ServiceRooms]: { 
     min: 1,           // Can't have negative rooms
     max: 20,          // Reasonable upper limit
     roundToInt: true, // Must be whole number
   },
-  [GameMetric.HappyProbability]: { 
-    min: 0, 
-    max: 1,           // Probability must be 0-1
-  },
-  [GameMetric.FounderWorkingHours]: {
+  // [GameMetric.HappyProbability] removed - not used in game mechanics
+  [GameMetric.FreedomScore]: {
     min: 0,           // Can't have negative hours
+    roundToInt: true, // Must be whole number
+  },
+  [GameMetric.SkillLevel]: {
+    min: 0,           // Can't have negative skill level
     roundToInt: true, // Must be whole number
   },
   // Add more constraints here only when needed
@@ -152,7 +163,7 @@ const applyConstraints = (value: number, metric: GameMetric): number => {
     result = Math.min(constraints.max, result);
   }
 
-  // Round to integer if needed (e.g., for ServiceRooms, FounderWorkingHours)
+  // Round to integer if needed (e.g., for ServiceRooms, FreedomScore)
   if (constraints.roundToInt) {
     result = Math.round(result);
   }

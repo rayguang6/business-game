@@ -72,7 +72,7 @@ export function IndustrySimulationConfigTab({
 }: IndustrySimulationConfigTabProps) {
 
   // Helper functions
-  const getMetrics = (): BusinessMetrics => businessMetrics || { startingCash: 0, monthlyExpenses: 0, startingReputation: 0, founderWorkHours: 0 };
+  const getMetrics = (): BusinessMetrics => businessMetrics || { startingCash: 0, monthlyExpenses: 0, startingSkillLevel: 0, startingFreedomScore: 0 };
   const getStats = (): BusinessStats => businessStats || {
     ticksPerSecond: 10,
     monthDurationSeconds: 60,
@@ -81,15 +81,15 @@ export function IndustrySimulationConfigTab({
     leavingAngryDurationTicks: 10,
     customerSpawnPosition: { x: 4, y: 9 },
     treatmentRooms: 2,
-    reputationGainPerHappyCustomer: 1,
-    reputationLossPerAngryCustomer: 1,
-    baseHappyProbability: 1,
+    skillLevelGainPerHappyCustomer: 1, // Previously: reputationGainPerHappyCustomer
+    skillLevelLossPerAngryCustomer: 1, // Previously: reputationLossPerAngryCustomer
+    // baseHappyProbability removed - not used in game mechanics
     eventTriggerSeconds: [],
     serviceRevenueMultiplier: 1,
     serviceRevenueScale: 10,
   };
-  const getWinCondition = (): WinCondition => winCondition || { founderHoursMax: 40, monthlyProfitTarget: 0, consecutiveMonthsRequired: 2 };
-  const getLoseCondition = (): LoseCondition => loseCondition || { cashThreshold: 0, reputationThreshold: 0, founderHoursMax: 400 };
+  const getWinCondition = (): WinCondition => winCondition || { cashTarget: 50000 };
+  const getLoseCondition = (): LoseCondition => loseCondition || { cashThreshold: 0, timeThreshold: 0 };
 
   const updateMetrics = (updates: Partial<BusinessMetrics>) => {
     const current = getMetrics();
@@ -216,12 +216,12 @@ export function IndustrySimulationConfigTab({
               <input type="number" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getMetrics().monthlyExpenses} onChange={(e) => updateMetrics({ monthlyExpenses: Number(e.target.value) })} />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Starting Reputation</label>
-              <input type="number" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getMetrics().startingReputation} onChange={(e) => updateMetrics({ startingReputation: Number(e.target.value) })} />
+              <label className="block text-xs text-slate-400 mb-1">Starting Skill Level</label>
+              <input type="number" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getMetrics().startingSkillLevel} onChange={(e) => updateMetrics({ startingSkillLevel: Number(e.target.value) })} />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Founder Work Hours</label>
-              <input type="number" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getMetrics().founderWorkHours} onChange={(e) => updateMetrics({ founderWorkHours: Number(e.target.value) })} />
+              <label className="block text-xs text-slate-400 mb-1">Starting Freedom Score</label>
+              <input type="number" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getMetrics().startingFreedomScore} onChange={(e) => updateMetrics({ startingFreedomScore: Number(e.target.value) })} />
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-700">
@@ -293,16 +293,9 @@ export function IndustrySimulationConfigTab({
             </div>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Founder Hours Max</label>
-                <input type="number" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getWinCondition().founderHoursMax} onChange={(e) => updateWinCondition({ founderHoursMax: Number(e.target.value) })} />
-              </div>
-              <div>
-                <label className="block text-xs text-slate-400 mb-1">Monthly Profit Target</label>
-                <input type="number" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getWinCondition().monthlyProfitTarget} onChange={(e) => updateWinCondition({ monthlyProfitTarget: Number(e.target.value) })} />
-              </div>
-              <div>
-                <label className="block text-xs text-slate-400 mb-1">Consecutive Months Required</label>
-                <input type="number" min="1" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getWinCondition().consecutiveMonthsRequired} onChange={(e) => updateWinCondition({ consecutiveMonthsRequired: Number(e.target.value) })} />
+                <label className="block text-xs text-slate-400 mb-1">Cash Target</label>
+                <input type="number" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getWinCondition().cashTarget} onChange={(e) => updateWinCondition({ cashTarget: Number(e.target.value) })} />
+                <p className="text-xs text-slate-500 mt-1">Target cash amount to win the game</p>
               </div>
             </div>
           </div>
@@ -322,12 +315,9 @@ export function IndustrySimulationConfigTab({
                 <input type="number" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getLoseCondition().cashThreshold} onChange={(e) => updateLoseCondition({ cashThreshold: Number(e.target.value) })} />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Reputation Threshold</label>
-                <input type="number" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getLoseCondition().reputationThreshold} onChange={(e) => updateLoseCondition({ reputationThreshold: Number(e.target.value) })} />
-              </div>
-              <div>
-                <label className="block text-xs text-slate-400 mb-1">Founder Hours Max (Burnout)</label>
-                <input type="number" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getLoseCondition().founderHoursMax} onChange={(e) => updateLoseCondition({ founderHoursMax: Number(e.target.value) })} />
+                <label className="block text-xs text-slate-400 mb-1">Time Threshold</label>
+                <input type="number" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getLoseCondition().timeThreshold} onChange={(e) => updateLoseCondition({ timeThreshold: Number(e.target.value) })} />
+                <p className="text-xs text-slate-500 mt-1">Game over if available time &lt;= this value (default: 0, only applies if time system is enabled)</p>
               </div>
             </div>
           </div>

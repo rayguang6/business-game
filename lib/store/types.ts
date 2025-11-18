@@ -11,8 +11,8 @@ export interface Metrics {
   time: number; // Monthly time budget (refreshes monthly)
   totalRevenue: number;
   totalExpenses: number;
-  reputation: number;
-  founderWorkingHours: number;
+  skillLevel: number; // Previously: reputation
+  freedomScore: number; // Previously: founderWorkingHours
 }
 
 // Map of upgrade ID to current level
@@ -57,9 +57,9 @@ export interface MonthlyHistoryEntry {
   expenses: number;
   oneTimeCosts: OneTimeCost[];
   profit: number;
-  reputation: number;
-  reputationChange: number;
-  founderWorkingHours: number;
+  skillLevel: number; // Previously: reputation
+  skillLevelChange: number; // Previously: reputationChange
+  freedomScore: number; // Previously: founderWorkingHours
   revenueBreakdown?: RevenueEntry[];
 }
 
@@ -72,7 +72,7 @@ export interface GameState {
   gameTick: number;
   currentMonth: number;
   isGameOver: boolean;
-  gameOverReason: 'cash' | 'reputation' | 'founderHours' | 'victory' | null;
+  gameOverReason: 'cash' | 'time' | 'victory' | null;
   
   // Business Metrics
   metrics: Metrics;

@@ -6,6 +6,7 @@ import type { GameCondition } from '@/lib/types/conditions';
 import type { MarketingCampaign } from '@/lib/store/slices/marketingSlice';
 import type { Requirement } from '@/lib/game/types';
 import { RequirementsSelector } from './RequirementsSelector';
+import { EffectsList } from './EffectsList';
 import { makeUniqueId, slugify } from './utils';
 
 interface MarketingTabProps {
@@ -213,104 +214,29 @@ export function MarketingTab({
                   />
                 </div>
 
-                <div className="md:col-span-2">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h4 className="text-sm font-semibold text-slate-300">Effects (temporary)</h4>
-                      <p className="text-xs text-slate-400 mt-1">
-                        Add = flat, Percent = +/-%, Multiply = × factor, Set = exact value.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onUpdateEffects([
-                          ...campaignEffectsForm,
-                          {
-                            metric: GameMetric.SpawnIntervalSeconds,
-                            type: EffectType.Add,
-                            value: '0',
-                            durationSeconds: '30',
-                          },
-                        ])
-                      }
-                      className="px-2 py-1 text-xs rounded-md border border-slate-600 text-slate-200 hover:bg-slate-800"
-                    >
-                      + Add Effect
-                    </button>
-                  </div>
-                  <div className="space-y-2">
-                    {campaignEffectsForm.map((ef, idx) => (
-                      <div key={idx} className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-center">
-                        <select
-                          value={ef.metric}
-                          onChange={(e) =>
-                            onUpdateEffects(
-                              campaignEffectsForm.map((row, i) =>
-                                i === idx ? { ...row, metric: e.target.value as GameMetric } : row
-                              )
-                            )
-                          }
-                          className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                        >
-                          {metricOptions.map((opt) => (
-                            <option key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          value={ef.type}
-                          onChange={(e) =>
-                            onUpdateEffects(
-                              campaignEffectsForm.map((row, i) =>
-                                i === idx ? { ...row, type: e.target.value as EffectType } : row
-                              )
-                            )
-                          }
-                          className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                        >
-                          {effectTypeOptions.map((opt) => (
-                            <option key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
-                        <input
-                          placeholder="value"
-                          type="number"
-                          value={ef.value}
-                          onChange={(e) =>
-                            onUpdateEffects(
-                              campaignEffectsForm.map((row, i) => (i === idx ? { ...row, value: e.target.value } : row))
-                            )
-                          }
-                          className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                        />
-                        <input
-                          placeholder="duration (sec)"
-                          type="number"
-                          value={ef.durationSeconds}
-                          onChange={(e) =>
-                            onUpdateEffects(
-                              campaignEffectsForm.map((row, i) =>
-                                i === idx ? { ...row, durationSeconds: e.target.value } : row
-                              )
-                            )
-                          }
-                          className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => onUpdateEffects(campaignEffectsForm.filter((_, i) => i !== idx))}
-                          className="px-2 py-2 text-xs rounded-md border border-rose-600 text-rose-200 hover:bg-rose-900"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <EffectsList
+                  effects={campaignEffectsForm.map(ef => ({
+                    ...ef,
+                    durationSeconds: ef.durationSeconds ?? '',
+                  }))}
+                  metricOptions={metricOptions}
+                  effectTypeOptions={effectTypeOptions}
+                  showDuration={true}
+                  title="Effects (temporary)"
+                  description="Add = flat, Percent = +/-%, Multiply = × factor, Set = exact value."
+                  defaultEffect={{
+                    metric: GameMetric.SpawnIntervalSeconds,
+                    type: EffectType.Add,
+                    value: '0',
+                    durationSeconds: '',
+                  }}
+                  onEffectsChange={(effects) => {
+                    onUpdateEffects(effects.map(ef => ({
+                      ...ef,
+                      durationSeconds: ef.durationSeconds || '',
+                    })));
+                  }}
+                />
 
                 <div className="md:col-span-2 flex flex-wrap gap-3">
                   <button
