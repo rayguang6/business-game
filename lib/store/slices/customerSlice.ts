@@ -7,6 +7,7 @@ import { GameStore } from '../gameStore';
 import { checkRequirements } from '@/lib/game/requirementChecker';
 import { getWeightedRandomService } from '@/lib/features/services';
 import { getServicesFromStore } from '@/lib/store/configStore';
+import { effectManager, GameMetric } from '@/lib/game/effectManager';
 
 export interface CustomerSlice {
   customers: Customer[];
@@ -60,13 +61,18 @@ export const createCustomerSlice: StateCreator<GameState, [], [], CustomerSlice>
   },
   
   startService: (customerId: string) => {
-    set((state) => ({
-      customers: state.customers.map(customer => 
-        customer.id === customerId 
-          ? startService(customer, 1) // Default to room 1 for now
-          : customer
-      )
-    }));
+    set((state) => {
+      const industryId = (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+      const serviceSpeedMultiplier = effectManager.calculate(GameMetric.ServiceSpeedMultiplier, 1.0);
+      
+      return {
+        customers: state.customers.map(customer => 
+          customer.id === customerId 
+            ? startService(customer, 1, serviceSpeedMultiplier, industryId) // Default to room 1 for now
+            : customer
+        )
+      };
+    });
   },
   
   updateCustomers: (customers: Customer[]) => {
