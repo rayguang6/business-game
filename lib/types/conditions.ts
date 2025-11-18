@@ -5,10 +5,10 @@ export type ConditionOperator = 'greater' | 'less' | 'equals' | 'greater_equal' 
 //TODO: later should direct use from global enum
 export enum ConditionMetric {
   Cash = 'cash',
-  Reputation = 'reputation',
+  SkillLevel = 'skillLevel', // Previously: Reputation = 'reputation'
   Expenses = 'expenses',
   GameTime = 'gameTime',
-  FounderWorkingHours = 'founderWorkingHours',
+  FreedomScore = 'freedomScore', // Previously: FounderWorkingHours = 'founderWorkingHours'
 }
 
 // Metric-based condition (simplified version)

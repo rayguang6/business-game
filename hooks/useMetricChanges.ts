@@ -4,10 +4,10 @@ import { useGameStore } from '@/lib/store/gameStore';
 export interface MetricChange {
   cash?: number;
   time?: number;
-  reputation?: number;
+  skillLevel?: number; // Previously: reputation
   revenue?: number;
   expenses?: number;
-  founderWorkingHours?: number;
+  freedomScore?: number; // Previously: founderWorkingHours
 }
 
 export function useMetricChanges() {
@@ -15,10 +15,10 @@ export function useMetricChanges() {
   const prevMetrics = useRef({
     cash: metrics.cash,
     time: metrics.time,
-    reputation: metrics.reputation,
+    skillLevel: metrics.skillLevel,
     revenue: monthlyRevenue,
     expenses: monthlyExpenses,
-    founderWorkingHours: metrics.founderWorkingHours,
+    freedomScore: metrics.freedomScore,
   });
   const [changes, setChanges] = useState<MetricChange>({});
 
@@ -35,9 +35,9 @@ export function useMetricChanges() {
       newChanges.time = metrics.time - prevMetrics.current.time;
     }
 
-    // Track reputation changes
-    if (metrics.reputation !== prevMetrics.current.reputation) {
-      newChanges.reputation = metrics.reputation - prevMetrics.current.reputation;
+    // Track skill level changes (previously reputation)
+    if (metrics.skillLevel !== prevMetrics.current.skillLevel) {
+      newChanges.skillLevel = metrics.skillLevel - prevMetrics.current.skillLevel;
     }
 
     // Track revenue changes
@@ -50,19 +50,19 @@ export function useMetricChanges() {
       newChanges.expenses = monthlyExpenses - prevMetrics.current.expenses;
     }
 
-    // Track founder hours required changes
-    if (metrics.founderWorkingHours !== prevMetrics.current.founderWorkingHours) {
-      newChanges.founderWorkingHours = metrics.founderWorkingHours - prevMetrics.current.founderWorkingHours;
+    // Track freedom score changes (previously founderWorkingHours)
+    if (metrics.freedomScore !== prevMetrics.current.freedomScore) {
+      newChanges.freedomScore = metrics.freedomScore - prevMetrics.current.freedomScore;
     }
 
     // Update previous values
     prevMetrics.current = {
       cash: metrics.cash,
       time: metrics.time,
-      reputation: metrics.reputation,
+      skillLevel: metrics.skillLevel,
       revenue: monthlyRevenue,
       expenses: monthlyExpenses,
-      founderWorkingHours: metrics.founderWorkingHours,
+      freedomScore: metrics.freedomScore,
     };
 
     // Only set changes if there are actual changes
@@ -76,7 +76,7 @@ export function useMetricChanges() {
 
       return () => clearTimeout(timer);
     }
-  }, [metrics.cash, metrics.time, metrics.reputation, metrics.founderWorkingHours, monthlyRevenue, monthlyExpenses]);
+  }, [metrics.cash, metrics.time, metrics.skillLevel, metrics.freedomScore, monthlyRevenue, monthlyExpenses]);
 
   return changes;
 }

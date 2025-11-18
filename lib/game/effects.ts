@@ -16,7 +16,7 @@ export interface EffectBundle {
    */
   effects?: UpgradeEffect[];
   /**
-   * Final multipliers applied after effects. For example, { reputationMultiplier: 2 } doubles the current value.
+   * Final multipliers applied after effects. For example, { skillLevel: 2 } modifies skill level directly.
    */
   multipliers?: EffectMultiplierMap;
 }
@@ -93,9 +93,9 @@ const applyUpgradeEffectsToCombined = (
         result = { ...result, serviceSpeedMultiplier: updated };
         break;
       }
-      case GameMetric.ReputationMultiplier: {
-        const updated = Math.max(0, applyUpgradeEffectMetric(result.reputationMultiplier, effect));
-        result = { ...result, reputationMultiplier: updated };
+      case GameMetric.SkillLevel: {
+        const updated = Math.max(0, applyUpgradeEffectMetric(result.skillLevel, effect));
+        result = { ...result, skillLevel: updated };
         break;
       }
       case GameMetric.ServiceRooms: {
@@ -108,11 +108,7 @@ const applyUpgradeEffectsToCombined = (
         result = { ...result, monthlyExpenses: updated };
         break;
       }
-      case GameMetric.HappyProbability: {
-        const updated = applyUpgradeEffectMetric(result.happyProbability, effect);
-        result = { ...result, happyProbability: Math.max(0, Math.min(1, updated)) };
-        break;
-      }
+      // GameMetric.HappyProbability removed - not used in game mechanics
       case GameMetric.ServiceRevenueMultiplier: {
         const updated = Math.max(0, applyUpgradeEffectMetric(result.serviceRevenueMultiplier, effect));
         result = { ...result, serviceRevenueMultiplier: updated };
@@ -194,10 +190,10 @@ const applyMultipliersToCombined = (
         };
         break;
       }
-      case GameMetric.ReputationMultiplier: {
+      case GameMetric.SkillLevel: {
         result = {
           ...result,
-          reputationMultiplier: Math.max(0, combined.reputationMultiplier * safeMultiplier),
+          skillLevel: Math.max(0, combined.skillLevel * safeMultiplier),
         };
         break;
       }
@@ -215,13 +211,7 @@ const applyMultipliersToCombined = (
         };
         break;
       }
-      case GameMetric.HappyProbability: {
-        result = {
-          ...result,
-          happyProbability: Math.max(0, Math.min(1, combined.happyProbability * safeMultiplier)),
-        };
-        break;
-      }
+      // GameMetric.HappyProbability removed - not used in game mechanics
       case GameMetric.ServiceRevenueMultiplier: {
         result = {
           ...result,

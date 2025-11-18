@@ -21,6 +21,7 @@ export interface StaffSlice {
 export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (set, get) => {
   const defaultIndustryId = DEFAULT_INDUSTRY_ID;
   const initialStaff = getInitialStaffForIndustry(defaultIndustryId);
+  // Note: Initial staff effects are applied without store functions (they'll be recalculated on game start)
   initialStaff.forEach((staff) => addStaffEffects(staff));
   const initialAvailable = createInitialAvailableStaff(defaultIndustryId);
 
@@ -46,7 +47,15 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
         }
       }
 
-      addStaffEffects(candidate);
+      // Apply staff effects, including direct state metric changes
+      addStaffEffects(candidate, {
+        applyCashChange: store.applyCashChange,
+        applyTimeChange: store.applyTimeChange,
+        applySkillLevelChange: store.applySkillLevelChange,
+        applyFreedomScoreChange: store.applyFreedomScoreChange,
+        recordEventRevenue: store.recordEventRevenue,
+        recordEventExpense: store.recordEventExpense,
+      });
 
       // Set flag if staff role sets one
       if (candidate.setsFlag) {
@@ -76,7 +85,15 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
       });
 
       const resetHired = getInitialStaffForIndustry(industryId);
-      resetHired.forEach((staff) => addStaffEffects(staff));
+      const currentStore = get();
+      resetHired.forEach((staff) => addStaffEffects(staff, {
+        applyCashChange: currentStore.applyCashChange,
+        applyTimeChange: currentStore.applyTimeChange,
+        applySkillLevelChange: currentStore.applySkillLevelChange,
+        applyFreedomScoreChange: currentStore.applyFreedomScoreChange,
+        recordEventRevenue: currentStore.recordEventRevenue,
+        recordEventExpense: currentStore.recordEventExpense,
+      }));
 
       set({
         hiredStaff: resetHired,
@@ -91,7 +108,15 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
       });
 
       const initialHired = getInitialStaffForIndustry(industryId);
-      initialHired.forEach((staff) => addStaffEffects(staff));
+      const currentStore = get();
+      initialHired.forEach((staff) => addStaffEffects(staff, {
+        applyCashChange: currentStore.applyCashChange,
+        applyTimeChange: currentStore.applyTimeChange,
+        applySkillLevelChange: currentStore.applySkillLevelChange,
+        applyFreedomScoreChange: currentStore.applyFreedomScoreChange,
+        recordEventRevenue: currentStore.recordEventRevenue,
+        recordEventExpense: currentStore.recordEventExpense,
+      }));
 
       set({
         hiredStaff: initialHired,

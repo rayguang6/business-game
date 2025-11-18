@@ -23,6 +23,7 @@ type RawChoice = {
   label?: string;
   description?: string;
   cost?: number;
+  timeCost?: number;
   consequences?: RawConsequence[];
   setsFlag?: string;
 };
@@ -88,6 +89,7 @@ const mapChoices = (raw: RawChoice[] | undefined): GameEventChoice[] => {
     label: choice.label ?? '',
     description: choice.description,
     cost: choice.cost !== undefined ? toNumber(choice.cost, 0) : undefined,
+    timeCost: choice.timeCost !== undefined ? toNumber(choice.timeCost, 0) : undefined,
     setsFlag: choice.setsFlag,
     consequences: mapConsequences(choice.consequences),
   }));
@@ -144,9 +146,10 @@ const convertRawEffectToGameEventEffect = (rawEffect: RawEffect): GameEventEffec
         amount: rawEffect.amount ?? 0,
         label: rawEffect.label,
       };
-    case 'reputation':
+    case 'reputation': // Legacy support - map to skillLevel
+    case 'skillLevel':
       return {
-        type: 'reputation',
+        type: 'skillLevel',
         amount: rawEffect.amount ?? 0,
       };
     case 'dynamicCash':
@@ -175,9 +178,9 @@ const convertGameEventEffectToRawEffect = (effect: GameEventEffect): RawEffect =
         amount: effect.amount,
         label: effect.label,
       };
-    case 'reputation':
+    case 'skillLevel': // Previously: 'reputation'
       return {
-        type: 'reputation',
+        type: 'skillLevel', // Database will use 'skillLevel' going forward
         amount: effect.amount,
       };
     case 'dynamicCash':
@@ -206,6 +209,7 @@ function serializeChoices(choices: GameEventChoice[]): RawChoice[] {
     label: choice.label,
     description: choice.description,
     cost: choice.cost,
+    timeCost: choice.timeCost,
     setsFlag: choice.setsFlag,
     consequences: choice.consequences.map((consequence) => ({
       id: consequence.id,

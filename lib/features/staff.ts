@@ -18,7 +18,14 @@ export interface Staff {
  * Add a staff member's effects to the effect manager
  * This should be called when a staff member is hired
  */
-export function addStaffEffects(staff: Staff): void {
+export function addStaffEffects(staff: Staff, store?: {
+  applyCashChange?: (amount: number) => void;
+  applyTimeChange?: (amount: number) => void;
+  applySkillLevelChange?: (amount: number) => void;
+  applyFreedomScoreChange?: (amount: number) => void;
+  recordEventRevenue?: (amount: number, label?: string) => void;
+  recordEventExpense?: (amount: number, label: string) => void;
+}): void {
   // Monthly salary expense (always applied)
   if (staff.salary > 0) {
     effectManager.add({
@@ -36,6 +43,34 @@ export function addStaffEffects(staff: Staff): void {
 
   // Apply all staff effects (flexible system like upgrades)
   staff.effects.forEach((effect, index) => {
+    // Direct state metrics (Cash, Time, SkillLevel, FreedomScore) are applied directly
+    // Other metrics go through effectManager
+    if ((effect.metric === GameMetric.Cash || effect.metric === GameMetric.Time || 
+         effect.metric === GameMetric.SkillLevel || effect.metric === GameMetric.FreedomScore)
+        && effect.type === EffectType.Add && store) {
+      // Apply directly to state
+      if (effect.metric === GameMetric.Cash) {
+        if (store.recordEventRevenue && store.recordEventExpense) {
+          if (effect.value >= 0) {
+            store.recordEventRevenue(effect.value, `Staff: ${staff.name}`);
+          } else {
+            store.recordEventExpense(Math.abs(effect.value), `Staff: ${staff.name}`);
+          }
+        } else if (store.applyCashChange) {
+          store.applyCashChange(effect.value);
+        }
+      } else if (effect.metric === GameMetric.Time && store.applyTimeChange) {
+        store.applyTimeChange(effect.value);
+      } else if (effect.metric === GameMetric.SkillLevel && store.applySkillLevelChange) {
+        store.applySkillLevelChange(effect.value);
+      } else if (effect.metric === GameMetric.FreedomScore && store.applyFreedomScoreChange) {
+        store.applyFreedomScoreChange(effect.value);
+      }
+      // Direct state metrics are always permanent (one-time add/subtract)
+      // Don't add to effectManager for direct state metrics with Add effects
+      return;
+    }
+    
     effectManager.add({
       id: `staff_${staff.id}_${index}`,
       source: {

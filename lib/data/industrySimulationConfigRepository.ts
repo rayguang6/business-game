@@ -30,12 +30,13 @@ const mapBusinessMetrics = (raw: unknown): BusinessMetrics | undefined => {
   if (
     typeof c.startingCash === 'number' &&
     typeof c.monthlyExpenses === 'number' &&
-    typeof c.startingReputation === 'number' &&
-    typeof c.founderWorkHours === 'number'
+    typeof c.startingSkillLevel === 'number' &&
+    (typeof c.startingFreedomScore === 'number' || typeof (c as any).founderWorkHours === 'number') // Support legacy founderWorkHours
   ) {
     return {
       ...c,
       startingTime: typeof c.startingTime === 'number' ? c.startingTime : undefined,
+      startingFreedomScore: c.startingFreedomScore ?? (c as any).founderWorkHours, // Support legacy founderWorkHours
     };
   }
   return undefined;
@@ -98,12 +99,11 @@ const mapLayoutConfig = (raw: unknown): SimulationLayoutConfig | undefined => {
 const mapWinCondition = (raw: unknown): WinCondition | undefined => {
   if (!isObject(raw)) return undefined;
   const c = raw as unknown as WinCondition;
-  if (
-    typeof c.founderHoursMax === 'number' &&
-    typeof c.monthlyProfitTarget === 'number' &&
-    typeof c.consecutiveMonthsRequired === 'number'
-  ) {
-    return c;
+  // Simplified win condition: only cashTarget
+  if (typeof c.cashTarget === 'number') {
+    return {
+      cashTarget: c.cashTarget,
+    };
   }
   return undefined;
 };
@@ -111,12 +111,15 @@ const mapWinCondition = (raw: unknown): WinCondition | undefined => {
 const mapLoseCondition = (raw: unknown): LoseCondition | undefined => {
   if (!isObject(raw)) return undefined;
   const c = raw as unknown as LoseCondition;
+  // Simplified lose condition: cashThreshold and timeThreshold only
   if (
     typeof c.cashThreshold === 'number' &&
-    typeof c.reputationThreshold === 'number' &&
-    typeof c.founderHoursMax === 'number'
+    typeof c.timeThreshold === 'number'
   ) {
-    return c;
+    return {
+      cashThreshold: c.cashThreshold,
+      timeThreshold: c.timeThreshold,
+    };
   }
   return undefined;
 };

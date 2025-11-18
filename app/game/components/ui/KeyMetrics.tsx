@@ -10,7 +10,7 @@ import type { IndustryId } from '@/lib/game/types';
 import Image from 'next/image';
 
 export function KeyMetrics() {
-  const { metrics, monthlyRevenue, monthlyExpenses } = useFinanceData();
+  const { metrics } = useFinanceData();
   const changes = useMetricChanges();
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
@@ -21,10 +21,8 @@ export function KeyMetrics() {
   const [feedbackByMetric, setFeedbackByMetric] = useState<Record<string, FeedbackItem[]>>({
     cash: [],
     time: [],
-    revenue: [],
-    reputation: [],
-    expenses: [],
-    founderWorkingHours: [],
+    skillLevel: [],
+    freedomScore: [],
   });
 
   useEffect(() => {
@@ -35,10 +33,8 @@ export function KeyMetrics() {
       const newFeedback: Record<string, FeedbackItem[]> = {
         cash: [...prev.cash],
         time: [...prev.time],
-        revenue: [...prev.revenue],
-        reputation: [...prev.reputation],
-        expenses: [...prev.expenses],
-        founderWorkingHours: [...prev.founderWorkingHours],
+        skillLevel: [...prev.skillLevel],
+        freedomScore: [...prev.freedomScore],
       };
 
       // Add cash change feedback
@@ -59,39 +55,21 @@ export function KeyMetrics() {
         });
       }
 
-      // Add revenue change feedback
-      if (changes.revenue !== undefined && changes.revenue !== 0) {
-        newFeedback.revenue.push({
-          id: `revenue-${Date.now()}`,
-          value: changes.revenue,
-          color: 'blue',
+      // Add skill level change feedback (previously reputation)
+      if (changes.skillLevel !== undefined && changes.skillLevel !== 0) {
+        newFeedback.skillLevel.push({
+          id: `skillLevel-${Date.now()}`,
+          value: changes.skillLevel,
+          color: changes.skillLevel > 0 ? 'yellow' : 'red',
         });
       }
 
-      // Add reputation change feedback
-      if (changes.reputation !== undefined && changes.reputation !== 0) {
-        newFeedback.reputation.push({
-          id: `reputation-${Date.now()}`,
-          value: changes.reputation,
-          color: changes.reputation > 0 ? 'yellow' : 'red',
-        });
-      }
-
-      // Add expense change feedback
-      if (changes.expenses !== undefined && changes.expenses !== 0) {
-        newFeedback.expenses.push({
-          id: `expenses-${Date.now()}`,
-          value: changes.expenses,
-          color: 'red',
-        });
-      }
-
-      // Add founder hours required change feedback
-      if (changes.founderWorkingHours !== undefined && changes.founderWorkingHours !== 0) {
-        newFeedback.founderWorkingHours.push({
-          id: `founderWorkingHours-${Date.now()}`,
-          value: changes.founderWorkingHours,
-          color: changes.founderWorkingHours < 0 ? 'green' : 'red', // Green when reduced, red when increased
+      // Add freedom score change feedback (previously founderWorkingHours)
+      if (changes.freedomScore !== undefined && changes.freedomScore !== 0) {
+        newFeedback.freedomScore.push({
+          id: `freedomScore-${Date.now()}`,
+          value: changes.freedomScore,
+          color: changes.freedomScore < 0 ? 'green' : 'red', // Green when reduced, red when increased
         });
       }
 
@@ -116,6 +94,15 @@ export function KeyMetrics() {
       color: 'text-green-400',
       feedback: feedbackByMetric.cash,
     },
+    {
+      key: 'skillLevel',
+      icon: '💎',
+      image: '/images/icons/marketing.png',
+      value: metrics.skillLevel.toLocaleString(),
+      label: 'Skill Level',
+      color: 'text-yellow-400',
+      feedback: feedbackByMetric.skillLevel,
+    },
     // Conditionally show time if configured
     ...(showTime ? [{
       key: 'time',
@@ -127,40 +114,13 @@ export function KeyMetrics() {
       feedback: feedbackByMetric.time,
     }] : []),
     {
-      key: 'revenue',
-      icon: '💎',
-      image: '/images/icons/home.png',
-      value: monthlyRevenue.toLocaleString(),
-      label: 'Revenue',
-      color: 'text-blue-400',
-      feedback: feedbackByMetric.revenue,
-    },
-    {
-      key: 'reputation',
-      icon: '💎',
-      image: '/images/icons/marketing.png',
-      value: metrics.reputation.toLocaleString(),
-      label: 'Reputation',
-      color: 'text-yellow-400',
-      feedback: feedbackByMetric.reputation,
-    },
-    {
-      key: 'expenses',
-      icon: '💎',
-      image: '/images/icons/staff.png',
-      value: monthlyExpenses.toLocaleString(),
-      label: 'Monthly Expenses',
-      color: 'text-red-400',
-      feedback: feedbackByMetric.expenses,
-    },
-    {
-      key: 'founderWorkingHours',
+      key: 'freedomScore',
       icon: '⏰',
       image: '/images/icons/upgrades.png',
-      value: `${metrics.founderWorkingHours}h`,
-      label: 'Founder Workload',
+      value: `${metrics.freedomScore}h`,
+      label: 'Freedom Score',
       color: 'text-purple-400',
-      feedback: feedbackByMetric.founderWorkingHours,
+      feedback: feedbackByMetric.freedomScore,
     }
   ];
 

@@ -5,6 +5,7 @@ import type { UpgradeDefinition, Requirement } from '@/lib/game/types';
 import type { GameFlag } from '@/lib/data/flagRepository';
 import type { GameCondition } from '@/lib/types/conditions';
 import { RequirementsSelector } from './RequirementsSelector';
+import { EffectsList } from './EffectsList';
 import { makeUniqueId, slugify } from './utils';
 
 interface UpgradesTabProps {
@@ -223,86 +224,20 @@ export function UpgradesTab({
                       />
                     </div>
 
-                    <div className="md:col-span-2">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h4 className="text-sm font-semibold text-slate-300">Effects</h4>
-                          <p className="text-xs text-slate-400 mt-1">
-                            Choose a metric and how to apply it. Add = flat amount, Percent = +/-%, Multiply = × factor, Set = exact value.
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            onUpdateEffects([
-                              ...effectsForm,
-                              { metric: GameMetric.ServiceRooms, type: EffectType.Add, value: '0' },
-                            ])
-                          }
-                          className="px-2 py-1 text-xs rounded-md border border-slate-600 text-slate-200 hover:bg-slate-800"
-                        >
-                          + Add Effect
-                        </button>
-                      </div>
-                      <div className="space-y-2">
-                        {effectsForm.map((ef, idx) => (
-                          <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center">
-                            <select
-                              value={ef.metric}
-                              onChange={(e) =>
-                                onUpdateEffects(
-                                  effectsForm.map((row, i) =>
-                                    i === idx ? { ...row, metric: e.target.value as GameMetric } : row
-                                  )
-                                )
-                              }
-                              className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                            >
-                              {metricOptions.map((opt) => (
-                                <option key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </option>
-                              ))}
-                            </select>
-                            <select
-                              value={ef.type}
-                              onChange={(e) =>
-                                onUpdateEffects(
-                                  effectsForm.map((row, i) =>
-                                    i === idx ? { ...row, type: e.target.value as EffectType } : row
-                                  )
-                                )
-                              }
-                              className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                            >
-                              {effectTypeOptions.map((opt) => (
-                                <option key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </option>
-                              ))}
-                            </select>
-                            <input
-                              placeholder="value"
-                              type="number"
-                              value={ef.value}
-                              onChange={(e) =>
-                                onUpdateEffects(
-                                  effectsForm.map((row, i) => (i === idx ? { ...row, value: e.target.value } : row))
-                                )
-                              }
-                              className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => onUpdateEffects(effectsForm.filter((_, i) => i !== idx))}
-                              className="px-2 py-2 text-xs rounded-md border border-rose-600 text-rose-200 hover:bg-rose-900"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <EffectsList
+                      effects={effectsForm}
+                      metricOptions={metricOptions}
+                      effectTypeOptions={effectTypeOptions}
+                      showDuration={false}
+                      title="Effects"
+                      description="Choose a metric and how to apply it. Add = flat amount, Percent = +/-%, Multiply = × factor, Set = exact value."
+                      defaultEffect={{
+                        metric: GameMetric.ServiceRooms,
+                        type: EffectType.Add,
+                        value: '0',
+                      }}
+                      onEffectsChange={onUpdateEffects}
+                    />
 
                     <div className="md:col-span-2 flex flex-wrap gap-3">
                       <button

@@ -21,8 +21,8 @@ import { DEFAULT_WIN_CONDITION, DEFAULT_LOSE_CONDITION } from './winConditions';
 const DEFAULT_BUSINESS_METRICS: BusinessMetrics = {
   startingCash: 15000,
   monthlyExpenses: 5000,
-  startingReputation: 10,
-  founderWorkHours: 360,
+  startingSkillLevel: 10, // Previously: startingReputation
+  startingFreedomScore: 360, // Previously: founderWorkHours
 };
 
 const DEFAULT_BUSINESS_STATS: BusinessStats = {
@@ -33,9 +33,9 @@ const DEFAULT_BUSINESS_STATS: BusinessStats = {
   leavingAngryDurationTicks: 10,
   customerSpawnPosition: { x: 4, y: 9 },
   treatmentRooms: 2,
-  reputationGainPerHappyCustomer: 1,
-  reputationLossPerAngryCustomer: 1,
-  baseHappyProbability: 1,
+  skillLevelGainPerHappyCustomer: 1, // Previously: reputationGainPerHappyCustomer
+  skillLevelLossPerAngryCustomer: 1, // Previously: reputationLossPerAngryCustomer
+  // baseHappyProbability removed - not used in game mechanics
   eventTriggerSeconds: [15, 30, 45],
   serviceRevenueMultiplier: 1,
   serviceRevenueScale: 10,

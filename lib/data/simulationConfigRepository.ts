@@ -46,15 +46,15 @@ const mapBusinessMetrics = (raw: unknown): BusinessMetrics | undefined => {
   if (
     typeof candidate.startingCash === 'number' &&
     typeof candidate.monthlyExpenses === 'number' &&
-    typeof candidate.startingReputation === 'number' &&
-    typeof candidate.founderWorkHours === 'number'
+    typeof candidate.startingSkillLevel === 'number' &&
+    (typeof candidate.startingFreedomScore === 'number' || typeof (candidate as any).founderWorkHours === 'number') // Support legacy founderWorkHours
   ) {
     return {
       startingCash: candidate.startingCash,
       startingTime: typeof candidate.startingTime === 'number' ? candidate.startingTime : undefined,
       monthlyExpenses: candidate.monthlyExpenses,
-      startingReputation: candidate.startingReputation,
-      founderWorkHours: candidate.founderWorkHours,
+      startingSkillLevel: candidate.startingSkillLevel, // Previously: startingReputation
+      startingFreedomScore: candidate.startingFreedomScore ?? candidate.founderWorkHours, // Previously: founderWorkHours
     };
   }
   return undefined;
@@ -98,15 +98,9 @@ const mapWinCondition = (raw: unknown): WinCondition | undefined => {
     return undefined;
   }
   const candidate = raw as unknown as WinCondition;
-  if (
-    typeof candidate.founderHoursMax === 'number' &&
-    typeof candidate.monthlyProfitTarget === 'number' &&
-    typeof candidate.consecutiveMonthsRequired === 'number'
-  ) {
+  if (typeof candidate.cashTarget === 'number') {
     return {
-      founderHoursMax: candidate.founderHoursMax,
-      monthlyProfitTarget: candidate.monthlyProfitTarget,
-      consecutiveMonthsRequired: candidate.consecutiveMonthsRequired,
+      cashTarget: candidate.cashTarget,
     };
   }
   return undefined;
@@ -119,13 +113,11 @@ const mapLoseCondition = (raw: unknown): LoseCondition | undefined => {
   const candidate = raw as unknown as LoseCondition;
   if (
     typeof candidate.cashThreshold === 'number' &&
-    typeof candidate.reputationThreshold === 'number' &&
-    typeof candidate.founderHoursMax === 'number'
+    typeof candidate.timeThreshold === 'number'
   ) {
     return {
       cashThreshold: candidate.cashThreshold,
-      reputationThreshold: candidate.reputationThreshold,
-      founderHoursMax: candidate.founderHoursMax,
+      timeThreshold: candidate.timeThreshold,
     };
   }
   return undefined;

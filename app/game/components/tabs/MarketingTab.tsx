@@ -23,15 +23,17 @@ const formatSeconds = (seconds: number): string => {
 };
 
 const METRIC_LABELS: Record<GameMetric, string> = {
+  [GameMetric.Cash]: 'Cash',
+  [GameMetric.Time]: 'Available Time',
   [GameMetric.SpawnIntervalSeconds]: 'Customer flow',
   [GameMetric.ServiceSpeedMultiplier]: 'Service speed',
   [GameMetric.ServiceRooms]: 'Service rooms',
-  [GameMetric.ReputationMultiplier]: 'Reputation gains',
-  [GameMetric.HappyProbability]: 'Happy customer chance',
+  [GameMetric.SkillLevel]: 'Skill Level',
+  // [GameMetric.HappyProbability] removed - not used in game mechanics
   [GameMetric.MonthlyExpenses]: 'Monthly expenses',
   [GameMetric.ServiceRevenueMultiplier]: 'Service revenue',
   [GameMetric.ServiceRevenueFlatBonus]: 'Average ticket',
-  [GameMetric.FounderWorkingHours]: 'Founder working hours',
+  [GameMetric.FreedomScore]: 'Freedom Score',
   // Tier-specific metrics
   [GameMetric.HighTierServiceRevenueMultiplier]: 'High-tier revenue',
   [GameMetric.HighTierServiceWeightageMultiplier]: 'High-tier selection',

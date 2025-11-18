@@ -31,18 +31,11 @@ const GameOverPopup: React.FC = () => {
         icon: '💰',
         color: 'red'
       };
-    } else if (gameOverReason === 'reputation') {
+    } else if (gameOverReason === 'time') {
       return {
-        title: '⭐ Reputation Ruined!',
-        message: 'Your reputation has hit rock bottom. Customers no longer trust your business.',
-        icon: '😞',
-        color: 'orange'
-      };
-    } else if (gameOverReason === 'founderHours') {
-      return {
-        title: '🔥 Founder Burnout!',
-        message: 'You\'re working too many hours! The founder has burned out from overwork. Hire more staff to reduce your workload.',
-        icon: '😴',
+        title: '⏰ Out of Time!',
+        message: 'You\'ve run out of available time. Manage your time more efficiently to succeed.',
+        icon: '⏱️',
         color: 'orange'
       };
     }

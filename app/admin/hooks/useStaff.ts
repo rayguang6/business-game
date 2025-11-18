@@ -92,7 +92,7 @@ export function useStaff(industryId: string) {
       }
       if ('workloadReduction' in role && (role as any).workloadReduction > 0) {
         legacyEffects.push({
-          metric: GameMetric.FounderWorkingHours,
+          metric: GameMetric.FreedomScore,
           type: EffectType.Add,
           value: String(-(role as any).workloadReduction),
         });

@@ -1,75 +1,35 @@
 import type { MonthlyHistoryEntry } from '@/lib/store/types';
 
 export interface WinCondition {
-  founderHoursMax: number;
-  monthlyProfitTarget: number;
-  consecutiveMonthsRequired: number;
+  cashTarget: number;              // Target cash amount to win
 }
 
 export interface LoseCondition {
   cashThreshold: number;           // Game over if cash <= this value
-  reputationThreshold: number;    // Game over if reputation <= this value
-  founderHoursMax: number;         // Game over if founder hours > this value (burnout)
+  timeThreshold: number;            // Game over if time <= this value (0 = no time left)
 }
 
 export const DEFAULT_WIN_CONDITION: WinCondition = {
-  founderHoursMax: 40,        // Part-time threshold (40 hours = 1 week/month)
-  monthlyProfitTarget: 5000,  // $5k profit per month
-  consecutiveMonthsRequired: 2 // Must achieve 2 months in a row
+  cashTarget: 50000,  // Win when reaching $50k cash
 };
 
 export const DEFAULT_LOSE_CONDITION: LoseCondition = {
-  cashThreshold: 0,           // Game over if cash <= $0
-  reputationThreshold: 0,      // Game over if reputation <= 0
-  founderHoursMax: 400,       // Game over if founder hours > 400 (burnout threshold)
+  cashThreshold: 0,  // Game over if cash <= $0
+  timeThreshold: 0,  // Game over if time <= 0 (only applies if time system is enabled)
 };
 
 /**
  * Checks if the player has met the win condition
- * @param monthlyHistory - Array of completed months
- * @param currentFounderHours - Current founder working hours requirement
+ * @param currentCash - Current cash amount
  * @param winCondition - Win condition configuration
  * @returns true if win condition is met
  */
 export function checkWinCondition(
-  monthlyHistory: MonthlyHistoryEntry[],
-  currentFounderHours: number,
+  currentCash: number,
   winCondition: WinCondition
 ): boolean {
-  // Check founder hours condition
-  const founderHoursMet = currentFounderHours <= winCondition.founderHoursMax;
-  
-  // Check consecutive profitable months
-  const consecutiveMonthsMet = checkConsecutiveProfitableMonths(
-    monthlyHistory,
-    winCondition.monthlyProfitTarget,
-    winCondition.consecutiveMonthsRequired
-  );
-  
-  // Both conditions must be met
-  return founderHoursMet && consecutiveMonthsMet;
+  // Win condition: reach target cash amount
+  return currentCash >= winCondition.cashTarget;
 }
 
-/**
- * Checks if there are enough consecutive months meeting the profit target
- * @param monthlyHistory - Array of completed months (most recent last)
- * @param profitTarget - Minimum profit required per month
- * @param requiredConsecutive - Number of consecutive months required
- * @returns true if condition is met
- */
-function checkConsecutiveProfitableMonths(
-  monthlyHistory: MonthlyHistoryEntry[],
-  profitTarget: number,
-  requiredConsecutive: number
-): boolean {
-  if (monthlyHistory.length < requiredConsecutive) {
-    return false;
-  }
-  
-  // Check the last N months (most recent months are at the end of the array)
-  const recentMonths = monthlyHistory.slice(-requiredConsecutive);
-  
-  // All recent months must meet the profit target
-  return recentMonths.every(month => month.profit >= profitTarget);
-}
 

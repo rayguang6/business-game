@@ -356,9 +356,9 @@ export function getBaseUpgradeMetricsForIndustry(
     monthlyExpenses: metrics.monthlyExpenses,
     spawnIntervalSeconds: stats.customerSpawnIntervalSeconds,
     serviceSpeedMultiplier: 1,
-    reputationMultiplier: 1,
+    skillLevel: 0, // Skill level starts at 0, modified by effects
     treatmentRooms: stats.treatmentRooms,
-    happyProbability: stats.baseHappyProbability,
+    // happyProbability removed - not used in game mechanics (customers happy/angry based on patience)
     serviceRevenueMultiplier: stats.serviceRevenueMultiplier ?? 1,
     serviceRevenueFlatBonus: 0,
     founderWorkingHours: getFounderWorkingHoursBase(industryId),
@@ -376,7 +376,7 @@ export function getRoundDurationSecondsForIndustry(
 }
 
 export function getFounderWorkingHoursBase(industryId: IndustryId = DEFAULT_INDUSTRY_ID): number {
-  return getBusinessMetrics(industryId).founderWorkHours;
+  return getBusinessMetrics(industryId).startingFreedomScore; // Previously: founderWorkHours
 }
 
 /**

@@ -8,8 +8,8 @@ export interface BusinessMetrics {
   startingCash: number;
   startingTime?: number; // Optional monthly time budget (hours)
   monthlyExpenses: number;
-  startingReputation: number;
-  founderWorkHours: number;
+  startingSkillLevel: number; // Previously: startingReputation
+  startingFreedomScore: number; // Previously: founderWorkHours - Base freedom score (monthly requirement)
 }
 
 export interface BusinessStats {
@@ -23,9 +23,9 @@ export interface BusinessStats {
     y: number;
   };
   treatmentRooms: number;
-  reputationGainPerHappyCustomer: number;
-  reputationLossPerAngryCustomer: number;
-  baseHappyProbability: number;
+  skillLevelGainPerHappyCustomer: number; // Previously: reputationGainPerHappyCustomer
+  skillLevelLossPerAngryCustomer: number; // Previously: reputationLossPerAngryCustomer
+  // baseHappyProbability removed - customers are happy/angry based on patience, not probability
   eventTriggerSeconds?: number[];
   serviceRevenueMultiplier: number;
   serviceRevenueScale?: number;
@@ -91,9 +91,9 @@ export interface BaseUpgradeMetrics {
   monthlyExpenses: number;
   spawnIntervalSeconds: number;
   serviceSpeedMultiplier: number;
-  reputationMultiplier: number;
+  skillLevel: number; // Direct skill level (effects modify this directly)
   treatmentRooms: number;
-  happyProbability: number;
+  // happyProbability removed - not used in game mechanics
   serviceRevenueMultiplier: number;
   serviceRevenueFlatBonus: number;
   founderWorkingHours: number;

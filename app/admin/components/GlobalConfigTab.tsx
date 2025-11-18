@@ -77,22 +77,22 @@ export function GlobalConfigTab({
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Starting Reputation</label>
+                <label className="block text-xs text-slate-400 mb-1">Starting Skill Level</label>
                 <input
                   type="number"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={metrics.startingReputation}
-                  onChange={(e) => onUpdateMetrics({ startingReputation: Number(e.target.value) })}
+                  value={metrics.startingSkillLevel}
+                  onChange={(e) => onUpdateMetrics({ startingSkillLevel: Number(e.target.value) })}
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Founder Work Hours (per month)</label>
+                <label className="block text-xs text-slate-400 mb-1">Starting Freedom Score</label>
                 <input
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={metrics.founderWorkHours}
-                  onChange={(e) => onUpdateMetrics({ founderWorkHours: Number(e.target.value) })}
+                  value={metrics.startingFreedomScore}
+                  onChange={(e) => onUpdateMetrics({ startingFreedomScore: Number(e.target.value) })}
                 />
               </div>
               <div>
@@ -175,36 +175,27 @@ export function GlobalConfigTab({
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Rep Gain per Happy</label>
+                <label className="block text-xs text-slate-400 mb-1">Skill Level Gain per Happy</label>
                 <input
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.reputationGainPerHappyCustomer}
-                  onChange={(e) => onUpdateStats({ reputationGainPerHappyCustomer: Number(e.target.value) })}
+                  value={stats.skillLevelGainPerHappyCustomer}
+                  onChange={(e) => onUpdateStats({ skillLevelGainPerHappyCustomer: Number(e.target.value) })}
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Rep Loss per Angry</label>
+                <label className="block text-xs text-slate-400 mb-1">Skill Level Loss per Angry</label>
                 <input
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.reputationLossPerAngryCustomer}
-                  onChange={(e) => onUpdateStats({ reputationLossPerAngryCustomer: Number(e.target.value) })}
+                  value={stats.skillLevelLossPerAngryCustomer}
+                  onChange={(e) => onUpdateStats({ skillLevelLossPerAngryCustomer: Number(e.target.value) })}
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Base Happy Probability</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="1"
-                  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.baseHappyProbability}
-                  onChange={(e) => onUpdateStats({ baseHappyProbability: Number(e.target.value) })}
-                />
+                {/* baseHappyProbability removed - not used in game mechanics */}
               </div>
               <div className="sm:col-span-2">
                 <label className="block text-xs text-slate-400 mb-1">Event Trigger Seconds (comma-separated)</label>
@@ -281,37 +272,15 @@ export function GlobalConfigTab({
           <label className="block text-sm font-semibold text-slate-300 mb-4">Win Condition</label>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Founder Hours Max</label>
+              <label className="block text-xs text-slate-400 mb-1">Cash Target</label>
               <input
                 type="number"
                 min="0"
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
-                value={winCondition.founderHoursMax}
-                onChange={(e) => onUpdateWinCondition({ founderHoursMax: Number(e.target.value) })}
+                value={winCondition.cashTarget}
+                onChange={(e) => onUpdateWinCondition({ cashTarget: Number(e.target.value) })}
               />
-              <p className="text-xs text-slate-500 mt-1">Maximum founder hours per month to win</p>
-            </div>
-            <div>
-              <label className="block text-xs text-slate-400 mb-1">Monthly Profit Target</label>
-              <input
-                type="number"
-                min="0"
-                className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
-                value={winCondition.monthlyProfitTarget}
-                onChange={(e) => onUpdateWinCondition({ monthlyProfitTarget: Number(e.target.value) })}
-              />
-              <p className="text-xs text-slate-500 mt-1">Minimum profit per month required</p>
-            </div>
-            <div>
-              <label className="block text-xs text-slate-400 mb-1">Consecutive Months Required</label>
-              <input
-                type="number"
-                min="1"
-                className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
-                value={winCondition.consecutiveMonthsRequired}
-                onChange={(e) => onUpdateWinCondition({ consecutiveMonthsRequired: Number(e.target.value) })}
-              />
-              <p className="text-xs text-slate-500 mt-1">Number of consecutive months needed</p>
+              <p className="text-xs text-slate-500 mt-1">Target cash amount to win the game</p>
             </div>
           </div>
         </div>
@@ -330,25 +299,14 @@ export function GlobalConfigTab({
               <p className="text-xs text-slate-500 mt-1">Game over if cash &lt;= this value (default: 0)</p>
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Reputation Threshold</label>
+              <label className="block text-xs text-slate-400 mb-1">Time Threshold</label>
               <input
                 type="number"
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
-                value={loseCondition.reputationThreshold}
-                onChange={(e) => onUpdateLoseCondition({ reputationThreshold: Number(e.target.value) })}
+                value={loseCondition.timeThreshold}
+                onChange={(e) => onUpdateLoseCondition({ timeThreshold: Number(e.target.value) })}
               />
-              <p className="text-xs text-slate-500 mt-1">Game over if reputation &lt;= this value (default: 0)</p>
-            </div>
-            <div>
-              <label className="block text-xs text-slate-400 mb-1">Founder Hours Max (Burnout)</label>
-              <input
-                type="number"
-                min="0"
-                className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
-                value={loseCondition.founderHoursMax}
-                onChange={(e) => onUpdateLoseCondition({ founderHoursMax: Number(e.target.value) })}
-              />
-              <p className="text-xs text-slate-500 mt-1">Game over if founder hours &gt; this value (default: 400)</p>
+              <p className="text-xs text-slate-500 mt-1">Game over if available time &lt;= this value (default: 0, only applies if time system is enabled)</p>
             </div>
           </div>
         </div>
