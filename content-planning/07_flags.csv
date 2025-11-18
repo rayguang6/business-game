@@ -1,8 +1,0 @@
-Flag ID,Industry ID,Name,Description
-has-extra-room,dental,Has Extra Room,You have an additional treatment room
-has-better-equipment,dental,Has Better Equipment,You have upgraded dental equipment
-learned-implant,dental,Learned Implant Procedures,You can now offer dental implant services
-has-better-waiting,dental,Has Better Waiting Area,You have improved the waiting area
-learned-design,freelance,Learned Design,You have learned design basics
-learned-web-dev,freelance,Learned Web Development,You have learned web development
-

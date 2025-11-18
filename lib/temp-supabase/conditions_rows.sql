@@ -1,1 +1,0 @@
-INSERT INTO "public"."conditions" ("id", "industry_id", "name", "description", "metric", "operator", "value") VALUES ('cash-more-than-10000', 'dental', 'cash more than 10000', '', 'cash', 'greater', '0'), ('time-10-seconds', 'dental', 'Time > 1 seconds', '', 'gameTime', 'greater', '1');
