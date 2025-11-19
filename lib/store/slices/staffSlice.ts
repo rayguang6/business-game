@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand';
 import { GameStore } from '../gameStore';
-import { Staff, addStaffEffects } from '@/lib/features/staff';
+import { Staff, addStaffEffects, removeStaffEffects } from '@/lib/features/staff';
 import {
   createInitialAvailableStaff,
   createRandomStaffForIndustry,
@@ -14,6 +14,7 @@ export interface StaffSlice {
   hiredStaff: Staff[];
   availableStaff: Staff[];
   hireStaff: (staff: Staff) => void;
+  fireStaff: (staffId: string) => void;
   resetStaff: () => void;
   initializeStaffForIndustry: (industryId: IndustryId) => void;
 }
@@ -75,6 +76,32 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
           availableStaff: updatedAvailable,
         };
       });
+    },
+    fireStaff: (staffId: string) => {
+      const store = get();
+      const industryId = (store.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+      const staffToFire = store.hiredStaff.find((member) => member.id === staffId);
+
+      if (!staffToFire) {
+        return;
+      }
+
+      // Remove staff effects
+      removeStaffEffects(staffId);
+
+      // Unset flag if staff role sets one
+      if (staffToFire.setsFlag) {
+        store.setFlag(staffToFire.setsFlag, false);
+        console.log(`[Flag System] Flag "${staffToFire.setsFlag}" set to false by firing staff "${staffToFire.name}" (${staffToFire.role})`);
+      }
+
+      // Create a replacement candidate and add to available staff
+      const replacement = createRandomStaffForIndustry(industryId, staffToFire.roleId);
+
+      set((state) => ({
+        hiredStaff: state.hiredStaff.filter((member) => member.id !== staffId),
+        availableStaff: [...state.availableStaff, replacement],
+      }));
     },
     resetStaff: () => {
       const store = get();

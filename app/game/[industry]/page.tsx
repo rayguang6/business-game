@@ -8,8 +8,6 @@ import { useAudio } from '@/hooks/useAudio';
 import { TopBar } from '@/app/game/components/ui/TopBar';
 import { GameCanvas } from '@/app/game/components/canvas/GameCanvas';
 import { HomeTab } from '@/app/game/components/tabs/HomeTab';
-import { StaffTab } from '@/app/game/components/tabs/StaffTab';
-import { FinanceTab } from '@/app/game/components/tabs/FinanceTab';
 import { UpgradesTab } from '@/app/game/components/tabs/UpgradesTab';
 import { MarketingTab } from '@/app/game/components/tabs/MarketingTab';
 import { TabType, TAB_CONFIGS } from '@/lib/types/ui';
@@ -273,8 +271,6 @@ export default function GamePage() {
       <div className="relative z-20 bg-gray-900 border-t-2 md:border-t-0 md:border-l-2 border-gray-700 flex-1 md:h-full md:w-1/2 flex flex-col overflow-hidden">
         {/* Tab Content Area */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
-          {activeTab === 'staff' && <StaffTab />}
-          {activeTab === 'finance' && <FinanceTab />}
           {activeTab === 'home' && <HomeTab />}
           {activeTab === 'upgrades' && <UpgradesTab />}
           {activeTab === 'marketing' && <MarketingTab />}
