@@ -31,11 +31,11 @@ VALUES (
   'config-freelance',
   'freelance',
   '{
-    "startingCash": 2000,
-    "startingTime": 160,
-    "monthlyExpenses": 1500,
-    "startingSkillLevel": 10,
-    "startingFreedomScore": 160
+    "startingCash": 3000,
+    "startingTime": 80,
+    "monthlyExpenses": 1000,
+    "startingSkillLevel": 0,
+    "startingFreedomScore": 0
   }'::jsonb
 )
 ON CONFLICT (industry_id) DO UPDATE SET
@@ -617,8 +617,8 @@ ON CONFLICT (industry_id, id) DO UPDATE SET
 
 -- Step 8: Staff Roles (3 roles)
 -- Staff effects format: {"metric": "validMetric", "type": "validType", "value": number}
-INSERT INTO staff_roles (id, industry_id, name, salary, effects, emoji, sets_flag, requirements)
-VALUES 
+INSERT INTO staff_roles (id, industry_id, name, salary, effects, sets_flag, requirements, sprite_image)
+VALUES
   (
     'virtual-assistant',
     'freelance',
@@ -626,11 +626,11 @@ VALUES
     800,
     '[
       {"metric": "serviceSpeedMultiplier", "type": "percent", "value": 5},
-      {"metric": "freedomScore", "type": "add", "value": -20}
+      {"metric": "freedomScore", "type": "add", "value": -1}
     ]'::jsonb,
-    '👩‍💼',
     NULL,
-    '[]'::jsonb
+    '[]'::jsonb,
+    '/images/staff/staff1.png'
   ),
   (
     'junior-designer',
@@ -639,11 +639,11 @@ VALUES
     1200,
     '[
       {"metric": "serviceSpeedMultiplier", "type": "percent", "value": 8},
-      {"metric": "freedomScore", "type": "add", "value": -30}
+      {"metric": "freedomScore", "type": "add", "value": -1}
     ]'::jsonb,
-    '🎨',
     'has-junior-designer',
-    '[{"type": "flag", "id": "learned-design", "expected": true}]'::jsonb
+    '[{"type": "flag", "id": "learned-design", "expected": true}]'::jsonb,
+    '/images/staff/staff1.png'
   ),
   (
     'junior-developer',
@@ -652,16 +652,16 @@ VALUES
     1500,
     '[
       {"metric": "serviceSpeedMultiplier", "type": "percent", "value": 10},
-      {"metric": "freedomScore", "type": "add", "value": -35}
+      {"metric": "freedomScore", "type": "add", "value": -2}
     ]'::jsonb,
-    '💻',
     'has-junior-developer',
-    '[{"type": "flag", "id": "learned-web-dev", "expected": true}]'::jsonb
+    '[{"type": "flag", "id": "learned-web-dev", "expected": true}]'::jsonb,
+    '/images/staff/staff1.png'
   )
 ON CONFLICT (industry_id, id) DO UPDATE SET
   name = EXCLUDED.name,
   salary = EXCLUDED.salary,
   effects = EXCLUDED.effects,
-  emoji = EXCLUDED.emoji,
   sets_flag = EXCLUDED.sets_flag,
-  requirements = EXCLUDED.requirements;
+  requirements = EXCLUDED.requirements,
+  sprite_image = EXCLUDED.sprite_image;

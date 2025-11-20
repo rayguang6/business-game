@@ -106,9 +106,27 @@ export interface BaseUpgradeMetrics {
   lowTierServiceWeightageMultiplier?: number;
 }
 
+export type FacingDirection = 'down' | 'left' | 'up' | 'right';
+
+export type AnchorPoint = 
+  | 'top-left' 
+  | 'top-center' 
+  | 'top-right'
+  | 'center-left'
+  | 'center' 
+  | 'center-right'
+  | 'bottom-left'
+  | 'bottom-center'
+  | 'bottom-right';
+
 export interface GridPosition {
   x: number;
   y: number;
+  facingDirection?: FacingDirection; // Optional: facing direction for this position (used for waiting/service positions)
+  // Optional: for multi-tile graphics
+  width?: number;  // Width in tiles (default: 1)
+  height?: number; // Height in tiles (default: 1)
+  anchor?: AnchorPoint; // Anchor point for positioning (default: 'top-left')
 }
 
 export interface SimulationLayoutConfig {

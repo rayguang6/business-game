@@ -468,7 +468,7 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
     // Handle flag setting
     if (choice.setsFlag) {
       store.setFlag(choice.setsFlag, true);
-      console.log(`[Flag System] Flag "${choice.setsFlag}" set to true`);
+      // console.log(`[Flag System] Flag "${choice.setsFlag}" set to true`);
     }
 
     set({

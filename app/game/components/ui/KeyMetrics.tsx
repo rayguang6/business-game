@@ -117,7 +117,7 @@ export function KeyMetrics() {
       key: 'freedomScore',
       icon: '⏰',
       image: '/images/icons/upgrades.png',
-      value: `${metrics.freedomScore}h`,
+      value: `${metrics.freedomScore}`,
       label: 'Freedom Score',
       color: 'text-purple-400',
       feedback: feedbackByMetric.freedomScore,

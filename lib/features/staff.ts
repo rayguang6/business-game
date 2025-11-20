@@ -6,7 +6,6 @@ export interface Staff {
   name: string;
   salary: number;
   effects: UpgradeEffect[]; // Flexible effects array like upgrades
-  emoji: string; // To represent the staff member
   role: string;
   roleId: string; // Reference to the role configuration
   spriteImage?: string; // Optional sprite image path (from role, falls back to default if not set)

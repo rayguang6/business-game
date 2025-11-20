@@ -98,9 +98,11 @@ interface UpgradeCardProps {
 }
 
 function UpgradeCard({ upgrade }: UpgradeCardProps) {
-  const { canAffordUpgrade, getUpgradeLevel, purchaseUpgrade, metrics } = useGameStore();
+  const { getUpgradeLevel, purchaseUpgrade } = useGameStore();
   // Subscribe to upgrades state to ensure re-renders when levels change
   const upgrades = useGameStore((state) => state.upgrades);
+  // Subscribe to metrics with selector to ensure re-renders when metrics change
+  const metrics = useGameStore((state) => state.metrics);
   const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(upgrade.requirements);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
   const [levelUpAnimation, setLevelUpAnimation] = useState(false);
@@ -109,7 +111,12 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
   const currentLevel = useMemo(() => upgrades[upgrade.id] || 0, [upgrades, upgrade.id]);
   const needsCash = upgrade.cost > 0;
   const needsTime = upgrade.timeCost !== undefined && upgrade.timeCost > 0;
-  const canAfford = useMemo(() => canAffordUpgrade(upgrade.cost, upgrade.timeCost), [canAffordUpgrade, upgrade.cost, upgrade.timeCost]);
+  // Calculate affordability directly using subscribed metrics to ensure reactivity
+  const canAfford = useMemo(() => {
+    const hasCash = upgrade.cost === 0 || metrics.cash >= upgrade.cost;
+    const hasTime = upgrade.timeCost === undefined || upgrade.timeCost === 0 || metrics.time >= upgrade.timeCost;
+    return hasCash && hasTime;
+  }, [metrics.cash, metrics.time, upgrade.cost, upgrade.timeCost]);
   const isMaxed = currentLevel >= upgrade.maxLevel;
   
   // Determine what's missing for button text
@@ -395,8 +402,18 @@ function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
       <div className="relative -mt-10 flex justify-center mb-3">
         <div className="relative">
           <div className={`absolute inset-0 ${styles.avatarBg} rounded-full blur-md opacity-50 group-hover:opacity-70 transition-opacity`}></div>
-          <div className={`relative w-20 h-20 sm:w-24 sm:h-24 ${styles.avatarBg} rounded-full flex items-center justify-center border-4 ${styles.borderColor} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-            <span className="text-4xl sm:text-5xl leading-none relative z-10">{candidate.emoji}</span>
+          <div className={`relative w-20 h-20 sm:w-24 sm:h-24 ${styles.avatarBg} rounded-full flex items-center justify-center border-4 ${styles.borderColor} shadow-lg group-hover:scale-110 transition-transform duration-300 overflow-hidden`}>
+            <div className="w-full h-full relative overflow-hidden">
+              <img
+                src={candidate.spriteImage || '/images/staff/staff1.png'}
+                alt={candidate.name}
+                className="w-[1600%] h-full object-cover object-left"
+                onError={(e) => {
+                  // Fallback to default sprite if custom sprite fails
+                  (e.target as HTMLImageElement).src = '/images/staff/staff1.png';
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -536,8 +553,18 @@ function HiredStaffCard({ member, onFire }: HiredStaffCardProps) {
       <div className="relative -mt-10 flex justify-center mb-3">
         <div className="relative">
           <div className={`absolute inset-0 ${styles.avatarBg} rounded-full blur-md opacity-50 group-hover:opacity-70 transition-opacity`}></div>
-          <div className={`relative w-20 h-20 sm:w-24 sm:h-24 ${styles.avatarBg} rounded-full flex items-center justify-center border-4 ${styles.borderColor} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-            <span className="text-4xl sm:text-5xl leading-none relative z-10">{member.emoji}</span>
+          <div className={`relative w-20 h-20 sm:w-24 sm:h-24 ${styles.avatarBg} rounded-full flex items-center justify-center border-4 ${styles.borderColor} shadow-lg group-hover:scale-110 transition-transform duration-300 overflow-hidden`}>
+            <div className="w-full h-full relative overflow-hidden">
+              <img
+                src={member.spriteImage || '/images/staff/staff1.png'}
+                alt={member.name}
+                className="w-[1600%] h-full object-cover object-left"
+                onError={(e) => {
+                  // Fallback to default sprite if custom sprite fails
+                  (e.target as HTMLImageElement).src = '/images/staff/staff1.png';
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -33,7 +33,6 @@ const mapEffects = (raw: unknown): CampaignEffect[] => {
 };
 
 export async function fetchMarketingCampaignsForIndustry(industryId: IndustryId): Promise<MarketingCampaign[] | null> {
-  console.log('fetchMarketingCampaignsForIndustry called with:', industryId);
   if (!supabase) {
     console.error('Supabase client not configured. Unable to fetch marketing campaigns.');
     return null;
@@ -44,8 +43,6 @@ export async function fetchMarketingCampaignsForIndustry(industryId: IndustryId)
     .select('id, industry_id, name, description, cost, time_cost, cooldown_seconds, effects, sets_flag, requirements')
     .eq('industry_id', industryId)
     .order('name', { ascending: true });
-
-  console.log('Supabase query result:', { data, error });
 
   if (error) {
     console.error('Failed to fetch marketing campaigns from Supabase', error);
@@ -71,7 +68,6 @@ export async function fetchMarketingCampaignsForIndustry(industryId: IndustryId)
       requirements: Array.isArray(row.requirements) ? row.requirements as any[] : [],
     }));
 
-  console.log('Mapped campaigns:', campaigns);
   return campaigns;
 }
 

@@ -100,8 +100,8 @@ export function GameCanvas() {
   const serviceRoomsLabel = 'Service Rooms';
   // Get service room positions for rendering beds (from database or fallback)
   const serviceRoomPositions = layout.serviceRoomPositions;
-  // Cap serviceRooms to the actual number of service room positions available
-  const serviceRooms = Math.max(1, Math.min(Math.round(metrics.serviceRooms), serviceRoomPositions.length));
+  // Use serviceRooms from metrics (no cap - handled by upgrades)
+  const serviceRooms = Math.max(1, Math.round(metrics.serviceRooms));
   const mapBackground = selectedIndustry.mapImage ?? '/images/maps/dental-map.png';
   const staffPositions = layout.staffPositions;
   const TILE_SIZE = 32;
@@ -222,30 +222,75 @@ export function GameCanvas() {
 
           {/* Render beds at service room positions (only for active rooms) */}
           {serviceRoomPositions.slice(0, serviceRooms).map((position, index) => {
-            // Bed dimensions: full width of grid, height overflows upward
-            const bedHeight = TILE_SIZE * 1.5; // 1.5x tile height for upward overflow
-            const bedBottom = (position.y + 1) * TILE_SIZE; // Align bottom with grid cell bottom
-            const bedTop = bedBottom - bedHeight; // Top extends upward
-            
             // Use capacity image from config (industry-specific or global)
             const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
             const bedImagePath = getCapacityImageForIndustry(industryId);
+            
+            // Don't render if no image is configured
+            if (!bedImagePath) {
+              return null;
+            }
+            
+            // Multi-tile support: get dimensions from position or default to 1x1
+            const width = position.width ?? 1;
+            const height = position.height ?? 1;
+            const anchor = position.anchor ?? 'top-left';
+            
+            // Calculate pixel dimensions
+            const pixelWidth = width * TILE_SIZE;
+            const pixelHeight = height * TILE_SIZE;
+            
+            // Calculate pixel position based on anchor point
+            // Start with the top-left corner of the tile at the grid coordinate
+            let pixelX = position.x * TILE_SIZE;
+            let pixelY = position.y * TILE_SIZE;
+            
+            // Adjust position based on anchor point
+            // For center anchors, we want to center on the tile center, not the tile corner
+            const tileCenterX = pixelX + TILE_SIZE / 2;
+            const tileCenterY = pixelY + TILE_SIZE / 2;
+            
+            // Horizontal alignment
+            if (anchor === 'top-center' || anchor === 'center' || anchor === 'bottom-center') {
+              // Center the graphic horizontally on the tile center
+              pixelX = tileCenterX - pixelWidth / 2;
+            } else if (anchor === 'top-right' || anchor === 'center-right' || anchor === 'bottom-right') {
+              // Align right edge with the right edge of the tile
+              pixelX = pixelX + TILE_SIZE - pixelWidth;
+            }
+            // 'top-left', 'center-left', 'bottom-left' use left edge of tile (no adjustment)
+            
+            // Vertical alignment
+            if (anchor === 'center-left' || anchor === 'center' || anchor === 'center-right') {
+              // Center the graphic vertically on the tile center
+              pixelY = tileCenterY - pixelHeight / 2;
+            } else if (anchor === 'bottom-left' || anchor === 'bottom-center' || anchor === 'bottom-right') {
+              // Align bottom edge with the bottom edge of the tile
+              pixelY = pixelY + TILE_SIZE - pixelHeight;
+            }
+            // 'top-left', 'top-center', 'top-right' use top edge of tile (no adjustment)
+            
             
             return (
               <div
                 key={`bed-${index}`}
                 className="absolute pointer-events-none"
                 style={{
-                  left: `${position.x * TILE_SIZE}px`,
-                  top: `${bedTop}px`,
-                  width: `${TILE_SIZE}px`,
-                  height: `${bedHeight}px`,
+                  left: `${pixelX}px`,
+                  top: `${pixelY}px`,
+                  width: `${pixelWidth}px`,
+                  height: `${pixelHeight}px`,
                   backgroundImage: `url(${bedImagePath})`,
-                  backgroundSize: '100% auto', // Fill full width, maintain aspect ratio
-                  backgroundPosition: 'bottom center', // Align to bottom so overflow goes up
+                  backgroundSize: '100% 100%', // Fill the entire multi-tile area
+                  backgroundPosition: 'center center',
                   backgroundRepeat: 'no-repeat',
                   imageRendering: 'pixelated',
-                  zIndex: 5 // Below customers (zIndex 10)
+                  zIndex: 5, // Below customers (zIndex 10)
+                  // Debug outline (remove in production)
+                  // ...(process.env.NODE_ENV === 'development' && {
+                  //   border: '1px solid rgba(255, 0, 0, 0.5)',
+                  //   boxSizing: 'border-box'
+                  // })
                 }}
               />
             );

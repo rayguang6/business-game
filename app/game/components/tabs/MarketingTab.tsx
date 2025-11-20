@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
-import { CampaignEffect, MarketingCampaign, FALLBACK_CAMPAIGNS } from '@/lib/store/slices/marketingSlice';
+import { CampaignEffect, MarketingCampaign } from '@/lib/store/slices/marketingSlice';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import { useRequirements } from '@/lib/hooks/useRequirements';
 import { useConfigStore } from '@/lib/store/configStore';
@@ -26,6 +26,7 @@ const METRIC_LABELS: Record<GameMetric, string> = {
   [GameMetric.Cash]: 'Cash',
   [GameMetric.Time]: 'Available Time',
   [GameMetric.SpawnIntervalSeconds]: 'Customer flow',
+  [GameMetric.SpawnCustomers]: 'Spawn customers',
   [GameMetric.ServiceSpeedMultiplier]: 'Service speed',
   [GameMetric.ServiceRooms]: 'Service rooms',
   [GameMetric.SkillLevel]: 'Skill Level',
@@ -64,6 +65,13 @@ const formatDurationLabel = (durationSeconds: number | null | undefined): string
 
 const describeEffect = (effect: CampaignEffect): string => {
   const label = METRIC_LABELS[effect.metric] ?? effect.metric;
+  
+  // SpawnCustomers is an immediate action - duration doesn't apply
+  if (effect.metric === GameMetric.SpawnCustomers) {
+    const count = Math.floor(effect.value);
+    return `${label} +${count} (immediate)`;
+  }
+  
   const durationLabel = formatDurationLabel(effect.durationSeconds);
 
   switch (effect.type) {
@@ -215,7 +223,8 @@ export function MarketingTab() {
     useCallback(
       (state) => {
         const campaigns = state.industryConfigs[industryId]?.marketingCampaigns;
-        return campaigns && campaigns.length > 0 ? campaigns : FALLBACK_CAMPAIGNS;
+        // Return campaigns from database only - no fallback to ensure we know when database is empty
+        return campaigns && campaigns.length > 0 ? campaigns : [];
       },
       [industryId],
     ),

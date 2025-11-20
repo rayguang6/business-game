@@ -237,7 +237,6 @@ export function UpgradesTab({
                         value: '1', // Changed from '0' to '1' so users see a non-zero default
                       }}
                       onEffectsChange={(newEffects) => {
-                        console.log('[UpgradesTab] Effects changed:', newEffects);
                         onUpdateEffects(newEffects);
                       }}
                     />

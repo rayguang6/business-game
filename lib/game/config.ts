@@ -325,21 +325,23 @@ export function getStaffNamePoolForIndustry(industryId: IndustryId = DEFAULT_IND
   return ['Ava', 'Noah', 'Mia', 'Ethan', 'Liam', 'Zara', 'Kai', 'Riya', 'Owen', 'Sage', 'Nico', 'Luna', 'Milo', 'Iris', 'Ezra'];
 }
 
-export function getCapacityImageForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): string {
+export function getCapacityImageForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): string | null {
   // Check industry-specific override first
   const industryConfig = getIndustryOverride(industryId);
-  if (industryConfig?.capacityImage) {
-    return industryConfig.capacityImage;
+  if (industryConfig?.capacityImage !== undefined) {
+    // Return null if explicitly set to empty string, otherwise return the value
+    return industryConfig.capacityImage || null;
   }
   
   // Check global config
   const globalConfig = getGlobalConfigOverride();
-  if (globalConfig?.capacityImage) {
-    return globalConfig.capacityImage;
+  if (globalConfig?.capacityImage !== undefined) {
+    // Return null if explicitly set to empty string, otherwise return the value
+    return globalConfig.capacityImage || null;
   }
   
-  // Fallback to default
-  return '/images/beds/bed.png';
+  // No fallback - return null if no image is configured
+  return null;
 }
 
 export function getTickIntervalMsForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): number {

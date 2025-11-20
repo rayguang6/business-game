@@ -65,6 +65,7 @@ export default function AdminPage() {
     { value: GameMetric.Time, label: 'Available Time' },
     { value: GameMetric.SkillLevel, label: 'Skill Level' },
     { value: GameMetric.FreedomScore, label: 'Freedom Score' },
+    { value: GameMetric.SpawnCustomers, label: 'Spawn Customers (immediate)' },
     { value: GameMetric.ServiceRooms, label: 'Service Rooms' },
     { value: GameMetric.MonthlyExpenses, label: 'Monthly Expenses' },
     { value: GameMetric.ServiceSpeedMultiplier, label: 'Service Speed Multiplier' },
