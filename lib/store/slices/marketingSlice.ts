@@ -7,6 +7,7 @@ import type { Requirement, IndustryId } from '@/lib/game/types';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import { useConfigStore } from '@/lib/store/configStore';
 import type { Customer } from '@/lib/features/customers';
+import type { Lead } from '@/lib/features/leads';
 
 // Marketing campaign effect (simplified from full Effect, no ID/source yet)
 export interface CampaignEffect {
@@ -37,7 +38,7 @@ export interface MarketingSlice {
 
 /**
  * Add marketing campaign effects to the effect manager
- * For direct state metrics (Cash, Time, SkillLevel, FreedomScore, SpawnCustomers), apply directly
+ * For direct state metrics (Cash, Time, SkillLevel, FreedomScore, GenerateLeads), apply directly
  */
 function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: number, store?: {
   applyCashChange?: (amount: number) => void;
@@ -46,15 +47,19 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
   applyFreedomScoreChange?: (amount: number) => void;
   recordEventRevenue?: (amount: number, label?: string) => void;
   recordEventExpense?: (amount: number, label: string) => void;
+  spawnLead?: () => Lead;
+  updateLeads?: (leads: Lead[]) => void;
   spawnCustomer?: () => Customer;
   addCustomers?: (customers: Customer[]) => void;
+  getState?: () => { leads: Lead[]; leadProgress: number; conversionRate: number };
+  updateLeadProgress?: (progress: number) => void;
 }): void {
   campaign.effects.forEach((effect, index) => {
-    // Direct state metrics (Cash, Time, SkillLevel, FreedomScore, SpawnCustomers) with Add effects are applied directly
+    // Direct state metrics (Cash, Time, SkillLevel, FreedomScore, GenerateLeads) with Add effects are applied directly
     // These are one-time permanent effects (no duration tracking)
     if ((effect.metric === GameMetric.Cash || effect.metric === GameMetric.Time || 
          effect.metric === GameMetric.SkillLevel || effect.metric === GameMetric.FreedomScore ||
-         effect.metric === GameMetric.SpawnCustomers) 
+         effect.metric === GameMetric.GenerateLeads) 
         && effect.type === EffectType.Add && store) {
       // Apply directly to state
       if (effect.metric === GameMetric.Cash) {
@@ -73,23 +78,61 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
         store.applySkillLevelChange(effect.value);
       } else if (effect.metric === GameMetric.FreedomScore && store.applyFreedomScoreChange) {
         store.applyFreedomScoreChange(effect.value);
-      } else if (effect.metric === GameMetric.SpawnCustomers && store.spawnCustomer && store.addCustomers) {
-        // Spawn customers with staggered animation - value is the number of customers to spawn
+      } else if (effect.metric === GameMetric.GenerateLeads && store.spawnLead && store.updateLeads && store.getState && store.updateLeadProgress) {
+        // Generate leads with staggered animation - value is the number of leads to generate
         const count = Math.max(0, Math.floor(effect.value));
-        
+
         if (count > 0) {
-          // Stagger customer spawns with a slight delay for better visual effect
-          // No position offset to avoid alignment issues with chairs and pathfinding
-          const spawnDelayMs = 150; // 150ms delay between each customer spawn
-          
+          // Get current conversion rate
+          const currentState = store.getState();
+          const conversionRate = currentState.conversionRate || 10;
+
+          // Stagger lead generation with a slight delay for better visual effect
+          const spawnDelayMs = 150; // 150ms delay between each lead generation
+
           for (let i = 0; i < count; i++) {
             setTimeout(() => {
-              if (!store.spawnCustomer || !store.addCustomers) return;
-              
-              const customer = store.spawnCustomer();
-              store.addCustomers([customer]);
-              
-              // Last customer spawned
+              if (!store.spawnLead || !store.updateLeads || !store.getState || !store.updateLeadProgress) return;
+
+              const lead = store.spawnLead();
+              if (lead) {
+                // Add the new lead to existing leads
+                const currentLeads = store.getState().leads || [];
+                store.updateLeads([...currentLeads, lead]);
+
+                // Update conversion progress
+                const currentProgress = store.getState().leadProgress || 0;
+                const newProgress = currentProgress + conversionRate;
+
+                // If progress reaches 100% or more, convert immediately
+                if (newProgress >= 100 && store.spawnCustomer && store.addCustomers && store.applySkillLevelChange && store.recordEventRevenue) {
+                  // Calculate how many customers to spawn
+                  const customersToSpawn = Math.floor(newProgress / 100);
+
+                  // Spawn customers immediately
+                  for (let c = 0; c < customersToSpawn; c++) {
+                    const customer = store.spawnCustomer();
+                    if (customer) {
+                      store.addCustomers([customer]);
+
+                      // Apply customer rewards
+                      store.applySkillLevelChange(1); // Skill level gain per happy customer
+
+                      // Record revenue
+                      if (customer.service && store.recordEventRevenue) {
+                        store.recordEventRevenue(customer.service.price, `Customer: ${customer.service.name}`);
+                      }
+                    }
+                  }
+
+                  // Reset progress (keep remainder for next conversion)
+                  const remainderProgress = newProgress % 100;
+                  store.updateLeadProgress(remainderProgress);
+                } else {
+                  // Progress hasn't reached 100% yet, just update it
+                  store.updateLeadProgress(newProgress);
+                }
+              }
             }, i * spawnDelayMs);
           }
         }
@@ -222,10 +265,18 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       applyFreedomScoreChange: store.applyFreedomScoreChange,
       recordEventRevenue: store.recordEventRevenue,
       recordEventExpense: store.recordEventExpense,
+      spawnLead: store.spawnLead,
+      updateLeads: store.updateLeads,
       spawnCustomer: store.spawnCustomer,
       addCustomers: (customers: Customer[]) => {
         set((state) => ({
           customers: [...state.customers, ...customers],
+        }));
+      },
+      getState: () => get(),
+      updateLeadProgress: (progress: number) => {
+        set((state) => ({
+          leadProgress: progress,
         }));
       },
     });

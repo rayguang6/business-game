@@ -27,7 +27,7 @@ export enum GameMetric {
   ServiceRevenueMultiplier = 'serviceRevenueMultiplier',
   ServiceRevenueFlatBonus = 'serviceRevenueFlatBonus',
   FreedomScore = 'freedomScore', // Previously: FounderWorkingHours
-  SpawnCustomers = 'spawnCustomers', // Immediate customer spawning (one-time action)
+  GenerateLeads = 'generateLeads', // Immediate lead generation (one-time action)
   // Tier-specific service metrics
   HighTierServiceRevenueMultiplier = 'highTierServiceRevenueMultiplier',
   HighTierServiceWeightageMultiplier = 'highTierServiceWeightageMultiplier',

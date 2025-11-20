@@ -26,7 +26,7 @@ const METRIC_LABELS: Record<GameMetric, string> = {
   [GameMetric.Cash]: 'Cash',
   [GameMetric.Time]: 'Available Time',
   [GameMetric.SpawnIntervalSeconds]: 'Customer flow',
-  [GameMetric.SpawnCustomers]: 'Spawn customers',
+  [GameMetric.GenerateLeads]: 'Generate leads',
   [GameMetric.ServiceSpeedMultiplier]: 'Service speed',
   [GameMetric.ServiceRooms]: 'Service rooms',
   [GameMetric.SkillLevel]: 'Skill Level',
@@ -66,8 +66,8 @@ const formatDurationLabel = (durationSeconds: number | null | undefined): string
 const describeEffect = (effect: CampaignEffect): string => {
   const label = METRIC_LABELS[effect.metric] ?? effect.metric;
   
-  // SpawnCustomers is an immediate action - duration doesn't apply
-  if (effect.metric === GameMetric.SpawnCustomers) {
+  // GenerateLeads is an immediate action - duration doesn't apply
+  if (effect.metric === GameMetric.GenerateLeads) {
     const count = Math.floor(effect.value);
     return `${label} +${count} (immediate)`;
   }

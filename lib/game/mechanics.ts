@@ -27,6 +27,11 @@ import {
   startService,
   getAvailableRooms,
 } from '@/lib/features/customers';
+import {
+  Lead,
+  spawnLead as createLead,
+  tickLead,
+} from '@/lib/features/leads';
 import { getServicesForIndustry } from '@/lib/game/config';
 import { getServicesFromStore } from '@/lib/store/configStore';
 import { checkRequirements } from '@/lib/game/requirementChecker';
@@ -47,6 +52,9 @@ interface TickSnapshot {
   gameTime: number;
   currentMonth: number;
   customers: Customer[];
+  leads: Lead[];
+  leadProgress: number;
+  conversionRate: number;
   metrics: Metrics;
   monthlyRevenue: number;
   monthlyExpenses: number;
@@ -503,6 +511,9 @@ export function tickOnce(state: TickSnapshot): TickResult {
 
   // To keep it pure, the function copies arrays and objects (customers, metrics, monthlyRevenueDetails, etc.) before changing them.
   let customers = [...state.customers];
+  let leads = [...(state.leads || [])];
+  let leadProgress = state.leadProgress || 0;
+  let conversionRate = state.conversionRate || 10;
   let metrics = { ...preparedMonth.metrics };
   let monthlyRevenue = preparedMonth.monthlyRevenue;
   let monthlyExpenses = preparedMonth.monthlyExpenses;
@@ -541,56 +552,76 @@ export function tickOnce(state: TickSnapshot): TickResult {
   };
   monthlyExpenses = gameMetrics.monthlyExpenses;
 
-  // Calculate spawn interval in ticks and check if it's time to spawn a customer
+  // Calculate spawn interval in ticks and check if it's time to spawn leads
   const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
   const spawnIntervalTicks = Math.max(1, Math.round(gameMetrics.spawnIntervalSeconds * ticksPerSecond));
-  const shouldSpawn = spawnIntervalTicks > 0 && nextTick % spawnIntervalTicks === 0;
+  const shouldSpawnLeads = spawnIntervalTicks > 0 && nextTick % spawnIntervalTicks === 0;
 
-  //If the customer should spawn, create a new customer.
-  if (shouldSpawn) {
-    // Filter services by requirements (same pattern as upgrades/marketing)
-    const servicesFromStore = getServicesFromStore(industryId);
-    const allServices =
-      servicesFromStore.length > 0 ? servicesFromStore : getServicesForIndustry(industryId);
+  // Lead system: spawn leads that accumulate toward customer conversion
+  if (shouldSpawnLeads) {
+      // LEAD SYSTEM: Spawn leads that accumulate toward customer conversion
+      const lead = createLead(industryId);
+      leads = [...leads, lead];
 
-    // Create a minimal store-like object for requirement checking
-    const storeContext: Partial<GameStore> = {
-      flags: state.flags || {},
-      availableFlags: state.availableFlags || [],
-      availableConditions: state.availableConditions || [],
-      metrics: state.metrics,
-      upgrades: state.upgrades,
-    };
+      // Each lead spawn contributes to conversion progress
+      leadProgress += conversionRate;
 
-    // Filter services that meet requirements
-    const availableServices = allServices.filter((service) => {
-      if (!service.requirements || service.requirements.length === 0) {
-        return true; // No requirements means always available
+      // If progress reaches 100%, convert to a customer
+      if (leadProgress >= 100) {
+        // Filter services by requirements (same pattern as lead spawning)
+        const servicesFromStore = getServicesFromStore(industryId);
+        const allServices =
+          servicesFromStore.length > 0 ? servicesFromStore : getServicesForIndustry(industryId);
+
+        // Create a minimal store-like object for requirement checking
+        const storeContext: Partial<GameStore> = {
+          flags: state.flags || {},
+          availableFlags: state.availableFlags || [],
+          availableConditions: state.availableConditions || [],
+          metrics: state.metrics,
+          upgrades: state.upgrades,
+        };
+
+        // Filter services that meet requirements
+        const availableServices = allServices.filter((service) => {
+          if (!service.requirements || service.requirements.length === 0) {
+            return true; // No requirements means always available
+          }
+          return checkRequirements(service.requirements, storeContext as GameStore);
+        });
+
+        if (availableServices.length > 0) {
+          // Pick a weighted random service
+          const selectedService = getWeightedRandomService(availableServices);
+
+          // Create customer with the selected service
+          const customer = createCustomer(gameMetrics.serviceSpeedMultiplier, industryId);
+          customers = [...customers, {
+            ...customer,
+            service: selectedService,
+          }];
+
+          console.log(`[Lead System] Lead converted to customer! Progress reached 100% (${conversionRate}% per lead)`);
+        } else {
+          console.warn(`[Lead System] No services available for customer conversion`);
+        }
+
+        // Reset progress after conversion
+        leadProgress = 0;
       }
-      return checkRequirements(service.requirements, storeContext as GameStore);
-    });
-
-    // If no services available, prevent customer spawn and log warning
-    // This prevents spawning customers with services they shouldn't have access to
-    if (availableServices.length === 0) {
-      console.warn(
-        `[Game Mechanics] No services available for industry ${industryId}. ` +
-        `All ${allServices.length} services have unmet requirements. ` +
-        `Skipping customer spawn this tick.`
-      );
-      // Don't spawn customer - skip to next tick
-    } else {
-      // Pick a weighted random service from available ones
-      const selectedService = getWeightedRandomService(availableServices);
-      
-      // Create customer with the selected service (override the randomly selected one)
-      const customer = createCustomer(gameMetrics.serviceSpeedMultiplier, industryId);
-      customers = [...customers, {
-        ...customer,
-        service: selectedService,
-      }];
-    }
   }
+
+  // Process leads for the tick
+  leads = leads.map(lead => tickLead(lead));
+  
+  // Remove leads that have expired (lifetime <= 0) or are leaving and off-screen
+  leads = leads.filter(lead => {
+    if (lead.lifetime <= 0) {
+      return false; // Expired
+    }
+    // Keep leads that are still active
+    return true;
+  });
 
   //Process customers for the tick.
   const processedCustomersForTick = processCustomersWithEffects({
@@ -616,6 +647,9 @@ export function tickOnce(state: TickSnapshot): TickResult {
     gameTime: nextGameTime,
     currentMonth,
     customers,
+    leads,
+    leadProgress,
+    conversionRate,
     metrics,
     monthlyRevenue,
     monthlyExpenses,
