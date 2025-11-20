@@ -3,13 +3,22 @@ import type { Requirement } from '@/lib/game/types';
 
 export type EventCategory = 'opportunity' | 'risk';
 
+// Enum for event effect types - single source of truth
+// Prevents typos and makes refactoring easier
+export enum EventEffectType {
+  Cash = 'cash',
+  SkillLevel = 'skillLevel',
+  DynamicCash = 'dynamicCash',
+  Metric = 'metric',
+}
+
 // export type OneTimeCostCategory = 'upgrade' | 'repair' | 'event';
 
 export type GameEventEffect =
-  | { type: 'cash'; amount: number; label?: string }
-  | { type: 'dynamicCash'; expression: string; label?: string }
-  | { type: 'skillLevel'; amount: number } // Previously: 'reputation'
-  | { type: 'metric'; metric: GameMetric; effectType: EffectType; value: number; durationSeconds?: number | null; priority?: number }
+  | { type: EventEffectType.Cash; amount: number; label?: string }
+  | { type: EventEffectType.DynamicCash; expression: string; label?: string }
+  | { type: EventEffectType.SkillLevel; amount: number }
+  | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: number; durationSeconds?: number | null; priority?: number }
 
 export interface GameEventConsequence {
   id: string;

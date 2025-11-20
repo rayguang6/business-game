@@ -56,7 +56,7 @@ export interface UpgradeEffect {
   metric: import('@/lib/game/effectManager').GameMetric;
   type: import('@/lib/game/effectManager').EffectType;
   value: number;
-  priority?: number;
+  // priority removed - effects are applied by type order (Add → Percent → Multiply → Set)
   // source removed - will be auto-generated when registering with effectManager
 }
 

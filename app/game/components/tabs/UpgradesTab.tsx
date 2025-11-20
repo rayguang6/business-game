@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import GameButton from '@/app/components/ui/GameButton';
 import { useGameStore } from '@/lib/store/gameStore';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
@@ -13,6 +13,7 @@ import { Card } from '@/app/components/ui/Card';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
 import { Modal } from '@/app/components/ui/Modal';
 import type { Staff } from '@/lib/features/staff';
+import { calculateSeveranceCost, SEVERANCE_MULTIPLIER } from '@/lib/features/staff';
 
 const METRIC_LABELS: Partial<Record<GameMetric, string>> = {
   [GameMetric.Cash]: 'Cash',
@@ -98,33 +99,50 @@ interface UpgradeCardProps {
 
 function UpgradeCard({ upgrade }: UpgradeCardProps) {
   const { canAffordUpgrade, getUpgradeLevel, purchaseUpgrade, metrics } = useGameStore();
+  // Subscribe to upgrades state to ensure re-renders when levels change
+  const upgrades = useGameStore((state) => state.upgrades);
   const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(upgrade.requirements);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
+  const [levelUpAnimation, setLevelUpAnimation] = useState(false);
 
-  const currentLevel = getUpgradeLevel(upgrade.id);
+  // Calculate current level from subscribed upgrades state
+  const currentLevel = useMemo(() => upgrades[upgrade.id] || 0, [upgrades, upgrade.id]);
   const needsCash = upgrade.cost > 0;
   const needsTime = upgrade.timeCost !== undefined && upgrade.timeCost > 0;
-  const canAfford = canAffordUpgrade(upgrade.cost, upgrade.timeCost);
+  const canAfford = useMemo(() => canAffordUpgrade(upgrade.cost, upgrade.timeCost), [canAffordUpgrade, upgrade.cost, upgrade.timeCost]);
   const isMaxed = currentLevel >= upgrade.maxLevel;
   
   // Determine what's missing for button text
-  const missing: string[] = [];
-  if (needsCash && metrics.cash < upgrade.cost) missing.push('Cash');
-  if (needsTime && metrics.time < upgrade.timeCost!) missing.push('Time');
-  const needText = missing.length > 0 ? `Need ${missing.join(' + ')}` : 'Need Cash';
-  const effects = upgrade.effects.map(formatEffect);
+  const needText = useMemo(() => {
+    const missing: string[] = [];
+    if (needsCash && metrics.cash < upgrade.cost) missing.push('Cash');
+    if (needsTime && metrics.time < upgrade.timeCost!) missing.push('Time');
+    return missing.length > 0 ? `Need ${missing.join(' + ')}` : 'Need Cash';
+  }, [needsCash, needsTime, metrics.cash, metrics.time, upgrade.cost, upgrade.timeCost]);
+  
+  const effects = useMemo(() => upgrade.effects.map(formatEffect), [upgrade.effects]);
   const buttonDisabled = isMaxed || !canAfford || !requirementsMet;
 
-  const handlePurchase = () => {
+  const handlePurchase = useCallback(() => {
     if (!buttonDisabled) {
-      purchaseUpgrade(upgrade.id);
+      const previousLevel = currentLevel;
+      const result = purchaseUpgrade(upgrade.id);
+      if (result.success && previousLevel < upgrade.maxLevel) {
+        // Trigger level up animation - level will increase by 1
+        setLevelUpAnimation(true);
+        setTimeout(() => setLevelUpAnimation(false), 1000);
+      }
     }
-  };
+  }, [buttonDisabled, purchaseUpgrade, upgrade.id, upgrade.maxLevel, currentLevel]);
 
-  const handleRequirementsClick = (e: React.MouseEvent) => {
+  const handleRequirementsClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     setShowRequirementsModal(true);
-  };
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setShowRequirementsModal(false);
+  }, []);
 
   return (
     <Card
@@ -137,11 +155,17 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <h5 className="text-primary font-bold text-base">{upgrade.name}</h5>
-              {upgrade.maxLevel > 1 && (
-                <span className="text-xs text-tertiary">
-                  Lvl {currentLevel}/{upgrade.maxLevel}
-                </span>
-              )}
+              <span 
+                className={`text-xs font-semibold transition-all duration-300 ${
+                  levelUpAnimation 
+                    ? 'text-[var(--success)] scale-125 animate-pulse' 
+                    : currentLevel > 0 
+                      ? 'text-[var(--success)]' 
+                      : 'text-tertiary'
+                }`}
+              >
+                Lvl {currentLevel}/{upgrade.maxLevel}
+              </span>
             </div>
             <span className={`text-sm font-semibold ${isMaxed ? '' : ''}`} style={{ color: isMaxed ? 'var(--success)' : 'var(--game-secondary)' }}>
               {isMaxed ? 'Max' : (() => {
@@ -157,7 +181,7 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
           {/* Requirements Modal */}
           <Modal
             isOpen={showRequirementsModal}
-            onClose={() => setShowRequirementsModal(false)}
+            onClose={handleCloseModal}
             maxWidth="sm"
           >
             <div className="text-center text-secondary text-sm leading-relaxed space-y-1">
@@ -167,19 +191,23 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
               ))}
             </div>
           </Modal>
-          <ul className="text-xs text-secondary space-y-1">
-            {effects.map((effect, idx) => (
-              <li key={idx} className="flex items-center gap-2">
-                <span style={{ color: 'var(--game-primary)' }}>•</span>
-                <span>{effect}</span>
-                {currentLevel > 0 && upgrade.maxLevel > 1 && (
-                  <span className="ml-1" style={{ color: 'var(--success)' }}>
-                    (×{currentLevel})
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
+          {upgrade.effects && upgrade.effects.length > 0 ? (
+            <ul className="text-xs text-secondary space-y-1">
+              {effects.map((effect, idx) => (
+                <li key={idx} className="flex items-center gap-2">
+                  <span style={{ color: 'var(--game-primary)' }}>•</span>
+                  <span>{effect}</span>
+                  {currentLevel > 0 && upgrade.maxLevel > 1 && (
+                    <span className="ml-1" style={{ color: 'var(--success)' }}>
+                      (×{currentLevel})
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-tertiary italic">No effects configured</p>
+          )}
         </div>
       </div>
       <div className="mt-4 flex justify-end relative">
@@ -327,20 +355,24 @@ interface StaffCandidateCardProps {
 function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
   const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(candidate.requirements);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
-  const styles = getRoleStyles(candidate.role);
+  const styles = useMemo(() => getRoleStyles(candidate.role), [candidate.role]);
   const metrics = useGameStore((state) => state.metrics);
-  const canAfford = metrics.cash >= candidate.salary;
+  const canAfford = useMemo(() => metrics.cash >= candidate.salary, [metrics.cash, candidate.salary]);
 
-  const handleHire = () => {
+  const handleHire = useCallback(() => {
     if (requirementsMet && canAfford) {
       onHire(candidate);
     }
-  };
+  }, [requirementsMet, canAfford, onHire, candidate]);
 
-  const handleRequirementsClick = (e: React.MouseEvent) => {
+  const handleRequirementsClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     setShowRequirementsModal(true);
-  };
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setShowRequirementsModal(false);
+  }, []);
 
   return (
     <div
@@ -420,7 +452,7 @@ function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
 
       <Modal
         isOpen={showRequirementsModal}
-        onClose={() => setShowRequirementsModal(false)}
+        onClose={handleCloseModal}
         maxWidth="sm"
       >
         <div className="text-center text-secondary text-sm leading-relaxed space-y-1">
@@ -462,6 +494,26 @@ interface HiredStaffCardProps {
 
 function HiredStaffCard({ member, onFire }: HiredStaffCardProps) {
   const styles = getRoleStyles(member.role);
+  const [showFireConfirm, setShowFireConfirm] = useState(false);
+  const metrics = useGameStore((state) => state.metrics);
+  
+  // Memoize calculations to prevent unnecessary re-renders
+  const severanceCost = useMemo(() => calculateSeveranceCost(member), [member]);
+  const canAffordSeverance = useMemo(() => metrics.cash >= severanceCost, [metrics.cash, severanceCost]);
+  const multiplierText = useMemo(() => SEVERANCE_MULTIPLIER === 1 ? '1x' : `${SEVERANCE_MULTIPLIER}x`, []);
+
+  const handleFireClick = useCallback(() => {
+    setShowFireConfirm(true);
+  }, []);
+
+  const handleConfirmFire = useCallback(() => {
+    onFire(member.id);
+    setShowFireConfirm(false);
+  }, [member.id, onFire]);
+
+  const handleCancelFire = useCallback(() => {
+    setShowFireConfirm(false);
+  }, []);
 
   return (
     <div
@@ -542,14 +594,92 @@ function HiredStaffCard({ member, onFire }: HiredStaffCardProps) {
       {/* Fire Button */}
       <div className="px-4 pb-4">
         <GameButton
-          onClick={() => onFire(member.id)}
+          onClick={handleFireClick}
           color="red"
           fullWidth
           className="w-full"
+          disabled={!canAffordSeverance}
         >
           Fire {member.name.split(' ')[0]}
         </GameButton>
       </div>
+
+      {/* Fire Confirmation Modal */}
+      <Modal
+        isOpen={showFireConfirm}
+        onClose={handleCancelFire}
+        maxWidth="sm"
+      >
+          <div className="p-6 space-y-5">
+            {/* Header */}
+            <div className="text-center border-b border-[var(--border-primary)] pb-4">
+              <h3 className="text-2xl font-bold text-primary mb-2">
+                Fire {member.name}?
+              </h3>
+              <p className="text-secondary text-sm">
+                This will remove {member.name} from your team. Their effects will stop immediately.
+              </p>
+            </div>
+
+            {/* Cost Breakdown */}
+            <div className="bg-gradient-to-br from-[var(--bg-tertiary)] to-[var(--bg-tertiary)]/50 rounded-xl p-5 border-2 border-[var(--border-primary)] shadow-lg">
+              <div className="space-y-3">
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-secondary text-sm font-medium">Monthly Salary:</span>
+                  <span className="text-primary font-bold text-base">${Math.round(member.salary).toLocaleString()}</span>
+                </div>
+                
+                <div className="h-px bg-[var(--border-primary)]"></div>
+                
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-secondary text-sm font-medium">
+                    Severance <span className="text-tertiary">({multiplierText} salary)</span>:
+                  </span>
+                  <span className={`font-bold text-lg ${canAffordSeverance ? 'text-[var(--error)]' : 'text-[var(--error)]/60'}`}>
+                    ${severanceCost.toLocaleString()}
+                  </span>
+                </div>
+                
+                <div className="h-px bg-[var(--border-primary)]"></div>
+                
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-primary font-semibold text-sm">Your Cash:</span>
+                  <span className={`font-bold text-lg ${canAffordSeverance ? 'text-[var(--success)]' : 'text-[var(--error)]'}`}>
+                    ${metrics.cash.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Warning Message */}
+            {!canAffordSeverance && (
+              <div className="bg-[var(--error)]/20 border-2 border-[var(--error)]/50 rounded-lg p-4 animate-pulse">
+                <p className="text-[var(--error)] text-sm text-center font-medium">
+                  ⚠️ Insufficient funds. You need ${severanceCost.toLocaleString()} to pay severance.
+                </p>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-2">
+              <GameButton
+                onClick={handleCancelFire}
+                color="gold"
+                className="flex-1"
+              >
+                Cancel
+              </GameButton>
+              <GameButton
+                onClick={handleConfirmFire}
+                color="red"
+                className="flex-1"
+                disabled={!canAffordSeverance}
+              >
+                Fire&Pay
+              </GameButton>
+            </div>
+          </div>
+        </Modal>
     </div>
   );
 }
@@ -574,7 +704,11 @@ export function UpgradesTab() {
   };
 
   const handleFireStaff = (staffId: string) => {
-    fireStaff(staffId);
+    const result = fireStaff(staffId);
+    if (result && !result.success) {
+      // Could show error message here if needed
+      console.warn(result.message);
+    }
   };
 
   return (

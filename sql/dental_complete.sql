@@ -1,11 +1,21 @@
 -- ============================================
--- DENTAL INDUSTRY - Complete Basic Setup
+-- DENTAL INDUSTRY - Complete Setup (Seed Data)
 -- ============================================
--- Simple but complete content for dental industry
--- Focus: Basic services, essential upgrades, simple events
+-- This file creates a complete dental industry with all required data:
+-- Industry, Config, Services, Upgrades, Marketing, Events, Flags, Staff
+-- 
+-- This is SEED DATA - run this to populate/update the database with initial data
+-- Effects format: {"metric": "validMetric", "type": "validType", "value": number}
+-- No priority field - effects are applied by type order (Add → Percent → Multiply → Set)
+-- ============================================
+-- Game Design Philosophy:
+-- - Patient care: Balance quality service with efficiency
+-- - Equipment: Invest in better tools for faster service
+-- - Staff: Hire assistants to handle workload
+-- - Growth: Expand rooms and services to serve more patients
 -- ============================================
 
--- Step 1: Create/Update Industry
+-- Step 1: Create Industry
 INSERT INTO industries (id, name, icon, description, is_available)
 VALUES ('dental', 'Dental Clinic', '🦷', 'Run a dental clinic, treating patients and managing your practice.', true)
 ON CONFLICT (id) DO UPDATE SET
@@ -23,8 +33,8 @@ VALUES (
     "startingCash": 5000,
     "startingTime": 120,
     "monthlyExpenses": 3000,
-    "startingReputation": 20,
-    "founderWorkHours": 160
+    "startingSkillLevel": 20,
+    "startingFreedomScore": 160
   }'::jsonb
 )
 ON CONFLICT (industry_id) DO UPDATE SET
@@ -48,6 +58,7 @@ ON CONFLICT (id) DO UPDATE SET
   requirements = EXCLUDED.requirements;
 
 -- Step 4: Upgrades (4 upgrades - mix of cash, time, and both)
+-- Effects format: {"metric": "validMetric", "type": "validType", "value": number}
 INSERT INTO upgrades (id, industry_id, name, description, icon, cost, time_cost, max_level, effects, sets_flag, requirements)
 VALUES 
   (
@@ -88,7 +99,7 @@ VALUES
     0,
     30,
     1,
-    '[{"metric": "reputationMultiplier", "type": "add", "value": 0.2}]'::jsonb,
+    '[{"metric": "skillLevel", "type": "add", "value": 2}]'::jsonb,
     'learned-implant',
     '[]'::jsonb
   ),
@@ -101,7 +112,7 @@ VALUES
     2000,
     5,
     1,
-    '[{"metric": "reputationMultiplier", "type": "add", "value": 0.15}]'::jsonb,
+    '[{"metric": "skillLevel", "type": "add", "value": 2}]'::jsonb,
     'has-better-waiting',
     '[]'::jsonb
   )
@@ -117,6 +128,7 @@ ON CONFLICT (industry_id, id) DO UPDATE SET
   requirements = EXCLUDED.requirements;
 
 -- Step 5: Marketing Campaigns (3 campaigns - mix of cash and time)
+-- Marketing effects include durationSeconds for temporary effects
 INSERT INTO marketing_campaigns (id, industry_id, name, description, cost, time_cost, cooldown_seconds, effects, sets_flag, requirements)
 VALUES 
   (
@@ -127,7 +139,7 @@ VALUES
     500,
     NULL,
     600,
-    '[{"metric": "reputationMultiplier", "type": "add", "value": 0.1, "durationSeconds": 3600}]'::jsonb,
+    '[{"metric": "skillLevel", "type": "add", "value": 1, "durationSeconds": 3600}]'::jsonb,
     NULL,
     '[]'::jsonb
   ),
@@ -139,7 +151,7 @@ VALUES
     300,
     NULL,
     300,
-    '[{"metric": "reputationMultiplier", "type": "add", "value": 0.15, "durationSeconds": 1800}]'::jsonb,
+    '[{"metric": "skillLevel", "type": "add", "value": 2, "durationSeconds": 1800}]'::jsonb,
     NULL,
     '[]'::jsonb
   ),
@@ -151,7 +163,7 @@ VALUES
     0,
     8,
     900,
-    '[{"metric": "reputationMultiplier", "type": "add", "value": 0.12, "durationSeconds": 3600}]'::jsonb,
+    '[{"metric": "skillLevel", "type": "add", "value": 1, "durationSeconds": 3600}]'::jsonb,
     NULL,
     '[]'::jsonb
   )
@@ -167,61 +179,174 @@ ON CONFLICT (id) DO UPDATE SET
   requirements = EXCLUDED.requirements;
 
 -- Step 6: Events (3 basic events - mix of opportunity and risk)
--- Event 1: Emergency Patient (Opportunity)
+-- Event effects use EventEffectType: "cash", "skillLevel", "dynamicCash", or "metric"
 INSERT INTO events (id, industry_id, title, category, summary, choices, requirements)
-VALUES (
-  'emergency-patient',
-  'dental',
-  'Emergency Patient',
-  'opportunity',
-  'A patient comes in with a dental emergency. This could be profitable but urgent.',
-  '[
-    {
-      "id": "treat",
-      "label": "Treat the emergency",
-      "description": "Help the patient immediately",
-      "cost": 0,
-      "consequences": [
-        {
-          "id": "success",
-          "label": "Treatment successful",
-          "description": "Patient is grateful and pays well",
-          "weight": 70,
-          "effects": [
-            {"type": "cash", "amount": 400, "label": "Emergency treatment fee"},
-            {"type": "reputation", "amount": 5, "label": "Good service"}
-          ]
-        },
-        {
-          "id": "complicated",
-          "label": "Complicated case",
-          "description": "Took longer than expected",
-          "weight": 30,
-          "effects": [
-            {"type": "cash", "amount": 200, "label": "Reduced fee"},
-            {"type": "reputation", "amount": 2, "label": "Patient satisfied"}
-          ]
-        }
-      ]
-    },
-    {
-      "id": "refer",
-      "label": "Refer to specialist",
-      "description": "Send to another dentist",
-      "cost": 0,
-      "consequences": [
-        {
-          "id": "neutral",
-          "label": "No change",
-          "description": "Patient went elsewhere",
-          "weight": 100,
-          "effects": []
-        }
-      ]
-    }
-  ]'::jsonb,
-  '[]'::jsonb
-)
+VALUES 
+  (
+    'emergency-patient',
+    'dental',
+    'Emergency Patient',
+    'opportunity',
+    'A patient comes in with a dental emergency. This could be profitable but urgent.',
+    '[
+      {
+        "id": "treat",
+        "label": "Treat the emergency",
+        "description": "Help the patient immediately",
+        "cost": 0,
+        "consequences": [
+          {
+            "id": "success",
+            "label": "Treatment successful",
+            "description": "Patient is grateful and pays well",
+            "weight": 70,
+            "effects": [
+              {"type": "cash", "amount": 400, "label": "Emergency treatment fee"},
+              {"type": "skillLevel", "amount": 5, "label": "Good service"}
+            ]
+          },
+          {
+            "id": "complicated",
+            "label": "Complicated case",
+            "description": "Took longer than expected",
+            "weight": 30,
+            "effects": [
+              {"type": "cash", "amount": 200, "label": "Partial payment"},
+              {"type": "skillLevel", "amount": 2, "label": "Learning experience"}
+            ]
+          }
+        ]
+      },
+      {
+        "id": "refer",
+        "label": "Refer to specialist",
+        "description": "Send to another dentist",
+        "cost": 0,
+        "consequences": [
+          {
+            "id": "neutral",
+            "label": "No change",
+            "description": "Patient went elsewhere",
+            "weight": 100,
+            "effects": []
+          }
+        ]
+      }
+    ]'::jsonb,
+    '[]'::jsonb
+  ),
+  (
+    'equipment-breakdown',
+    'dental',
+    'Equipment Breakdown',
+    'risk',
+    'Your dental chair breaks down. You need to fix it or replace it.',
+    '[
+      {
+        "id": "repair",
+        "label": "Repair quickly",
+        "description": "Get it fixed immediately",
+        "cost": 500,
+        "consequences": [
+          {
+            "id": "fixed",
+            "label": "Fixed quickly",
+            "description": "Equipment repaired, minimal downtime",
+            "weight": 80,
+            "effects": []
+          },
+          {
+            "id": "still-broken",
+            "label": "Still having issues",
+            "description": "Repair didn''t work well",
+            "weight": 20,
+            "effects": [
+              {"type": "cash", "amount": -300, "label": "Additional repair cost"},
+              {"type": "skillLevel", "amount": -2, "label": "Frustration"}
+            ]
+          }
+        ]
+      },
+      {
+        "id": "replace",
+        "label": "Replace equipment",
+        "description": "Buy new equipment",
+        "cost": 2000,
+        "consequences": [
+          {
+            "id": "upgraded",
+            "label": "Better equipment",
+            "description": "New equipment works great",
+            "weight": 100,
+            "effects": [
+              {"type": "metric", "metric": "serviceSpeedMultiplier", "effectType": "percent", "value": 5, "durationSeconds": null}
+            ]
+          }
+        ]
+      },
+      {
+        "id": "wait",
+        "label": "Wait and save",
+        "description": "Use backup equipment",
+        "cost": 0,
+        "consequences": [
+          {
+            "id": "struggled",
+            "label": "Productivity suffered",
+            "description": "Backup equipment is slow",
+            "weight": 100,
+            "effects": [
+              {"type": "skillLevel", "amount": -3, "label": "Patient complaints"}
+            ]
+          }
+        ]
+      }
+    ]'::jsonb,
+    '[]'::jsonb
+  ),
+  (
+    'patient-referral',
+    'dental',
+    'New Patient Referral',
+    'opportunity',
+    'A satisfied patient wants to refer their friend. This could bring in more business!',
+    '[
+      {
+        "id": "accept",
+        "label": "Accept the referral",
+        "description": "Welcome the new patient",
+        "cost": 0,
+        "consequences": [
+          {
+            "id": "success",
+            "label": "New patient signed up",
+            "description": "The referral worked out well!",
+            "weight": 100,
+            "effects": [
+              {"type": "cash", "amount": 300, "label": "New patient deposit"},
+              {"type": "skillLevel", "amount": 3, "label": "Word of mouth"}
+            ]
+          }
+        ]
+      },
+      {
+        "id": "decline",
+        "label": "Politely decline",
+        "description": "Focus on current patients",
+        "cost": 0,
+        "consequences": [
+          {
+            "id": "neutral",
+            "label": "No change",
+            "description": "You continue with your current patients",
+            "weight": 100,
+            "effects": []
+          }
+        ]
+      }
+    ]'::jsonb,
+    '[]'::jsonb
+  )
 ON CONFLICT (industry_id, id) DO UPDATE SET
   title = EXCLUDED.title,
   category = EXCLUDED.category,
@@ -229,120 +354,21 @@ ON CONFLICT (industry_id, id) DO UPDATE SET
   choices = EXCLUDED.choices,
   requirements = EXCLUDED.requirements;
 
--- Event 2: Equipment Breakdown (Risk)
-INSERT INTO events (id, industry_id, title, category, summary, choices, requirements)
-VALUES (
-  'equipment-breakdown',
-  'dental',
-  'Equipment Breakdown',
-  'risk',
-  'One of your dental tools breaks down. You need to repair or replace it.',
-  '[
-    {
-      "id": "repair",
-      "label": "Repair immediately",
-      "description": "Fix the equipment quickly",
-      "cost": 800,
-      "consequences": [
-        {
-          "id": "fixed",
-          "label": "Equipment fixed",
-          "description": "Back to normal operations",
-          "weight": 100,
-          "effects": []
-        }
-      ]
-    },
-    {
-      "id": "wait",
-      "label": "Wait and save",
-      "description": "Use backup equipment",
-      "cost": 0,
-      "consequences": [
-        {
-          "id": "slower",
-          "label": "Slower service",
-          "description": "Backup equipment is slower",
-          "weight": 100,
-          "effects": [
-            {"type": "reputation", "amount": -3, "label": "Longer wait times"}
-          ]
-        }
-      ]
-    }
-  ]'::jsonb,
-  '[]'::jsonb
-)
-ON CONFLICT (industry_id, id) DO UPDATE SET
-  title = EXCLUDED.title,
-  category = EXCLUDED.category,
-  summary = EXCLUDED.summary,
-  choices = EXCLUDED.choices,
-  requirements = EXCLUDED.requirements;
-
--- Event 3: Patient Referral (Opportunity)
-INSERT INTO events (id, industry_id, title, category, summary, choices, requirements)
-VALUES (
-  'patient-referral',
-  'dental',
-  'Patient Referral',
-  'opportunity',
-  'A satisfied patient wants to refer a friend to your clinic.',
-  '[
-    {
-      "id": "accept",
-      "label": "Accept new patient",
-      "description": "Welcome the referral",
-      "cost": 0,
-      "consequences": [
-        {
-          "id": "new-patient",
-          "label": "New patient",
-          "description": "Got a new regular patient",
-          "weight": 100,
-          "effects": [
-            {"type": "reputation", "amount": 3, "label": "Word of mouth"}
-          ]
-        }
-      ]
-    },
-    {
-      "id": "decline",
-      "label": "Politely decline",
-      "description": "Too busy right now",
-      "cost": 0,
-      "consequences": [
-        {
-          "id": "missed",
-          "label": "Missed opportunity",
-          "description": "Patient went elsewhere",
-          "weight": 100,
-          "effects": []
-        }
-      ]
-    }
-  ]'::jsonb,
-  '[]'::jsonb
-)
-ON CONFLICT (industry_id, id) DO UPDATE SET
-  title = EXCLUDED.title,
-  category = EXCLUDED.category,
-  summary = EXCLUDED.summary,
-  choices = EXCLUDED.choices,
-  requirements = EXCLUDED.requirements;
-
--- Step 7: Flags (basic flags)
+-- Step 7: Flags (for tracking progress)
 INSERT INTO flags (id, industry_id, name, description)
 VALUES 
   ('has-extra-room', 'dental', 'Has Extra Room', 'You have an additional treatment room'),
   ('has-better-equipment', 'dental', 'Has Better Equipment', 'You have upgraded dental equipment'),
-  ('learned-implant', 'dental', 'Learned Implant Procedures', 'You can now offer dental implant services'),
-  ('has-better-waiting', 'dental', 'Has Better Waiting Area', 'You have improved the waiting area')
+  ('learned-implant', 'dental', 'Learned Implant Procedures', 'You can perform dental implant procedures'),
+  ('has-better-waiting', 'dental', 'Has Better Waiting Area', 'You have an improved waiting area'),
+  ('has-assistant', 'dental', 'Has Dental Assistant', 'You have hired a dental assistant'),
+  ('has-receptionist', 'dental', 'Has Receptionist', 'You have hired a receptionist')
 ON CONFLICT (industry_id, id) DO UPDATE SET
   name = EXCLUDED.name,
   description = EXCLUDED.description;
 
--- Step 8: Staff Roles (2 basic roles)
+-- Step 8: Staff Roles (2 roles)
+-- Staff effects format: {"metric": "validMetric", "type": "validType", "value": number}
 INSERT INTO staff_roles (id, industry_id, name, salary, effects, emoji, sets_flag, requirements)
 VALUES 
   (
@@ -352,7 +378,7 @@ VALUES
     2500,
     '[
       {"metric": "serviceSpeedMultiplier", "type": "percent", "value": 8},
-      {"metric": "founderWorkingHours", "type": "add", "value": -15}
+      {"metric": "freedomScore", "type": "add", "value": -15}
     ]'::jsonb,
     '👩‍⚕️',
     'has-assistant',
@@ -364,8 +390,8 @@ VALUES
     'Receptionist',
     2000,
     '[
-      {"metric": "reputationMultiplier", "type": "add", "value": 0.1},
-      {"metric": "founderWorkingHours", "type": "add", "value": -10}
+      {"metric": "skillLevel", "type": "add", "value": 1},
+      {"metric": "freedomScore", "type": "add", "value": -10}
     ]'::jsonb,
     '👨‍💼',
     'has-receptionist',
@@ -378,4 +404,3 @@ ON CONFLICT (industry_id, id) DO UPDATE SET
   emoji = EXCLUDED.emoji,
   sets_flag = EXCLUDED.sets_flag,
   requirements = EXCLUDED.requirements;
-

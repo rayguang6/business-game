@@ -1,14 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '../../../../lib/store/gameStore';
-import { GameEvent, GameEventChoice, GameEventEffect } from '../../../../lib/types/gameEvents';
+import { GameEvent, GameEventChoice, GameEventEffect, EventEffectType } from '../../../../lib/types/gameEvents';
 import { EffectType, GameMetric } from '@/lib/game/effectManager';
 import type { ResolvedEventOutcome } from '@/lib/store/slices/eventSlice';
 
 const getEffectIcon = (type: GameEventEffect['type']) => {
   switch (type) {
-    case 'cash':
+    case EventEffectType.Cash:
       return '💰';
-    case 'skillLevel': // Previously: 'reputation'
+    case EventEffectType.SkillLevel:
       return '⭐';
     default:
       return '';
@@ -16,15 +16,15 @@ const getEffectIcon = (type: GameEventEffect['type']) => {
 };
 
 const getEffectColorClass = (type: GameEventEffect['type'], amount: number) => {
-  if (type === 'skillLevel') { // Previously: 'reputation'
+  if (type === EventEffectType.SkillLevel) {
     return amount > 0 ? 'text-green-400' : 'text-red-400';
   }
   return amount > 0 ? 'text-green-400' : 'text-red-400';
 };
 
 const formatEffect = (effect: GameEventEffect) => {
-  if (effect.type === 'cash' || effect.type === 'skillLevel') { // Previously: 'reputation'
-    const prefix = effect.type === 'cash' ? '$' : '';
+  if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.SkillLevel) {
+    const prefix = effect.type === EventEffectType.Cash ? '$' : '';
     const sign = effect.amount > 0 ? '+' : effect.amount < 0 ? '-' : '';
     const value = Math.abs(effect.amount);
     return `${getEffectIcon(effect.type)} ${sign}${prefix}${value.toLocaleString()}`;
@@ -63,7 +63,7 @@ const formatDurationLabel = (durationSeconds: number | null | undefined) => {
   return ` for ${durationSeconds}s`;
 };
 
-const formatMetricEffect = (effect: GameEventEffect & { type: 'metric' }) => {
+const formatMetricEffect = (effect: GameEventEffect & { type: EventEffectType.Metric }) => {
   const label = METRIC_LABELS[effect.metric] ?? effect.metric;
   const durationLabel = formatDurationLabel(effect.durationSeconds);
   switch (effect.effectType) {
@@ -176,7 +176,7 @@ const EventPopup: React.FC = () => {
                 <div className="text-[10px] md:text-xs font-semibold text-[var(--text-primary)] mb-0.5 md:mb-1">Effects:</div>
                 <ul className="space-y-0.5 text-[9px] md:text-xs">
                   {lastEventOutcome.appliedEffects.map((effect, index) => {
-                    if (effect.type === 'cash' || effect.type === 'skillLevel') { // Previously: 'reputation'
+                    if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.SkillLevel) {
                       return (
                         <li key={index} className={`flex items-center gap-1 ${getEffectColorClass(effect.type, effect.amount)}`}>
                           <span>{getEffectIcon(effect.type)}</span>
@@ -189,12 +189,12 @@ const EventPopup: React.FC = () => {
                 </ul>
               </div>
             )}
-            {lastEventOutcome.appliedEffects.some(effect => effect.type === 'metric') && (
+            {lastEventOutcome.appliedEffects.some(effect => effect.type === EventEffectType.Metric) && (
               <div className="bg-[var(--game-primary)]/20 rounded p-1.5 md:p-3 mb-1 md:mb-2 border border-[var(--game-primary)]/40">
                 <div className="text-[10px] md:text-xs font-semibold text-[var(--game-primary-light)] mb-0.5">Active:</div>
                 <ul className="space-y-0.5 text-[9px] md:text-xs text-[var(--text-primary)]">
                   {lastEventOutcome.appliedEffects
-                    .filter((effect): effect is Extract<GameEventEffect, { type: 'metric' }> => effect.type === 'metric')
+                    .filter((effect): effect is Extract<GameEventEffect, { type: EventEffectType.Metric }> => effect.type === EventEffectType.Metric)
                     .map((effect, index) => (
                       <li key={index}>{formatMetricEffect(effect)}</li>
                     ))}

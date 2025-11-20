@@ -150,7 +150,7 @@
 // ════════════════════════════════════════════════════════════════════════════════
 
 import { StateCreator } from 'zustand';
-import { GameEvent, GameEventChoice, GameEventConsequence, GameEventEffect } from '../../types/gameEvents';
+import { GameEvent, GameEventChoice, GameEventConsequence, GameEventEffect, EventEffectType } from '../../types/gameEvents';
 import { GameMetric, EffectType } from '../../game/effectManager';
 import type { GameStore } from '../gameStore';
 import { effectManager } from '@/lib/game/effectManager';
@@ -164,9 +164,9 @@ import { DynamicValueEvaluator } from '@/lib/game/dynamicValueEvaluator';
 // Pre-calculated effect values for consistent application
 // These must match the structure expected in the application phase
 export type ResolvedEffect =
-  | { type: 'cash'; amount: number; label: string | undefined }
-  | { type: 'skillLevel'; amount: number; label: string | undefined } // Previously: 'reputation'
-  | { type: 'metric'; metric: GameMetric; effectType: EffectType; value: number; durationSeconds?: number | null; priority?: number; label: string | undefined };
+  | { type: EventEffectType.Cash; amount: number; label: string | undefined }
+  | { type: EventEffectType.SkillLevel; amount: number; label: string | undefined }
+  | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: number; durationSeconds?: number | null; priority?: number; label: string | undefined };
 // 🚨 ADD NEW RESOLVED EFFECT TYPES HERE (STEP 2)
 // | { type: 'yourNewEffectType'; amount: number; label: string | undefined }
 
@@ -196,7 +196,7 @@ export interface EventSlice {
 
 // Helper to calculate dynamic cash value
 const calculateDynamicCashValue = (
-  effect: GameEventEffect & { type: 'dynamicCash' },
+  effect: GameEventEffect & { type: EventEffectType.DynamicCash },
   store: GameStore,
 ): number => {
   const industryId = store.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
@@ -224,7 +224,7 @@ const applyEventEffect = (
   store: GameStore,
 ): void => {
   switch (effect.type) {
-    case 'cash': {
+    case EventEffectType.Cash: {
       // Cash effects should be handled by the game's revenue system
       const { recordEventRevenue, recordEventExpense } = store;
       if (effect.amount >= 0) {
@@ -234,7 +234,7 @@ const applyEventEffect = (
       }
       return; // Don't use effectManager for cash (handled by revenue system)
     }
-    case 'dynamicCash': {
+    case EventEffectType.DynamicCash: {
       const value = calculateDynamicCashValue(effect, store);
       const { recordEventRevenue, recordEventExpense } = store;
       if (value >= 0) {
@@ -244,13 +244,13 @@ const applyEventEffect = (
       }
       return;
     }
-    case 'skillLevel': {
+    case EventEffectType.SkillLevel: {
       // Skill level effects directly modify skill level
       const { applySkillLevelChange } = store;
       applySkillLevelChange(effect.amount);
       return; // Don't use effectManager for skill level (handled directly)
     }
-    case 'metric': {
+    case EventEffectType.Metric: {
       // For direct state metrics (Cash, Time, SkillLevel, FreedomScore) with Add effects, apply directly
       // These are one-time permanent effects (no duration tracking)
       if ((effect.metric === GameMetric.Cash || effect.metric === GameMetric.Time || 
@@ -414,35 +414,35 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
     // This eliminates display/apply misalignment by locking in values immediately
     if (consequence) {
       consequence.effects.forEach((effect: GameEventEffect) => {
-        if (effect.type === 'dynamicCash') {
+        if (effect.type === EventEffectType.DynamicCash) {
           // Dynamic cash effects: calculate once, store final value
           const finalAmount = calculateDynamicCashValue(effect, store);
 
           appliedEffects.push({
-            type: 'cash',
+            type: EventEffectType.Cash,
             amount: finalAmount,
             label: effect.label,
           });
 
           pendingEffects.push({
-            type: 'cash',
+            type: EventEffectType.Cash,
             amount: finalAmount,
             label: effect.label,
           });
-        } else if (effect.type === 'cash' || effect.type === 'skillLevel') {
+        } else if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.SkillLevel) {
           // Direct cash/skillLevel effects - no calculation needed
           appliedEffects.push(effect);
           const resolvedEffect: ResolvedEffect = {
             type: effect.type,
             amount: effect.amount,
-            label: effect.type === 'cash' ? effect.label : undefined,
+            label: effect.type === EventEffectType.Cash ? effect.label : undefined,
           };
           pendingEffects.push(resolvedEffect);
-        } else if (effect.type === 'metric') {
+        } else if (effect.type === EventEffectType.Metric) {
           // Metric effects - copy all properties as-is
           appliedEffects.push(effect);
           const resolvedEffect: ResolvedEffect = {
-            type: 'metric',
+            type: EventEffectType.Metric,
             metric: effect.metric!,
             effectType: effect.effectType!,
             value: effect.value!,
@@ -501,7 +501,7 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
     const outcome = store.lastEventOutcome;
     if (outcome?.pendingEffects) {
       outcome.pendingEffects.forEach((resolvedEffect: ResolvedEffect) => {
-        if (resolvedEffect.type === 'cash' && resolvedEffect.amount !== undefined) {
+        if (resolvedEffect.type === EventEffectType.Cash && resolvedEffect.amount !== undefined) {
           // Cash effects go through revenue system
           const { recordEventRevenue, recordEventExpense } = store;
           if (resolvedEffect.amount >= 0) {
@@ -509,10 +509,10 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
           } else {
             recordEventExpense(Math.abs(resolvedEffect.amount), resolvedEffect.label ?? 'Event expense');
           }
-        } else if (resolvedEffect.type === 'skillLevel' && resolvedEffect.amount !== undefined) {
+        } else if (resolvedEffect.type === EventEffectType.SkillLevel && resolvedEffect.amount !== undefined) {
           // Skill level effects directly modify skill level
           store.applySkillLevelChange(resolvedEffect.amount);
-        } else if (resolvedEffect.type === 'metric' && resolvedEffect.metric && resolvedEffect.effectType !== undefined && resolvedEffect.value !== undefined) {
+        } else if (resolvedEffect.type === EventEffectType.Metric && resolvedEffect.metric && resolvedEffect.effectType !== undefined && resolvedEffect.value !== undefined) {
           // Metric effects go through effect manager
           const { gameTime, metrics } = store;
           

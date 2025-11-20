@@ -222,6 +222,7 @@ export function HomeTab() {
                                   {cost.category === 'upgrade' && '🔧 '}
                                   {cost.category === 'repair' && '🔨 '}
                                   {cost.category === 'event' && '📋 '}
+                                  {cost.category === 'staff' && '👋 '}
                                   {cost.label}
                                 </span>
                                 <span className="font-semibold" style={{ color: 'var(--warning)' }}>${cost.amount.toLocaleString()}</span>

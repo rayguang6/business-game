@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand';
 import { GameStore } from '../gameStore';
-import { Staff, addStaffEffects, removeStaffEffects } from '@/lib/features/staff';
+import { Staff, addStaffEffects, removeStaffEffects, calculateSeveranceCost } from '@/lib/features/staff';
 import {
   createInitialAvailableStaff,
   createRandomStaffForIndustry,
@@ -9,12 +9,13 @@ import {
 import { DEFAULT_INDUSTRY_ID, type IndustryId } from '@/lib/game/types';
 import { effectManager } from '@/lib/game/effectManager';
 import { checkRequirements } from '@/lib/game/requirementChecker';
+import { OneTimeCostCategory } from '../types';
 
 export interface StaffSlice {
   hiredStaff: Staff[];
   availableStaff: Staff[];
   hireStaff: (staff: Staff) => void;
-  fireStaff: (staffId: string) => void;
+  fireStaff: (staffId: string) => { success: boolean; message: string } | void;
   resetStaff: () => void;
   initializeStaffForIndustry: (industryId: IndustryId) => void;
 }
@@ -83,11 +84,34 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
       const staffToFire = store.hiredStaff.find((member) => member.id === staffId);
 
       if (!staffToFire) {
-        return;
+        return { success: false, message: 'Staff member not found.' };
       }
 
-      // Remove staff effects
+      // Calculate severance cost
+      const severanceCost = calculateSeveranceCost(staffToFire);
+
+      // Check if player can afford severance
+      if (store.metrics.cash < severanceCost) {
+        return { 
+          success: false, 
+          message: `Need $${severanceCost.toLocaleString()} to pay severance for ${staffToFire.name}.` 
+        };
+      }
+
+      // Remove staff effects (including salary expense)
       removeStaffEffects(staffId);
+
+      // Record severance as one-time cost for P&L tracking
+      if (store.addOneTimeCost) {
+        store.addOneTimeCost(
+          {
+            label: `Severance: ${staffToFire.name}`,
+            amount: severanceCost,
+            category: OneTimeCostCategory.Staff,
+          },
+          { deductNow: true }, // Deduct cash immediately
+        );
+      }
 
       // Unset flag if staff role sets one
       if (staffToFire.setsFlag) {
@@ -102,6 +126,8 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
         hiredStaff: state.hiredStaff.filter((member) => member.id !== staffId),
         availableStaff: [...state.availableStaff, replacement],
       }));
+
+      return { success: true, message: `${staffToFire.name} has been fired. Severance paid: $${severanceCost.toLocaleString()}.` };
     },
     resetStaff: () => {
       const store = get();

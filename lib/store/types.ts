@@ -42,6 +42,7 @@ export enum OneTimeCostCategory {
   Repair = 'repair',
   Event = 'event',
   Marketing = 'marketing',
+  Staff = 'staff',
 }
 
 export interface OneTimeCost {
