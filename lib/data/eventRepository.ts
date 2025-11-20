@@ -5,8 +5,10 @@ import type {
   GameEventConsequence,
   GameEventEffect,
 } from '@/lib/types/gameEvents';
+import { EventEffectType } from '@/lib/types/gameEvents';
 import type { IndustryId, Requirement } from '@/lib/game/types';
 import { EffectType, GameMetric } from '@/lib/game/effectManager';
+import { validateAndParseGameEventEffects } from '@/lib/utils/effectValidation';
 
 interface EventRow {
   id: string;
@@ -37,10 +39,10 @@ type RawConsequence = {
 };
 
 type RawEffect =
-  | { type: 'cash'; amount: number; label?: string }
-  | { type: 'reputation'; amount: number; label?: string }
-  | { type: 'dynamicCash'; expression: string; label?: string }
-  | { type: 'metric'; metric?: string; effectType?: string; value?: number; durationSeconds?: number | null; priority?: number };
+  | { type: EventEffectType.Cash; amount: number; label?: string }
+  | { type: EventEffectType.SkillLevel; amount: number }
+  | { type: EventEffectType.DynamicCash; expression: string; label?: string }
+  | { type: EventEffectType.Metric; metric: string; effectType: string; value: number; durationSeconds?: number | null; priority?: number };
 
 const toNumber = (value: unknown, fallback = 0): number => {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -56,11 +58,8 @@ const toNumber = (value: unknown, fallback = 0): number => {
 };
 
 const isRawEffect = (value: unknown): value is RawEffect => {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-  const record = value as Record<string, unknown>;
-  return record.type === 'cash' || record.type === 'reputation' || record.type === 'metric' || record.type === 'dynamicCash';
+  // Use centralized validation utility
+  return validateAndParseGameEventEffects([value]).length === 1;
 };
 
 const mapConsequences = (raw: RawConsequence[] | undefined): GameEventConsequence[] => {
@@ -68,15 +67,17 @@ const mapConsequences = (raw: RawConsequence[] | undefined): GameEventConsequenc
     return [];
   }
 
-  return raw.map((consequence) => ({
-    id: String(consequence.id ?? ''),
-    label: consequence.label,
-    description: consequence.description,
-    weight: Math.max(0, toNumber(consequence.weight, 0)),
-    effects: Array.isArray(consequence.effects)
-      ? consequence.effects.filter(isRawEffect).map(convertRawEffectToGameEventEffect)
-      : [],
-  }));
+  return raw
+    .filter((consequence): consequence is RawConsequence => consequence !== null && typeof consequence === 'object')
+    .map((consequence) => ({
+      id: String(consequence.id ?? ''),
+      label: consequence.label,
+      description: consequence.description,
+      weight: Math.max(0, toNumber(consequence.weight, 0)),
+      effects: Array.isArray(consequence.effects)
+        ? validateAndParseGameEventEffects(consequence.effects).map(convertRawEffectToGameEventEffect)
+        : [],
+    }));
 };
 
 const mapChoices = (raw: RawChoice[] | undefined): GameEventChoice[] => {
@@ -84,15 +85,17 @@ const mapChoices = (raw: RawChoice[] | undefined): GameEventChoice[] => {
     return [];
   }
 
-  return raw.map((choice) => ({
-    id: String(choice.id ?? ''),
-    label: choice.label ?? '',
-    description: choice.description,
-    cost: choice.cost !== undefined ? toNumber(choice.cost, 0) : undefined,
-    timeCost: choice.timeCost !== undefined ? toNumber(choice.timeCost, 0) : undefined,
-    setsFlag: choice.setsFlag,
-    consequences: mapConsequences(choice.consequences),
-  }));
+  return raw
+    .filter((choice): choice is RawChoice => choice !== null && typeof choice === 'object')
+    .map((choice) => ({
+      id: String(choice.id ?? ''),
+      label: choice.label ?? '',
+      description: choice.description,
+      cost: choice.cost !== undefined ? toNumber(choice.cost, 0) : undefined,
+      timeCost: choice.timeCost !== undefined ? toNumber(choice.timeCost, 0) : undefined,
+      setsFlag: choice.setsFlag,
+      consequences: mapConsequences(choice.consequences),
+    }));
 };
 
 export async function fetchEventsForIndustry(industryId: IndustryId): Promise<GameEvent[] | null> {
@@ -138,68 +141,72 @@ export async function fetchEventsForIndustry(industryId: IndustryId): Promise<Ga
   return mapped;
 }
 
-const convertRawEffectToGameEventEffect = (rawEffect: RawEffect): GameEventEffect => {
-  switch (rawEffect.type) {
-    case 'cash':
+const convertRawEffectToGameEventEffect = (rawEffect: unknown): GameEventEffect => {
+  // rawEffect is already validated by validateAndParseGameEventEffects
+  const e = rawEffect as Record<string, unknown>;
+  
+  switch (e.type) {
+    case EventEffectType.Cash:
       return {
-        type: 'cash',
-        amount: rawEffect.amount ?? 0,
-        label: rawEffect.label,
+        type: EventEffectType.Cash,
+        amount: e.amount as number,
+        label: e.label as string | undefined,
       };
-    case 'reputation': // Legacy support - map to skillLevel
-    case 'skillLevel':
+    case EventEffectType.SkillLevel:
       return {
-        type: 'skillLevel',
-        amount: rawEffect.amount ?? 0,
+        type: EventEffectType.SkillLevel,
+        amount: e.amount as number,
       };
-    case 'dynamicCash':
+    case EventEffectType.DynamicCash:
       return {
-        type: 'dynamicCash',
-        expression: String(rawEffect.expression ?? ''),
-        label: rawEffect.label,
+        type: EventEffectType.DynamicCash,
+        expression: e.expression as string,
+        label: e.label as string | undefined,
       };
-    case 'metric':
+    case EventEffectType.Metric:
+      // Use enum values - already validated to be valid GameMetric and EffectType
       return {
-        type: 'metric',
-        metric: rawEffect.metric as GameMetric,
-        effectType: rawEffect.effectType as EffectType,
-        value: rawEffect.value ?? 0,
-        durationSeconds: rawEffect.durationSeconds ?? null,
-        priority: rawEffect.priority,
+        type: EventEffectType.Metric,
+        metric: e.metric as GameMetric,
+        effectType: e.effectType as EffectType,
+        value: e.value as number,
+        durationSeconds: e.durationSeconds as number | null | undefined,
+        priority: e.priority as number | undefined,
       };
+    default:
+      throw new Error(`Invalid effect type: ${e.type}`);
   }
 };
 
 const convertGameEventEffectToRawEffect = (effect: GameEventEffect): RawEffect => {
   switch (effect.type) {
-    case 'cash':
+    case EventEffectType.Cash:
       return {
-        type: 'cash',
+        type: EventEffectType.Cash,
         amount: effect.amount,
         label: effect.label,
       };
-    case 'skillLevel': // Previously: 'reputation'
+    case EventEffectType.SkillLevel:
       return {
-        type: 'skillLevel', // Database will use 'skillLevel' going forward
+        type: EventEffectType.SkillLevel,
         amount: effect.amount,
       };
-    case 'dynamicCash':
+    case EventEffectType.DynamicCash:
       return {
-        type: 'dynamicCash',
+        type: EventEffectType.DynamicCash,
         expression: effect.expression,
         label: effect.label,
       };
-    case 'metric':
+    case EventEffectType.Metric:
+      // Use enum values directly - they come from GameMetric and EffectType enums
       return {
-        type: 'metric',
+        type: EventEffectType.Metric,
         metric: effect.metric,
         effectType: effect.effectType,
         value: effect.value,
         durationSeconds: effect.durationSeconds,
         priority: effect.priority,
       };
-    default:
-      throw new Error(`Unknown effect type: ${(effect as any).type}`);
   }
 };
 

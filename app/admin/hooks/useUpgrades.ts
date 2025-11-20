@@ -127,11 +127,48 @@ export function useUpgrades(industryId: string) {
     }
     const setsFlag = form.setsFlag?.trim() || undefined;
     const requirements = form.requirements;
-    const effects = effectsForm.map((ef) => ({
-      metric: ef.metric,
-      type: ef.type,
-      value: Number(ef.value) || 0,
-    }));
+    
+    // Validate and convert effects
+    // Allow empty string, "0", and valid numbers
+    const effects = effectsForm
+      .filter((ef) => {
+        // Filter out effects with invalid values (but allow 0 and empty string)
+        const trimmedValue = ef.value.trim();
+        if (trimmedValue === '') {
+          console.warn(`Skipping effect with empty value`);
+          return false;
+        }
+        const numValue = Number(trimmedValue);
+        if (!Number.isFinite(numValue)) {
+          console.warn(`Skipping effect with invalid value: "${ef.value}"`);
+          return false;
+        }
+        return true;
+      })
+      .map((ef) => {
+        const numValue = Number(ef.value.trim());
+        return {
+          metric: ef.metric,
+          type: ef.type,
+          value: Number.isFinite(numValue) ? numValue : 0,
+        };
+      });
+    
+    // Log effects being saved for debugging
+    console.log('[Admin] Effects form before filtering:', effectsForm);
+    console.log('[Admin] Effects after filtering:', effects);
+    if (effects.length !== effectsForm.length) {
+      console.warn(`[Admin] Filtered out ${effectsForm.length - effects.length} invalid effects`);
+      const filtered = effectsForm.filter((ef) => {
+        const trimmedValue = ef.value.trim();
+        if (trimmedValue === '') return false;
+        const numValue = Number(trimmedValue);
+        return Number.isFinite(numValue);
+      });
+      console.warn('[Admin] Filtered effects:', filtered);
+    }
+    console.log('[Admin] Saving upgrade with effects:', effects);
+    
     setOperation('saving');
     const result = await upsertUpgradeForIndustry(industryId, {
       id,
@@ -147,19 +184,43 @@ export function useUpgrades(industryId: string) {
     });
     setOperation('idle');
     if (!result.success) {
-      setStatus(result.message ?? 'Failed to save upgrade.');
+      const errorMsg = result.message ?? 'Failed to save upgrade.';
+      console.error('[Admin] Save failed:', errorMsg);
+      setStatus(errorMsg);
       return;
     }
-    setUpgrades((prev) => {
-      const exists = prev.some((u) => u.id === id);
-      const nextItem: UpgradeDefinition = { id, name, description, icon, cost, timeCost, maxLevel, effects, setsFlag, requirements };
-      const next = exists ? prev.map((u) => (u.id === id ? nextItem : u)) : [...prev, nextItem];
-      return next.sort((a, b) => a.name.localeCompare(b.name));
-    });
-    setStatus('Upgrade saved.');
+    
+    console.log('[Admin] Save successful:', result.message);
+    
+    // Reload upgrades from database to ensure we have the latest data
+    const reloaded = await fetchUpgradesForIndustry(industryId);
+    if (reloaded) {
+      setUpgrades(reloaded.sort((a, b) => a.name.localeCompare(b.name)));
+      const savedUpgrade = reloaded.find((u) => u.id === id);
+      if (savedUpgrade) {
+        selectUpgrade(savedUpgrade, false);
+        if (savedUpgrade.effects.length !== effects.length) {
+          setStatus(`Upgrade saved. Warning: ${effects.length - savedUpgrade.effects.length} effects were filtered out during validation.`);
+        } else {
+          setStatus(`Upgrade saved successfully with ${effects.length} effect(s).`);
+        }
+      } else {
+        setStatus('Upgrade saved.');
+      }
+    } else {
+      // Fallback to local update if reload fails
+      setUpgrades((prev) => {
+        const exists = prev.some((u) => u.id === id);
+        const nextItem: UpgradeDefinition = { id, name, description, icon, cost, timeCost, maxLevel, effects, setsFlag, requirements };
+        const next = exists ? prev.map((u) => (u.id === id ? nextItem : u)) : [...prev, nextItem];
+        return next.sort((a, b) => a.name.localeCompare(b.name));
+      });
+      setStatus(`Upgrade saved with ${effects.length} effect(s).`);
+    }
+    
     setIsCreating(false);
     setSelectedId(id);
-  }, [industryId, form, effectsForm]);
+  }, [industryId, form, effectsForm, selectUpgrade]);
 
   const deleteUpgrade = useCallback(async () => {
     if (isCreating || !selectedId) return;

@@ -15,6 +15,20 @@ export interface Staff {
 }
 
 /**
+ * Severance payment multiplier
+ * When firing staff, player pays: monthlySalary × SEVERANCE_MULTIPLIER
+ * Can be adjusted for balancing (e.g., 1x, 2x, 3x)
+ */
+export const SEVERANCE_MULTIPLIER = 1.0;
+
+/**
+ * Calculate severance payment cost for firing a staff member
+ */
+export function calculateSeveranceCost(staff: Staff): number {
+  return Math.round(staff.salary * SEVERANCE_MULTIPLIER);
+}
+
+/**
  * Add a staff member's effects to the effect manager
  * This should be called when a staff member is hired
  */
@@ -81,7 +95,6 @@ export function addStaffEffects(staff: Staff, store?: {
       metric: effect.metric,
       type: effect.type,
       value: effect.value,
-      priority: effect.priority,
     });
   });
 }

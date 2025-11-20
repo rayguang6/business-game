@@ -230,13 +230,16 @@ export function UpgradesTab({
                       effectTypeOptions={effectTypeOptions}
                       showDuration={false}
                       title="Effects"
-                      description="Choose a metric and how to apply it. Add = flat amount, Percent = +/-%, Multiply = × factor, Set = exact value."
+                      description="Choose a metric and how to apply it. Add = flat amount, Percent = +/-%, Multiply = × factor, Set = exact value. Note: Value must be a number (0 is valid)."
                       defaultEffect={{
                         metric: GameMetric.ServiceRooms,
                         type: EffectType.Add,
-                        value: '0',
+                        value: '1', // Changed from '0' to '1' so users see a non-zero default
                       }}
-                      onEffectsChange={onUpdateEffects}
+                      onEffectsChange={(newEffects) => {
+                        console.log('[UpgradesTab] Effects changed:', newEffects);
+                        onUpdateEffects(newEffects);
+                      }}
                     />
 
                     <div className="md:col-span-2 flex flex-wrap gap-3">

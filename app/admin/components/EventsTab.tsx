@@ -5,6 +5,7 @@ import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import type { GameFlag } from '@/lib/data/flagRepository';
 import type { GameCondition } from '@/lib/types/conditions';
 import type { GameEvent, GameEventChoice, GameEventConsequence, GameEventEffect } from '@/lib/types/gameEvents';
+import { EventEffectType } from '@/lib/types/gameEvents';
 import { makeUniqueId, slugify } from './utils';
 
 interface EventsTabProps {
@@ -94,10 +95,10 @@ export function EventsTab({
     description: string;
     weight: string;
     effects: Array<
-      | { type: 'cash'; amount: string; label?: string }
-      | { type: 'dynamicCash'; expression: string; label?: string }
-      | { type: 'skillLevel'; amount: string } // Previously: 'reputation'
-      | { type: 'metric'; metric: GameMetric; effectType: EffectType; value: string; durationSeconds: string; priority?: string }
+      | { type: EventEffectType.Cash; amount: string; label?: string }
+      | { type: EventEffectType.DynamicCash; expression: string; label?: string }
+      | { type: EventEffectType.SkillLevel; amount: string }
+      | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: string; durationSeconds: string; priority?: string }
     >;
   }>({ id: '', label: '', description: '', weight: '1', effects: [] });
 
@@ -216,15 +217,15 @@ export function EventsTab({
       description: consequence.description ?? '',
       weight: String(consequence.weight || 1),
       effects: (consequence.effects || []).map((ef: any) => {
-        if (ef.type === 'cash') {
-          return { type: 'cash', amount: String(ef.amount || 0), label: ef.label };
-        } else if (ef.type === 'dynamicCash') {
-          return { type: 'dynamicCash', expression: String(ef.expression || ''), label: ef.label };
-        } else if (ef.type === 'skillLevel') { // Previously: 'reputation'
-          return { type: 'skillLevel', amount: String(ef.amount || 0) };
-        } else if (ef.type === 'metric') {
+        if (ef.type === EventEffectType.Cash) {
+          return { type: EventEffectType.Cash, amount: String(ef.amount || 0), label: ef.label };
+        } else if (ef.type === EventEffectType.DynamicCash) {
+          return { type: EventEffectType.DynamicCash, expression: String(ef.expression || ''), label: ef.label };
+        } else if (ef.type === EventEffectType.SkillLevel) {
+          return { type: EventEffectType.SkillLevel, amount: String(ef.amount || 0) };
+        } else if (ef.type === EventEffectType.Metric) {
           return {
-            type: 'metric',
+            type: EventEffectType.Metric,
             metric: ef.metric,
             effectType: ef.effectType,
             value: String(ef.value || 0),
@@ -262,26 +263,26 @@ export function EventsTab({
     }
 
     const normalizedEffects = consequenceForm.effects.map((ef: any) => {
-      if (ef.type === 'cash') {
+      if (ef.type === EventEffectType.Cash) {
         return {
-          type: 'cash' as const,
+          type: EventEffectType.Cash as const,
           amount: Number(ef.amount) || 0,
           ...(ef.label ? { label: ef.label } : {}),
         };
-      } else if (ef.type === 'dynamicCash') {
+      } else if (ef.type === EventEffectType.DynamicCash) {
         return {
-          type: 'dynamicCash' as const,
+          type: EventEffectType.DynamicCash as const,
           expression: String(ef.expression || ''),
           ...(ef.label ? { label: ef.label } : {}),
         };
-      } else if (ef.type === 'reputation' || ef.type === 'skillLevel') { // Support legacy 'reputation' type
+      } else if (ef.type === EventEffectType.SkillLevel) {
         return {
-          type: 'skillLevel' as const,
+          type: EventEffectType.SkillLevel as const,
           amount: Number(ef.amount) || 0,
         };
-      } else if (ef.type === 'metric') {
+      } else if (ef.type === EventEffectType.Metric) {
         return {
-          type: 'metric' as const,
+          type: EventEffectType.Metric as const,
           metric: ef.metric,
           effectType: ef.effectType,
           value: Number(ef.value) || 0,
@@ -381,18 +382,18 @@ export function EventsTab({
         if (!Array.isArray(consequence.effects)) return false;
         for (const effect of consequence.effects) {
           if (!effect || typeof effect !== 'object') return false;
-          if (effect.type === 'metric') {
+          if (effect.type === EventEffectType.Metric) {
             if (!isValidGameMetric(effect.metric)) return false;
             if (!isValidEffectType(effect.effectType)) return false;
             if (typeof effect.value !== 'number') return false;
             if (effect.durationSeconds !== null && typeof effect.durationSeconds !== 'number') return false;
             if (effect.priority !== undefined && typeof effect.priority !== 'number') return false;
-          } else if (effect.type === 'cash') {
+          } else if (effect.type === EventEffectType.Cash) {
             if (typeof effect.amount !== 'number') return false;
             if (effect.label !== undefined && typeof effect.label !== 'string') return false;
-          } else if (effect.type === 'reputation' || effect.type === 'skillLevel') { // Support legacy 'reputation'
+          } else if (effect.type === EventEffectType.SkillLevel) {
             if (typeof effect.amount !== 'number') return false;
-          } else if (effect.type === 'dynamicCash') {
+          } else if (effect.type === EventEffectType.DynamicCash) {
             if (typeof effect.expression !== 'string' || !effect.expression.trim()) return false;
             if (effect.label !== undefined && typeof effect.label !== 'string') return false;
           } else {
@@ -487,18 +488,18 @@ export function EventsTab({
             } else {
               consequence.effects.forEach((effect: any, effectIndex: number) => {
                 const effectPath = `${consPath}.effects[${effectIndex}]`;
-                if (effect?.type === 'cash') {
+                if (effect?.type === EventEffectType.Cash) {
                   if (typeof effect.amount !== 'number') {
                     errors.push(`${effectPath}.amount: must be a number`);
                   }
                   if (effect.label !== undefined && typeof effect.label !== 'string') {
                     errors.push(`${effectPath}.label: must be a string if provided`);
                   }
-                } else if (effect?.type === 'reputation' || effect?.type === 'skillLevel') { // Support legacy 'reputation'
+                } else if (effect?.type === EventEffectType.SkillLevel) {
                   if (typeof effect.amount !== 'number') {
                     errors.push(`${effectPath}.amount: must be a number`);
                   }
-                } else if (effect?.type === 'metric') {
+                } else if (effect?.type === EventEffectType.Metric) {
                   if (!isValidGameMetric(effect.metric)) {
                     errors.push(`${effectPath}.metric: must be a valid GameMetric`);
                   }
@@ -514,7 +515,7 @@ export function EventsTab({
                   if (effect.priority !== undefined && typeof effect.priority !== 'number') {
                     errors.push(`${effectPath}.priority: must be a number if provided`);
                   }
-                } else if (effect?.type === 'dynamicCash') {
+                } else if (effect?.type === EventEffectType.DynamicCash) {
                   if (typeof effect.expression !== 'string' || !effect.expression.trim()) {
                     errors.push(`${effectPath}.expression: must be a non-empty string`);
                   }
@@ -1041,28 +1042,28 @@ export function EventsTab({
                                         <div className="flex gap-2 flex-wrap">
                                           <button
                                             type="button"
-                                            onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: 'cash', amount: '0', label: '' }] }))}
+                                            onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: EventEffectType.Cash, amount: '0', label: '' }] }))}
                                             className="px-2 py-1 text-xs rounded border border-emerald-500 text-emerald-200 hover:bg-emerald-500/10"
                                           >
                                             + Cash
                                           </button>
                                           <button
                                             type="button"
-                                            onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: 'skillLevel', amount: '0' }] }))}
+                                            onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: EventEffectType.SkillLevel, amount: '0' }] }))}
                                             className="px-2 py-1 text-xs rounded border border-emerald-500 text-emerald-200 hover:bg-emerald-500/10"
                                           >
                                             + Skill Level
                                           </button>
                                           <button
                                             type="button"
-                                            onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: 'dynamicCash', expression: 'expenses*1', label: '' }] }))}
+                                            onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: EventEffectType.DynamicCash, expression: 'expenses*1', label: '' }] }))}
                                             className="px-2 py-1 text-xs rounded border border-purple-500 text-purple-200 hover:bg-purple-500/10"
                                           >
                                             + Dynamic Cash
                                           </button>
                                           <button
                                             type="button"
-                                            onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: 'metric', metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationSeconds: '' }] }))}
+                                            onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: EventEffectType.Metric, metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationSeconds: '' }] }))}
                                             className="px-2 py-1 text-xs rounded border border-indigo-500 text-indigo-200 hover:bg-indigo-500/10"
                                           >
                                             + Metric Effect
@@ -1071,30 +1072,30 @@ export function EventsTab({
                                       </div>
                                       <div className="space-y-2">
                                         {consequenceForm.effects.map((ef, idx) => (
-                                          <div key={idx} className={`grid gap-2 items-end ${ef.type === 'metric' ? 'grid-cols-1 sm:grid-cols-6' : ef.type === 'dynamicCash' ? 'grid-cols-1 sm:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3'}`}>
+                                          <div key={idx} className={`grid gap-2 items-end ${ef.type === EventEffectType.Metric ? 'grid-cols-1 sm:grid-cols-6' : ef.type === EventEffectType.DynamicCash ? 'grid-cols-1 sm:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3'}`}>
                                             <div>
                                               <label className="block text-xs text-slate-400 mb-1">Type</label>
                                               <select
                                                 value={ef.type}
                                                 onChange={(e) => {
-                                                  const newEffect = e.target.value === 'cash' ? { type: 'cash' as const, amount: '0', label: '' } :
-                                                    e.target.value === 'skillLevel' ? { type: 'skillLevel' as const, amount: '0' } : // Previously: 'reputation'
-                                                    e.target.value === 'dynamicCash' ? { type: 'dynamicCash' as const, expression: 'expenses*1', label: '' } :
-                                                    { type: 'metric' as const, metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationSeconds: '', priority: '' };
+                                                  const newEffect = e.target.value === EventEffectType.Cash ? { type: EventEffectType.Cash as const, amount: '0', label: '' } :
+                                                    e.target.value === EventEffectType.SkillLevel ? { type: EventEffectType.SkillLevel as const, amount: '0' } :
+                                                    e.target.value === EventEffectType.DynamicCash ? { type: EventEffectType.DynamicCash as const, expression: 'expenses*1', label: '' } :
+                                                    { type: EventEffectType.Metric as const, metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationSeconds: '', priority: '' };
                                                   const newEffects = [...consequenceForm.effects];
                                                   newEffects[idx] = newEffect;
                                                   setConsequenceForm((p) => ({ ...p, effects: newEffects }));
                                                 }}
                                                 className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
                                               >
-                                                <option value="cash">Cash</option>
-                                                <option value="skillLevel">Skill Level</option>
-                                                <option value="dynamicCash">Dynamic Cash</option>
-                                                <option value="metric">Metric Effect</option>
+                                                <option value={EventEffectType.Cash}>Cash</option>
+                                                <option value={EventEffectType.SkillLevel}>Skill Level</option>
+                                                <option value={EventEffectType.DynamicCash}>Dynamic Cash</option>
+                                                <option value={EventEffectType.Metric}>Metric Effect</option>
                                               </select>
                                             </div>
 
-                                            {ef.type === 'cash' || ef.type === 'skillLevel' ? ( // Previously: 'reputation'
+                                            {ef.type === EventEffectType.Cash || ef.type === EventEffectType.SkillLevel ? (
                                               <>
                                                 <div>
                                                   <label className="block text-xs text-slate-400 mb-1">Amount</label>
@@ -1109,7 +1110,7 @@ export function EventsTab({
                                                     className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
                                                   />
                                                 </div>
-                                                {ef.type === 'cash' && (
+                                                {ef.type === EventEffectType.Cash && (
                                                   <div>
                                                     <label className="block text-xs text-slate-400 mb-1">Label (optional)</label>
                                                     <input
@@ -1124,7 +1125,7 @@ export function EventsTab({
                                                   </div>
                                                 )}
                                               </>
-                                            ) : ef.type === 'dynamicCash' ? (
+                                            ) : ef.type === EventEffectType.DynamicCash ? (
                                               <>
                                                 <div>
                                                   <label className="block text-xs text-slate-400 mb-1">Expression</label>
@@ -1153,7 +1154,7 @@ export function EventsTab({
                                                   />
                                                 </div>
                                               </>
-                                            ) : ef.type === 'metric' ? (
+                                            ) : ef.type === EventEffectType.Metric ? (
                                               <>
                                                 <div>
                                                   <label className="block text-xs text-slate-400 mb-1">Metric</label>

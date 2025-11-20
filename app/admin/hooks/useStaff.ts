@@ -80,43 +80,15 @@ export function useStaff(industryId: string) {
     setSelectedRoleId(role.id);
     setIsCreatingRole(false);
     const effects = role.effects || [];
-    // Handle legacy format
-    if (effects.length === 0 && ('serviceSpeed' in role || 'workloadReduction' in role)) {
-      const legacyEffects: Array<{ metric: GameMetric; type: EffectType; value: string }> = [];
-      if ('serviceSpeed' in role && (role as any).serviceSpeed > 0) {
-        legacyEffects.push({
-          metric: GameMetric.ServiceSpeedMultiplier,
-          type: EffectType.Percent,
-          value: String((role as any).serviceSpeed),
-        });
-      }
-      if ('workloadReduction' in role && (role as any).workloadReduction > 0) {
-        legacyEffects.push({
-          metric: GameMetric.FreedomScore,
-          type: EffectType.Add,
-          value: String(-(role as any).workloadReduction),
-        });
-      }
-      setRoleForm({
-        id: role.id,
-        name: role.name,
-        salary: String(role.salary),
-        effects: legacyEffects,
-        emoji: role.emoji,
-        setsFlag: role.setsFlag,
-        requirements: role.requirements || [],
-      });
-    } else {
-      setRoleForm({
-        id: role.id,
-        name: role.name,
-        salary: String(role.salary),
-        effects: effects.map(e => ({ metric: e.metric, type: e.type, value: String(e.value) })),
-        emoji: role.emoji,
-        setsFlag: role.setsFlag,
-        requirements: role.requirements || [],
-      });
-    }
+    setRoleForm({
+      id: role.id,
+      name: role.name,
+      salary: String(role.salary),
+      effects: effects.map(e => ({ metric: e.metric, type: e.type, value: String(e.value) })),
+      emoji: role.emoji,
+      setsFlag: role.setsFlag,
+      requirements: role.requirements || [],
+    });
     if (resetMsg) setStatus(null);
   }, []);
 

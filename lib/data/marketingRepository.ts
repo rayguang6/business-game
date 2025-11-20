@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase/client';
 import type { MarketingCampaign, CampaignEffect } from '@/lib/store/slices/marketingSlice';
-import { EffectType, GameMetric } from '@/lib/game/effectManager';
 import type { IndustryId } from '@/lib/game/types';
+import { validateAndParseCampaignEffects } from '@/lib/utils/effectValidation';
 
 interface MarketingCampaignRow {
   id: string;
@@ -16,13 +16,6 @@ interface MarketingCampaignRow {
   requirements: unknown;
 }
 
-interface RawEffect {
-  metric?: string;
-  type?: string;
-  value?: number;
-  durationSeconds?: number | null;
-}
-
 const parseNumber = (value: number | string | null | undefined, fallback = 0): number => {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : fallback;
@@ -35,19 +28,8 @@ const parseNumber = (value: number | string | null | undefined, fallback = 0): n
 };
 
 const mapEffects = (raw: unknown): CampaignEffect[] => {
-  if (!Array.isArray(raw)) {
-    return [];
-  }
-
-  return raw
-    .filter((item): item is RawEffect => !!item && typeof item === 'object')
-    .filter((item) => typeof item.metric === 'string' && typeof item.type === 'string')
-    .map((item) => ({
-      metric: item.metric as GameMetric,
-      type: item.type as EffectType,
-      value: typeof item.value === 'number' ? item.value : 0,
-      durationSeconds: item.durationSeconds ?? null,
-    }));
+  // Use centralized validation for CampaignEffect (includes durationSeconds)
+  return validateAndParseCampaignEffects(raw);
 };
 
 export async function fetchMarketingCampaignsForIndustry(industryId: IndustryId): Promise<MarketingCampaign[] | null> {

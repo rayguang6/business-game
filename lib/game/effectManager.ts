@@ -122,8 +122,21 @@ export interface CalculationStep {
 
 export type MetricValues = Record<GameMetric, number>;
 
+// Sort effects by priority (if set), otherwise keep original order
+// Note: For Add/Percent/Multiply, order doesn't matter mathematically
+// This is mainly useful for Set effects where we want the highest priority one
 const sortEffectsByPriority = (effects: Effect[]): Effect[] => {
-  return effects.slice().sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+  // If no effects have priority set, return as-is (order doesn't matter)
+  const hasPriority = effects.some(e => e.priority !== undefined && e.priority !== null);
+  if (!hasPriority) {
+    return effects;
+  }
+  // Sort by priority (higher priority first), then by original order
+  return effects.slice().sort((a, b) => {
+    const aPriority = a.priority ?? 0;
+    const bPriority = b.priority ?? 0;
+    return bPriority - aPriority;
+  });
 };
 
 const partitionEffectsByType = (

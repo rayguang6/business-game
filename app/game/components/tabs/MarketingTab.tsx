@@ -122,10 +122,14 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, on
 
   const buttonDisabled = isOnCooldown || !canAfford || !requirementsMet;
 
-  const handleRequirementsClick = (e: React.MouseEvent) => {
+  const handleRequirementsClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     setShowRequirementsModal(true);
-  };
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setShowRequirementsModal(false);
+  }, []);
 
   return (
     <Card className="space-y-3">
@@ -149,7 +153,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, on
       {/* Requirements Modal */}
       <Modal
         isOpen={showRequirementsModal}
-        onClose={() => setShowRequirementsModal(false)}
+        onClose={handleCloseModal}
         maxWidth="sm"
       >
         <div className="text-center text-secondary text-sm leading-relaxed space-y-1">
