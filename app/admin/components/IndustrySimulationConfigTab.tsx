@@ -277,6 +277,10 @@ export function IndustrySimulationConfigTab({
               <label className="block text-xs text-slate-400 mb-1">Service Revenue Multiplier</label>
               <input type="number" step="0.01" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getStats().serviceRevenueMultiplier ?? 1} onChange={(e) => updateStats({ serviceRevenueMultiplier: Number(e.target.value) })} />
             </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Lead Conversion Rate</label>
+              <input type="number" min="1" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getStats().conversionRate ?? 10} onChange={(e) => updateStats({ conversionRate: Number(e.target.value) })} />
+            </div>
           </div>
         </div>
 

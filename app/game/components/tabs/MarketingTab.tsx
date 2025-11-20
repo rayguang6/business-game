@@ -238,7 +238,8 @@ export function MarketingTab() {
 
   const handleLaunch = (campaignId: string) => {
     const result = startCampaign(campaignId);
-    setMessage(result.message);
+    // No message to display
+    setMessage(null);
   };
 
   return (
