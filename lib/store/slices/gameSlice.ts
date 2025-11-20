@@ -2,6 +2,7 @@ import { StateCreator } from 'zustand';
 import { getMonthlyBaseExpenses } from '@/lib/features/economy';
 import { tickOnce } from '@/lib/game/mechanics';
 import { GameState, RevenueCategory, OneTimeCostCategory } from '../types';
+import { Lead } from '@/lib/features/leads';
 import { getInitialMetrics } from './metricsSlice';
 import { DEFAULT_INDUSTRY_ID, getUpgradesForIndustry, getWinCondition, getLoseCondition, getStartingTime } from '@/lib/game/config';
 import { GameStore } from '../gameStore';
@@ -33,6 +34,9 @@ const getInitialGameState = (
     monthlyOneTimeCostsPaid: 0,
     monthlyHistory: [],
     customers: [],
+    leads: [],
+    leadProgress: 0,
+    conversionRate: 10, // Default: 10% per lead
     metrics: getInitialMetrics(industryId),
     upgrades: {},
     flags: {},
@@ -49,7 +53,12 @@ export interface GameSlice {
   currentMonth: number;
   isGameOver: boolean;
   gameOverReason: 'cash' | 'time' | 'victory' | null;
-  
+
+  // Leads
+  leads: Lead[];
+  leadProgress: number;
+  conversionRate: number;
+
   // Flag management
   flags: Record<string, boolean>;
   
@@ -206,6 +215,9 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
         gameTime: state.gameTime,
         currentMonth: state.currentMonth,
         customers: state.customers,
+        leads: state.leads || [],
+        leadProgress: state.leadProgress || 0,
+        conversionRate: state.conversionRate || 10,
         metrics: state.metrics,
         monthlyRevenue: state.monthlyRevenue,
         monthlyExpenses: state.monthlyExpenses,

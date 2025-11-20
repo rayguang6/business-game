@@ -7,6 +7,7 @@ import { WaitingArea } from './WaitingArea';
 import { TreatmentRoom } from './TreatmentRoom';
 import { Character2D } from './Character2D';
 import { SpriteCustomer } from './SpriteCustomer';
+import { SpriteLead } from './SpriteLead';
 import { SpriteStaff } from './SpriteStaff';
 import { GridOverlay } from './GridOverlay';
 import { DEFAULT_INDUSTRY_ID, getBusinessStats, getLayoutConfig, getCapacityImageForIndustry } from '@/lib/game/config';
@@ -37,6 +38,9 @@ export function GameCanvas() {
   const {
     selectedIndustry,
     customers,
+    leads,
+    leadProgress,
+    conversionRate,
     gameTime,
     hiredStaff,
   } = useGameStore();
@@ -177,6 +181,35 @@ export function GameCanvas() {
         )}
       </div>
 
+      {/* Conversion Progress HUD - Below TopBar */}
+      <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-40">
+        <div className="bg-black/75 text-white px-3 py-2 rounded-lg shadow-lg min-w-[220px]">
+          <div className="text-center mb-2">
+            <div className="text-sm font-semibold text-blue-300">Lead Conversion Progress</div>
+            <div className="text-xs text-gray-300">Generate leads → Convert to customers</div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span>Next Customer</span>
+              <span className="font-bold">{Math.round(leadProgress)}%</span>
+            </div>
+            <div className="w-full bg-gray-600 rounded-full h-2">
+              <div
+                className="h-2 rounded-full transition-all duration-300"
+                style={{
+                  width: `${Math.min(100, leadProgress)}%`,
+                  backgroundColor: leadProgress >= 100 ? '#10b981' : '#3b82f6'
+                }}
+              />
+            </div>
+            <div className="text-xs text-center text-gray-300">
+              Conversion Rate: {conversionRate}% per lead
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Canvas Container - Responsive with max constraints */}
       <div 
         ref={canvasRef}
@@ -295,6 +328,15 @@ export function GameCanvas() {
               />
             );
           })}
+
+          {/* Render all leads as sprites (behind customers) */}
+          {(leads || []).map((lead) => (
+            <SpriteLead
+              key={lead.id}
+              lead={lead}
+              scaleFactor={scaleFactor}
+            />
+          ))}
 
           {/* Render all customers as sprites */}
           {customers.map((customer) => (

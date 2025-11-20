@@ -4,6 +4,7 @@
 
 import { Industry } from '@/lib/features/industries';
 import { Customer } from '@/lib/features/customers';
+import { Lead } from '@/lib/features/leads';
 import { UpgradeId } from '@/lib/game/config';
 
 export interface Metrics {
@@ -96,4 +97,9 @@ export interface GameState {
 
   // Customers
   customers: Customer[];
+
+  // Leads
+  leads: Lead[];
+  leadProgress: number; // Progress toward converting a lead to customer (0-100)
+  conversionRate: number; // How much progress each lead adds (default: 10)
 }

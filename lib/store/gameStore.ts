@@ -4,6 +4,7 @@ import { createGameSlice, GameSlice } from './slices/gameSlice';
 import { createMetricsSlice, MetricsSlice } from './slices/metricsSlice';
 import { createMonthlySlice, MonthlySlice } from './slices/monthlySlice';
 import { createCustomerSlice, CustomerSlice } from './slices/customerSlice';
+import { createLeadSlice, LeadSlice } from './slices/leadSlice';
 import { createUpgradesSlice, UpgradesSlice } from './slices/upgradesSlice';
 import { EventSlice, createEventSlice } from './slices/eventSlice';
 import { createStaffSlice, StaffSlice } from './slices/staffSlice';
@@ -17,6 +18,7 @@ export type GameStore = IndustrySlice &
   MetricsSlice &
   MonthlySlice &
   CustomerSlice &
+  LeadSlice &
   UpgradesSlice &
   EventSlice &
   StaffSlice &
@@ -30,6 +32,7 @@ export const useGameStore = create<GameStore>()((...args) => ({
   ...createMetricsSlice(...args),
   ...createMonthlySlice(...args),
   ...createCustomerSlice(...args),
+  ...createLeadSlice(...args),
   ...createUpgradesSlice(...args),
   ...createEventSlice(...args),
   ...createStaffSlice(...args),

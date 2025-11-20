@@ -3,6 +3,7 @@
 import React from 'react';
 import { useFinanceData } from '@/hooks/useFinanceData';
 import { RevenueCategory, type RevenueEntry } from '@/lib/store/types';
+import { useGameStore } from '@/lib/store/gameStore';
 import { Card } from '@/app/components/ui/Card';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
 
@@ -17,6 +18,8 @@ export function HomeTab() {
     monthlyRevenue,
     monthlyRevenueBreakdown,
   } = useFinanceData();
+
+  const { leads = [], leadProgress = 0, conversionRate = 10 } = useGameStore();
 
   const recurringExpenses = monthlyExpenseBreakdown.filter((entry) => entry.category !== 'event');
   const eventExpenses = monthlyExpenseBreakdown.filter((entry) => entry.category === 'event');
@@ -144,7 +147,50 @@ export function HomeTab() {
           </div>
         </Card>
       </div>
-      
+
+      {/* Lead Progress Card */}
+      <Card variant="info">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center shadow-lg" style={{ backgroundColor: 'var(--info)' }}>
+            <span className="text-2xl">👥</span>
+          </div>
+          <div>
+            <h4 className="text-primary font-bold text-sm sm:text-base">Customer Progress</h4>
+            <p className="text-secondary text-xs">Build leads toward your next customer</p>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {/* Progress Bar */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Next Customer</span>
+              <span className="font-semibold">{Math.round(leadProgress)}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div
+                className="h-3 rounded-full transition-all duration-300"
+                style={{
+                  width: `${Math.min(100, leadProgress)}%`,
+                  backgroundColor: leadProgress >= 100 ? 'var(--success)' : 'var(--info)'
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Conversion Rate Display */}
+          <div className="text-center">
+            <div className="text-lg font-bold" style={{ color: 'var(--info)' }}>
+              {conversionRate}%
+            </div>
+            <div className="text-xs text-secondary">Conversion Rate</div>
+            <div className="text-xs text-tertiary mt-1">
+              Each lead brings you {conversionRate}% closer to your next customer
+            </div>
+          </div>
+        </div>
+      </Card>
+
       {/* Monthly History */}
       <Card>
         <SectionHeading>
