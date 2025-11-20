@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { BusinessMetrics, BusinessStats, GridPosition } from '@/lib/game/types';
+import type { BusinessMetrics, BusinessStats, GridPosition, AnchorPoint } from '@/lib/game/types';
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
 
 interface IndustrySimulationConfigTabProps {
@@ -137,7 +137,7 @@ export function IndustrySimulationConfigTab({
     }
   };
 
-  const updatePosition = (type: 'waiting' | 'serviceRoom' | 'staff', index: number, field: 'x' | 'y', value: number) => {
+  const updatePosition = (type: 'waiting' | 'serviceRoom' | 'staff', index: number, field: 'x' | 'y' | 'facingDirection' | 'width' | 'height' | 'anchor', value: number | string | null) => {
     if (type === 'waiting') {
       setWaitingPositions(waitingPositions.map((pos, i) => i === index ? { ...pos, [field]: value } : pos));
     } else if (type === 'serviceRoom') {
@@ -411,11 +411,22 @@ export function IndustrySimulationConfigTab({
               <label className="block text-sm font-medium text-slate-300">Waiting Positions</label>
               <button onClick={() => addPosition('waiting', 0, 0)} className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded">+ Add</button>
             </div>
+            <p className="text-xs text-slate-400 mb-2">Configure facing direction for each position (e.g., restaurant tables facing each other)</p>
             <div className="space-y-2">
               {waitingPositions.map((pos, idx) => (
-                <div key={idx} className="flex gap-2">
+                <div key={idx} className="flex gap-2 items-center">
                   <input type="number" className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="X" value={pos.x} onChange={(e) => updatePosition('waiting', idx, 'x', Number(e.target.value))} />
                   <input type="number" className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="Y" value={pos.y} onChange={(e) => updatePosition('waiting', idx, 'y', Number(e.target.value))} />
+                  <select 
+                    className="w-24 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                    value={pos.facingDirection || 'right'}
+                    onChange={(e) => updatePosition('waiting', idx, 'facingDirection', e.target.value as 'down' | 'left' | 'up' | 'right')}
+                  >
+                    <option value="right">Right →</option>
+                    <option value="left">Left ←</option>
+                    <option value="down">Down ↓</option>
+                    <option value="up">Up ↑</option>
+                  </select>
                   <button onClick={() => removePosition('waiting', idx)} className="px-2 py-1 bg-rose-600 hover:bg-rose-700 rounded text-sm">Remove</button>
                 </div>
               ))}
@@ -428,12 +439,64 @@ export function IndustrySimulationConfigTab({
               <label className="block text-sm font-medium text-slate-300">Service Room Positions</label>
               <button onClick={() => addPosition('serviceRoom', 0, 0)} className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded">+ Add</button>
             </div>
-            <div className="space-y-2">
+            <p className="text-xs text-slate-400 mb-2">Configure position, facing direction, and optional multi-tile size</p>
+            <div className="space-y-3">
               {serviceRoomPositions.map((pos, idx) => (
-                <div key={idx} className="flex gap-2">
-                  <input type="number" className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="X" value={pos.x} onChange={(e) => updatePosition('serviceRoom', idx, 'x', Number(e.target.value))} />
-                  <input type="number" className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="Y" value={pos.y} onChange={(e) => updatePosition('serviceRoom', idx, 'y', Number(e.target.value))} />
-                  <button onClick={() => removePosition('serviceRoom', idx)} className="px-2 py-1 bg-rose-600 hover:bg-rose-700 rounded text-sm">Remove</button>
+                <div key={idx} className="bg-slate-700/50 rounded-lg p-3 space-y-2">
+                  {/* Basic Position */}
+                  <div className="flex gap-2 items-center">
+                    <input type="number" className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="X" value={pos.x} onChange={(e) => updatePosition('serviceRoom', idx, 'x', Number(e.target.value))} />
+                    <input type="number" className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="Y" value={pos.y} onChange={(e) => updatePosition('serviceRoom', idx, 'y', Number(e.target.value))} />
+                    <select 
+                      className="w-24 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                      value={pos.facingDirection || 'down'}
+                      onChange={(e) => updatePosition('serviceRoom', idx, 'facingDirection', e.target.value as 'down' | 'left' | 'up' | 'right')}
+                    >
+                      <option value="down">Down ↓</option>
+                      <option value="up">Up ↑</option>
+                      <option value="left">Left ←</option>
+                      <option value="right">Right →</option>
+                    </select>
+                    <button onClick={() => removePosition('serviceRoom', idx)} className="px-2 py-1 bg-rose-600 hover:bg-rose-700 rounded text-sm">Remove</button>
+                  </div>
+                  
+                  {/* Multi-tile Size (Optional) */}
+                  <div className="flex gap-2 items-center text-xs text-slate-400">
+                    <span className="w-16">Size:</span>
+                    <input 
+                      type="number" 
+                      min="1"
+                      className="w-16 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs" 
+                      placeholder="W" 
+                      value={pos.width ?? ''} 
+                      onChange={(e) => updatePosition('serviceRoom', idx, 'width', e.target.value ? Number(e.target.value) : null)} 
+                    />
+                    <span className="text-slate-500">×</span>
+                    <input 
+                      type="number" 
+                      min="1"
+                      className="w-16 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs" 
+                      placeholder="H" 
+                      value={pos.height ?? ''} 
+                      onChange={(e) => updatePosition('serviceRoom', idx, 'height', e.target.value ? Number(e.target.value) : null)} 
+                    />
+                    <span className="text-slate-500 ml-2">tiles</span>
+                    <select 
+                      className="w-32 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs ml-auto"
+                      value={pos.anchor || 'top-left'}
+                      onChange={(e) => updatePosition('serviceRoom', idx, 'anchor', e.target.value as AnchorPoint)}
+                    >
+                      <option value="top-left">Top-Left</option>
+                      <option value="top-center">Top-Center</option>
+                      <option value="top-right">Top-Right</option>
+                      <option value="center-left">Center-Left</option>
+                      <option value="center">Center</option>
+                      <option value="center-right">Center-Right</option>
+                      <option value="bottom-left">Bottom-Left</option>
+                      <option value="bottom-center">Bottom-Center</option>
+                      <option value="bottom-right">Bottom-Right</option>
+                    </select>
+                  </div>
                 </div>
               ))}
             </div>

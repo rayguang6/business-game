@@ -369,8 +369,8 @@ ON CONFLICT (industry_id, id) DO UPDATE SET
 
 -- Step 8: Staff Roles (2 roles)
 -- Staff effects format: {"metric": "validMetric", "type": "validType", "value": number}
-INSERT INTO staff_roles (id, industry_id, name, salary, effects, emoji, sets_flag, requirements)
-VALUES 
+INSERT INTO staff_roles (id, industry_id, name, salary, effects, sets_flag, requirements, sprite_image)
+VALUES
   (
     'dental-assistant',
     'dental',
@@ -380,9 +380,9 @@ VALUES
       {"metric": "serviceSpeedMultiplier", "type": "percent", "value": 8},
       {"metric": "freedomScore", "type": "add", "value": -15}
     ]'::jsonb,
-    '👩‍⚕️',
     'has-assistant',
-    '[]'::jsonb
+    '[]'::jsonb,
+    '/images/staff/dental-assistant.png'
   ),
   (
     'receptionist',
@@ -393,14 +393,14 @@ VALUES
       {"metric": "skillLevel", "type": "add", "value": 1},
       {"metric": "freedomScore", "type": "add", "value": -10}
     ]'::jsonb,
-    '👨‍💼',
     'has-receptionist',
-    '[]'::jsonb
+    '[]'::jsonb,
+    '/images/staff/dental-specialist.png'
   )
 ON CONFLICT (industry_id, id) DO UPDATE SET
   name = EXCLUDED.name,
   salary = EXCLUDED.salary,
   effects = EXCLUDED.effects,
-  emoji = EXCLUDED.emoji,
   sets_flag = EXCLUDED.sets_flag,
-  requirements = EXCLUDED.requirements;
+  requirements = EXCLUDED.requirements,
+  sprite_image = EXCLUDED.sprite_image;

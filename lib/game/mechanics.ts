@@ -284,6 +284,8 @@ function processCustomersForTick({
           if (!isOccupied) {
             updatedCustomer.targetX = waitingPosition.x;
             updatedCustomer.targetY = waitingPosition.y;
+            // Store the facing direction from the waiting position config (defaults to 'right' for backward compatibility)
+            updatedCustomer.waitingPositionFacing = waitingPosition.facingDirection || 'right';
             const pathToChair = findPath(
               { x: Math.round(updatedCustomer.x), y: Math.round(updatedCustomer.y) },
               waitingPosition,
@@ -315,6 +317,8 @@ function processCustomersForTick({
         
         customerWithService.targetX = servicePosition.x;
         customerWithService.targetY = servicePosition.y;
+        // Store the facing direction from the service position config (defaults to 'down' for backward compatibility)
+        customerWithService.servicePositionFacing = servicePosition.facingDirection || 'down';
         const pathToRoom = findPath(
           { x: Math.round(customerWithService.x), y: Math.round(customerWithService.y) },
           servicePosition,

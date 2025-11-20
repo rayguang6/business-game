@@ -121,11 +121,6 @@ export async function upsertUpgradeForIndustry(
     })),
   } as const;
 
-  // Log the payload being sent for debugging
-  console.log('[Upgrade Save] Upserting upgrade with payload:', JSON.stringify(basePayload, null, 2));
-  console.log('[Upgrade Save] Industry ID:', industryId);
-  console.log('[Upgrade Save] Upgrade ID:', upgrade.id);
-  
   const { data: upsertData, error: upsertError } = await supabase
     .from('upgrades')
     .upsert(basePayload, { onConflict: 'industry_id,id' })
@@ -137,8 +132,6 @@ export async function upsertUpgradeForIndustry(
     console.error('[Upgrade Save] Payload that failed:', JSON.stringify(basePayload, null, 2));
     return { success: false, message: `Failed to save: ${upsertError.message}` };
   }
-
-  console.log('[Upgrade Save] Upsert successful, returned data:', upsertData);
 
   // Verify the data was saved correctly
   const { data: verifyData, error: verifyError } = await supabase
@@ -155,13 +148,9 @@ export async function upsertUpgradeForIndustry(
     return { success: true, message: 'Saved but verification failed. Please refresh to confirm.' };
   }
 
-  console.log('[Upgrade Save] Verification successful. Saved data:', JSON.stringify(verifyData, null, 2));
-  
   if (verifyData) {
     const parsedEffects = validateAndParseUpgradeEffects(verifyData.effects);
-    console.log('[Upgrade Save] Parsed effects from DB:', parsedEffects);
-    console.log('[Upgrade Save] Expected effects:', upgrade.effects);
-    
+
     if (parsedEffects.length !== upgrade.effects.length) {
       console.warn(`[Upgrade Save] Effect count mismatch: saved ${parsedEffects.length}, expected ${upgrade.effects.length}`);
       console.warn('[Upgrade Save] Saved effects:', parsedEffects);

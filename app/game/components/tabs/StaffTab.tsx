@@ -165,8 +165,18 @@ function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
           {/* Outer glow ring */}
           <div className={`absolute inset-0 ${styles.avatarBg} rounded-full blur-md opacity-50 group-hover:opacity-70 transition-opacity`}></div>
           {/* Avatar */}
-          <div className={`relative w-20 h-20 sm:w-24 sm:h-24 ${styles.avatarBg} rounded-full flex items-center justify-center border-4 ${styles.borderColor} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-            <span className="text-4xl sm:text-5xl leading-none relative z-10">{candidate.emoji}</span>
+          <div className={`relative w-20 h-20 sm:w-24 sm:h-24 ${styles.avatarBg} rounded-full flex items-center justify-center border-4 ${styles.borderColor} shadow-lg group-hover:scale-110 transition-transform duration-300 overflow-hidden`}>
+            <div className="w-full h-full relative overflow-hidden">
+              <img
+                src={candidate.spriteImage || '/images/staff/staff1.png'}
+                alt={candidate.name}
+                className="w-[1600%] h-full object-cover object-left"
+                onError={(e) => {
+                  // Fallback to default sprite if custom sprite fails
+                  (e.target as HTMLImageElement).src = '/images/staff/staff1.png';
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -330,8 +340,18 @@ export function StaffTab() {
                     {/* Outer glow ring */}
                     <div className={`absolute inset-0 ${styles.avatarBg} rounded-full blur-md opacity-50 group-hover:opacity-70 transition-opacity`}></div>
                     {/* Avatar */}
-                    <div className={`relative w-20 h-20 sm:w-24 sm:h-24 ${styles.avatarBg} rounded-full flex items-center justify-center border-4 ${styles.borderColor} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                      <span className="text-4xl sm:text-5xl leading-none relative z-10">{member.emoji}</span>
+                    <div className={`relative w-20 h-20 sm:w-24 sm:h-24 ${styles.avatarBg} rounded-full flex items-center justify-center border-4 ${styles.borderColor} shadow-lg group-hover:scale-110 transition-transform duration-300 overflow-hidden`}>
+                      <div className="w-full h-full relative overflow-hidden">
+                        <img
+                          src={member.spriteImage || '/images/staff/staff1.png'}
+                          alt={member.name}
+                          className="w-[1600%] h-full object-cover object-left"
+                          onError={(e) => {
+                            // Fallback to default sprite if custom sprite fails
+                            (e.target as HTMLImageElement).src = '/images/staff/staff1.png';
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

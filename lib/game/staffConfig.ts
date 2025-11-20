@@ -9,7 +9,6 @@ export interface StaffRoleConfig {
   name: string;
   salary: number;
   effects: UpgradeEffect[];
-  emoji: string;
   spriteImage?: string;
   setsFlag?: string;
   requirements?: Requirement[];
@@ -22,7 +21,6 @@ export interface StaffPreset {
   salary?: number;
   serviceSpeed?: number;
   workloadReduction?: number;
-  emoji?: string;
 }
 
 const DEFAULT_NAME_POOL = [
@@ -123,7 +121,6 @@ function buildStaffFromRole(
     roleId: role.id,
     salary: overrides.salary ?? role.salary,
     effects: overrides.effects ?? role.effects.map((effect) => ({ ...effect })),
-    emoji: overrides.emoji ?? role.emoji,
     spriteImage: overrides.spriteImage ?? role.spriteImage,
     setsFlag: overrides.setsFlag ?? role.setsFlag,
     requirements: overrides.requirements ?? role.requirements,
@@ -164,7 +161,6 @@ export function getInitialStaffForIndustry(industryId: IndustryId): Staff[] {
       id: preset.id,
       name,
       salary: preset.salary,
-      emoji: preset.emoji,
     });
   });
 }
@@ -185,7 +181,6 @@ export function createRandomStaffForIndustry(
     roleId: role.id,
     salary: role.salary,
     effects: role.effects.map((effect) => ({ ...effect })),
-    emoji: role.emoji,
     spriteImage: role.spriteImage,
     setsFlag: role.setsFlag,
     requirements: role.requirements,
@@ -210,7 +205,6 @@ const DEFAULT_ROLES: StaffRoleConfig[] = [
       { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 8 },
       { metric: GameMetric.FreedomScore, type: EffectType.Add, value: -8 },
     ],
-    emoji: '👩‍⚕️',
   },
   {
     id: 'technician',
@@ -220,7 +214,6 @@ const DEFAULT_ROLES: StaffRoleConfig[] = [
       { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 10 },
       { metric: GameMetric.FreedomScore, type: EffectType.Add, value: -10 },
     ],
-    emoji: '👨‍🔧',
   },
   {
     id: 'specialist',
@@ -230,7 +223,6 @@ const DEFAULT_ROLES: StaffRoleConfig[] = [
       { metric: GameMetric.ServiceSpeedMultiplier, type: EffectType.Percent, value: 14 },
       { metric: GameMetric.FreedomScore, type: EffectType.Add, value: -14 },
     ],
-    emoji: '👨‍🔬',
   },
 ];
 
@@ -240,13 +232,11 @@ const DEFAULT_INITIAL_STAFF: StaffPreset[] = [
     name: 'Alice',
     roleId: 'assistant',
     salary: 2600,
-    emoji: '👩‍⚕️',
   },
   {
     id: 'staff-initial-2',
     name: 'Bob',
     roleId: 'specialist',
     salary: 3600,
-    emoji: '👨‍🔬',
   },
 ];

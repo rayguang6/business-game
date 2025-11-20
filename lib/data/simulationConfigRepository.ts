@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
-import type { BusinessMetrics, BusinessStats, MovementConfig, MapConfig, SimulationLayoutConfig } from '@/lib/game/types';
+import type { BusinessMetrics, BusinessStats, MovementConfig, MapConfig, SimulationLayoutConfig, GridPosition } from '@/lib/game/types';
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
 
 export interface GlobalSimulationConfigRow {
@@ -11,10 +11,10 @@ export interface GlobalSimulationConfigRow {
   map_height?: number | null;
   map_walls?: Array<{ x: number; y: number }> | null;
   layout_config: SimulationLayoutConfig | null; // Keep for backward compatibility
-  entry_position?: { x: number; y: number } | null;
-  waiting_positions?: Array<{ x: number; y: number }> | null;
-  service_room_positions?: Array<{ x: number; y: number }> | null;
-  staff_positions?: Array<{ x: number; y: number }> | null;
+  entry_position?: GridPosition | null;
+  waiting_positions?: GridPosition[] | null;
+  service_room_positions?: GridPosition[] | null;
+  staff_positions?: GridPosition[] | null;
   capacity_image: string | null;
   win_condition: WinCondition | null;
   lose_condition: LoseCondition | null;
@@ -189,10 +189,10 @@ export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationCon
   let layoutConfig: SimulationLayoutConfig | undefined;
   if (data.entry_position || data.waiting_positions || data.service_room_positions || data.staff_positions) {
     layoutConfig = {
-      entryPosition: (data.entry_position as unknown as { x: number; y: number }) || { x: 0, y: 0 },
-      waitingPositions: (data.waiting_positions as unknown as Array<{ x: number; y: number }>) || [],
-      serviceRoomPositions: (data.service_room_positions as unknown as Array<{ x: number; y: number }>) || [],
-      staffPositions: (data.staff_positions as unknown as Array<{ x: number; y: number }>) || [],
+      entryPosition: (data.entry_position as unknown as GridPosition) || { x: 0, y: 0 },
+      waitingPositions: (data.waiting_positions as unknown as GridPosition[]) || [],
+      serviceRoomPositions: (data.service_room_positions as unknown as GridPosition[]) || [],
+      staffPositions: (data.staff_positions as unknown as GridPosition[]) || [],
     };
   } else {
     layoutConfig = mapLayoutConfig(data.layout_config);
@@ -229,10 +229,10 @@ export async function upsertGlobalSimulationConfig(config: {
   mapHeight?: number | null;
   mapWalls?: Array<{ x: number; y: number }> | null;
   layoutConfig?: SimulationLayoutConfig;
-  entryPosition?: { x: number; y: number } | null;
-  waitingPositions?: Array<{ x: number; y: number }> | null;
-  serviceRoomPositions?: Array<{ x: number; y: number }> | null;
-  staffPositions?: Array<{ x: number; y: number }> | null;
+    entryPosition?: GridPosition | null;
+    waitingPositions?: GridPosition[] | null;
+    serviceRoomPositions?: GridPosition[] | null;
+    staffPositions?: GridPosition[] | null;
   capacityImage?: string | null;
   winCondition?: WinCondition;
   loseCondition?: LoseCondition;

@@ -49,9 +49,9 @@ export function SpriteCustomer({ customer, scaleFactor }: SpriteCustomerProps) {
         return { isWalking: false, isCelebrating: true, direction: facingDirection };
 
       case CustomerStatus.Waiting:
-        return { isWalking: false, isCelebrating: false, direction: 'right' };
+        return { isWalking: false, isCelebrating: false, direction: facingDirection };
       case CustomerStatus.InService:
-        return { isWalking: false, isCelebrating: false, direction: 'down' };
+        return { isWalking: false, isCelebrating: false, direction: facingDirection };
       default:
         return { isWalking: false, isCelebrating: false, direction: facingDirection };
     }

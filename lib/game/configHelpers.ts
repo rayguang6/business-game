@@ -112,8 +112,7 @@ export async function getBusinessMetricsWithFallback(industryId: IndustryId): Pr
   } catch (error) {
     console.warn(`[Config] Failed to fetch business metrics for ${industryId}, using defaults:`, error);
   }
-  
-  console.log(`[Config] Using default business metrics for ${industryId}`);
+
   return DEFAULT_BUSINESS_METRICS;
 }
 
@@ -134,8 +133,7 @@ export async function getBusinessStatsWithFallback(industryId: IndustryId): Prom
   } catch (error) {
     console.warn(`[Config] Failed to fetch business stats for ${industryId}, using defaults:`, error);
   }
-  
-  console.log(`[Config] Using default business stats for ${industryId}`);
+
   return DEFAULT_BUSINESS_STATS;
 }
 

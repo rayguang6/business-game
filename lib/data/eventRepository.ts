@@ -104,8 +104,6 @@ export async function fetchEventsForIndustry(industryId: IndustryId): Promise<Ga
     return null;
   }
 
-  console.log(`[Events] fetchEventsForIndustry called with: ${industryId}`);
-
   const { data, error } = await supabase
     .from('events')
     .select('id, industry_id, title, category, summary, choices, requirements')
@@ -115,11 +113,6 @@ export async function fetchEventsForIndustry(industryId: IndustryId): Promise<Ga
     console.error('[Events] Failed to fetch events from Supabase', error);
     return null;
   }
-
-  console.log(`[Events] Supabase query result for "${industryId}":`, { 
-    count: data?.length || 0, 
-    events: data?.map(e => ({ id: e.id, title: e.title })) || [] 
-  });
 
   if (!data || data.length === 0) {
     console.warn(`[Events] ⚠️ No events found for industry "${industryId}"`);
@@ -137,7 +130,6 @@ export async function fetchEventsForIndustry(industryId: IndustryId): Promise<Ga
       requirements: Array.isArray(row.requirements) ? row.requirements as Requirement[] : undefined,
     }));
 
-  console.log(`[Events] Mapped ${mapped.length} events for industry "${industryId}"`);
   return mapped;
 }
 

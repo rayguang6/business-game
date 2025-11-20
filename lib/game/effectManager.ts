@@ -27,6 +27,7 @@ export enum GameMetric {
   ServiceRevenueMultiplier = 'serviceRevenueMultiplier',
   ServiceRevenueFlatBonus = 'serviceRevenueFlatBonus',
   FreedomScore = 'freedomScore', // Previously: FounderWorkingHours
+  SpawnCustomers = 'spawnCustomers', // Immediate customer spawning (one-time action)
   // Tier-specific service metrics
   HighTierServiceRevenueMultiplier = 'highTierServiceRevenueMultiplier',
   HighTierServiceWeightageMultiplier = 'highTierServiceWeightageMultiplier',
@@ -88,7 +89,7 @@ export const METRIC_CONSTRAINTS: Partial<Record<GameMetric, MetricConstraints>> 
   },
   [GameMetric.ServiceRooms]: { 
     min: 1,           // Can't have negative rooms
-    max: 20,          // Reasonable upper limit
+    // max removed - capacity handled by upgrades
     roundToInt: true, // Must be whole number
   },
   // [GameMetric.HappyProbability] removed - not used in game mechanics

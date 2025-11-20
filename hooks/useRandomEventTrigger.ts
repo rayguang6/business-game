@@ -45,13 +45,6 @@ export const useRandomEventTrigger = () => {
     ) {
       const eventsFromStore = getEventsFromStore(industryId);
       const allEvents = eventsFromStore.length > 0 ? eventsFromStore : getEventsForIndustry(industryId);
-      
-      console.log(`[Event Trigger] Industry: "${industryId}"`, {
-        triggerPoints,
-        roundDuration,
-        totalEvents: allEvents.length,
-        events: allEvents.map(e => ({ id: e.id, title: e.title, requirements: e.requirements?.length || 0 })),
-      });
 
       triggerStateRef.current = {
         month: currentMonth,
@@ -86,9 +79,6 @@ export const useRandomEventTrigger = () => {
         // Filter events based on their requirements
         const eligibleEvents = allEvents.filter(event => {
           const meetsRequirements = event.requirements ? checkRequirements(event.requirements, store) : true;
-          if (!meetsRequirements && event.requirements) {
-            console.debug(`[Event Trigger] Event "${event.title}" does not meet requirements:`, event.requirements);
-          }
           return meetsRequirements;
         });
 
@@ -96,7 +86,6 @@ export const useRandomEventTrigger = () => {
           console.warn(`[Event Trigger] No eligible events for industry "${industryId}" at trigger point ${trigger}s. Total events: ${allEvents.length}, Eligible: 0`);
         } else {
           const randomIndex = Math.floor(Math.random() * eligibleEvents.length);
-          console.log(`[Event Trigger] Triggering event "${eligibleEvents[randomIndex].title}" for industry "${industryId}" at ${trigger}s`);
           setCurrentEvent(eligibleEvents[randomIndex]);
         }
         break;

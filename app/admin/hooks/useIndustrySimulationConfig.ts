@@ -76,7 +76,8 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
             setStaffPositions(config.layoutConfig.staffPositions || []);
           }
           
-          if (config.capacityImage) setCapacityImage(config.capacityImage);
+          // Handle capacityImage: set to empty string if null/undefined, otherwise use the value
+          setCapacityImage(config.capacityImage ?? '');
           if (config.winCondition) setWinCondition(config.winCondition);
           if (config.loseCondition) setLoseCondition(config.loseCondition);
           // customerImages and staffNamePool removed - they're global only

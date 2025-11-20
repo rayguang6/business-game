@@ -10,7 +10,7 @@ interface RoleForm {
   name: string;
   salary: string;
   effects: Array<{ metric: GameMetric; type: EffectType; value: string }>;
-  emoji: string;
+  spriteImage?: string;
   setsFlag?: string;
   requirements: Requirement[];
 }
@@ -21,7 +21,6 @@ interface PresetForm {
   name: string;
   salary?: string;
   serviceSpeed?: string;
-  emoji?: string;
 }
 
 export function useStaff(industryId: string) {
@@ -39,7 +38,7 @@ export function useStaff(industryId: string) {
     name: '',
     salary: '0',
     effects: [],
-    emoji: '🧑‍💼',
+    spriteImage: '',
     requirements: [],
   });
 
@@ -85,7 +84,7 @@ export function useStaff(industryId: string) {
       name: role.name,
       salary: String(role.salary),
       effects: effects.map(e => ({ metric: e.metric, type: e.type, value: String(e.value) })),
-      emoji: role.emoji,
+      spriteImage: role.spriteImage || '',
       setsFlag: role.setsFlag,
       requirements: role.requirements || [],
     });
@@ -104,7 +103,6 @@ export function useStaff(industryId: string) {
       name: '',
       salary: '0',
       effects: [],
-      emoji: '🧑‍💼',
       requirements: [],
     });
     setStatus(null);
@@ -140,7 +138,7 @@ export function useStaff(industryId: string) {
       name,
       salary,
       effects,
-      emoji: roleForm.emoji.trim() || undefined,
+      spriteImage: roleForm.spriteImage?.trim() || undefined,
       setsFlag,
       requirements,
     });
@@ -156,7 +154,6 @@ export function useStaff(industryId: string) {
         name,
         salary,
         effects,
-        emoji: roleForm.emoji.trim() || '🧑‍💼',
         setsFlag,
         requirements,
       };
@@ -191,7 +188,6 @@ export function useStaff(industryId: string) {
       name: '',
       salary: '0',
       effects: [],
-      emoji: '🧑‍💼',
       requirements: [],
     });
     setStatus('Role deleted.');
@@ -206,7 +202,6 @@ export function useStaff(industryId: string) {
       name: preset.name,
       salary: preset.salary !== undefined ? String(preset.salary) : undefined,
       serviceSpeed: preset.serviceSpeed !== undefined ? String(preset.serviceSpeed) : undefined,
-      emoji: preset.emoji,
     });
     if (resetMsg) setStatus(null);
   }, []);
@@ -252,7 +247,6 @@ export function useStaff(industryId: string) {
       name: name || undefined,
       salary,
       serviceSpeed,
-      emoji: presetForm.emoji?.trim() || undefined,
     });
     setPresetOperation('idle');
     if (!result.success) {
@@ -264,7 +258,6 @@ export function useStaff(industryId: string) {
       const nextItem: StaffPreset = { id, roleId, name: name || 'Staff' };
       if (salary !== undefined) (nextItem as any).salary = salary;
       if (serviceSpeed !== undefined) (nextItem as any).serviceSpeed = serviceSpeed;
-      if (presetForm.emoji?.trim()) (nextItem as any).emoji = presetForm.emoji.trim();
       const next = exists ? prev.map((p) => (p.id === id ? nextItem : p)) : [...prev, nextItem];
       return next.sort((a, b) => a.name.localeCompare(b.name));
     });
@@ -306,7 +299,6 @@ export function useStaff(industryId: string) {
         name: '',
         salary: '0',
         effects: [],
-        emoji: '🧑‍💼',
         requirements: [],
       });
     }

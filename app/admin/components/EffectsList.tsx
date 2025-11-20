@@ -49,8 +49,6 @@ export function EffectsList({
       value: defaultEffect.value ?? '0',
       ...(showDuration ? { durationSeconds: defaultEffect.durationSeconds ?? '' } : {}),
     };
-    console.log('[EffectsList] Adding new effect:', newEffect);
-    console.log('[EffectsList] Current effects:', effects);
     onEffectsChange([...effects, newEffect]);
   };
 

@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
-import type { IndustryId } from '@/lib/game/types';
+import type { IndustryId, GridPosition } from '@/lib/game/types';
 import type {
   BusinessMetrics,
   BusinessStats,
@@ -8,6 +8,7 @@ import type {
   SimulationLayoutConfig,
 } from '@/lib/game/types';
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
+import { parsePositions } from './layoutRepository';
 
 export interface IndustrySimulationConfigResult {
   businessMetrics?: BusinessMetrics;
@@ -183,11 +184,16 @@ export async function fetchIndustrySimulationConfig(
   
   // Build layout config from separate columns (or fallback to layout_config for backward compatibility)
   if (data.entry_position || data.waiting_positions || data.service_room_positions || data.staff_positions) {
+    // Use parsePositions to properly parse facingDirection if present
+    const waitingPositions = parsePositions(data.waiting_positions) || [];
+    const serviceRoomPositions = parsePositions(data.service_room_positions) || [];
+    const staffPositions = parsePositions(data.staff_positions) || [];
+    
     const layoutConfig: SimulationLayoutConfig = {
-      entryPosition: (data.entry_position as unknown as { x: number; y: number }) || { x: 0, y: 0 },
-      waitingPositions: (data.waiting_positions as unknown as Array<{ x: number; y: number }>) || [],
-      serviceRoomPositions: (data.service_room_positions as unknown as Array<{ x: number; y: number }>) || [],
-      staffPositions: (data.staff_positions as unknown as Array<{ x: number; y: number }>) || [],
+      entryPosition: (data.entry_position as unknown as GridPosition) || { x: 0, y: 0 },
+      waitingPositions,
+      serviceRoomPositions,
+      staffPositions,
     };
     result.layoutConfig = layoutConfig;
   } else if (data.layout_config) {
@@ -229,10 +235,10 @@ export async function upsertIndustrySimulationConfig(
     mapHeight?: number | null;
     mapWalls?: Array<{ x: number; y: number }> | null;
     layoutConfig?: SimulationLayoutConfig;
-    entryPosition?: { x: number; y: number } | null;
-    waitingPositions?: Array<{ x: number; y: number }> | null;
-    serviceRoomPositions?: Array<{ x: number; y: number }> | null;
-    staffPositions?: Array<{ x: number; y: number }> | null;
+    entryPosition?: GridPosition | null;
+    waitingPositions?: GridPosition[] | null;
+    serviceRoomPositions?: GridPosition[] | null;
+    staffPositions?: GridPosition[] | null;
     capacityImage?: string | null;
     winCondition?: WinCondition;
     loseCondition?: LoseCondition;

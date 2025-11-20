@@ -118,10 +118,10 @@ grep -r "serviceSpeedMultiplier\|founderWorkingHours\|reputationMultiplier" --in
 import { validateAndParseUpgradeEffects } from '@/lib/utils/effectValidation';
 
 // Should return empty array (invalid)
-console.log(validateAndParseUpgradeEffects([{ metric: 'invalid', type: 'add', value: 10 }]));
+// console.log(validateAndParseUpgradeEffects([{ metric: 'invalid', type: 'add', value: 10 }]));
 
 // Should return valid effect
-console.log(validateAndParseUpgradeEffects([{ metric: 'cash', type: 'add', value: 10 }]));
+// console.log(validateAndParseUpgradeEffects([{ metric: 'cash', type: 'add', value: 10 }]));
 ```
 
 ## 📝 Next Steps

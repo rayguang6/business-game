@@ -6,6 +6,7 @@ import { checkRequirements } from '@/lib/game/requirementChecker';
 import type { Requirement, IndustryId } from '@/lib/game/types';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import { useConfigStore } from '@/lib/store/configStore';
+import type { Customer } from '@/lib/features/customers';
 
 // Marketing campaign effect (simplified from full Effect, no ID/source yet)
 export interface CampaignEffect {
@@ -36,7 +37,7 @@ export interface MarketingSlice {
 
 /**
  * Add marketing campaign effects to the effect manager
- * For direct state metrics (Cash, Time, SkillLevel, FreedomScore), apply directly
+ * For direct state metrics (Cash, Time, SkillLevel, FreedomScore, SpawnCustomers), apply directly
  */
 function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: number, store?: {
   applyCashChange?: (amount: number) => void;
@@ -45,12 +46,15 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
   applyFreedomScoreChange?: (amount: number) => void;
   recordEventRevenue?: (amount: number, label?: string) => void;
   recordEventExpense?: (amount: number, label: string) => void;
+  spawnCustomer?: () => Customer;
+  addCustomers?: (customers: Customer[]) => void;
 }): void {
   campaign.effects.forEach((effect, index) => {
-    // Direct state metrics (Cash, Time, SkillLevel, FreedomScore) with Add effects are applied directly
+    // Direct state metrics (Cash, Time, SkillLevel, FreedomScore, SpawnCustomers) with Add effects are applied directly
     // These are one-time permanent effects (no duration tracking)
     if ((effect.metric === GameMetric.Cash || effect.metric === GameMetric.Time || 
-         effect.metric === GameMetric.SkillLevel || effect.metric === GameMetric.FreedomScore) 
+         effect.metric === GameMetric.SkillLevel || effect.metric === GameMetric.FreedomScore ||
+         effect.metric === GameMetric.SpawnCustomers) 
         && effect.type === EffectType.Add && store) {
       // Apply directly to state
       if (effect.metric === GameMetric.Cash) {
@@ -69,6 +73,26 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
         store.applySkillLevelChange(effect.value);
       } else if (effect.metric === GameMetric.FreedomScore && store.applyFreedomScoreChange) {
         store.applyFreedomScoreChange(effect.value);
+      } else if (effect.metric === GameMetric.SpawnCustomers && store.spawnCustomer && store.addCustomers) {
+        // Spawn customers with staggered animation - value is the number of customers to spawn
+        const count = Math.max(0, Math.floor(effect.value));
+        
+        if (count > 0) {
+          // Stagger customer spawns with a slight delay for better visual effect
+          // No position offset to avoid alignment issues with chairs and pathfinding
+          const spawnDelayMs = 150; // 150ms delay between each customer spawn
+          
+          for (let i = 0; i < count; i++) {
+            setTimeout(() => {
+              if (!store.spawnCustomer || !store.addCustomers) return;
+              
+              const customer = store.spawnCustomer();
+              store.addCustomers([customer]);
+              
+              // Last customer spawned
+            }, i * spawnDelayMs);
+          }
+        }
       }
       // Direct state metrics are always permanent (one-time add/subtract)
       // Duration is ignored for these metrics - content should not use temporary effects
@@ -106,112 +130,6 @@ function removeMarketingEffects(campaignId: string): void {
   effectManager.removeBySource('marketing', campaignId);
 }
 
-// Note: percent values now use whole numbers (e.g., 100 = +100%)
-export const FALLBACK_CAMPAIGNS: MarketingCampaign[] = [
-  {
-    id: 'neighborhood-flyers',
-    name: 'Neighborhood Flyers',
-    description: 'Hand out flyers and offer a same-day discount to nearby offices.',
-    cost: 150,
-    cooldownSeconds: 10, // 10 seconds cooldown
-    effects: [
-      {
-        metric: GameMetric.SpawnIntervalSeconds,
-        type: EffectType.Add,
-        value: -1, // reduce spawn interval by 1 second
-        durationSeconds: 30, // 30 seconds effect
-      },
-    ],
-  },
-  {
-    id: 'community-open-house',
-    name: 'Community Open House',
-    description: 'Host a monthend open house with free mini check-ups and swag.',
-    cost: 200,
-    cooldownSeconds: 15, // 15 seconds cooldown
-    effects: [
-      {
-        metric: GameMetric.SkillLevel,
-        type: EffectType.Add,
-        value: 5, // +5 skill level per customer (direct add)
-        durationSeconds: 45, // 45 seconds effect
-      },
-    ],
-  },
-  {
-    id: 'digital-ad-burst',
-    name: 'Digital Ad Burst',
-    description: 'Launch a short social media blitz to boost incoming customers.',
-    cost: 240,
-    cooldownSeconds: 12, // 12 seconds cooldown
-    effects: [
-      {
-        metric: GameMetric.SpawnIntervalSeconds,
-        type: EffectType.Percent,
-        value: 100, // double the spawn speed (interval ÷ 2)
-        durationSeconds: 35, // 35 seconds effect
-      },
-      {
-        metric: GameMetric.MonthlyExpenses,
-        type: EffectType.Add,
-        value: 300, // +$300 expenses while active
-        durationSeconds: 35, // 35 seconds effect
-      },
-    ],
-  },
-  {
-    id: 'vip-weekend',
-    name: 'VIP Weekend',
-    description: 'Bundle premium services for high-value patients.',
-    cost: 360,
-    cooldownSeconds: 20, // 20 seconds cooldown
-    effects: [
-      {
-        metric: GameMetric.ServiceRevenueFlatBonus,
-        type: EffectType.Add,
-        value: 80, // add $80 to each service
-        durationSeconds: 40, // 40 seconds effect
-      },
-    ],
-  },
-  {
-    id: 'revenue-multiplier-test',
-    name: 'Revenue Multiplier Test',
-    description: 'A test campaign to boost service revenue by a multiplier.',
-    cost: 400,
-    cooldownSeconds: 25, // 25 seconds cooldown
-    effects: [
-      {
-        metric: GameMetric.ServiceRevenueMultiplier,
-        type: EffectType.Multiply,
-        value: 1.5, // multiply service revenue by 1.5
-        durationSeconds: 50, // 50 seconds effect
-      },
-    ],
-  },
-  {
-    id: 'express-checkin',
-    name: 'Express Check-in',
-    description: 'Bring in temporary staff to keep chairs turning quickly.',
-    cost: 320,
-    cooldownSeconds: 18, // 18 seconds cooldown
-    effects: [
-      {
-        metric: GameMetric.ServiceSpeedMultiplier,
-        type: EffectType.Multiply,
-        value: 1.25, // speed up service by 25%
-        durationSeconds: 32, // 32 seconds effect
-      },
-      {
-        metric: GameMetric.ServiceRooms,
-        type: EffectType.Add,
-        value: 1, // add one temporary service room
-        durationSeconds: 32, // 32 seconds effect
-      },
-    ],
-  },
-];
-
 const cloneCampaign = (campaign: MarketingCampaign): MarketingCampaign => ({
   ...campaign,
   effects: campaign.effects.map((effect) => ({ ...effect })),
@@ -219,8 +137,11 @@ const cloneCampaign = (campaign: MarketingCampaign): MarketingCampaign => ({
 
 const resolveCampaignBlueprints = (industryId: IndustryId): MarketingCampaign[] => {
   const configCampaigns = useConfigStore.getState().industryConfigs[industryId]?.marketingCampaigns;
-  const source = configCampaigns && configCampaigns.length > 0 ? configCampaigns : FALLBACK_CAMPAIGNS;
-  return source.map(cloneCampaign);
+  // Return campaigns from database only - no fallback to ensure we know when database is empty
+  if (!configCampaigns || configCampaigns.length === 0) {
+    return [];
+  }
+  return configCampaigns.map(cloneCampaign);
 };
 
 export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlice> = (set, get) => ({
@@ -301,12 +222,17 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       applyFreedomScoreChange: store.applyFreedomScoreChange,
       recordEventRevenue: store.recordEventRevenue,
       recordEventExpense: store.recordEventExpense,
+      spawnCustomer: store.spawnCustomer,
+      addCustomers: (customers: Customer[]) => {
+        set((state) => ({
+          customers: [...state.customers, ...customers],
+        }));
+      },
     });
 
     // Set flag if campaign sets one
     if (campaign.setsFlag) {
       get().setFlag(campaign.setsFlag, true);
-      console.log(`[Flag System] Flag "${campaign.setsFlag}" set to true by marketing campaign "${campaign.name}"`);
     }
 
     // Start cooldown immediately

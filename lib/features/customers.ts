@@ -49,6 +49,8 @@ export interface Customer {
   maxPatience: number; // maximum patience ticks for this customer
   roomId?: number; // assigned treatment room (1, 2, 3, etc.)
   leavingTicks?: number; // ticks spent in LeavingAngry state
+  waitingPositionFacing?: 'down' | 'left' | 'up' | 'right'; // Facing direction for waiting position (stored when assigned)
+  servicePositionFacing?: 'down' | 'left' | 'up' | 'right'; // Facing direction for service position (stored when assigned)
 }
 
 // Configuration (now using centralized config)
@@ -115,18 +117,30 @@ function moveTowardsTarget(customer: Customer): Customer {
 
   // Close enough to waypoint - snap to position and advance path
   if (Math.abs(dx) <= movementSpeed && Math.abs(dy) <= movementSpeed) {
-    let facingDirection = customer.facingDirection;
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 0) {
-      facingDirection = dx > 0 ? 'right' : 'left';
-    } else if (Math.abs(dy) > 0) {
-      facingDirection = dy > 0 ? 'down' : 'up';
-    }
-
     const hasMoreWaypoints = remainingPath.length > 0;
     const reachedFinalWaypoint =
       !hasMoreWaypoints &&
       nextWaypoint.x === customer.targetX &&
       nextWaypoint.y === customer.targetY;
+
+    // If we've reached the final waypoint, use the configured facing direction (waitingPositionFacing or servicePositionFacing)
+    // Otherwise, use movement-based facing direction
+    let facingDirection = customer.facingDirection;
+    if (reachedFinalWaypoint) {
+      // Prefer servicePositionFacing (for service rooms) over waitingPositionFacing (for waiting positions)
+      if (customer.servicePositionFacing) {
+        facingDirection = customer.servicePositionFacing;
+      } else if (customer.waitingPositionFacing) {
+        facingDirection = customer.waitingPositionFacing;
+      }
+    } else {
+      // Use movement-based facing direction for intermediate waypoints
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 0) {
+        facingDirection = dx > 0 ? 'right' : 'left';
+      } else if (Math.abs(dy) > 0) {
+        facingDirection = dy > 0 ? 'down' : 'up';
+      }
+    }
 
     return {
       ...customer,
@@ -190,10 +204,12 @@ export function tickCustomer(customer: Customer): Customer {
       
       // If reached target, start waiting
       if (hasReachedTarget(movedToChair)) {
+        // Use the facing direction stored when position was assigned (defaults to 'right' for backward compatibility)
+        const facingDirection = movedToChair.waitingPositionFacing || 'right';
         return {
           ...movedToChair,
           status: CustomerStatus.Waiting,
-          facingDirection: 'right',
+          facingDirection,
         };
       }
 
@@ -202,12 +218,17 @@ export function tickCustomer(customer: Customer): Customer {
     case CustomerStatus.Waiting:
       // If patience runs out, customer leaves angrily. Else it remains the 'waiting' status
       const nextStatus = customer.patienceLeft <= 1 ? CustomerStatus.LeavingAngry : CustomerStatus.Waiting;
+      // Keep the facing direction from waiting position (or default to 'right' for backward compatibility)
+      const waitingFacing = customer.waitingPositionFacing || 'right';
+      
+      // Ensure facing direction is set correctly (in case it was overwritten)
+      const finalFacingDirection = nextStatus === CustomerStatus.Waiting ? waitingFacing : customer.facingDirection;
 
       return {
         ...customer,
         patienceLeft: Math.max(0, customer.patienceLeft - 1),
         status: nextStatus,
-        facingDirection: nextStatus === CustomerStatus.Waiting ? 'right' : customer.facingDirection,
+        facingDirection: finalFacingDirection,
       };
     
     case CustomerStatus.WalkingToRoom:
@@ -216,21 +237,25 @@ export function tickCustomer(customer: Customer): Customer {
       
       // If reached target, start service
       if (hasReachedTarget(movedToRoom)) {
+        // Use the facing direction stored when service position was assigned (defaults to 'down' for backward compatibility)
+        const facingDirection = movedToRoom.servicePositionFacing || 'down';
         return {
           ...movedToRoom,
           status: CustomerStatus.InService,
-          facingDirection: 'down',
+          facingDirection,
         };
       }
 
       return movedToRoom;
 
     case CustomerStatus.InService:
+      // Keep the facing direction from service position (or default to 'down' for backward compatibility)
+      const serviceFacing = customer.servicePositionFacing || 'down';
       return {
         ...customer,
         serviceTimeLeft: Math.max(0, customer.serviceTimeLeft - 1),
         status: customer.serviceTimeLeft <= 1 ? CustomerStatus.WalkingOutHappy : CustomerStatus.InService,
-        facingDirection: 'down',
+        facingDirection: serviceFacing,
       };
     
     case CustomerStatus.WalkingOutHappy:
@@ -275,13 +300,9 @@ export function getAvailableSlots(customers: Customer[], maxRooms?: number, indu
     .filter(c => (c.status === CustomerStatus.InService || c.status === CustomerStatus.WalkingToRoom) && c.roomId)
     .map(c => c.roomId!);
   
-  // Get the actual number of service room positions configured
-  const serviceRoomPositions = getLayoutConfig(industryId).serviceRoomPositions;
-  const maxAvailableRooms = serviceRoomPositions.length;
-  
-  // Cap roomCount to the actual number of service room positions
+  // Get the requested room count (no cap - handled by upgrades)
   const requestedRoomCount = maxRooms || getBusinessStats(industryId).treatmentRooms;
-  const roomCount = Math.min(requestedRoomCount, maxAvailableRooms);
+  const roomCount = Math.max(1, Math.round(requestedRoomCount));
   
   return Array.from({ length: roomCount }, (_, i) => i + 1)
     .filter(roomId => !occupiedRooms.includes(roomId));

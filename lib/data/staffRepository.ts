@@ -10,7 +10,6 @@ interface StaffRoleRow {
   name: string;
   salary: number | string | null;
   effects?: unknown; // JSONB column for effects array
-  emoji: string | null;
   sets_flag: string | null;
   requirements: unknown;
   sprite_image?: string | null; // Path to sprite image (can be local or Supabase Storage URL)
@@ -23,7 +22,6 @@ interface StaffPresetRow {
   name: string | null;
   salary_override: number | string | null;
   service_speed_override: number | string | null;
-  emoji_override: string | null;
 }
 
 export interface StaffDataResult {
@@ -59,7 +57,6 @@ const mapRoleRows = (rows: StaffRoleRow[] | null | undefined): StaffRoleConfig[]
         name: row.name,
         salary: parseNumber(row.salary),
         effects,
-        emoji: row.emoji && row.emoji.trim() ? row.emoji.trim() : '🧑‍💼',
         spriteImage: row.sprite_image && row.sprite_image.trim() ? row.sprite_image.trim() : undefined,
         setsFlag: row.sets_flag || undefined,
         requirements: Array.isArray(row.requirements) ? row.requirements as any[] : [],
@@ -83,7 +80,6 @@ const mapPresetRows = (rows: StaffPresetRow[] | null | undefined): StaffPreset[]
         row.service_speed_override !== null
           ? parseNumber(row.service_speed_override)
           : undefined,
-      emoji: row.emoji_override ?? undefined,
     }));
 };
 
@@ -98,7 +94,7 @@ export async function fetchStaffDataForIndustry(
   const [rolesResponse, presetsResponse] = await Promise.all([
     supabase
       .from('staff_roles')
-      .select('id, industry_id, name, salary, effects, emoji, sets_flag, requirements, sprite_image')
+      .select('id, industry_id, name, salary, effects, sets_flag, requirements, sprite_image')
       .eq('industry_id', industryId),
     supabase
       .from('staff_presets')
@@ -136,7 +132,6 @@ export async function upsertStaffRole(role: {
   name: string;
   salary: number;
   effects: UpgradeEffect[];
-  emoji?: string;
   spriteImage?: string;
   setsFlag?: string;
   requirements?: any[];
@@ -159,7 +154,6 @@ export async function upsertStaffRole(role: {
     name: role.name,
     salary: role.salary,
     effects: effectsJson,
-    emoji: role.emoji ?? null,
     sprite_image: role.spriteImage ?? null,
     sets_flag: role.setsFlag || null,
     requirements: role.requirements || [],
@@ -203,7 +197,6 @@ export async function upsertStaffPreset(preset: {
   name?: string;
   salary?: number;
   serviceSpeed?: number;
-  emoji?: string;
 }): Promise<{ success: boolean; message?: string }>
 {
   if (!supabase) {
@@ -217,7 +210,6 @@ export async function upsertStaffPreset(preset: {
     name: preset.name ?? null,
     salary_override: preset.salary ?? null,
     service_speed_override: preset.serviceSpeed ?? null,
-    emoji_override: preset.emoji ?? null,
   };
 
   const { error } = await supabase

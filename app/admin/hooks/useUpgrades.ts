@@ -154,9 +154,6 @@ export function useUpgrades(industryId: string) {
         };
       });
     
-    // Log effects being saved for debugging
-    console.log('[Admin] Effects form before filtering:', effectsForm);
-    console.log('[Admin] Effects after filtering:', effects);
     if (effects.length !== effectsForm.length) {
       console.warn(`[Admin] Filtered out ${effectsForm.length - effects.length} invalid effects`);
       const filtered = effectsForm.filter((ef) => {
@@ -167,8 +164,7 @@ export function useUpgrades(industryId: string) {
       });
       console.warn('[Admin] Filtered effects:', filtered);
     }
-    console.log('[Admin] Saving upgrade with effects:', effects);
-    
+
     setOperation('saving');
     const result = await upsertUpgradeForIndustry(industryId, {
       id,
@@ -190,7 +186,6 @@ export function useUpgrades(industryId: string) {
       return;
     }
     
-    console.log('[Admin] Save successful:', result.message);
     
     // Reload upgrades from database to ensure we have the latest data
     const reloaded = await fetchUpgradesForIndustry(industryId);

@@ -22,7 +22,7 @@ interface StaffTabProps {
     name: string;
     salary: string;
     effects: Array<{ metric: GameMetric; type: EffectType; value: string }>;
-    emoji: string;
+    spriteImage?: string;
     setsFlag?: string;
     requirements: Requirement[];
   };
@@ -36,7 +36,6 @@ interface StaffTabProps {
     name: string;
     salary?: string;
     serviceSpeed?: string;
-    emoji?: string;
   };
   presetSaving: boolean;
   presetDeleting: boolean;
@@ -134,7 +133,7 @@ export function StaffTab({
                             : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
                         }`}
                       >
-                        {role.emoji} {role.name}
+                        {role.name}
                       </button>
                     ))}
                   </div>
@@ -225,12 +224,16 @@ export function StaffTab({
                         onEffectsChange={(effects) => onUpdateRoleForm({ effects })}
                       />
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-semibold text-slate-300 mb-1">Emoji</label>
+                        <label className="block text-sm font-semibold text-slate-300 mb-1">Sprite Image Path</label>
                         <input
-                          value={roleForm.emoji}
-                          onChange={(e) => onUpdateRoleForm({ emoji: e.target.value })}
+                          value={roleForm.spriteImage || ''}
+                          onChange={(e) => onUpdateRoleForm({ spriteImage: e.target.value })}
+                          placeholder="/images/staff/staff1.png"
                           className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                         />
+                        <p className="text-xs text-slate-500 mt-1">
+                          Path to sprite sheet (16-frame animation). Leave empty to use default staff sprite.
+                        </p>
                       </div>
                       <div className="md:col-span-2 flex flex-wrap gap-3">
                         <button
@@ -360,14 +363,6 @@ export function StaffTab({
                           min="0"
                           value={presetForm.serviceSpeed ?? ''}
                           onChange={(e) => onUpdatePresetForm({ serviceSpeed: e.target.value })}
-                          className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-semibold text-slate-300 mb-1">Emoji (optional)</label>
-                        <input
-                          value={presetForm.emoji ?? ''}
-                          onChange={(e) => onUpdatePresetForm({ emoji: e.target.value })}
                           className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                         />
                       </div>
