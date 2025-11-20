@@ -36,6 +36,7 @@ const DEFAULT_BUSINESS_STATS: BusinessStats = {
   eventTriggerSeconds: [15, 30, 45],
   serviceRevenueMultiplier: 1,
   serviceRevenueScale: 10,
+  conversionRate: 10, // How much progress each lead adds toward customer conversion
 } as const;
 
 export const DEFAULT_MOVEMENT_CONFIG: MovementConfig = {

@@ -4,7 +4,7 @@ import { tickOnce } from '@/lib/game/mechanics';
 import { GameState, RevenueCategory, OneTimeCostCategory } from '../types';
 import { Lead } from '@/lib/features/leads';
 import { getInitialMetrics } from './metricsSlice';
-import { DEFAULT_INDUSTRY_ID, getUpgradesForIndustry, getWinCondition, getLoseCondition, getStartingTime } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getUpgradesForIndustry, getWinCondition, getLoseCondition, getStartingTime, getBusinessStats } from '@/lib/game/config';
 import { GameStore } from '../gameStore';
 import { IndustryId } from '@/lib/game/types';
 import { effectManager } from '@/lib/game/effectManager';
@@ -18,6 +18,7 @@ const getInitialGameState = (
   keepIndustry: boolean = false,
 ) => {
   const baseMonthlyExpenses = getMonthlyBaseExpenses(industryId);
+  const businessStats = getBusinessStats(industryId);
   return {
     isGameStarted: false,
     isPaused: false,
@@ -36,7 +37,7 @@ const getInitialGameState = (
     customers: [],
     leads: [],
     leadProgress: 0,
-    conversionRate: 10, // Default: 10% per lead
+    conversionRate: businessStats.conversionRate ?? 10, // From business config with fallback
     metrics: getInitialMetrics(industryId),
     upgrades: {},
     flags: {},
@@ -92,6 +93,11 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     isGameOver: false,
     gameOverReason: null,
     flags: {},
+
+    // Leads
+    leads: [],
+    leadProgress: 0,
+    conversionRate: 10, // Will be overridden by getInitialGameState
   
   startGame: () => {
     const { resetEvents, resetMonthlyTracking, resetFlags } = get();

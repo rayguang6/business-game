@@ -31,7 +31,7 @@ export interface MarketingCampaign {
 
 export interface MarketingSlice {
   campaignCooldowns: Record<string, number>; // campaignId -> cooldownEndTime
-  startCampaign: (campaignId: string) => { success: boolean; message: string };
+  startCampaign: (campaignId: string) => { success: boolean; message?: string };
   tickMarketing: (currentGameTime: number) => void;
   resetMarketing: () => void;
 }
@@ -296,7 +296,7 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       },
     }));
 
-    return { success: true, message: `${campaign.name} launched!` };
+    return { success: true };
   },
 
   tickMarketing: (currentGameTime: number) => {
