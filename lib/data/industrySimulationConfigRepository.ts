@@ -103,10 +103,13 @@ const mapLayoutConfig = (raw: unknown): SimulationLayoutConfig | undefined => {
 const mapWinCondition = (raw: unknown): WinCondition | undefined => {
   if (!isObject(raw)) return undefined;
   const c = raw as unknown as WinCondition;
-  // Simplified win condition: only cashTarget
+  // Win condition: cashTarget required, others optional
   if (typeof c.cashTarget === 'number') {
     return {
       cashTarget: c.cashTarget,
+      monthTarget: typeof c.monthTarget === 'number' ? c.monthTarget : undefined,
+      customTitle: typeof c.customTitle === 'string' ? c.customTitle : undefined,
+      customMessage: typeof c.customMessage === 'string' ? c.customMessage : undefined,
     };
   }
   return undefined;

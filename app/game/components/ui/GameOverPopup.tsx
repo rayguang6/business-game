@@ -1,10 +1,13 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "../../../../lib/store/gameStore";
+import { getWinCondition } from "../../../../lib/game/config";
+import { DEFAULT_INDUSTRY_ID, IndustryId } from "../../../../lib/game/types";
 
 const GameOverPopup: React.FC = () => {
   const isGameOver = useGameStore((state) => state.isGameOver);
   const gameOverReason = useGameStore((state) => state.gameOverReason);
+  const selectedIndustry = useGameStore((state) => state.selectedIndustry);
   const resetAllGame = useGameStore((state) => state.resetAllGame);
   const router = useRouter();
 
@@ -18,6 +21,19 @@ const GameOverPopup: React.FC = () => {
 
   const getGameOverMessage = () => {
     if (gameOverReason === 'victory') {
+      // Check for custom win condition messages
+      const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+      const winCondition = getWinCondition(industryId);
+
+      if (winCondition.customTitle || winCondition.customMessage) {
+        return {
+          title: winCondition.customTitle || '🎉 Mission Accomplished!',
+          message: winCondition.customMessage || 'Congratulations! You\'ve successfully completed your business challenge!',
+          icon: '🏆',
+          color: 'green'
+        };
+      }
+
       return {
         title: '🎉 Financial Freedom Achieved!',
         message: 'Congratulations! You\'ve built a sustainable business with part-time hours and consistent profits. You\'ve achieved financial freedom!',

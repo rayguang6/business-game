@@ -483,13 +483,14 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
   checkWinConditionAtMonthEnd: () => {
     const state = get();
     if (state.isGameOver) return; // Already game over
-    
+
     const { cash } = state.metrics;
+    const { currentMonth } = state;
     const industryId = (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-    
-    // Check win condition: cash target reached
+
+    // Check win condition: cash target reached or month target reached
     const winCondition = getWinCondition(industryId);
-    if (checkWinCondition(cash, winCondition)) {
+    if (checkWinCondition(cash, currentMonth, winCondition)) {
       set({ isGameOver: true, gameOverReason: 'victory', isPaused: true });
     }
   },
