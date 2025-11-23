@@ -7,6 +7,7 @@ import {
   RevenueEntry,
   REVENUE_CATEGORY_LABELS,
   RevenueCategory,
+  getLevel,
 } from '@/lib/store/types';
 import {
   getBusinessStats,
@@ -190,7 +191,9 @@ function processMonthTransition({
   const netExpensesForMetrics = Math.max(0, monthResult.totalExpenses - alreadyAccounted);
 
   // Refresh time budget at start of new month
-  const timeBudget = getStartingTime(industryId);
+  const baseTimeBudget = getStartingTime(industryId);
+  const timeCapacityBonus = effectManager.calculate(GameMetric.MonthlyTimeCapacity, 0);
+  const timeBudget = baseTimeBudget + timeCapacityBonus;
 
   const updatedMetrics: Metrics = {
     ...metrics,
@@ -199,7 +202,10 @@ function processMonthTransition({
     totalExpenses: metrics.totalExpenses + netExpensesForMetrics,
   };
 
-  const previousSkillLevel = monthlyHistory.length > 0 ? monthlyHistory[monthlyHistory.length - 1].skillLevel : 0;
+  const previousExp = monthlyHistory.length > 0 ? monthlyHistory[monthlyHistory.length - 1].exp : 0;
+  const previousLevel = monthlyHistory.length > 0 ? monthlyHistory[monthlyHistory.length - 1].level : 0;
+  const currentLevel = getLevel(updatedMetrics.exp);
+
   const updatedHistory: MonthlyHistoryEntry[] = [
     ...monthlyHistory,
     {
@@ -209,8 +215,10 @@ function processMonthTransition({
       oneTimeCosts: monthlyOneTimeCostDetails,
       revenueBreakdown,
       profit: monthResult.profit,
-      skillLevel: updatedMetrics.skillLevel,
-      skillLevelChange: updatedMetrics.skillLevel - previousSkillLevel,
+      exp: updatedMetrics.exp,
+      expChange: updatedMetrics.exp - previousExp,
+      level: currentLevel,
+      levelChange: currentLevel - previousLevel,
       freedomScore: metrics.freedomScore,
     },
   ];
@@ -353,14 +361,14 @@ function processCustomersForTick({
       // Add revenue
       const newCash = metricsAccumulator.cash + serviceRevenue;
       
-      // Customers always leave satisfied, so apply the base skill level gain
-      // Skill level is modified directly (like cash), not through effect multipliers
-      const skillLevelGain = stats.skillLevelGainPerHappyCustomer;
+      // Customers always leave satisfied, so apply the base exp gain
+      // EXP is modified directly (like cash), not through effect multipliers
+      const expGain = stats.expGainPerHappyCustomer;
 
       metricsAccumulator = {
         ...metricsAccumulator,
         cash: newCash,
-        skillLevel: metricsAccumulator.skillLevel + skillLevelGain,
+        exp: metricsAccumulator.exp + expGain,
         totalRevenue: metricsAccumulator.totalRevenue + serviceRevenue,
       };
       revenueAccumulator += serviceRevenue;
@@ -377,11 +385,11 @@ function processCustomersForTick({
 
     // If customer is leaving angry, deduct skill level and keep in game for exit animation
     if (customer.status !== CustomerStatus.LeavingAngry && updatedCustomer.status === CustomerStatus.LeavingAngry) {
-      // Customer just became angry - deduct skill level and keep in game for exit animation
-      const skillLevelLoss = stats.skillLevelLossPerAngryCustomer;
+      // Customer just became angry - deduct exp and keep in game for exit animation
+      const expLoss = stats.expLossPerAngryCustomer;
       metricsAccumulator = {
         ...metricsAccumulator,
-        skillLevel: Math.max(0, metricsAccumulator.skillLevel - skillLevelLoss),
+        exp: Math.max(0, metricsAccumulator.exp - expLoss),
       };
       updatedCustomers.push(updatedCustomer);
       continue; // Skip to next customer

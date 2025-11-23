@@ -12,7 +12,7 @@ export const getInitialMetrics = (industryId: IndustryId = DEFAULT_INDUSTRY_ID):
     time: metrics.startingTime ?? 0, // Monthly time budget, defaults to 0
     totalRevenue: 0,
     totalExpenses: 0,
-    skillLevel: metrics.startingSkillLevel, // Previously: startingReputation
+    exp: metrics.startingExp, // Previously: startingSkillLevel
     freedomScore: metrics.startingFreedomScore, // Previously: founderWorkHours - Start with full monthly requirement
   };
 };

@@ -103,7 +103,7 @@ export function EventsTab({
     effects: Array<
       | { type: EventEffectType.Cash; amount: string; label?: string }
       | { type: EventEffectType.DynamicCash; expression: string; label?: string }
-      | { type: EventEffectType.SkillLevel; amount: string }
+      | { type: EventEffectType.Exp; amount: string }
       | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: string; durationSeconds: string; priority?: string }
     >;
     delayedConsequence?: {
@@ -113,13 +113,13 @@ export function EventsTab({
       successEffects: Array<
         | { type: EventEffectType.Cash; amount: string; label?: string }
         | { type: EventEffectType.DynamicCash; expression: string; label?: string }
-        | { type: EventEffectType.SkillLevel; amount: string }
+        | { type: EventEffectType.Exp; amount: string }
         | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: string; durationSeconds: string; priority?: string }
       >;
       failureEffects?: Array<
         | { type: EventEffectType.Cash; amount: string; label?: string }
         | { type: EventEffectType.DynamicCash; expression: string; label?: string }
-        | { type: EventEffectType.SkillLevel; amount: string }
+        | { type: EventEffectType.Exp; amount: string }
         | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: string; durationSeconds: string; priority?: string }
       >;
       label?: string;
@@ -142,7 +142,7 @@ export function EventsTab({
   const convertDelayedEffects = (effects: GameEventEffect[]): Array<
     | { type: EventEffectType.Cash; amount: string; label?: string }
     | { type: EventEffectType.DynamicCash; expression: string; label?: string }
-    | { type: EventEffectType.SkillLevel; amount: string }
+    | { type: EventEffectType.Exp; amount: string }
     | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: string; durationSeconds: string; priority?: string }
   > => {
     return effects.map((ef: any) => {
@@ -150,8 +150,8 @@ export function EventsTab({
         return { type: EventEffectType.Cash, amount: String(ef.amount || 0), label: ef.label };
       } else if (ef.type === EventEffectType.DynamicCash) {
         return { type: EventEffectType.DynamicCash, expression: String(ef.expression || ''), label: ef.label };
-      } else if (ef.type === EventEffectType.SkillLevel) {
-        return { type: EventEffectType.SkillLevel, amount: String(ef.amount || 0) };
+      } else if (ef.type === EventEffectType.Exp) {
+        return { type: EventEffectType.Exp, amount: String(ef.amount || 0) };
       } else if (ef.type === EventEffectType.Metric) {
         return {
           type: EventEffectType.Metric,
@@ -276,8 +276,8 @@ export function EventsTab({
           return { type: EventEffectType.Cash, amount: String(ef.amount || 0), label: ef.label };
         } else if (ef.type === EventEffectType.DynamicCash) {
           return { type: EventEffectType.DynamicCash, expression: String(ef.expression || ''), label: ef.label };
-        } else if (ef.type === EventEffectType.SkillLevel) {
-          return { type: EventEffectType.SkillLevel, amount: String(ef.amount || 0) };
+        } else if (ef.type === EventEffectType.Exp) {
+          return { type: EventEffectType.Exp, amount: String(ef.amount || 0) };
         } else if (ef.type === EventEffectType.Metric) {
           return {
             type: EventEffectType.Metric,
@@ -340,9 +340,9 @@ export function EventsTab({
           expression: String(ef.expression || ''),
           ...(ef.label ? { label: ef.label } : {}),
         };
-      } else if (ef.type === EventEffectType.SkillLevel) {
+      } else if (ef.type === EventEffectType.Exp) {
         return {
-          type: EventEffectType.SkillLevel as const,
+          type: EventEffectType.Exp as const,
           amount: Number(ef.amount) || 0,
         };
       } else if (ef.type === EventEffectType.Metric) {
@@ -381,9 +381,9 @@ export function EventsTab({
             expression: String(ef.expression || ''),
             ...(ef.label ? { label: ef.label } : {}),
           };
-        } else if (ef.type === EventEffectType.SkillLevel) {
+        } else if (ef.type === EventEffectType.Exp) {
           return {
-            type: EventEffectType.SkillLevel as const,
+            type: EventEffectType.Exp as const,
             amount: Number(ef.amount) || 0,
           };
         } else if (ef.type === EventEffectType.Metric) {
@@ -412,9 +412,9 @@ export function EventsTab({
             expression: String(ef.expression || ''),
             ...(ef.label ? { label: ef.label } : {}),
           };
-        } else if (ef.type === EventEffectType.SkillLevel) {
+        } else if (ef.type === EventEffectType.Exp) {
           return {
-            type: EventEffectType.SkillLevel as const,
+            type: EventEffectType.Exp as const,
             amount: Number(ef.amount) || 0,
           };
         } else if (ef.type === EventEffectType.Metric) {
@@ -547,7 +547,7 @@ export function EventsTab({
           } else if (effect.type === EventEffectType.Cash) {
             if (typeof effect.amount !== 'number') return false;
             if (effect.label !== undefined && typeof effect.label !== 'string') return false;
-          } else if (effect.type === EventEffectType.SkillLevel) {
+          } else if (effect.type === EventEffectType.Exp) {
             if (typeof effect.amount !== 'number') return false;
           } else if (effect.type === EventEffectType.DynamicCash) {
             if (typeof effect.expression !== 'string' || !effect.expression.trim()) return false;
@@ -651,7 +651,7 @@ export function EventsTab({
                   if (effect.label !== undefined && typeof effect.label !== 'string') {
                     errors.push(`${effectPath}.label: must be a string if provided`);
                   }
-                } else if (effect?.type === EventEffectType.SkillLevel) {
+                } else if (effect?.type === EventEffectType.Exp) {
                   if (typeof effect.amount !== 'number') {
                     errors.push(`${effectPath}.amount: must be a number`);
                   }
@@ -679,7 +679,7 @@ export function EventsTab({
                     errors.push(`${effectPath}.label: must be a string if provided`);
                   }
                 } else {
-                  errors.push(`${effectPath}.type: must be "cash", "skillLevel", "metric", or "dynamicCash"`);
+                  errors.push(`${effectPath}.type: must be "cash", "exp", "metric", or "dynamicCash"`);
                 }
               });
             }
@@ -1205,7 +1205,7 @@ export function EventsTab({
                                           </button>
                                           <button
                                             type="button"
-                                            onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: EventEffectType.SkillLevel, amount: '0' }] }))}
+                                            onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: EventEffectType.Exp, amount: '0' }] }))}
                                             className="px-2 py-1 text-xs rounded border border-emerald-500 text-emerald-200 hover:bg-emerald-500/10"
                                           >
                                             + Skill Level
@@ -1235,7 +1235,7 @@ export function EventsTab({
                                                 value={ef.type}
                                                 onChange={(e) => {
                                                   const newEffect = e.target.value === EventEffectType.Cash ? { type: EventEffectType.Cash as const, amount: '0', label: '' } :
-                                                    e.target.value === EventEffectType.SkillLevel ? { type: EventEffectType.SkillLevel as const, amount: '0' } :
+                                                    e.target.value === EventEffectType.Exp ? { type: EventEffectType.Exp as const, amount: '0' } :
                                                     e.target.value === EventEffectType.DynamicCash ? { type: EventEffectType.DynamicCash as const, expression: 'expenses*1', label: '' } :
                                                     { type: EventEffectType.Metric as const, metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationSeconds: '', priority: '' };
                                                   const newEffects = [...consequenceForm.effects];
@@ -1245,13 +1245,13 @@ export function EventsTab({
                                                 className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
                                               >
                                                 <option value={EventEffectType.Cash}>Cash</option>
-                                                <option value={EventEffectType.SkillLevel}>Skill Level</option>
+                                                <option value={EventEffectType.Exp}>EXP</option>
                                                 <option value={EventEffectType.DynamicCash}>Dynamic Cash</option>
                                                 <option value={EventEffectType.Metric}>Metric Effect</option>
                                               </select>
                                             </div>
 
-                                            {ef.type === EventEffectType.Cash || ef.type === EventEffectType.SkillLevel ? (
+                                            {ef.type === EventEffectType.Cash || ef.type === EventEffectType.Exp ? (
                                               <>
                                                 <div>
                                                   <label className="block text-xs text-slate-400 mb-1">Amount</label>
@@ -1579,7 +1579,7 @@ export function EventsTab({
                                                     ...p,
                                                     delayedConsequence: p.delayedConsequence ? {
                                                       ...p.delayedConsequence,
-                                                      successEffects: [...p.delayedConsequence.successEffects, { type: EventEffectType.SkillLevel, amount: '0' }],
+                                                      successEffects: [...p.delayedConsequence.successEffects, { type: EventEffectType.Exp, amount: '0' }],
                                                     } : undefined,
                                                   }))}
                                                   className="px-2 py-1 text-xs rounded border border-emerald-500 text-emerald-200 hover:bg-emerald-500/10"
@@ -1624,7 +1624,7 @@ export function EventsTab({
                                                       value={ef.type}
                                                       onChange={(e) => {
                                                         const newEffect = e.target.value === EventEffectType.Cash ? { type: EventEffectType.Cash as const, amount: '0', label: '' } :
-                                                          e.target.value === EventEffectType.SkillLevel ? { type: EventEffectType.SkillLevel as const, amount: '0' } :
+                                                          e.target.value === EventEffectType.Exp ? { type: EventEffectType.Exp as const, amount: '0' } :
                                                           e.target.value === EventEffectType.DynamicCash ? { type: EventEffectType.DynamicCash as const, expression: 'expenses*1', label: '' } :
                                                           { type: EventEffectType.Metric as const, metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationSeconds: '', priority: '' };
                                                         const newEffects = [...consequenceForm.delayedConsequence!.successEffects];
@@ -1637,13 +1637,13 @@ export function EventsTab({
                                                       className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
                                                     >
                                                       <option value={EventEffectType.Cash}>Cash</option>
-                                                      <option value={EventEffectType.SkillLevel}>Skill Level</option>
+                                                      <option value={EventEffectType.Exp}>EXP</option>
                                                       <option value={EventEffectType.DynamicCash}>Dynamic Cash</option>
                                                       <option value={EventEffectType.Metric}>Metric Effect</option>
                                                     </select>
                                                   </div>
                                                   {/* Effect fields - same as regular effects editor */}
-                                                  {ef.type === EventEffectType.Cash || ef.type === EventEffectType.SkillLevel ? (
+                                                  {ef.type === EventEffectType.Cash || ef.type === EventEffectType.Exp ? (
                                                     <>
                                                       <div>
                                                         <label className="block text-xs text-slate-400 mb-1">Amount</label>
@@ -1873,7 +1873,7 @@ export function EventsTab({
                                                       ...p,
                                                       delayedConsequence: p.delayedConsequence ? {
                                                         ...p.delayedConsequence,
-                                                        failureEffects: [...(p.delayedConsequence.failureEffects || []), { type: EventEffectType.SkillLevel, amount: '0' }],
+                                                        failureEffects: [...(p.delayedConsequence.failureEffects || []), { type: EventEffectType.Exp, amount: '0' }],
                                                       } : undefined,
                                                     }))}
                                                     className="px-2 py-1 text-xs rounded border border-emerald-500 text-emerald-200 hover:bg-emerald-500/10"
@@ -1917,7 +1917,7 @@ export function EventsTab({
                                                         value={ef.type}
                                                         onChange={(e) => {
                                                           const newEffect = e.target.value === EventEffectType.Cash ? { type: EventEffectType.Cash as const, amount: '0', label: '' } :
-                                                            e.target.value === EventEffectType.SkillLevel ? { type: EventEffectType.SkillLevel as const, amount: '0' } :
+                                                            e.target.value === EventEffectType.Exp ? { type: EventEffectType.Exp as const, amount: '0' } :
                                                             e.target.value === EventEffectType.DynamicCash ? { type: EventEffectType.DynamicCash as const, expression: 'expenses*1', label: '' } :
                                                             { type: EventEffectType.Metric as const, metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationSeconds: '', priority: '' };
                                                           const newEffects = [...consequenceForm.delayedConsequence!.failureEffects!];
@@ -1930,13 +1930,13 @@ export function EventsTab({
                                                         className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
                                                       >
                                                         <option value={EventEffectType.Cash}>Cash</option>
-                                                        <option value={EventEffectType.SkillLevel}>Skill Level</option>
+                                                        <option value={EventEffectType.Exp}>EXP</option>
                                                         <option value={EventEffectType.DynamicCash}>Dynamic Cash</option>
                                                         <option value={EventEffectType.Metric}>Metric Effect</option>
                                                       </select>
                                                     </div>
                                                     {/* Effect fields - same pattern as success effects */}
-                                                    {ef.type === EventEffectType.Cash || ef.type === EventEffectType.SkillLevel ? (
+                                                    {ef.type === EventEffectType.Cash || ef.type === EventEffectType.Exp ? (
                                                       <>
                                                         <div>
                                                           <label className="block text-xs text-slate-400 mb-1">Amount</label>
@@ -2163,7 +2163,7 @@ export function EventsTab({
                 <p>Paste JSON for a single event to auto-fill the form, or an array of events for bulk import.</p>
                 <p><strong>Valid metrics:</strong> {Object.values(GameMetric).join(', ')}</p>
                 <p><strong>Valid effect types:</strong> {Object.values(EffectType).join(', ')}</p>
-                <p><strong>Immediate effects:</strong> "cash", "skillLevel"</p>
+                <p><strong>Immediate effects:</strong> "cash", "exp"</p>
               </div>
             </div>
             <div className="p-6 space-y-4">
@@ -2210,7 +2210,7 @@ export function EventsTab({
           "weight": 85,
           "effects": [
             {
-              "type": "skillLevel",
+              "type": "exp",
               "amount": 3
             },
             {

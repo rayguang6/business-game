@@ -53,7 +53,7 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
       addStaffEffects(candidate, {
         applyCashChange: store.applyCashChange,
         applyTimeChange: store.applyTimeChange,
-        applySkillLevelChange: store.applySkillLevelChange,
+        applyExpChange: store.applyExpChange,
         applyFreedomScoreChange: store.applyFreedomScoreChange,
         recordEventRevenue: store.recordEventRevenue,
         recordEventExpense: store.recordEventExpense,
@@ -142,7 +142,7 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
       resetHired.forEach((staff) => addStaffEffects(staff, {
         applyCashChange: currentStore.applyCashChange,
         applyTimeChange: currentStore.applyTimeChange,
-        applySkillLevelChange: currentStore.applySkillLevelChange,
+        applyExpChange: currentStore.applyExpChange,
         applyFreedomScoreChange: currentStore.applyFreedomScoreChange,
         recordEventRevenue: currentStore.recordEventRevenue,
         recordEventExpense: currentStore.recordEventExpense,
@@ -165,7 +165,7 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
       initialHired.forEach((staff) => addStaffEffects(staff, {
         applyCashChange: currentStore.applyCashChange,
         applyTimeChange: currentStore.applyTimeChange,
-        applySkillLevelChange: currentStore.applySkillLevelChange,
+        applyExpChange: currentStore.applyExpChange,
         applyFreedomScoreChange: currentStore.applyFreedomScoreChange,
         recordEventRevenue: currentStore.recordEventRevenue,
         recordEventExpense: currentStore.recordEventExpense,

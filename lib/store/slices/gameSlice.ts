@@ -79,7 +79,7 @@ export interface GameSlice {
   tickGame: () => void;
   applyCashChange: (amount: number) => void;
   applyTimeChange: (amount: number) => void;
-  applySkillLevelChange: (amount: number) => void; // Previously: applyReputationChange
+  applyExpChange: (amount: number) => void; // Previously: applySkillLevelChange
   applyFreedomScoreChange: (amount: number) => void;
   recordEventRevenue: (amount: number, label?: string) => void;
   recordEventExpense: (amount: number, label: string) => void;
@@ -155,7 +155,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
           addUpgradeEffects(upgrade, level, {
             applyCashChange: currentState.applyCashChange,
             applyTimeChange: currentState.applyTimeChange,
-            applySkillLevelChange: currentState.applySkillLevelChange,
+            applyExpChange: currentState.applyExpChange,
             applyFreedomScoreChange: currentState.applyFreedomScoreChange,
             recordEventRevenue: currentState.recordEventRevenue,
             recordEventExpense: currentState.recordEventExpense,
@@ -169,7 +169,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       addStaffEffects(staff, {
         applyCashChange: currentState.applyCashChange,
         applyTimeChange: currentState.applyTimeChange,
-        applySkillLevelChange: currentState.applySkillLevelChange,
+        applyExpChange: currentState.applyExpChange,
         applyFreedomScoreChange: currentState.applyFreedomScoreChange,
         recordEventRevenue: currentState.recordEventRevenue,
         recordEventExpense: currentState.recordEventExpense,
@@ -327,7 +327,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
                 amount: value,
                 label: effect.label,
               });
-            } else if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.SkillLevel) {
+            } else if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.Exp) {
               appliedEffects.push(effect);
               const resolvedEffect: ResolvedEffect = {
                 type: effect.type,
@@ -410,9 +410,9 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       checkGameOver();
     }
   },
-  applySkillLevelChange: (amount: number) => {
+  applyExpChange: (amount: number) => {
     set((state) => ({
-      metrics: { ...state.metrics, skillLevel: state.metrics.skillLevel + amount },
+      metrics: { ...state.metrics, exp: state.metrics.exp + amount },
     }));
     const { checkGameOver } = get();
     if (checkGameOver) {

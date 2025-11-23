@@ -77,7 +77,7 @@ VALUES
     0,
     20,
     1,
-    '[{"metric": "skillLevel", "type": "add", "value": 1}]'::jsonb,
+    '[{"metric": "exp", "type": "add", "value": 1}]'::jsonb,
     'learned-design',
     '[]'::jsonb
   ),
@@ -90,7 +90,7 @@ VALUES
     0,
     40,
     1,
-    '[{"metric": "skillLevel", "type": "add", "value": 2}]'::jsonb,
+    '[{"metric": "exp", "type": "add", "value": 2}]'::jsonb,
     'learned-web-dev',
     '[]'::jsonb
   ),
@@ -104,7 +104,7 @@ VALUES
     10,
     1,
     '[
-      {"metric": "skillLevel", "type": "add", "value": 3},
+      {"metric": "exp", "type": "add", "value": 3},
       {"metric": "monthlyExpenses", "type": "add", "value": 50}
     ]'::jsonb,
     'has-portfolio',
@@ -136,7 +136,7 @@ VALUES
     5,
     1,
     '[
-      {"metric": "skillLevel", "type": "add", "value": 2},
+      {"metric": "exp", "type": "add", "value": 2},
       {"metric": "monthlyExpenses", "type": "add", "value": 80}
     ]'::jsonb,
     'has-crm',
@@ -165,7 +165,7 @@ VALUES
     0,
     2,
     180,
-    '[{"metric": "skillLevel", "type": "add", "value": 1, "durationSeconds": 1800}]'::jsonb,
+    '[{"metric": "exp", "type": "add", "value": 1, "durationSeconds": 1800}]'::jsonb,
     NULL,
     '[]'::jsonb
   ),
@@ -177,7 +177,7 @@ VALUES
     0,
     5,
     300,
-    '[{"metric": "skillLevel", "type": "add", "value": 2, "durationSeconds": 3600}]'::jsonb,
+    '[{"metric": "exp", "type": "add", "value": 2, "durationSeconds": 3600}]'::jsonb,
     NULL,
     '[{"type": "flag", "id": "has-portfolio", "expected": true}]'::jsonb
   ),
@@ -189,7 +189,7 @@ VALUES
     0,
     8,
     600,
-    '[{"metric": "skillLevel", "type": "add", "value": 1, "durationSeconds": 3600}]'::jsonb,
+    '[{"metric": "exp", "type": "add", "value": 1, "durationSeconds": 3600}]'::jsonb,
     NULL,
     '[]'::jsonb
   ),
@@ -201,7 +201,7 @@ VALUES
     0,
     12,
     900,
-    '[{"metric": "skillLevel", "type": "add", "value": 2, "durationSeconds": 7200}]'::jsonb,
+    '[{"metric": "exp", "type": "add", "value": 2, "durationSeconds": 7200}]'::jsonb,
     NULL,
     '[]'::jsonb
   )
@@ -217,7 +217,7 @@ ON CONFLICT (id) DO UPDATE SET
   requirements = EXCLUDED.requirements;
 
 -- Step 6: Events (7 items - mix of opportunities and risks)
--- Event effects use EventEffectType: "cash", "skillLevel", "dynamicCash", or "metric"
+-- Event effects use EventEffectType: "cash", "exp", "dynamicCash", or "metric"
 INSERT INTO events (id, industry_id, title, category, summary, choices, requirements)
 VALUES 
   (
@@ -240,7 +240,7 @@ VALUES
             "weight": 100,
             "effects": [
               {"type": "cash", "amount": 300, "label": "New project deposit"},
-              {"type": "skillLevel", "amount": 5, "label": "Word of mouth"}
+              {"type": "exp", "amount": 5, "label": "Word of mouth"}
             ]
           }
         ]
@@ -291,7 +291,7 @@ VALUES
             "description": "Payment still pending",
             "weight": 30,
             "effects": [
-              {"type": "skillLevel", "amount": -2, "label": "Frustration"}
+              {"type": "exp", "amount": -2, "label": "Frustration"}
             ]
           }
         ]
@@ -316,7 +316,7 @@ VALUES
             "weight": 40,
             "effects": [
               {"type": "cash", "amount": -500, "label": "Lost invoice"},
-              {"type": "skillLevel", "amount": -5, "label": "Bad experience"}
+              {"type": "exp", "amount": -5, "label": "Bad experience"}
             ]
           }
         ]
@@ -344,7 +344,7 @@ VALUES
             "weight": 60,
             "effects": [
               {"type": "cash", "amount": 200, "label": "Additional payment"},
-              {"type": "skillLevel", "amount": 2, "label": "Professional boundaries"}
+              {"type": "exp", "amount": 2, "label": "Professional boundaries"}
             ]
           },
           {
@@ -353,7 +353,7 @@ VALUES
             "description": "Client refused to pay extra",
             "weight": 40,
             "effects": [
-              {"type": "skillLevel", "amount": -3, "label": "Unhappy client"}
+              {"type": "exp", "amount": -3, "label": "Unhappy client"}
             ]
           }
         ]
@@ -370,7 +370,7 @@ VALUES
             "description": "Client appreciates the extra effort",
             "weight": 70,
             "effects": [
-              {"type": "skillLevel", "amount": 3, "label": "Good relationship"}
+              {"type": "exp", "amount": 3, "label": "Good relationship"}
             ]
           },
           {
@@ -379,7 +379,7 @@ VALUES
             "description": "Client now expects free extras",
             "weight": 30,
             "effects": [
-              {"type": "skillLevel", "amount": -2, "label": "Boundary issues"}
+              {"type": "exp", "amount": -2, "label": "Boundary issues"}
             ]
           }
         ]
@@ -407,7 +407,7 @@ VALUES
             "weight": 60,
             "effects": [
               {"type": "cash", "amount": 2000, "label": "Large project payment"},
-              {"type": "skillLevel", "amount": 10, "label": "Major achievement"}
+              {"type": "exp", "amount": 10, "label": "Major achievement"}
             ]
           },
           {
@@ -417,7 +417,7 @@ VALUES
             "weight": 40,
             "effects": [
               {"type": "cash", "amount": 1000, "label": "Reduced payment"},
-              {"type": "skillLevel", "amount": -3, "label": "Quality issues"}
+              {"type": "exp", "amount": -3, "label": "Quality issues"}
             ]
           }
         ]
@@ -459,7 +459,7 @@ VALUES
             "description": "Professional approach worked",
             "weight": 50,
             "effects": [
-              {"type": "skillLevel", "amount": 2, "label": "Professionalism"}
+              {"type": "exp", "amount": 2, "label": "Professionalism"}
             ]
           },
           {
@@ -468,7 +468,7 @@ VALUES
             "description": "Client fired you",
             "weight": 50,
             "effects": [
-              {"type": "skillLevel", "amount": -5, "label": "Lost client"},
+              {"type": "exp", "amount": -5, "label": "Lost client"},
               {"type": "cash", "amount": -300, "label": "Lost project"}
             ]
           }
@@ -486,7 +486,7 @@ VALUES
             "description": "Extra effort paid off",
             "weight": 40,
             "effects": [
-              {"type": "skillLevel", "amount": 1, "label": "Client happy"}
+              {"type": "exp", "amount": 1, "label": "Client happy"}
             ]
           },
           {
@@ -495,7 +495,7 @@ VALUES
             "description": "Too much work, quality suffered",
             "weight": 60,
             "effects": [
-              {"type": "skillLevel", "amount": -4, "label": "Quality issues"},
+              {"type": "exp", "amount": -4, "label": "Quality issues"},
               {"type": "cash", "amount": -200, "label": "Refund"}
             ]
           }
@@ -523,7 +523,7 @@ VALUES
             "description": "Made valuable connections",
             "weight": 60,
             "effects": [
-              {"type": "skillLevel", "amount": 5, "label": "Networking success"},
+              {"type": "exp", "amount": 5, "label": "Networking success"},
               {"type": "cash", "amount": 400, "label": "New project from connection"}
             ]
           },
@@ -590,7 +590,7 @@ VALUES
             "description": "Old equipment slows you down",
             "weight": 100,
             "effects": [
-              {"type": "skillLevel", "amount": -2, "label": "Delayed projects"}
+              {"type": "exp", "amount": -2, "label": "Delayed projects"}
             ]
           }
         ]

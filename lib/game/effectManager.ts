@@ -18,10 +18,11 @@ import { getTicksPerSecondForIndustry } from './config';
 export enum GameMetric {
   Cash = 'cash', // Direct cash modification (add/subtract)
   Time = 'time', // Direct time modification (add/subtract)
+  MonthlyTimeCapacity = 'monthlyTimeCapacity', // Monthly time capacity increase (permanent)
   SpawnIntervalSeconds = 'spawnIntervalSeconds',
   ServiceSpeedMultiplier = 'serviceSpeedMultiplier',
   ServiceRooms = 'serviceRooms',
-  SkillLevel = 'skillLevel', // Direct skill level modification (add/subtract)
+  Exp = 'exp', // Direct exp modification (add/subtract)
   // HappyProbability removed - not used in game mechanics (customers happy/angry based on patience)
   MonthlyExpenses = 'monthlyExpenses',
   ServiceRevenueMultiplier = 'serviceRevenueMultiplier',
@@ -87,7 +88,11 @@ export const METRIC_CONSTRAINTS: Partial<Record<GameMetric, MetricConstraints>> 
     min: 0,           // Can't have negative time (game over condition)
     roundToInt: true, // Must be whole number
   },
-  [GameMetric.ServiceRooms]: { 
+  [GameMetric.MonthlyTimeCapacity]: {
+    min: 0,           // Can't have negative monthly capacity
+    roundToInt: true, // Must be whole number
+  },
+  [GameMetric.ServiceRooms]: {
     min: 1,           // Can't have negative rooms
     // max removed - capacity handled by upgrades
     roundToInt: true, // Must be whole number
@@ -97,7 +102,7 @@ export const METRIC_CONSTRAINTS: Partial<Record<GameMetric, MetricConstraints>> 
     min: 0,           // Can't have negative hours
     roundToInt: true, // Must be whole number
   },
-  [GameMetric.SkillLevel]: {
+  [GameMetric.Exp]: {
     min: 0,           // Can't have negative skill level
     roundToInt: true, // Must be whole number
   },

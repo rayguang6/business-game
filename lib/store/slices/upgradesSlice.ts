@@ -22,7 +22,7 @@ const findUpgradeDefinition = (industryId: IndustryId, upgradeId: UpgradeId): Up
 const DIRECT_STATE_METRICS = [
   GameMetric.Cash,
   GameMetric.Time,
-  GameMetric.SkillLevel,
+  GameMetric.Exp,
   GameMetric.FreedomScore,
 ] as const;
 
@@ -63,7 +63,7 @@ export interface UpgradesSlice {
 export interface UpgradeEffectStore {
   applyCashChange?: (amount: number) => void;
   applyTimeChange?: (amount: number) => void;
-  applySkillLevelChange?: (amount: number) => void;
+  applyExpChange?: (amount: number) => void;
   applyFreedomScoreChange?: (amount: number) => void;
   recordEventRevenue?: (amount: number, label?: string) => void;
   recordEventExpense?: (amount: number, label: string) => void;
@@ -112,9 +112,9 @@ export function addUpgradeEffects(upgrade: UpgradeDefinition, level: number, sto
               store.applyTimeChange(delta);
             }
             break;
-          case GameMetric.SkillLevel:
-            if (store.applySkillLevelChange) {
-              store.applySkillLevelChange(delta);
+          case GameMetric.Exp:
+            if (store.applyExpChange) {
+              store.applyExpChange(delta);
             }
             break;
           case GameMetric.FreedomScore:
@@ -290,7 +290,7 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
     addUpgradeEffects(upgrade, newLevel, {
       applyCashChange: store.applyCashChange,
       applyTimeChange: store.applyTimeChange,
-      applySkillLevelChange: store.applySkillLevelChange,
+      applyExpChange: store.applyExpChange,
       applyFreedomScoreChange: store.applyFreedomScoreChange,
       recordEventRevenue: store.recordEventRevenue,
       recordEventExpense: store.recordEventExpense,

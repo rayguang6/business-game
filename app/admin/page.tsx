@@ -63,7 +63,8 @@ export default function AdminPage() {
   const METRIC_OPTIONS: { value: GameMetric; label: string }[] = [
     { value: GameMetric.Cash, label: 'Cash' },
     { value: GameMetric.Time, label: 'Available Time' },
-    { value: GameMetric.SkillLevel, label: 'Skill Level' },
+    { value: GameMetric.MonthlyTimeCapacity, label: 'Monthly Time Capacity' },
+    { value: GameMetric.Exp, label: 'EXP' },
     { value: GameMetric.FreedomScore, label: 'Freedom Score' },
     { value: GameMetric.GenerateLeads, label: 'Generate Leads (immediate)' },
     { value: GameMetric.ServiceRooms, label: 'Service Rooms' },

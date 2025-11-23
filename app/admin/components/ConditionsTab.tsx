@@ -152,7 +152,8 @@ export function ConditionsTab({
                         className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
                       >
                         <option value={ConditionMetric.Cash}>Cash</option>
-                        <option value={ConditionMetric.SkillLevel}>Skill Level</option>
+                        <option value={ConditionMetric.Exp}>EXP</option>
+                        <option value={ConditionMetric.Level}>Level</option>
                         <option value={ConditionMetric.Expenses}>Monthly Expenses</option>
                         <option value={ConditionMetric.GameTime}>Game Time (seconds)</option>
                         <option value={ConditionMetric.FreedomScore}>Freedom Score</option>

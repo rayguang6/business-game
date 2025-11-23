@@ -43,7 +43,7 @@ export interface MarketingSlice {
 function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: number, store?: {
   applyCashChange?: (amount: number) => void;
   applyTimeChange?: (amount: number) => void;
-  applySkillLevelChange?: (amount: number) => void;
+  applyExpChange?: (amount: number) => void;
   applyFreedomScoreChange?: (amount: number) => void;
   recordEventRevenue?: (amount: number, label?: string) => void;
   recordEventExpense?: (amount: number, label: string) => void;
@@ -58,7 +58,7 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
     // Direct state metrics (Cash, Time, SkillLevel, FreedomScore, GenerateLeads) with Add effects are applied directly
     // These are one-time permanent effects (no duration tracking)
     if ((effect.metric === GameMetric.Cash || effect.metric === GameMetric.Time || 
-         effect.metric === GameMetric.SkillLevel || effect.metric === GameMetric.FreedomScore ||
+         effect.metric === GameMetric.Exp || effect.metric === GameMetric.FreedomScore ||
          effect.metric === GameMetric.GenerateLeads) 
         && effect.type === EffectType.Add && store) {
       // Apply directly to state
@@ -74,8 +74,8 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
         }
       } else if (effect.metric === GameMetric.Time && store.applyTimeChange) {
         store.applyTimeChange(effect.value);
-      } else if (effect.metric === GameMetric.SkillLevel && store.applySkillLevelChange) {
-        store.applySkillLevelChange(effect.value);
+      } else if (effect.metric === GameMetric.Exp && store.applyExpChange) {
+        store.applyExpChange(effect.value);
       } else if (effect.metric === GameMetric.FreedomScore && store.applyFreedomScoreChange) {
         store.applyFreedomScoreChange(effect.value);
       } else if (effect.metric === GameMetric.GenerateLeads && store.spawnLead && store.updateLeads && store.getState && store.updateLeadProgress) {
@@ -105,7 +105,7 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
                 const newProgress = currentProgress + conversionRate;
 
                 // If progress reaches 100% or more, convert immediately
-                if (newProgress >= 100 && store.spawnCustomer && store.addCustomers && store.applySkillLevelChange && store.recordEventRevenue) {
+                if (newProgress >= 100 && store.spawnCustomer && store.addCustomers && store.applyExpChange && store.recordEventRevenue) {
                   // Calculate how many customers to spawn
                   const customersToSpawn = Math.floor(newProgress / 100);
 
@@ -116,7 +116,7 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
                       store.addCustomers([customer]);
 
                       // Apply customer rewards
-                      store.applySkillLevelChange(1); // Skill level gain per happy customer
+                      store.applyExpChange(1); // Skill level gain per happy customer
 
                       // Record revenue
                       if (customer.service && store.recordEventRevenue) {
@@ -158,7 +158,7 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
     
     // For direct state metrics with non-Add effects, calculate and apply the change
     if (store && (effect.metric === GameMetric.Cash || effect.metric === GameMetric.Time || 
-                  effect.metric === GameMetric.SkillLevel || effect.metric === GameMetric.FreedomScore)) {
+                  effect.metric === GameMetric.Exp || effect.metric === GameMetric.FreedomScore)) {
       // Get current values from store (would need to pass metrics or calculate)
       // For now, non-Add effects on direct state metrics go through effectManager
       // and would need to be applied elsewhere if needed
@@ -261,7 +261,7 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
     addMarketingEffects(campaign, gameTime, {
       applyCashChange: store.applyCashChange,
       applyTimeChange: store.applyTimeChange,
-      applySkillLevelChange: store.applySkillLevelChange,
+      applyExpChange: store.applyExpChange,
       applyFreedomScoreChange: store.applyFreedomScoreChange,
       recordEventRevenue: store.recordEventRevenue,
       recordEventExpense: store.recordEventExpense,

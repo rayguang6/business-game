@@ -81,7 +81,7 @@ export function GameCanvas() {
     ),
     serviceSpeedMultiplier: effectManager.calculate(GameMetric.ServiceSpeedMultiplier, 1.0),
     serviceRooms: effectManager.calculate(GameMetric.ServiceRooms, businessStats.treatmentRooms),
-    skillLevel: 0, // Skill level effects are applied directly when customers complete services
+    exp: 0, // Exp effects are applied directly when customers complete services
     serviceRevenueMultiplier: effectManager.calculate(
       GameMetric.ServiceRevenueMultiplier,
       businessStats.serviceRevenueMultiplier ?? 1,

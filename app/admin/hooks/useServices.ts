@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { fetchServicesForIndustry, upsertServiceForIndustry, deleteServiceById } from '@/lib/data/serviceRepository';
-import type { IndustryServiceDefinition, Requirement } from '@/lib/game/types';
+import type { IndustryServiceDefinition, Requirement, ServicePricingCategory } from '@/lib/game/types';
 import type { Operation } from './types';
 
 interface ServiceForm {
@@ -108,7 +108,7 @@ export function useServices(industryId: string) {
       duration,
       price,
       requirements: form.requirements,
-      pricingCategory: form.pricingCategory || undefined,
+      pricingCategory: (form.pricingCategory as ServicePricingCategory) || undefined,
       weightage,
     };
     const result = await upsertServiceForIndustry(payload);

@@ -4,7 +4,7 @@ import { useGameStore } from '@/lib/store/gameStore';
 export interface MetricChange {
   cash?: number;
   time?: number;
-  skillLevel?: number; // Previously: reputation
+  exp?: number; // Previously: skillLevel
   revenue?: number;
   expenses?: number;
   freedomScore?: number; // Previously: founderWorkingHours
@@ -15,7 +15,7 @@ export function useMetricChanges() {
   const prevMetrics = useRef({
     cash: metrics.cash,
     time: metrics.time,
-    skillLevel: metrics.skillLevel,
+    exp: metrics.exp,
     revenue: monthlyRevenue,
     expenses: monthlyExpenses,
     freedomScore: metrics.freedomScore,
@@ -35,9 +35,9 @@ export function useMetricChanges() {
       newChanges.time = metrics.time - prevMetrics.current.time;
     }
 
-    // Track skill level changes (previously reputation)
-    if (metrics.skillLevel !== prevMetrics.current.skillLevel) {
-      newChanges.skillLevel = metrics.skillLevel - prevMetrics.current.skillLevel;
+    // Track exp changes (previously skill level)
+    if (metrics.exp !== prevMetrics.current.exp) {
+      newChanges.exp = metrics.exp - prevMetrics.current.exp;
     }
 
     // Track revenue changes
@@ -59,7 +59,7 @@ export function useMetricChanges() {
     prevMetrics.current = {
       cash: metrics.cash,
       time: metrics.time,
-      skillLevel: metrics.skillLevel,
+      exp: metrics.exp,
       revenue: monthlyRevenue,
       expenses: monthlyExpenses,
       freedomScore: metrics.freedomScore,
@@ -76,7 +76,7 @@ export function useMetricChanges() {
 
       return () => clearTimeout(timer);
     }
-  }, [metrics.cash, metrics.time, metrics.skillLevel, metrics.freedomScore, monthlyRevenue, monthlyExpenses]);
+  }, [metrics.cash, metrics.time, metrics.exp, metrics.freedomScore, monthlyRevenue, monthlyExpenses]);
 
   return changes;
 }

@@ -13,10 +13,13 @@ export interface UpgradeLevelDefinition {
 }
 
 const toMetricValues = (base: BaseUpgradeMetrics): MetricValues => ({
+  [GameMetric.Cash]: 0, // Not affected by upgrades
+  [GameMetric.Time]: 0, // Not affected by upgrades
+  [GameMetric.GenerateLeads]: 0, // Not affected by upgrades
   [GameMetric.MonthlyExpenses]: base.monthlyExpenses,
   [GameMetric.SpawnIntervalSeconds]: base.spawnIntervalSeconds,
   [GameMetric.ServiceSpeedMultiplier]: base.serviceSpeedMultiplier,
-  [GameMetric.SkillLevel]: base.skillLevel,
+  [GameMetric.Exp]: base.exp,
   [GameMetric.ServiceRooms]: base.treatmentRooms,
   // [GameMetric.HappyProbability] removed - not used in game mechanics
   [GameMetric.ServiceRevenueMultiplier]: base.serviceRevenueMultiplier,
@@ -34,7 +37,7 @@ const fromMetricValues = (values: MetricValues): BaseUpgradeMetrics => ({
   monthlyExpenses: values[GameMetric.MonthlyExpenses],
   spawnIntervalSeconds: values[GameMetric.SpawnIntervalSeconds],
   serviceSpeedMultiplier: values[GameMetric.ServiceSpeedMultiplier],
-  skillLevel: values[GameMetric.SkillLevel],
+  exp: values[GameMetric.Exp],
   treatmentRooms: values[GameMetric.ServiceRooms],
   // happyProbability removed - not used in game mechanics
   serviceRevenueMultiplier: values[GameMetric.ServiceRevenueMultiplier],

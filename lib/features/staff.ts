@@ -34,7 +34,7 @@ export function calculateSeveranceCost(staff: Staff): number {
 export function addStaffEffects(staff: Staff, store?: {
   applyCashChange?: (amount: number) => void;
   applyTimeChange?: (amount: number) => void;
-  applySkillLevelChange?: (amount: number) => void;
+  applyExpChange?: (amount: number) => void;
   applyFreedomScoreChange?: (amount: number) => void;
   recordEventRevenue?: (amount: number, label?: string) => void;
   recordEventExpense?: (amount: number, label: string) => void;
@@ -59,7 +59,7 @@ export function addStaffEffects(staff: Staff, store?: {
     // Direct state metrics (Cash, Time, SkillLevel, FreedomScore) are applied directly
     // Other metrics go through effectManager
     if ((effect.metric === GameMetric.Cash || effect.metric === GameMetric.Time || 
-         effect.metric === GameMetric.SkillLevel || effect.metric === GameMetric.FreedomScore)
+         effect.metric === GameMetric.Exp || effect.metric === GameMetric.FreedomScore)
         && effect.type === EffectType.Add && store) {
       // Apply directly to state
       if (effect.metric === GameMetric.Cash) {
@@ -74,8 +74,8 @@ export function addStaffEffects(staff: Staff, store?: {
         }
       } else if (effect.metric === GameMetric.Time && store.applyTimeChange) {
         store.applyTimeChange(effect.value);
-      } else if (effect.metric === GameMetric.SkillLevel && store.applySkillLevelChange) {
-        store.applySkillLevelChange(effect.value);
+      } else if (effect.metric === GameMetric.Exp && store.applyExpChange) {
+        store.applyExpChange(effect.value);
       } else if (effect.metric === GameMetric.FreedomScore && store.applyFreedomScoreChange) {
         store.applyFreedomScoreChange(effect.value);
       }

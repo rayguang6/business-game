@@ -12,7 +12,7 @@ export interface Metrics {
   time: number; // Monthly time budget (refreshes monthly)
   totalRevenue: number;
   totalExpenses: number;
-  skillLevel: number; // Previously: reputation
+  exp: number; // Previously: skillLevel (reputation)
   freedomScore: number; // Previously: founderWorkingHours
 }
 
@@ -59,8 +59,10 @@ export interface MonthlyHistoryEntry {
   expenses: number;
   oneTimeCosts: OneTimeCost[];
   profit: number;
-  skillLevel: number; // Previously: reputation
-  skillLevelChange: number; // Previously: reputationChange
+  exp: number; // Previously: skillLevel (reputation)
+  expChange: number; // Previously: skillLevelChange
+  level: number; // Current level at end of month
+  levelChange: number; // Level change during the month
   freedomScore: number; // Previously: founderWorkingHours
   revenueBreakdown?: RevenueEntry[];
 }
@@ -102,4 +104,20 @@ export interface GameState {
   leads: Lead[];
   leadProgress: number; // Progress toward converting a lead to customer (0-100)
   conversionRate: number; // How much progress each lead adds (default: 10)
+}
+
+// EXP per level configuration
+export const EXP_PER_LEVEL = 100;
+
+// Helper functions for EXP/level system
+export function getLevel(exp: number, expPerLevel: number = EXP_PER_LEVEL): number {
+  return Math.floor(exp / expPerLevel);
+}
+
+export function getLevelProgress(exp: number, expPerLevel: number = EXP_PER_LEVEL): number {
+  return exp % expPerLevel;
+}
+
+export function getExpToNextLevel(exp: number, expPerLevel: number = EXP_PER_LEVEL): number {
+  return expPerLevel - getLevelProgress(exp, expPerLevel);
 }

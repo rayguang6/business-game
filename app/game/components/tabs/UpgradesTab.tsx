@@ -18,11 +18,12 @@ import { calculateSeveranceCost, SEVERANCE_MULTIPLIER } from '@/lib/features/sta
 const METRIC_LABELS: Partial<Record<GameMetric, string>> = {
   [GameMetric.Cash]: 'Cash',
   [GameMetric.Time]: 'Available Time',
+  [GameMetric.MonthlyTimeCapacity]: 'Monthly Time Capacity',
   [GameMetric.ServiceRooms]: 'Service Rooms',
   [GameMetric.MonthlyExpenses]: 'Monthly Expenses',
   [GameMetric.ServiceSpeedMultiplier]: 'Service Speed',
   [GameMetric.SpawnIntervalSeconds]: 'Customer Spawn',
-  [GameMetric.SkillLevel]: 'Skill Level',
+  [GameMetric.Exp]: 'EXP',
   // [GameMetric.HappyProbability] removed - not used in game mechanics
   [GameMetric.ServiceRevenueMultiplier]: 'Service Price',
   [GameMetric.ServiceRevenueFlatBonus]: 'Service Price',
@@ -321,7 +322,7 @@ const formatStaffEffect = (effect: { metric: GameMetric; type: EffectType; value
       case GameMetric.ServiceSpeedMultiplier: return 'Service Speed';
       case GameMetric.FreedomScore: return 'Freedom Score';
       case GameMetric.MonthlyExpenses: return 'Monthly Expenses';
-      case GameMetric.SkillLevel: return 'Skill Level';
+      case GameMetric.Exp: return 'EXP';
       case GameMetric.ServiceRevenueMultiplier: return 'Revenue';
       case GameMetric.ServiceRevenueFlatBonus: return 'Revenue Bonus';
       default: return metric;
@@ -345,7 +346,7 @@ const getEffectIcon = (metric: GameMetric) => {
     case GameMetric.Cash: return '💵';
     case GameMetric.Time: return '⏰';
     case GameMetric.ServiceSpeedMultiplier: return '⚡';
-    case GameMetric.SkillLevel: return '⭐';
+    case GameMetric.Exp: return '⭐';
     case GameMetric.ServiceRevenueMultiplier: return '💰';
     case GameMetric.ServiceRevenueFlatBonus: return '💵';
     case GameMetric.FreedomScore: return '⏰';
