@@ -22,6 +22,10 @@ interface IndustrySimulationConfigTabProps {
   capacityImage: string;
   winCondition: WinCondition | null;
   loseCondition: LoseCondition | null;
+  // Event sequencing
+  eventSelectionMode: 'random' | 'sequence';
+  eventSequence: string[];
+  events: Array<{ id: string; title: string }>;
   // customerImages and staffNamePool removed - they're global only
   // Setters
   setBusinessMetrics: (value: BusinessMetrics | null) => void;
@@ -36,6 +40,8 @@ interface IndustrySimulationConfigTabProps {
   setCapacityImage: (value: string) => void;
   setWinCondition: (value: WinCondition | null) => void;
   setLoseCondition: (value: LoseCondition | null) => void;
+  setEventSelectionMode: (mode: 'random' | 'sequence') => void;
+  setEventSequence: (sequence: string[]) => void;
   onSave: () => Promise<void>;
 }
 
@@ -56,6 +62,9 @@ export function IndustrySimulationConfigTab({
   capacityImage,
   winCondition,
   loseCondition,
+  eventSelectionMode,
+  eventSequence,
+  events,
   setBusinessMetrics,
   setBusinessStats,
   setMapWidth,
@@ -68,8 +77,37 @@ export function IndustrySimulationConfigTab({
   setCapacityImage,
   setWinCondition,
   setLoseCondition,
+  setEventSelectionMode,
+  setEventSequence,
   onSave,
 }: IndustrySimulationConfigTabProps) {
+
+  // Helper functions for event sequencing
+  const moveEventUp = (index: number) => {
+    if (index > 0) {
+      const newSequence = [...eventSequence];
+      [newSequence[index - 1], newSequence[index]] = [newSequence[index], newSequence[index - 1]];
+      setEventSequence(newSequence);
+    }
+  };
+
+  const moveEventDown = (index: number) => {
+    if (index < eventSequence.length - 1) {
+      const newSequence = [...eventSequence];
+      [newSequence[index], newSequence[index + 1]] = [newSequence[index + 1], newSequence[index]];
+      setEventSequence(newSequence);
+    }
+  };
+
+  const removeEventFromSequence = (eventId: string) => {
+    setEventSequence(eventSequence.filter(id => id !== eventId));
+  };
+
+  const addEventToSequence = (eventId: string) => {
+    if (!eventSequence.includes(eventId)) {
+      setEventSequence([...eventSequence, eventId]);
+    }
+  };
 
   // Helper functions
   const getMetrics = (): BusinessMetrics => businessMetrics || { startingCash: 0, monthlyExpenses: 0, startingSkillLevel: 0, startingFreedomScore: 0 };
@@ -521,6 +559,167 @@ export function IndustrySimulationConfigTab({
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* Event Sequencing */}
+        <div className="pt-6 mt-6 border-t border-slate-800">
+          <h3 className="text-lg font-semibold mb-4">Event Sequencing</h3>
+
+          <div className="space-y-4">
+            {/* Selection Mode */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-300 mb-2">
+                Event Selection Mode
+              </label>
+              <div className="space-y-2">
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="radio"
+                    name="eventSelectionMode"
+                    value="random"
+                    checked={eventSelectionMode === 'random'}
+                    onChange={(e) => setEventSelectionMode(e.target.value as 'random' | 'sequence')}
+                    className="text-blue-600 bg-slate-800 border-slate-600 focus:ring-blue-500"
+                  />
+                  <div>
+                    <span className="text-slate-200 font-medium">Random Selection</span>
+                    <p className="text-sm text-slate-400">Events are chosen randomly from available events</p>
+                  </div>
+                </label>
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="radio"
+                    name="eventSelectionMode"
+                    value="sequence"
+                    checked={eventSelectionMode === 'sequence'}
+                    onChange={(e) => setEventSelectionMode(e.target.value as 'random' | 'sequence')}
+                    className="text-blue-600 bg-slate-800 border-slate-600 focus:ring-blue-500"
+                  />
+                  <div>
+                    <span className="text-slate-200 font-medium">Sequential Selection</span>
+                    <p className="text-sm text-slate-400">Events are shown in the configured order, cycling back when complete</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Sequence Configuration - Only show when sequence mode is selected */}
+            {eventSelectionMode === 'sequence' && (
+              <div className="space-y-4">
+                <div className="border-t border-slate-800 pt-4">
+                  <h4 className="text-md font-semibold text-slate-200 mb-4">Event Sequence Order</h4>
+
+                  {loading ? (
+                    <div className="text-sm text-slate-400">Loading events...</div>
+                  ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Current Sequence */}
+                      <div className="space-y-3">
+                        <h5 className="text-sm font-semibold text-slate-300">
+                          Event Sequence ({eventSequence.length})
+                        </h5>
+
+                        {eventSequence.length === 0 ? (
+                          <div className="text-sm text-slate-500 italic p-4 bg-slate-800/50 rounded-lg border border-slate-700 border-dashed">
+                            No events in sequence yet.
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {eventSequence.map((eventId, index) => {
+                              const event = events.find(e => e.id === eventId);
+                              return (
+                                <div
+                                  key={eventId}
+                                  className="flex items-center gap-3 p-3 rounded-lg border border-slate-700 bg-slate-800"
+                                >
+                                  <span className="text-xs font-mono text-slate-400 w-6 text-center">
+                                    {index + 1}
+                                  </span>
+
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium text-slate-200 truncate">
+                                      {event?.title || `Unknown Event (${eventId})`}
+                                    </div>
+                                    <div className="text-xs text-slate-400 font-mono">
+                                      {eventId}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() => moveEventUp(index)}
+                                      disabled={index === 0}
+                                      className="p-1 text-slate-400 hover:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      title="Move up"
+                                    >
+                                      ↑
+                                    </button>
+                                    <button
+                                      onClick={() => moveEventDown(index)}
+                                      disabled={index === eventSequence.length - 1}
+                                      className="p-1 text-slate-400 hover:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      title="Move down"
+                                    >
+                                      ↓
+                                    </button>
+                                    <button
+                                      onClick={() => removeEventFromSequence(eventId)}
+                                      className="p-1 text-red-400 hover:text-red-300"
+                                      title="Remove from sequence"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Available Events */}
+                      <div className="space-y-3">
+                        <h5 className="text-sm font-semibold text-slate-300">
+                          Available Events ({events.filter(e => !eventSequence.includes(e.id)).length})
+                        </h5>
+
+                        <div className="space-y-2 max-h-80 overflow-y-auto">
+                          {events
+                            .filter(event => !eventSequence.includes(event.id))
+                            .map((event) => (
+                              <div
+                                key={event.id}
+                                className="flex items-center gap-3 p-3 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700/60 transition-colors"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm font-medium text-slate-200 truncate">
+                                    {event.title}
+                                  </div>
+                                  <div className="text-xs text-slate-400 font-mono">
+                                    {event.id}
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => addEventToSequence(event.id)}
+                                  className="px-3 py-1 text-xs bg-green-600 hover:bg-green-500 text-white rounded transition-colors"
+                                  title="Add to sequence"
+                                >
+                                  Add
+                                </button>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-4 p-3 bg-slate-800/50 rounded-lg text-xs text-slate-400">
+                    💡 Use the ↑↓ buttons to reorder events in the sequence. Events will trigger in this order and cycle back when complete.
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

@@ -193,6 +193,9 @@ export default function AdminPage() {
                 capacityImage={industrySimConfig.capacityImage}
                 winCondition={industrySimConfig.winCondition}
                 loseCondition={industrySimConfig.loseCondition}
+                eventSelectionMode={industrySimConfig.eventSelectionMode}
+                eventSequence={industrySimConfig.eventSequence}
+                events={industrySimConfig.events}
                 setBusinessMetrics={industrySimConfig.setBusinessMetrics}
                 setBusinessStats={industrySimConfig.setBusinessStats}
                 setMapWidth={industrySimConfig.setMapWidth}
@@ -205,6 +208,8 @@ export default function AdminPage() {
                 setCapacityImage={industrySimConfig.setCapacityImage}
                 setWinCondition={industrySimConfig.setWinCondition}
                 setLoseCondition={industrySimConfig.setLoseCondition}
+                setEventSelectionMode={industrySimConfig.setEventSelectionMode}
+                setEventSequence={industrySimConfig.setEventSequence}
                 onSave={industrySimConfig.save}
               />
             )}

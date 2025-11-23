@@ -42,6 +42,7 @@ const getInitialGameState = (
     upgrades: {},
     flags: {},
     monthlyExpenseAdjustments: 0,
+    eventSequenceIndex: 0,
     ...(keepIndustry ? {} : { selectedIndustry: null }),
   };
 };
@@ -62,7 +63,10 @@ export interface GameSlice {
 
   // Flag management
   flags: Record<string, boolean>;
-  
+
+  // Event sequence tracking
+  eventSequenceIndex: number;
+
   startGame: () => void;
   pauseGame: () => void;
   unpauseGame: () => void;
@@ -81,6 +85,10 @@ export interface GameSlice {
   setFlag: (flagId: string, value: boolean) => void;
   hasFlag: (flagId: string) => boolean;
   resetFlags: () => void;
+
+  // Event sequence methods
+  advanceEventSequence: () => void;
+  resetEventSequence: () => void;
 }
 
 export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set, get) => {
@@ -93,6 +101,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     isGameOver: false,
     gameOverReason: null,
     flags: {},
+    eventSequenceIndex: 0,
 
     // Leads
     leads: [],
@@ -100,7 +109,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     conversionRate: 10, // Will be overridden by getInitialGameState
   
   startGame: () => {
-    const { resetEvents, resetMonthlyTracking, resetFlags } = get();
+    const { resetEvents, resetMonthlyTracking, resetFlags, resetEventSequence } = get();
 
     // Reset to initial state but keep industry selection and start the game
     const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
@@ -121,6 +130,9 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     }
     if (resetFlags) {
       resetFlags();
+    }
+    if (resetEventSequence) {
+      resetEventSequence();
     }
 
     // Restore effects for purchased upgrades and hired staff
@@ -176,6 +188,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       resetEvents,
       resetMonthlyTracking,
       resetFlags,
+      resetEventSequence,
     } = get();
 
     // Clear all active effects before rebuilding initial ones
@@ -198,6 +211,9 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     }
     if (resetFlags) {
       resetFlags();
+    }
+    if (resetEventSequence) {
+      resetEventSequence();
     }
 
     // Reset everything to initial state including industry selection
@@ -379,6 +395,17 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
 
   resetFlags: () => {
     set({ flags: {} });
+  },
+
+  // Event sequence methods
+  advanceEventSequence: () => {
+    set((state) => ({
+      eventSequenceIndex: state.eventSequenceIndex + 1
+    }));
+  },
+
+  resetEventSequence: () => {
+    set({ eventSequenceIndex: 0 });
   },
 });
 };
