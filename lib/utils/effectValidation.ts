@@ -169,7 +169,7 @@ export function validateAndParseCampaignEffects(raw: unknown): Array<{
 
 /**
  * Validates a GameEventEffect (used in events)
- * Events have special types: cash, skillLevel, dynamicCash, metric
+ * Events have special types: cash, exp, dynamicCash, metric
  * For 'metric' type, uses enums as single source of truth
  */
 export function validateGameEventEffect(effect: unknown): boolean {
@@ -194,8 +194,8 @@ export function validateGameEventEffect(effect: unknown): boolean {
     return Object.keys(e).every(key => allowedKeys.includes(key));
   }
 
-  // skillLevel type (removed legacy 'reputation' support)
-  if (type === EventEffectType.SkillLevel) {
+  // exp type (removed legacy 'reputation' and 'skillLevel' support)
+  if (type === EventEffectType.Exp) {
     if (!isValidNumber(e.amount)) {
       return false;
     }

@@ -77,12 +77,12 @@ export function GlobalConfigTab({
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Starting Skill Level</label>
+                <label className="block text-xs text-slate-400 mb-1">Starting EXP</label>
                 <input
                   type="number"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={metrics.startingSkillLevel}
-                  onChange={(e) => onUpdateMetrics({ startingSkillLevel: Number(e.target.value) })}
+                  value={metrics.startingExp}
+                  onChange={(e) => onUpdateMetrics({ startingExp: Number(e.target.value) })}
                 />
               </div>
               <div>
@@ -175,23 +175,23 @@ export function GlobalConfigTab({
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Skill Level Gain per Happy</label>
+                <label className="block text-xs text-slate-400 mb-1">EXP Gain per Happy Customer</label>
                 <input
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.skillLevelGainPerHappyCustomer}
-                  onChange={(e) => onUpdateStats({ skillLevelGainPerHappyCustomer: Number(e.target.value) })}
+                  value={stats.expGainPerHappyCustomer}
+                  onChange={(e) => onUpdateStats({ expGainPerHappyCustomer: Number(e.target.value) })}
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Skill Level Loss per Angry</label>
+                <label className="block text-xs text-slate-400 mb-1">EXP Loss per Angry Customer</label>
                 <input
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.skillLevelLossPerAngryCustomer}
-                  onChange={(e) => onUpdateStats({ skillLevelLossPerAngryCustomer: Number(e.target.value) })}
+                  value={stats.expLossPerAngryCustomer}
+                  onChange={(e) => onUpdateStats({ expLossPerAngryCustomer: Number(e.target.value) })}
                 />
               </div>
               <div>

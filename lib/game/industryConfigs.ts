@@ -15,7 +15,7 @@ import {
 const DEFAULT_BUSINESS_METRICS: BusinessMetrics = {
   startingCash: 15000,
   monthlyExpenses: 5000,
-  startingSkillLevel: 10, // Previously: startingReputation
+  startingExp: 10, // Previously: startingSkillLevel
   startingFreedomScore: 360, // Previously: founderWorkHours - 12 hours * 30 days
 } as const;
 
@@ -30,8 +30,8 @@ const DEFAULT_BUSINESS_STATS: BusinessStats = {
     y: 9,
   },
   treatmentRooms: 2,
-  skillLevelGainPerHappyCustomer: 1, // Previously: reputationGainPerHappyCustomer
-  skillLevelLossPerAngryCustomer: 1, // Previously: reputationLossPerAngryCustomer
+  expGainPerHappyCustomer: 1, // Previously: skillLevelGainPerHappyCustomer
+  expLossPerAngryCustomer: 1, // Previously: skillLevelLossPerAngryCustomer
   // baseHappyProbability removed - not used in game mechanics
   eventTriggerSeconds: [15, 30, 45],
   serviceRevenueMultiplier: 1,

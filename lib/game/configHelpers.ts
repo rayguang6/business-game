@@ -21,7 +21,7 @@ import { DEFAULT_WIN_CONDITION, DEFAULT_LOSE_CONDITION } from './winConditions';
 const DEFAULT_BUSINESS_METRICS: BusinessMetrics = {
   startingCash: 15000,
   monthlyExpenses: 5000,
-  startingSkillLevel: 10, // Previously: startingReputation
+  startingExp: 10, // Previously: startingSkillLevel
   startingFreedomScore: 360, // Previously: founderWorkHours
 };
 
@@ -33,8 +33,8 @@ const DEFAULT_BUSINESS_STATS: BusinessStats = {
   leavingAngryDurationTicks: 10,
   customerSpawnPosition: { x: 4, y: 9 },
   treatmentRooms: 2,
-  skillLevelGainPerHappyCustomer: 1, // Previously: reputationGainPerHappyCustomer
-  skillLevelLossPerAngryCustomer: 1, // Previously: reputationLossPerAngryCustomer
+  expGainPerHappyCustomer: 1, // Previously: skillLevelGainPerHappyCustomer
+  expLossPerAngryCustomer: 1, // Previously: skillLevelLossPerAngryCustomer
   // baseHappyProbability removed - not used in game mechanics
   eventTriggerSeconds: [15, 30, 45],
   serviceRevenueMultiplier: 1,
@@ -142,11 +142,7 @@ export async function getBusinessStatsWithFallback(industryId: IndustryId): Prom
  */
 export async function getMovementConfigWithFallback(industryId: IndustryId): Promise<MovementConfig> {
   try {
-    const industryConfig = await fetchIndustrySimulationConfig(industryId);
-    if (industryConfig?.movement) {
-      return industryConfig.movement;
-    }
-    
+    // Movement is now global-only
     const globalConfig = await fetchGlobalSimulationConfig();
     if (globalConfig?.movement) {
       return globalConfig.movement;
@@ -154,7 +150,7 @@ export async function getMovementConfigWithFallback(industryId: IndustryId): Pro
   } catch (error) {
     console.warn(`[Config] Failed to fetch movement config for ${industryId}, using defaults:`, error);
   }
-  
+
   return DEFAULT_MOVEMENT_CONFIG;
 }
 
@@ -243,12 +239,7 @@ export async function getCapacityImageWithFallback(industryId: IndustryId): Prom
  */
 export async function getCustomerImagesWithFallback(industryId: IndustryId): Promise<string[]> {
   try {
-    const industryConfig = await fetchIndustrySimulationConfig(industryId);
-    // NULL = use global, [] = empty, [values] = override
-    if (industryConfig?.customerImages !== undefined && industryConfig.customerImages !== null) {
-      return industryConfig.customerImages;
-    }
-    
+    // Customer images are now global-only
     const globalConfig = await fetchGlobalSimulationConfig();
     if (globalConfig?.customerImages && globalConfig.customerImages.length > 0) {
       return globalConfig.customerImages;
@@ -256,7 +247,7 @@ export async function getCustomerImagesWithFallback(industryId: IndustryId): Pro
   } catch (error) {
     console.warn(`[Config] Failed to fetch customer images for ${industryId}, using defaults:`, error);
   }
-  
+
   return DEFAULT_CUSTOMER_IMAGES;
 }
 
@@ -265,11 +256,7 @@ export async function getCustomerImagesWithFallback(industryId: IndustryId): Pro
  */
 export async function getStaffNamePoolWithFallback(industryId: IndustryId): Promise<string[]> {
   try {
-    const industryConfig = await fetchIndustrySimulationConfig(industryId);
-    if (industryConfig?.staffNamePool !== undefined && industryConfig.staffNamePool !== null) {
-      return industryConfig.staffNamePool;
-    }
-    
+    // Staff name pool is now global-only
     const globalConfig = await fetchGlobalSimulationConfig();
     if (globalConfig?.staffNamePool && globalConfig.staffNamePool.length > 0) {
       return globalConfig.staffNamePool;
@@ -277,7 +264,7 @@ export async function getStaffNamePoolWithFallback(industryId: IndustryId): Prom
   } catch (error) {
     console.warn(`[Config] Failed to fetch staff name pool for ${industryId}, using defaults:`, error);
   }
-  
+
   return DEFAULT_STAFF_NAME_POOL;
 }
 

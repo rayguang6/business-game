@@ -8,7 +8,7 @@ const getEffectIcon = (type: GameEventEffect['type']) => {
   switch (type) {
     case EventEffectType.Cash:
       return '💰';
-    case EventEffectType.SkillLevel:
+    case EventEffectType.Exp:
       return '⭐';
     default:
       return '';
@@ -16,14 +16,14 @@ const getEffectIcon = (type: GameEventEffect['type']) => {
 };
 
 const getEffectColorClass = (type: GameEventEffect['type'], amount: number) => {
-  if (type === EventEffectType.SkillLevel) {
+  if (type === EventEffectType.Exp) {
     return amount > 0 ? 'text-green-400' : 'text-red-400';
   }
   return amount > 0 ? 'text-green-400' : 'text-red-400';
 };
 
 const formatEffect = (effect: GameEventEffect) => {
-  if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.SkillLevel) {
+  if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.Exp) {
     const prefix = effect.type === EventEffectType.Cash ? '$' : '';
     const sign = effect.amount > 0 ? '+' : effect.amount < 0 ? '-' : '';
     const value = Math.abs(effect.amount);
@@ -35,10 +35,11 @@ const formatEffect = (effect: GameEventEffect) => {
 const METRIC_LABELS: Record<GameMetric, string> = {
   [GameMetric.Cash]: 'Cash',
   [GameMetric.Time]: 'Available Time',
+  [GameMetric.MonthlyTimeCapacity]: 'Monthly Time Capacity',
   [GameMetric.SpawnIntervalSeconds]: 'Customer Spawn Speed',
   [GameMetric.ServiceSpeedMultiplier]: 'Service Speed',
   [GameMetric.ServiceRooms]: 'Service Rooms',
-  [GameMetric.SkillLevel]: 'Skill Level',
+  [GameMetric.Exp]: 'EXP',
   // [GameMetric.HappyProbability] removed - not used in game mechanics
   [GameMetric.MonthlyExpenses]: 'Monthly Expenses',
   [GameMetric.ServiceRevenueMultiplier]: 'Service Revenue Multiplier',
@@ -177,7 +178,7 @@ const EventPopup: React.FC = () => {
                 <div className="text-[10px] md:text-xs font-semibold text-[var(--text-primary)] mb-0.5 md:mb-1">Effects:</div>
                 <ul className="space-y-0.5 text-[9px] md:text-xs">
                   {lastDelayedOutcome.appliedEffects.map((effect, index) => {
-                    if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.SkillLevel) {
+                    if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.Exp) {
                       return (
                         <li key={index} className={`flex items-center gap-1 ${getEffectColorClass(effect.type, effect.amount)}`}>
                           <span>{getEffectIcon(effect.type)}</span>
@@ -253,7 +254,7 @@ const EventPopup: React.FC = () => {
                 <div className="text-[10px] md:text-xs font-semibold text-[var(--text-primary)] mb-0.5 md:mb-1">Effects:</div>
                 <ul className="space-y-0.5 text-[9px] md:text-xs">
                   {lastEventOutcome.appliedEffects.map((effect, index) => {
-                    if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.SkillLevel) {
+                    if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.Exp) {
                       return (
                         <li key={index} className={`flex items-center gap-1 ${getEffectColorClass(effect.type, effect.amount)}`}>
                           <span>{getEffectIcon(effect.type)}</span>

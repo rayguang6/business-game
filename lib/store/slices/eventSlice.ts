@@ -166,7 +166,7 @@ import { checkRequirements } from '@/lib/game/requirementChecker';
 // These must match the structure expected in the application phase
 export type ResolvedEffect =
   | { type: EventEffectType.Cash; amount: number; label: string | undefined }
-  | { type: EventEffectType.SkillLevel; amount: number; label: string | undefined }
+  | { type: EventEffectType.Exp; amount: number; label: string | undefined }
   | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: number; durationSeconds?: number | null; priority?: number; label: string | undefined };
 // 🚨 ADD NEW RESOLVED EFFECT TYPES HERE (STEP 2)
 // | { type: 'yourNewEffectType'; amount: number; label: string | undefined }
@@ -274,17 +274,17 @@ const applyEventEffect = (
       }
       return;
     }
-    case EventEffectType.SkillLevel: {
+    case EventEffectType.Exp: {
       // Skill level effects directly modify skill level
-      const { applySkillLevelChange } = store;
-      applySkillLevelChange(effect.amount);
+      const { applyExpChange } = store;
+      applyExpChange(effect.amount);
       return; // Don't use effectManager for skill level (handled directly)
     }
     case EventEffectType.Metric: {
       // For direct state metrics (Cash, Time, SkillLevel, FreedomScore) with Add effects, apply directly
       // These are one-time permanent effects (no duration tracking)
       if ((effect.metric === GameMetric.Cash || effect.metric === GameMetric.Time || 
-           effect.metric === GameMetric.SkillLevel || effect.metric === GameMetric.FreedomScore) 
+           effect.metric === GameMetric.Exp || effect.metric === GameMetric.FreedomScore) 
           && effect.effectType === EffectType.Add) {
         if (effect.metric === GameMetric.Cash) {
           const { recordEventRevenue, recordEventExpense } = store;
@@ -295,8 +295,8 @@ const applyEventEffect = (
           }
         } else if (effect.metric === GameMetric.Time) {
           store.applyTimeChange(effect.value);
-        } else if (effect.metric === GameMetric.SkillLevel) {
-          store.applySkillLevelChange(effect.value);
+        } else if (effect.metric === GameMetric.Exp) {
+          store.applyExpChange(effect.value);
         } else if (effect.metric === GameMetric.FreedomScore) {
           store.applyFreedomScoreChange(effect.value);
         }
@@ -330,10 +330,10 @@ const applyEventEffect = (
         const currentTime = metrics.time;
         const newTime = effectManager.calculate(GameMetric.Time, currentTime);
         store.applyTimeChange(newTime - currentTime);
-      } else if (effect.metric === GameMetric.SkillLevel) {
-        const currentSkillLevel = metrics.skillLevel;
-        const newSkillLevel = effectManager.calculate(GameMetric.SkillLevel, currentSkillLevel);
-        store.applySkillLevelChange(newSkillLevel - currentSkillLevel);
+      } else if (effect.metric === GameMetric.Exp) {
+        const currentExp = metrics.exp;
+        const newExp = effectManager.calculate(GameMetric.Exp, currentExp);
+        store.applyExpChange(newExp - currentExp);
       } else if (effect.metric === GameMetric.FreedomScore) {
         const currentFreedomScore = metrics.freedomScore;
         const newFreedomScore = effectManager.calculate(GameMetric.FreedomScore, currentFreedomScore);
@@ -462,7 +462,7 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
             amount: finalAmount,
             label: effect.label,
           });
-        } else if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.SkillLevel) {
+        } else if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.Exp) {
           // Direct cash/skillLevel effects - no calculation needed
           appliedEffects.push(effect);
           const resolvedEffect: ResolvedEffect = {
@@ -560,9 +560,9 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
           } else {
             recordEventExpense(Math.abs(resolvedEffect.amount), resolvedEffect.label ?? 'Event expense');
           }
-        } else if (resolvedEffect.type === EventEffectType.SkillLevel && resolvedEffect.amount !== undefined) {
+        } else if (resolvedEffect.type === EventEffectType.Exp && resolvedEffect.amount !== undefined) {
           // Skill level effects directly modify skill level
-          store.applySkillLevelChange(resolvedEffect.amount);
+          store.applyExpChange(resolvedEffect.amount);
         } else if (resolvedEffect.type === EventEffectType.Metric && resolvedEffect.metric && resolvedEffect.effectType !== undefined && resolvedEffect.value !== undefined) {
           // Metric effects go through effect manager
           const { gameTime, metrics } = store;
@@ -572,8 +572,8 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
             store.applyCashChange(resolvedEffect.value);
           } else if (resolvedEffect.metric === GameMetric.Time && resolvedEffect.effectType === EffectType.Add) {
             store.applyTimeChange(resolvedEffect.value);
-          } else if (resolvedEffect.metric === GameMetric.SkillLevel && resolvedEffect.effectType === EffectType.Add) {
-            store.applySkillLevelChange(resolvedEffect.value);
+          } else if (resolvedEffect.metric === GameMetric.Exp && resolvedEffect.effectType === EffectType.Add) {
+            store.applyExpChange(resolvedEffect.value);
           } else if (resolvedEffect.metric === GameMetric.FreedomScore && resolvedEffect.effectType === EffectType.Add) {
             store.applyFreedomScoreChange(resolvedEffect.value);
           } else {
@@ -601,10 +601,10 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
               const currentTime = metrics.time;
               const newTime = effectManager.calculate(GameMetric.Time, currentTime);
               store.applyTimeChange(newTime - currentTime);
-            } else if (resolvedEffect.metric === GameMetric.SkillLevel) {
-              const currentSkillLevel = metrics.skillLevel;
-              const newSkillLevel = effectManager.calculate(GameMetric.SkillLevel, currentSkillLevel);
-              store.applySkillLevelChange(newSkillLevel - currentSkillLevel);
+            } else if (resolvedEffect.metric === GameMetric.Exp) {
+              const currentExp = metrics.exp;
+              const newExp = effectManager.calculate(GameMetric.Exp, currentExp);
+              store.applyExpChange(newExp - currentExp);
             } else if (resolvedEffect.metric === GameMetric.FreedomScore) {
               const currentFreedomScore = metrics.freedomScore;
               const newFreedomScore = effectManager.calculate(GameMetric.FreedomScore, currentFreedomScore);
@@ -657,8 +657,8 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
           } else {
             recordEventExpense(Math.abs(resolvedEffect.amount), resolvedEffect.label ?? 'Delayed event expense');
           }
-        } else if (resolvedEffect.type === EventEffectType.SkillLevel && resolvedEffect.amount !== undefined) {
-          store.applySkillLevelChange(resolvedEffect.amount);
+        } else if (resolvedEffect.type === EventEffectType.Exp && resolvedEffect.amount !== undefined) {
+          store.applyExpChange(resolvedEffect.amount);
         } else if (resolvedEffect.type === EventEffectType.Metric && resolvedEffect.metric && resolvedEffect.effectType !== undefined && resolvedEffect.value !== undefined) {
           const { gameTime, metrics } = store;
           
@@ -666,8 +666,8 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
             store.applyCashChange(resolvedEffect.value);
           } else if (resolvedEffect.metric === GameMetric.Time && resolvedEffect.effectType === EffectType.Add) {
             store.applyTimeChange(resolvedEffect.value);
-          } else if (resolvedEffect.metric === GameMetric.SkillLevel && resolvedEffect.effectType === EffectType.Add) {
-            store.applySkillLevelChange(resolvedEffect.value);
+          } else if (resolvedEffect.metric === GameMetric.Exp && resolvedEffect.effectType === EffectType.Add) {
+            store.applyExpChange(resolvedEffect.value);
           } else if (resolvedEffect.metric === GameMetric.FreedomScore && resolvedEffect.effectType === EffectType.Add) {
             store.applyFreedomScoreChange(resolvedEffect.value);
           } else {
@@ -693,10 +693,10 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
               const currentTime = metrics.time;
               const newTime = effectManager.calculate(GameMetric.Time, currentTime);
               store.applyTimeChange(newTime - currentTime);
-            } else if (resolvedEffect.metric === GameMetric.SkillLevel) {
-              const currentSkillLevel = metrics.skillLevel;
-              const newSkillLevel = effectManager.calculate(GameMetric.SkillLevel, currentSkillLevel);
-              store.applySkillLevelChange(newSkillLevel - currentSkillLevel);
+            } else if (resolvedEffect.metric === GameMetric.Exp) {
+              const currentExp = metrics.exp;
+              const newExp = effectManager.calculate(GameMetric.Exp, currentExp);
+              store.applyExpChange(newExp - currentExp);
             } else if (resolvedEffect.metric === GameMetric.FreedomScore) {
               const currentFreedomScore = metrics.freedomScore;
               const newFreedomScore = effectManager.calculate(GameMetric.FreedomScore, currentFreedomScore);

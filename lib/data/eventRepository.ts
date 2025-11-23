@@ -53,7 +53,7 @@ type RawConsequence = {
 
 type RawEffect =
   | { type: EventEffectType.Cash; amount: number; label?: string }
-  | { type: EventEffectType.SkillLevel; amount: number }
+  | { type: EventEffectType.Exp; amount: number }
   | { type: EventEffectType.DynamicCash; expression: string; label?: string }
   | { type: EventEffectType.Metric; metric: string; effectType: string; value: number; durationSeconds?: number | null; priority?: number };
 
@@ -190,9 +190,9 @@ const convertRawEffectToGameEventEffect = (rawEffect: unknown): GameEventEffect 
         amount: e.amount as number,
         label: e.label as string | undefined,
       };
-    case EventEffectType.SkillLevel:
+    case EventEffectType.Exp:
       return {
-        type: EventEffectType.SkillLevel,
+        type: EventEffectType.Exp,
         amount: e.amount as number,
       };
     case EventEffectType.DynamicCash:
@@ -224,9 +224,9 @@ const convertGameEventEffectToRawEffect = (effect: GameEventEffect): RawEffect =
         amount: effect.amount,
         label: effect.label,
       };
-    case EventEffectType.SkillLevel:
+    case EventEffectType.Exp:
       return {
-        type: EventEffectType.SkillLevel,
+        type: EventEffectType.Exp,
         amount: effect.amount,
       };
     case EventEffectType.DynamicCash:

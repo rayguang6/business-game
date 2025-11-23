@@ -52,7 +52,6 @@ const cloneIndustryConfig = (
   winCondition: config.winCondition ? { ...config.winCondition } : undefined,
   loseCondition: config.loseCondition ? { ...config.loseCondition } : undefined,
   customerImages: config.customerImages ? [...config.customerImages] : undefined,
-  metadata: config.metadata ? { ...config.metadata } : undefined,
 });
 
 const cloneGlobalConfig = (config: GlobalSimulationConfigState | null) =>

@@ -7,7 +7,7 @@ export type EventCategory = 'opportunity' | 'risk';
 // Prevents typos and makes refactoring easier
 export enum EventEffectType {
   Cash = 'cash',
-  SkillLevel = 'skillLevel',
+  Exp = 'exp',
   DynamicCash = 'dynamicCash',
   Metric = 'metric',
 }
@@ -17,7 +17,7 @@ export enum EventEffectType {
 export type GameEventEffect =
   | { type: EventEffectType.Cash; amount: number; label?: string }
   | { type: EventEffectType.DynamicCash; expression: string; label?: string }
-  | { type: EventEffectType.SkillLevel; amount: number }
+  | { type: EventEffectType.Exp; amount: number }
   | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: number; durationSeconds?: number | null; priority?: number }
 
 export interface DelayedConsequence {

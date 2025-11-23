@@ -92,19 +92,19 @@ export async function loadIndustryContent(
     marketingCampaigns,
     staffRoles: staffResult?.roles ?? [],
     staffPresets: staffResult?.initialStaff ?? [],
-    staffNamePool: industrySimConfig?.staffNamePool ?? staffResult?.namePool ?? undefined,
+    staffNamePool: staffResult?.namePool ?? undefined,
     flags,
     conditions,
     layout: resolvedLayout,
     // Industry-specific simulation config overrides
     businessMetrics: industrySimConfig?.businessMetrics,
     businessStats: industrySimConfig?.businessStats,
-    movement: industrySimConfig?.movement,
+    // movement is now global-only and handled separately
     mapConfig: industrySimConfig?.mapConfig,
     capacityImage: industrySimConfig?.capacityImage,
     winCondition: industrySimConfig?.winCondition,
     loseCondition: industrySimConfig?.loseCondition,
-    customerImages: industrySimConfig?.customerImages,
+    // customerImages is now global-only and handled separately
     staffDataAvailable,
   };
 }

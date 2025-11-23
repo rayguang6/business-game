@@ -23,7 +23,7 @@ export interface UpgradeEffects {
   spawnIntervalSeconds: number;
   spawnIntervalTicks: number;
   serviceSpeedMultiplier: number;
-  skillLevel: number; // Direct skill level (effects modify this directly)
+  exp: number; // Direct exp (effects modify this directly)
   treatmentRooms: number;
   monthlyExpenses: number;
   // happyProbability removed - not used in game mechanics
@@ -73,7 +73,7 @@ export function getUpgradeEffects(
     spawnIntervalSeconds,
     spawnIntervalTicks,
     serviceSpeedMultiplier: Math.max(0.1, effectManager.calculate(GameMetric.ServiceSpeedMultiplier, baseMetrics.serviceSpeedMultiplier)),
-    skillLevel: baseMetrics.skillLevel, // Skill level is modified directly, not calculated here
+    exp: baseMetrics.exp, // Exp is modified directly, not calculated here
     treatmentRooms: Math.max(1, Math.round(effectManager.calculate(GameMetric.ServiceRooms, baseMetrics.treatmentRooms))),
     monthlyExpenses: effectManager.calculate(GameMetric.MonthlyExpenses, baseMetrics.monthlyExpenses),
     // happyProbability removed - not used in game mechanics
@@ -104,11 +104,11 @@ export function getEffectiveServiceSpeedMultiplier(
   return getUpgradeEffects(upgrades, industryId).serviceSpeedMultiplier;
 }
 
-export function getEffectiveSkillLevel(
+export function getEffectiveExp(
   upgrades: Upgrades,
   industryId: IndustryId,
 ): number {
-  return getUpgradeEffects(upgrades, industryId).skillLevel;
+  return getUpgradeEffects(upgrades, industryId).exp;
 }
 
 export function getEffectiveTreatmentRooms(

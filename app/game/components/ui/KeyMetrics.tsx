@@ -6,7 +6,9 @@ import { useMetricChanges } from '@/hooks/useMetricChanges';
 import { MetricFeedback, FeedbackItem } from './MetricFeedback';
 import { useGameStore } from '@/lib/store/gameStore';
 import { DEFAULT_INDUSTRY_ID, getStartingTime } from '@/lib/game/config';
+import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import type { IndustryId } from '@/lib/game/types';
+import { getLevel, getLevelProgress, EXP_PER_LEVEL } from '@/lib/store/types';
 import Image from 'next/image';
 
 export function KeyMetrics() {
@@ -21,7 +23,7 @@ export function KeyMetrics() {
   const [feedbackByMetric, setFeedbackByMetric] = useState<Record<string, FeedbackItem[]>>({
     cash: [],
     time: [],
-    skillLevel: [],
+    exp: [],
     freedomScore: [],
   });
 
@@ -33,7 +35,7 @@ export function KeyMetrics() {
       const newFeedback: Record<string, FeedbackItem[]> = {
         cash: [...prev.cash],
         time: [...prev.time],
-        skillLevel: [...prev.skillLevel],
+        exp: [...prev.exp],
         freedomScore: [...prev.freedomScore],
       };
 
@@ -55,12 +57,12 @@ export function KeyMetrics() {
         });
       }
 
-      // Add skill level change feedback (previously reputation)
-      if (changes.skillLevel !== undefined && changes.skillLevel !== 0) {
-        newFeedback.skillLevel.push({
-          id: `skillLevel-${Date.now()}`,
-          value: changes.skillLevel,
-          color: changes.skillLevel > 0 ? 'yellow' : 'red',
+      // Add exp change feedback (previously skill level)
+      if (changes.exp !== undefined && changes.exp !== 0) {
+        newFeedback.exp.push({
+          id: `exp-${Date.now()}`,
+          value: changes.exp,
+          color: changes.exp > 0 ? 'yellow' : 'red',
         });
       }
 
@@ -95,21 +97,21 @@ export function KeyMetrics() {
       feedback: feedbackByMetric.cash,
     },
     {
-      key: 'skillLevel',
+      key: 'exp',
       icon: '💎',
       image: '/images/icons/marketing.png',
-      value: metrics.skillLevel.toLocaleString(),
-      label: 'Skill Level',
+      value: `Level ${getLevel(metrics.exp)} (${getLevelProgress(metrics.exp)}/${EXP_PER_LEVEL} EXP)`,
+      label: selectedIndustry?.id === 'freelance' ? 'Skill Level' : 'Level',
       color: 'text-yellow-400',
-      feedback: feedbackByMetric.skillLevel,
+      feedback: feedbackByMetric.exp,
     },
     // Conditionally show time if configured
     ...(showTime ? [{
       key: 'time',
       icon: '⏱️',
       image: '/images/icons/upgrades.png',
-      value: `${metrics.time}h`,
-      label: 'Available Time',
+      value: `${metrics.time}/${getStartingTime(industryId) + effectManager.calculate(GameMetric.MonthlyTimeCapacity, 0)}h`,
+      label: 'Time Budget',
       color: 'text-cyan-400',
       feedback: feedbackByMetric.time,
     }] : []),

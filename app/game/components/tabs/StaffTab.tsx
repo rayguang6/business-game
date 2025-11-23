@@ -85,7 +85,7 @@ const formatEffect = (effect: { metric: GameMetric; type: EffectType; value: num
       case GameMetric.ServiceSpeedMultiplier: return 'Service Speed';
       case GameMetric.FreedomScore: return 'Freedom Score';
       case GameMetric.MonthlyExpenses: return 'Monthly Expenses';
-      case GameMetric.SkillLevel: return 'Skill Level';
+      case GameMetric.Exp: return 'EXP';
       case GameMetric.ServiceRevenueMultiplier: return 'Revenue';
       case GameMetric.ServiceRevenueFlatBonus: return 'Revenue Bonus';
       default: return metric;
@@ -133,7 +133,7 @@ function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
       case GameMetric.Cash: return '💵';
       case GameMetric.Time: return '⏰';
       case GameMetric.ServiceSpeedMultiplier: return '⚡';
-      case GameMetric.SkillLevel: return '⭐';
+      case GameMetric.Exp: return '⭐';
       case GameMetric.ServiceRevenueMultiplier: return '💰';
       case GameMetric.ServiceRevenueFlatBonus: return '💵';
       case GameMetric.FreedomScore: return '⏰';
@@ -307,7 +307,7 @@ export function StaffTab() {
                 case GameMetric.Cash: return '💵';
                 case GameMetric.Time: return '⏰';
                 case GameMetric.ServiceSpeedMultiplier: return '⚡';
-                case GameMetric.SkillLevel: return '⭐';
+                case GameMetric.Exp: return '⭐';
                 case GameMetric.ServiceRevenueMultiplier: return '💰';
                 case GameMetric.ServiceRevenueFlatBonus: return '💵';
                 case GameMetric.FreedomScore: return '⏰';

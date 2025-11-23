@@ -109,8 +109,13 @@ export function IndustrySimulationConfigTab({
     }
   };
 
-  // Helper functions
-  const getMetrics = (): BusinessMetrics => businessMetrics || { startingCash: 0, monthlyExpenses: 0, startingSkillLevel: 0, startingFreedomScore: 0 };
+  // Helper functions - return current values or defaults for display
+  const getMetrics = (): BusinessMetrics => businessMetrics || {
+    startingCash: 0,
+    monthlyExpenses: 0,
+    startingExp: 0,
+    startingFreedomScore: 0,
+  };
   const getStats = (): BusinessStats => businessStats || {
     ticksPerSecond: 10,
     monthDurationSeconds: 60,
@@ -119,9 +124,8 @@ export function IndustrySimulationConfigTab({
     leavingAngryDurationTicks: 10,
     customerSpawnPosition: { x: 4, y: 9 },
     treatmentRooms: 2,
-    skillLevelGainPerHappyCustomer: 1, // Previously: reputationGainPerHappyCustomer
-    skillLevelLossPerAngryCustomer: 1, // Previously: reputationLossPerAngryCustomer
-    // baseHappyProbability removed - not used in game mechanics
+    expGainPerHappyCustomer: 1,
+    expLossPerAngryCustomer: 1,
     eventTriggerSeconds: [],
     serviceRevenueMultiplier: 1,
     serviceRevenueScale: 10,
@@ -130,13 +134,33 @@ export function IndustrySimulationConfigTab({
   const getLoseCondition = (): LoseCondition => loseCondition || { cashThreshold: 0, timeThreshold: 0 };
 
   const updateMetrics = (updates: Partial<BusinessMetrics>) => {
-    const current = getMetrics();
-    setBusinessMetrics({ ...current, ...updates });
+    // Filter out undefined values and merge with existing data
+    const filteredUpdates: Partial<BusinessMetrics> = {};
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value !== undefined) {
+        (filteredUpdates as any)[key] = value;
+      }
+    });
+
+    if (Object.keys(filteredUpdates).length > 0) {
+      const current = businessMetrics || {};
+      setBusinessMetrics({ ...current, ...filteredUpdates } as BusinessMetrics);
+    }
   };
 
   const updateStats = (updates: Partial<BusinessStats>) => {
-    const current = getStats();
-    setBusinessStats({ ...current, ...updates });
+    // Filter out undefined values and merge with existing data
+    const filteredUpdates: Partial<BusinessStats> = {};
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value !== undefined) {
+        (filteredUpdates as any)[key] = value;
+      }
+    });
+
+    if (Object.keys(filteredUpdates).length > 0) {
+      const current = businessStats || {};
+      setBusinessStats({ ...current, ...filteredUpdates } as BusinessStats);
+    }
   };
 
   const updateWinCondition = (updates: Partial<WinCondition>) => {
@@ -247,19 +271,19 @@ export function IndustrySimulationConfigTab({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs text-slate-400 mb-1">Starting Cash</label>
-              <input type="number" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getMetrics().startingCash} onChange={(e) => updateMetrics({ startingCash: Number(e.target.value) })} />
+              <input type="number" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getMetrics().startingCash ?? ''} onChange={(e) => updateMetrics({ startingCash: e.target.value === '' ? 0 : Number(e.target.value) })} placeholder="0" />
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Monthly Expenses</label>
-              <input type="number" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getMetrics().monthlyExpenses} onChange={(e) => updateMetrics({ monthlyExpenses: Number(e.target.value) })} />
+              <input type="number" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getMetrics().monthlyExpenses ?? ''} onChange={(e) => updateMetrics({ monthlyExpenses: e.target.value === '' ? 0 : Number(e.target.value) })} placeholder="0" />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Starting Skill Level</label>
-              <input type="number" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getMetrics().startingSkillLevel} onChange={(e) => updateMetrics({ startingSkillLevel: Number(e.target.value) })} />
+              <label className="block text-xs text-slate-400 mb-1">Starting EXP</label>
+              <input type="number" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getMetrics().startingExp ?? ''} onChange={(e) => updateMetrics({ startingExp: e.target.value === '' ? 0 : Number(e.target.value) })} placeholder="0" />
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Starting Freedom Score</label>
-              <input type="number" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getMetrics().startingFreedomScore} onChange={(e) => updateMetrics({ startingFreedomScore: Number(e.target.value) })} />
+              <input type="number" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getMetrics().startingFreedomScore ?? ''} onChange={(e) => updateMetrics({ startingFreedomScore: e.target.value === '' ? 0 : Number(e.target.value) })} placeholder="0" />
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-700">

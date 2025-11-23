@@ -34,7 +34,7 @@ const mapBusinessMetrics = (raw: unknown): BusinessMetrics | undefined => {
   if (
     typeof c.startingCash === 'number' &&
     typeof c.monthlyExpenses === 'number' &&
-    typeof c.startingSkillLevel === 'number' &&
+    typeof c.startingExp === 'number' &&
     (typeof c.startingFreedomScore === 'number' || typeof (c as any).founderWorkHours === 'number') // Support legacy founderWorkHours
   ) {
     return {

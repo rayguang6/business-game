@@ -16,7 +16,7 @@ export interface EffectBundle {
    */
   effects?: UpgradeEffect[];
   /**
-   * Final multipliers applied after effects. For example, { skillLevel: 2 } modifies skill level directly.
+   * Final multipliers applied after effects. For example, { exp: 2 } modifies exp directly.
    */
   multipliers?: EffectMultiplierMap;
 }
@@ -93,9 +93,9 @@ const applyUpgradeEffectsToCombined = (
         result = { ...result, serviceSpeedMultiplier: updated };
         break;
       }
-      case GameMetric.SkillLevel: {
-        const updated = Math.max(0, applyUpgradeEffectMetric(result.skillLevel, effect));
-        result = { ...result, skillLevel: updated };
+      case GameMetric.Exp: {
+        const updated = Math.max(0, applyUpgradeEffectMetric(result.exp, effect));
+        result = { ...result, exp: updated };
         break;
       }
       case GameMetric.ServiceRooms: {
@@ -190,10 +190,10 @@ const applyMultipliersToCombined = (
         };
         break;
       }
-      case GameMetric.SkillLevel: {
+      case GameMetric.Exp: {
         result = {
           ...result,
-          skillLevel: Math.max(0, combined.skillLevel * safeMultiplier),
+          exp: Math.max(0, combined.exp * safeMultiplier),
         };
         break;
       }

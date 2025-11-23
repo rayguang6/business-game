@@ -46,15 +46,15 @@ const mapBusinessMetrics = (raw: unknown): BusinessMetrics | undefined => {
   if (
     typeof candidate.startingCash === 'number' &&
     typeof candidate.monthlyExpenses === 'number' &&
-    typeof candidate.startingSkillLevel === 'number' &&
-    (typeof candidate.startingFreedomScore === 'number' || typeof (candidate as any).founderWorkHours === 'number') // Support legacy founderWorkHours
+    typeof candidate.startingExp === 'number' &&
+    typeof candidate.startingFreedomScore === 'number'
   ) {
     return {
       startingCash: candidate.startingCash,
       startingTime: typeof candidate.startingTime === 'number' ? candidate.startingTime : undefined,
       monthlyExpenses: candidate.monthlyExpenses,
-      startingSkillLevel: candidate.startingSkillLevel, // Previously: startingReputation
-      startingFreedomScore: candidate.startingFreedomScore ?? candidate.founderWorkHours, // Previously: founderWorkHours
+      startingExp: candidate.startingExp, // Previously: startingSkillLevel
+      startingFreedomScore: candidate.startingFreedomScore,
     };
   }
   return undefined;

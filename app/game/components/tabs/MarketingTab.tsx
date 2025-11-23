@@ -25,11 +25,12 @@ const formatSeconds = (seconds: number): string => {
 const METRIC_LABELS: Record<GameMetric, string> = {
   [GameMetric.Cash]: 'Cash',
   [GameMetric.Time]: 'Available Time',
+  [GameMetric.MonthlyTimeCapacity]: 'Monthly Time Capacity',
   [GameMetric.SpawnIntervalSeconds]: 'Customer flow',
   [GameMetric.GenerateLeads]: 'Generate leads',
   [GameMetric.ServiceSpeedMultiplier]: 'Service speed',
   [GameMetric.ServiceRooms]: 'Service rooms',
-  [GameMetric.SkillLevel]: 'Skill Level',
+  [GameMetric.Exp]: 'EXP',
   // [GameMetric.HappyProbability] removed - not used in game mechanics
   [GameMetric.MonthlyExpenses]: 'Monthly expenses',
   [GameMetric.ServiceRevenueMultiplier]: 'Service revenue',

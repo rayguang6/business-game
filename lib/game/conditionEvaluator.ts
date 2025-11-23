@@ -1,5 +1,6 @@
 import { GameCondition, ConditionMetric } from '@/lib/types/conditions';
 import { GameStore } from '@/lib/store/gameStore';
+import { getLevel } from '@/lib/store/types';
 
 /**
  * Evaluates a single metric condition against the current game state
@@ -44,8 +45,10 @@ function getMetricValue(metric: ConditionMetric, store: GameStore): number {
   switch (metric) {
     case ConditionMetric.Cash:
       return metrics.cash;
-    case ConditionMetric.SkillLevel:
-      return metrics.skillLevel;
+    case ConditionMetric.Exp:
+      return metrics.exp;
+    case ConditionMetric.Level:
+      return getLevel(metrics.exp);
     case ConditionMetric.Expenses:
       return metrics.totalExpenses;
     case ConditionMetric.GameTime:
