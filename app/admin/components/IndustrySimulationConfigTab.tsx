@@ -339,6 +339,21 @@ export function IndustrySimulationConfigTab({
                 <input type="number" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getWinCondition().cashTarget} onChange={(e) => updateWinCondition({ cashTarget: Number(e.target.value) })} />
                 <p className="text-xs text-slate-500 mt-1">Target cash amount to win the game</p>
               </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Month Target (Optional)</label>
+                <input type="number" min="1" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getWinCondition().monthTarget || ''} onChange={(e) => updateWinCondition({ monthTarget: e.target.value ? Number(e.target.value) : undefined })} />
+                <p className="text-xs text-slate-500 mt-1">Win by surviving this many months (alternative to cash target)</p>
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Custom Victory Title (Optional)</label>
+                <input type="text" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getWinCondition().customTitle || ''} onChange={(e) => updateWinCondition({ customTitle: e.target.value || undefined })} placeholder="🎉 Mission Accomplished!" />
+                <p className="text-xs text-slate-500 mt-1">Override the default victory title</p>
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Custom Victory Message (Optional)</label>
+                <textarea rows={3} className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200 resize-none" value={getWinCondition().customMessage || ''} onChange={(e) => updateWinCondition({ customMessage: e.target.value || undefined })} placeholder="Congratulations! You've successfully completed your business challenge!" />
+                <p className="text-xs text-slate-500 mt-1">Override the default victory message</p>
+              </div>
             </div>
           </div>
 

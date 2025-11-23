@@ -270,7 +270,7 @@ export function GlobalConfigTab({
 
         <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
           <label className="block text-sm font-semibold text-slate-300 mb-4">Win Condition</label>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-slate-400 mb-1">Cash Target</label>
               <input
@@ -281,6 +281,39 @@ export function GlobalConfigTab({
                 onChange={(e) => onUpdateWinCondition({ cashTarget: Number(e.target.value) })}
               />
               <p className="text-xs text-slate-500 mt-1">Target cash amount to win the game</p>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Month Target (Optional)</label>
+              <input
+                type="number"
+                min="1"
+                className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
+                value={winCondition.monthTarget || ''}
+                onChange={(e) => onUpdateWinCondition({ monthTarget: e.target.value ? Number(e.target.value) : undefined })}
+              />
+              <p className="text-xs text-slate-500 mt-1">Win by surviving this many months</p>
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs text-slate-400 mb-1">Custom Victory Title (Optional)</label>
+              <input
+                type="text"
+                className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
+                value={winCondition.customTitle || ''}
+                onChange={(e) => onUpdateWinCondition({ customTitle: e.target.value || undefined })}
+                placeholder="🎉 Mission Accomplished!"
+              />
+              <p className="text-xs text-slate-500 mt-1">Override the default victory title</p>
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs text-slate-400 mb-1">Custom Victory Message (Optional)</label>
+              <textarea
+                rows={3}
+                className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200 resize-none"
+                value={winCondition.customMessage || ''}
+                onChange={(e) => onUpdateWinCondition({ customMessage: e.target.value || undefined })}
+                placeholder="Congratulations! You've successfully completed your business challenge!"
+              />
+              <p className="text-xs text-slate-500 mt-1">Override the default victory message</p>
             </div>
           </div>
         </div>
