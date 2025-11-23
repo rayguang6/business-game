@@ -346,6 +346,8 @@ export default function AdminPage() {
                 eventDeleting={events.deleting}
                 flags={flags.flags}
                 flagsLoading={flags.loading}
+                conditions={conditions.conditions}
+                conditionsLoading={conditions.loading}
                 metricOptions={METRIC_OPTIONS}
                 effectTypeOptions={EFFECT_TYPE_OPTIONS}
                 onSelectEvent={events.selectEvent}

@@ -11,6 +11,11 @@ import { effectManager } from '@/lib/game/effectManager';
 import { addStaffEffects } from '@/lib/features/staff';
 import { addUpgradeEffects } from './upgradesSlice';
 import { checkWinCondition } from '@/lib/game/winConditions';
+import { checkRequirements } from '@/lib/game/requirementChecker';
+import type { ResolvedDelayedOutcome, ResolvedEffect } from './eventSlice';
+import { EventEffectType } from '@/lib/types/gameEvents';
+import { GameMetric, EffectType } from '@/lib/game/effectManager';
+import { DynamicValueEvaluator } from '@/lib/game/dynamicValueEvaluator';
 
 // Shared initial game state - DRY principle
 const getInitialGameState = (
@@ -268,6 +273,113 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     // Check if marketing campaigns have ended
     if (tickMarketing) {
       tickMarketing(gameTime);
+    }
+
+    // Process ready delayed consequences
+    const currentStore = get();
+    const { pendingDelayedConsequences } = currentStore;
+    if (pendingDelayedConsequences && pendingDelayedConsequences.length > 0) {
+      const readyConsequences = pendingDelayedConsequences.filter(
+        (pending) => gameTime >= pending.triggerTime
+      );
+
+      if (readyConsequences.length > 0) {
+        // Process each ready delayed consequence
+        readyConsequences.forEach((pending) => {
+          const { delayedConsequence, eventId, eventTitle, choiceId, choiceLabel, consequenceId } = pending;
+          
+          // Check requirements to determine success/failure
+          const hasRequirements = delayedConsequence.successRequirements && delayedConsequence.successRequirements.length > 0;
+          const requirementsMet = hasRequirements 
+            ? checkRequirements(delayedConsequence.successRequirements || [], currentStore)
+            : true; // Default to success if no requirements
+          
+          const success = requirementsMet;
+          const effectsToResolve = success 
+            ? delayedConsequence.successEffects 
+            : (delayedConsequence.failureEffects || []);
+
+          // Resolve effects (similar to resolveEventChoice logic)
+          const appliedEffects: any[] = [];
+          const pendingEffects: ResolvedEffect[] = [];
+
+          effectsToResolve.forEach((effect) => {
+            if (effect.type === EventEffectType.DynamicCash) {
+              // Calculate dynamic cash value at trigger time
+              const industryId = currentStore.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
+              const baseExpenses = getMonthlyBaseExpenses(industryId);
+              const currentExpenses = effectManager.calculate(GameMetric.MonthlyExpenses, baseExpenses);
+              const evaluator = new DynamicValueEvaluator({ expenses: currentExpenses });
+              let value = evaluator.evaluate(effect.expression);
+              const isExpensesExpression = effect.expression.trim().toLowerCase().startsWith('expenses');
+              if (isExpensesExpression && value > 0) {
+                value = -value;
+              }
+
+              appliedEffects.push({
+                type: EventEffectType.Cash,
+                amount: value,
+                label: effect.label,
+              });
+
+              pendingEffects.push({
+                type: EventEffectType.Cash,
+                amount: value,
+                label: effect.label,
+              });
+            } else if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.SkillLevel) {
+              appliedEffects.push(effect);
+              const resolvedEffect: ResolvedEffect = {
+                type: effect.type,
+                amount: effect.amount,
+                label: effect.type === EventEffectType.Cash ? effect.label : undefined,
+              };
+              pendingEffects.push(resolvedEffect);
+            } else if (effect.type === EventEffectType.Metric) {
+              appliedEffects.push(effect);
+              const resolvedEffect: ResolvedEffect = {
+                type: EventEffectType.Metric,
+                metric: effect.metric!,
+                effectType: effect.effectType!,
+                value: effect.value!,
+                durationSeconds: effect.durationSeconds,
+                priority: effect.priority,
+                label: undefined,
+              };
+              pendingEffects.push(resolvedEffect);
+            }
+          });
+
+          // Create resolved delayed outcome
+          const resolvedOutcome: ResolvedDelayedOutcome = {
+            id: pending.id,
+            eventId,
+            eventTitle,
+            choiceId,
+            choiceLabel,
+            consequenceId,
+            label: delayedConsequence.label,
+            description: success ? delayedConsequence.successDescription : delayedConsequence.failureDescription,
+            success,
+            appliedEffects,
+            pendingEffects,
+          };
+
+          // Update state atomically
+          const wasPaused = currentStore.isPaused;
+          set((state) => ({
+            pendingDelayedConsequences: state.pendingDelayedConsequences.filter(
+              (p) => p.id !== pending.id
+            ),
+            lastDelayedOutcome: resolvedOutcome,
+            wasPausedBeforeDelayedOutcome: wasPaused,
+          }));
+          
+          if (!wasPaused) {
+            get().pauseGame();
+          }
+        });
+      }
     }
 
     // Check lose conditions (cash, skillLevel) continuously

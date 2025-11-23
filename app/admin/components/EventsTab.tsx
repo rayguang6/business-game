@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import type { GameFlag } from '@/lib/data/flagRepository';
 import type { GameCondition } from '@/lib/types/conditions';
-import type { GameEvent, GameEventChoice, GameEventConsequence, GameEventEffect } from '@/lib/types/gameEvents';
+import type { GameEvent, GameEventChoice, GameEventConsequence, GameEventEffect, DelayedConsequence } from '@/lib/types/gameEvents';
 import { EventEffectType } from '@/lib/types/gameEvents';
+import type { Requirement } from '@/lib/game/types';
+import { RequirementsSelector } from './RequirementsSelector';
 import { makeUniqueId, slugify } from './utils';
 
 interface EventsTabProps {
@@ -26,6 +28,8 @@ interface EventsTabProps {
   eventDeleting: boolean;
   flags: GameFlag[];
   flagsLoading: boolean;
+  conditions: GameCondition[];
+  conditionsLoading: boolean;
   metricOptions: Array<{ value: GameMetric; label: string }>;
   effectTypeOptions: Array<{ value: EffectType; label: string; hint: string }>;
   onSelectEvent: (event: GameEvent) => void;
@@ -54,6 +58,8 @@ export function EventsTab({
   eventDeleting,
   flags,
   flagsLoading,
+  conditions,
+  conditionsLoading,
   metricOptions,
   effectTypeOptions,
   onSelectEvent,
@@ -100,6 +106,26 @@ export function EventsTab({
       | { type: EventEffectType.SkillLevel; amount: string }
       | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: string; durationSeconds: string; priority?: string }
     >;
+    delayedConsequence?: {
+      id: string;
+      delaySeconds: string;
+      successRequirements: Requirement[];
+      successEffects: Array<
+        | { type: EventEffectType.Cash; amount: string; label?: string }
+        | { type: EventEffectType.DynamicCash; expression: string; label?: string }
+        | { type: EventEffectType.SkillLevel; amount: string }
+        | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: string; durationSeconds: string; priority?: string }
+      >;
+      failureEffects?: Array<
+        | { type: EventEffectType.Cash; amount: string; label?: string }
+        | { type: EventEffectType.DynamicCash; expression: string; label?: string }
+        | { type: EventEffectType.SkillLevel; amount: string }
+        | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: string; durationSeconds: string; priority?: string }
+      >;
+      label?: string;
+      successDescription?: string;
+      failureDescription?: string;
+    };
   }>({ id: '', label: '', description: '', weight: '1', effects: [] });
 
   // Reset choice/consequence state when event changes
@@ -109,8 +135,36 @@ export function EventsTab({
     setChoiceForm({ id: '', label: '', description: '', cost: '', timeCost: '', requirements: [] });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
-    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
+    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], delayedConsequence: undefined });
   }, [selectedEventId, isCreatingEvent]);
+  
+  // Helper to convert delayed consequence effects
+  const convertDelayedEffects = (effects: GameEventEffect[]): Array<
+    | { type: EventEffectType.Cash; amount: string; label?: string }
+    | { type: EventEffectType.DynamicCash; expression: string; label?: string }
+    | { type: EventEffectType.SkillLevel; amount: string }
+    | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: string; durationSeconds: string; priority?: string }
+  > => {
+    return effects.map((ef: any) => {
+      if (ef.type === EventEffectType.Cash) {
+        return { type: EventEffectType.Cash, amount: String(ef.amount || 0), label: ef.label };
+      } else if (ef.type === EventEffectType.DynamicCash) {
+        return { type: EventEffectType.DynamicCash, expression: String(ef.expression || ''), label: ef.label };
+      } else if (ef.type === EventEffectType.SkillLevel) {
+        return { type: EventEffectType.SkillLevel, amount: String(ef.amount || 0) };
+      } else if (ef.type === EventEffectType.Metric) {
+        return {
+          type: EventEffectType.Metric,
+          metric: ef.metric,
+          effectType: ef.effectType,
+          value: String(ef.value || 0),
+          durationSeconds: String(ef.durationSeconds ?? ''),
+          priority: ef.priority !== undefined ? String(ef.priority) : undefined,
+        };
+      }
+      return ef;
+    });
+  };
 
   // Choice handlers
   const selectChoice = (choice: GameEventChoice) => {
@@ -211,6 +265,7 @@ export function EventsTab({
     if (!consequence) return;
     setIsCreatingConsequence(false);
     setSelectedConsequenceId(consequence.id);
+    const delayed = consequence.delayedConsequence;
     setConsequenceForm({
       id: consequence.id || '',
       label: consequence.label ?? '',
@@ -235,6 +290,16 @@ export function EventsTab({
         }
         return ef;
       }),
+      delayedConsequence: delayed ? {
+        id: delayed.id,
+        delaySeconds: String(delayed.delaySeconds),
+        successRequirements: delayed.successRequirements || [],
+        successEffects: convertDelayedEffects(delayed.successEffects),
+        failureEffects: delayed.failureEffects ? convertDelayedEffects(delayed.failureEffects) : undefined,
+        label: delayed.label,
+        successDescription: delayed.successDescription,
+        failureDescription: delayed.failureDescription,
+      } : undefined,
     });
   };
 
@@ -245,7 +310,7 @@ export function EventsTab({
     }
     setIsCreatingConsequence(true);
     setSelectedConsequenceId('');
-    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
+    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], delayedConsequence: undefined });
   };
 
   const handleSaveConsequence = () => {
@@ -293,6 +358,90 @@ export function EventsTab({
       return ef;
     });
 
+    // Normalize delayed consequence if present
+    let normalizedDelayedConsequence: DelayedConsequence | undefined = undefined;
+    if (consequenceForm.delayedConsequence) {
+      const delayed = consequenceForm.delayedConsequence;
+      const delaySeconds = Number(delayed.delaySeconds);
+      if (!delayed.id || delaySeconds <= 0) {
+        onUpdateStatus('Delayed consequence requires id and positive delaySeconds.');
+        return;
+      }
+      
+      const normalizedSuccessEffects = delayed.successEffects.map((ef: any) => {
+        if (ef.type === EventEffectType.Cash) {
+          return {
+            type: EventEffectType.Cash as const,
+            amount: Number(ef.amount) || 0,
+            ...(ef.label ? { label: ef.label } : {}),
+          };
+        } else if (ef.type === EventEffectType.DynamicCash) {
+          return {
+            type: EventEffectType.DynamicCash as const,
+            expression: String(ef.expression || ''),
+            ...(ef.label ? { label: ef.label } : {}),
+          };
+        } else if (ef.type === EventEffectType.SkillLevel) {
+          return {
+            type: EventEffectType.SkillLevel as const,
+            amount: Number(ef.amount) || 0,
+          };
+        } else if (ef.type === EventEffectType.Metric) {
+          return {
+            type: EventEffectType.Metric as const,
+            metric: ef.metric,
+            effectType: ef.effectType,
+            value: Number(ef.value) || 0,
+            durationSeconds: ef.durationSeconds === '' ? null : Number(ef.durationSeconds) || null,
+            ...(ef.priority !== undefined ? { priority: Number(ef.priority) } : {}),
+          };
+        }
+        return ef;
+      });
+
+      const normalizedFailureEffects = delayed.failureEffects?.map((ef: any) => {
+        if (ef.type === EventEffectType.Cash) {
+          return {
+            type: EventEffectType.Cash as const,
+            amount: Number(ef.amount) || 0,
+            ...(ef.label ? { label: ef.label } : {}),
+          };
+        } else if (ef.type === EventEffectType.DynamicCash) {
+          return {
+            type: EventEffectType.DynamicCash as const,
+            expression: String(ef.expression || ''),
+            ...(ef.label ? { label: ef.label } : {}),
+          };
+        } else if (ef.type === EventEffectType.SkillLevel) {
+          return {
+            type: EventEffectType.SkillLevel as const,
+            amount: Number(ef.amount) || 0,
+          };
+        } else if (ef.type === EventEffectType.Metric) {
+          return {
+            type: EventEffectType.Metric as const,
+            metric: ef.metric,
+            effectType: ef.effectType,
+            value: Number(ef.value) || 0,
+            durationSeconds: ef.durationSeconds === '' ? null : Number(ef.durationSeconds) || null,
+            ...(ef.priority !== undefined ? { priority: Number(ef.priority) } : {}),
+          };
+        }
+        return ef;
+      });
+
+      normalizedDelayedConsequence = {
+        id: delayed.id,
+        delaySeconds,
+        successRequirements: delayed.successRequirements && delayed.successRequirements.length > 0 ? delayed.successRequirements : undefined,
+        successEffects: normalizedSuccessEffects,
+        failureEffects: normalizedFailureEffects && normalizedFailureEffects.length > 0 ? normalizedFailureEffects : undefined,
+        label: delayed.label || undefined,
+        successDescription: delayed.successDescription || undefined,
+        failureDescription: delayed.failureDescription || undefined,
+      };
+    }
+
     const idx = eventChoices.findIndex((c) => c.id === selectedChoiceId);
     if (idx === -1) {
       onUpdateStatus('Choice not found.');
@@ -300,7 +449,14 @@ export function EventsTab({
     }
     const currentChoice = eventChoices[idx];
     const exists = (currentChoice.consequences || []).some((cs: any) => cs.id === id);
-    const nextConsequence: any = { id, label, description: description || undefined, weight: weightNum, effects: normalizedEffects };
+    const nextConsequence: any = { 
+      id, 
+      label, 
+      description: description || undefined, 
+      weight: weightNum, 
+      effects: normalizedEffects,
+      delayedConsequence: normalizedDelayedConsequence,
+    };
     const nextConsequences = exists
       ? (currentChoice.consequences || []).map((cs: any) => (cs.id === id ? nextConsequence : cs))
       : [...(currentChoice.consequences || []), nextConsequence];
@@ -327,7 +483,7 @@ export function EventsTab({
     next[idx] = nextChoice;
     onUpdateEventChoices(next);
     setSelectedConsequenceId('');
-    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
+    setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], delayedConsequence: undefined });
     onPersistEventWithChoices(next, 'Consequence deleted.');
   };
 
@@ -339,7 +495,7 @@ export function EventsTab({
     } else {
       setIsCreatingConsequence(false);
       setSelectedConsequenceId('');
-      setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
+      setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], delayedConsequence: undefined });
     }
     onUpdateStatus(null);
   };
@@ -1235,6 +1391,721 @@ export function EventsTab({
                                           </div>
                                         ))}
                                       </div>
+                                    </div>
+
+                                    {/* Delayed Consequence Editor */}
+                                    <div className="md:col-span-2 border-t border-slate-700 pt-4 mt-4">
+                                      <div className="flex items-center justify-between mb-3">
+                                        <div>
+                                          <span className="text-sm font-semibold text-slate-300">⏰ Delayed Consequence (Optional)</span>
+                                          <div className="text-xs text-slate-400 mt-1">
+                                            Add a follow-up event that triggers after a delay with conditional success/failure outcomes
+                                          </div>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            if (consequenceForm.delayedConsequence) {
+                                              setConsequenceForm((p) => ({ ...p, delayedConsequence: undefined }));
+                                            } else {
+                                              const delayedId = consequenceForm.id ? `${consequenceForm.id}_delayed` : '';
+                                              setConsequenceForm((p) => ({
+                                                ...p,
+                                                delayedConsequence: {
+                                                  id: delayedId,
+                                                  delaySeconds: '30',
+                                                  successRequirements: [],
+                                                  successEffects: [],
+                                                  failureEffects: undefined,
+                                                  label: '',
+                                                  successDescription: '',
+                                                  failureDescription: '',
+                                                },
+                                              }));
+                                            }
+                                          }}
+                                          className={`px-3 py-1 text-xs rounded border ${
+                                            consequenceForm.delayedConsequence
+                                              ? 'border-red-500 text-red-200 hover:bg-red-500/10'
+                                              : 'border-blue-500 text-blue-200 hover:bg-blue-500/10'
+                                          }`}
+                                        >
+                                          {consequenceForm.delayedConsequence ? 'Remove Delayed' : '+ Add Delayed'}
+                                        </button>
+                                      </div>
+
+                                      {consequenceForm.delayedConsequence && (
+                                        <div className="space-y-4 bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                              <label className="block text-sm font-semibold text-slate-300 mb-1">Delayed ID</label>
+                                              <input
+                                                value={consequenceForm.delayedConsequence.id}
+                                                onChange={(e) => {
+                                                  setConsequenceForm((p) => ({
+                                                    ...p,
+                                                    delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, id: e.target.value } : undefined,
+                                                  }));
+                                                }}
+                                                className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                                              />
+                                            </div>
+                                            <div>
+                                              <label className="block text-sm font-semibold text-slate-300 mb-1">Delay (seconds)</label>
+                                              <input
+                                                type="number"
+                                                min="1"
+                                                value={consequenceForm.delayedConsequence.delaySeconds}
+                                                onChange={(e) => {
+                                                  setConsequenceForm((p) => ({
+                                                    ...p,
+                                                    delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, delaySeconds: e.target.value } : undefined,
+                                                  }));
+                                                }}
+                                                className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                                              />
+                                            </div>
+                                            <div>
+                                              <label className="block text-sm font-semibold text-slate-300 mb-1">
+                                                Title <span className="text-slate-400">(shown to player)</span>
+                                              </label>
+                                              <input
+                                                value={consequenceForm.delayedConsequence.label || ''}
+                                                onChange={(e) => {
+                                                  setConsequenceForm((p) => ({
+                                                    ...p,
+                                                    delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, label: e.target.value } : undefined,
+                                                  }));
+                                                }}
+                                                placeholder="e.g., 'Partnership Opportunity', 'Market Response'"
+                                                className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                                              />
+                                              <div className="text-xs text-slate-500 mt-1">
+                                                What the player will see as the popup title
+                                              </div>
+                                            </div>
+                                            <div>
+                                              <label className="block text-sm font-semibold text-slate-300 mb-1">
+                                                Success Description <span className="text-slate-400">(shown on success)</span>
+                                              </label>
+                                              <textarea
+                                                rows={2}
+                                                value={consequenceForm.delayedConsequence.successDescription || ''}
+                                                onChange={(e) => {
+                                                  setConsequenceForm((p) => ({
+                                                    ...p,
+                                                    delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, successDescription: e.target.value } : undefined,
+                                                  }));
+                                                }}
+                                                placeholder="e.g., 'Your investment has paid off - the partnership is successful!'"
+                                                className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                                              />
+                                              <div className="text-xs text-slate-500 mt-1">
+                                                Message shown when requirements are met
+                                              </div>
+                                            </div>
+                                            <div>
+                                              <label className="block text-sm font-semibold text-slate-300 mb-1">
+                                                Failure Description <span className="text-slate-400">(shown on failure)</span>
+                                              </label>
+                                              <textarea
+                                                rows={2}
+                                                value={consequenceForm.delayedConsequence.failureDescription || ''}
+                                                onChange={(e) => {
+                                                  setConsequenceForm((p) => ({
+                                                    ...p,
+                                                    delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, failureDescription: e.target.value } : undefined,
+                                                  }));
+                                                }}
+                                                placeholder="e.g., 'Unfortunately, the partnership fell through due to market conditions.'"
+                                                className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+                                              />
+                                              <div className="text-xs text-slate-500 mt-1">
+                                                Message shown when requirements are not met
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          {/* Success Requirements */}
+                                          <div>
+                                            <label className="block text-sm font-semibold text-slate-300 mb-2">
+                                              Success Requirements
+                                              <span className="text-slate-400 ml-1">(optional - if empty, always succeeds)</span>
+                                            </label>
+                                            <div className="text-xs text-slate-500 mb-2">
+                                              Choose flags/conditions that must be met for success. If none selected, the delayed consequence will always succeed.
+                                            </div>
+                                            <RequirementsSelector
+                                              flags={flags}
+                                              conditions={conditions}
+                                              flagsLoading={flagsLoading}
+                                              conditionsLoading={conditionsLoading}
+                                              requirements={consequenceForm.delayedConsequence.successRequirements}
+                                              onRequirementsChange={(reqs) => {
+                                                setConsequenceForm((p) => ({
+                                                  ...p,
+                                                  delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, successRequirements: reqs } : undefined,
+                                                }));
+                                              }}
+                                            />
+                                          </div>
+
+                                          {/* Success Effects */}
+                                          <div>
+                                            <div className="flex items-center justify-between mb-2">
+                                              <div>
+                                                <span className="text-sm font-semibold text-slate-300">Success Effects</span>
+                                                <div className="text-xs text-slate-500">
+                                                  Applied when requirements are met (or always if no requirements)
+                                                </div>
+                                              </div>
+                                              <div className="flex gap-2 flex-wrap">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => setConsequenceForm((p) => ({
+                                                    ...p,
+                                                    delayedConsequence: p.delayedConsequence ? {
+                                                      ...p.delayedConsequence,
+                                                      successEffects: [...p.delayedConsequence.successEffects, { type: EventEffectType.Cash, amount: '0', label: '' }],
+                                                    } : undefined,
+                                                  }))}
+                                                  className="px-2 py-1 text-xs rounded border border-emerald-500 text-emerald-200 hover:bg-emerald-500/10"
+                                                >
+                                                  + Cash
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => setConsequenceForm((p) => ({
+                                                    ...p,
+                                                    delayedConsequence: p.delayedConsequence ? {
+                                                      ...p.delayedConsequence,
+                                                      successEffects: [...p.delayedConsequence.successEffects, { type: EventEffectType.SkillLevel, amount: '0' }],
+                                                    } : undefined,
+                                                  }))}
+                                                  className="px-2 py-1 text-xs rounded border border-emerald-500 text-emerald-200 hover:bg-emerald-500/10"
+                                                >
+                                                  + Skill Level
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => setConsequenceForm((p) => ({
+                                                    ...p,
+                                                    delayedConsequence: p.delayedConsequence ? {
+                                                      ...p.delayedConsequence,
+                                                      successEffects: [...p.delayedConsequence.successEffects, { type: EventEffectType.DynamicCash, expression: 'expenses*1', label: '' }],
+                                                    } : undefined,
+                                                  }))}
+                                                  className="px-2 py-1 text-xs rounded border border-purple-500 text-purple-200 hover:bg-purple-500/10"
+                                                >
+                                                  + Dynamic Cash
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => setConsequenceForm((p) => ({
+                                                    ...p,
+                                                    delayedConsequence: p.delayedConsequence ? {
+                                                      ...p.delayedConsequence,
+                                                      successEffects: [...p.delayedConsequence.successEffects, { type: EventEffectType.Metric, metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationSeconds: '' }],
+                                                    } : undefined,
+                                                  }))}
+                                                  className="px-2 py-1 text-xs rounded border border-indigo-500 text-indigo-200 hover:bg-indigo-500/10"
+                                                >
+                                                  + Metric Effect
+                                                </button>
+                                              </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                              {consequenceForm.delayedConsequence.successEffects.map((ef, idx) => (
+                                                <div key={idx} className={`grid gap-2 items-end ${ef.type === EventEffectType.Metric ? 'grid-cols-1 sm:grid-cols-6' : ef.type === EventEffectType.DynamicCash ? 'grid-cols-1 sm:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3'}`}>
+                                                  {/* Same effect editing UI as regular effects - reuse the pattern */}
+                                                  <div>
+                                                    <label className="block text-xs text-slate-400 mb-1">Type</label>
+                                                    <select
+                                                      value={ef.type}
+                                                      onChange={(e) => {
+                                                        const newEffect = e.target.value === EventEffectType.Cash ? { type: EventEffectType.Cash as const, amount: '0', label: '' } :
+                                                          e.target.value === EventEffectType.SkillLevel ? { type: EventEffectType.SkillLevel as const, amount: '0' } :
+                                                          e.target.value === EventEffectType.DynamicCash ? { type: EventEffectType.DynamicCash as const, expression: 'expenses*1', label: '' } :
+                                                          { type: EventEffectType.Metric as const, metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationSeconds: '', priority: '' };
+                                                        const newEffects = [...consequenceForm.delayedConsequence!.successEffects];
+                                                        newEffects[idx] = newEffect;
+                                                        setConsequenceForm((p) => ({
+                                                          ...p,
+                                                          delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, successEffects: newEffects } : undefined,
+                                                        }));
+                                                      }}
+                                                      className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                    >
+                                                      <option value={EventEffectType.Cash}>Cash</option>
+                                                      <option value={EventEffectType.SkillLevel}>Skill Level</option>
+                                                      <option value={EventEffectType.DynamicCash}>Dynamic Cash</option>
+                                                      <option value={EventEffectType.Metric}>Metric Effect</option>
+                                                    </select>
+                                                  </div>
+                                                  {/* Effect fields - same as regular effects editor */}
+                                                  {ef.type === EventEffectType.Cash || ef.type === EventEffectType.SkillLevel ? (
+                                                    <>
+                                                      <div>
+                                                        <label className="block text-xs text-slate-400 mb-1">Amount</label>
+                                                        <input
+                                                          type="number"
+                                                          value={ef.amount}
+                                                          onChange={(e) => {
+                                                            const newEffects = [...consequenceForm.delayedConsequence!.successEffects];
+                                                            (newEffects[idx] as any).amount = e.target.value;
+                                                            setConsequenceForm((p) => ({
+                                                              ...p,
+                                                              delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, successEffects: newEffects } : undefined,
+                                                            }));
+                                                          }}
+                                                          className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                        />
+                                                      </div>
+                                                      {ef.type === EventEffectType.Cash && (
+                                                        <div>
+                                                          <label className="block text-xs text-slate-400 mb-1">Label (optional)</label>
+                                                          <input
+                                                            value={ef.label ?? ''}
+                                                            onChange={(e) => {
+                                                              const newEffects = [...consequenceForm.delayedConsequence!.successEffects];
+                                                              (newEffects[idx] as any).label = e.target.value;
+                                                              setConsequenceForm((p) => ({
+                                                                ...p,
+                                                                delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, successEffects: newEffects } : undefined,
+                                                              }));
+                                                            }}
+                                                            className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                          />
+                                                        </div>
+                                                      )}
+                                                    </>
+                                                  ) : ef.type === EventEffectType.DynamicCash ? (
+                                                    <>
+                                                      <div>
+                                                        <label className="block text-xs text-slate-400 mb-1">Expression</label>
+                                                        <input
+                                                          type="text"
+                                                          value={ef.expression}
+                                                          onChange={(e) => {
+                                                            const newEffects = [...consequenceForm.delayedConsequence!.successEffects];
+                                                            (newEffects[idx] as any).expression = e.target.value;
+                                                            setConsequenceForm((p) => ({
+                                                              ...p,
+                                                              delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, successEffects: newEffects } : undefined,
+                                                            }));
+                                                          }}
+                                                          placeholder="expenses*3"
+                                                          className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                        />
+                                                      </div>
+                                                      <div>
+                                                        <label className="block text-xs text-slate-400 mb-1">Label (optional)</label>
+                                                        <input
+                                                          value={ef.label ?? ''}
+                                                          onChange={(e) => {
+                                                            const newEffects = [...consequenceForm.delayedConsequence!.successEffects];
+                                                            (newEffects[idx] as any).label = e.target.value;
+                                                            setConsequenceForm((p) => ({
+                                                              ...p,
+                                                              delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, successEffects: newEffects } : undefined,
+                                                            }));
+                                                          }}
+                                                          className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                        />
+                                                      </div>
+                                                    </>
+                                                  ) : ef.type === EventEffectType.Metric ? (
+                                                    <>
+                                                      <div>
+                                                        <label className="block text-xs text-slate-400 mb-1">Metric</label>
+                                                        <select
+                                                          value={ef.metric}
+                                                          onChange={(e) => {
+                                                            const newEffects = [...consequenceForm.delayedConsequence!.successEffects];
+                                                            (newEffects[idx] as any).metric = e.target.value;
+                                                            setConsequenceForm((p) => ({
+                                                              ...p,
+                                                              delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, successEffects: newEffects } : undefined,
+                                                            }));
+                                                          }}
+                                                          className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                        >
+                                                          {metricOptions.map((opt) => (
+                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                          ))}
+                                                        </select>
+                                                      </div>
+                                                      <div>
+                                                        <label className="block text-xs text-slate-400 mb-1">Effect Type</label>
+                                                        <select
+                                                          value={ef.effectType}
+                                                          onChange={(e) => {
+                                                            const newEffects = [...consequenceForm.delayedConsequence!.successEffects];
+                                                            (newEffects[idx] as any).effectType = e.target.value;
+                                                            setConsequenceForm((p) => ({
+                                                              ...p,
+                                                              delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, successEffects: newEffects } : undefined,
+                                                            }));
+                                                          }}
+                                                          className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                        >
+                                                          {effectTypeOptions.map((opt) => (
+                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                          ))}
+                                                        </select>
+                                                      </div>
+                                                      <div>
+                                                        <label className="block text-xs text-slate-400 mb-1">Value</label>
+                                                        <input
+                                                          type="number"
+                                                          value={ef.value}
+                                                          onChange={(e) => {
+                                                            const newEffects = [...consequenceForm.delayedConsequence!.successEffects];
+                                                            (newEffects[idx] as any).value = e.target.value;
+                                                            setConsequenceForm((p) => ({
+                                                              ...p,
+                                                              delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, successEffects: newEffects } : undefined,
+                                                            }));
+                                                          }}
+                                                          className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                        />
+                                                      </div>
+                                                      <div>
+                                                        <label className="block text-xs text-slate-400 mb-1">Duration (s)</label>
+                                                        <input
+                                                          type="number"
+                                                          min="0"
+                                                          step="1"
+                                                          placeholder="Empty = permanent"
+                                                          value={ef.durationSeconds}
+                                                          onChange={(e) => {
+                                                            const newEffects = [...consequenceForm.delayedConsequence!.successEffects];
+                                                            (newEffects[idx] as any).durationSeconds = e.target.value;
+                                                            setConsequenceForm((p) => ({
+                                                              ...p,
+                                                              delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, successEffects: newEffects } : undefined,
+                                                            }));
+                                                          }}
+                                                          className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                        />
+                                                      </div>
+                                                    </>
+                                                  ) : null}
+                                                  <div className="flex items-center gap-2">
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => {
+                                                        const newEffects = consequenceForm.delayedConsequence!.successEffects.filter((_, i) => i !== idx);
+                                                        setConsequenceForm((p) => ({
+                                                          ...p,
+                                                          delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, successEffects: newEffects } : undefined,
+                                                        }));
+                                                      }}
+                                                      className="text-xs text-rose-300 hover:text-rose-200 px-2 py-1 rounded"
+                                                    >
+                                                      Remove
+                                                    </button>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+
+                                          {/* Failure Effects (Optional) */}
+                                          <div>
+                                            <div className="flex items-center justify-between mb-2">
+                                              <div>
+                                                <span className="text-sm font-semibold text-slate-300">Failure Effects (optional)</span>
+                                                <div className="text-xs text-slate-500">
+                                                  Applied when requirements are not met (only needed if you want different effects for failure)
+                                                </div>
+                                              </div>
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  if (consequenceForm.delayedConsequence?.failureEffects) {
+                                                    setConsequenceForm((p) => ({
+                                                      ...p,
+                                                      delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, failureEffects: undefined } : undefined,
+                                                    }));
+                                                  } else {
+                                                    setConsequenceForm((p) => ({
+                                                      ...p,
+                                                      delayedConsequence: p.delayedConsequence ? {
+                                                        ...p.delayedConsequence,
+                                                        failureEffects: [],
+                                                      } : undefined,
+                                                    }));
+                                                  }
+                                                }}
+                                                className={`px-2 py-1 text-xs rounded border ${
+                                                  consequenceForm.delayedConsequence?.failureEffects
+                                                    ? 'border-red-500 text-red-200 hover:bg-red-500/10'
+                                                    : 'border-blue-500 text-blue-200 hover:bg-blue-500/10'
+                                                }`}
+                                              >
+                                                {consequenceForm.delayedConsequence?.failureEffects ? 'Remove Failure' : '+ Add Failure'}
+                                              </button>
+                                            </div>
+                                            {consequenceForm.delayedConsequence?.failureEffects && (
+                                              <div className="space-y-2">
+                                                <div className="text-xs text-slate-400 mb-2">
+                                                  These effects are applied when requirements are not met. If no failure effects are defined, no effects will be applied on failure.
+                                                </div>
+                                                {/* Add effect buttons and editor similar to success effects */}
+                                                <div className="flex gap-2 flex-wrap mb-2">
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => setConsequenceForm((p) => ({
+                                                      ...p,
+                                                      delayedConsequence: p.delayedConsequence ? {
+                                                        ...p.delayedConsequence,
+                                                        failureEffects: [...(p.delayedConsequence.failureEffects || []), { type: EventEffectType.Cash, amount: '0', label: '' }],
+                                                      } : undefined,
+                                                    }))}
+                                                    className="px-2 py-1 text-xs rounded border border-emerald-500 text-emerald-200 hover:bg-emerald-500/10"
+                                                  >
+                                                    + Cash
+                                                  </button>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => setConsequenceForm((p) => ({
+                                                      ...p,
+                                                      delayedConsequence: p.delayedConsequence ? {
+                                                        ...p.delayedConsequence,
+                                                        failureEffects: [...(p.delayedConsequence.failureEffects || []), { type: EventEffectType.SkillLevel, amount: '0' }],
+                                                      } : undefined,
+                                                    }))}
+                                                    className="px-2 py-1 text-xs rounded border border-emerald-500 text-emerald-200 hover:bg-emerald-500/10"
+                                                  >
+                                                    + Skill Level
+                                                  </button>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => setConsequenceForm((p) => ({
+                                                      ...p,
+                                                      delayedConsequence: p.delayedConsequence ? {
+                                                        ...p.delayedConsequence,
+                                                        failureEffects: [...(p.delayedConsequence.failureEffects || []), { type: EventEffectType.DynamicCash, expression: 'expenses*1', label: '' }],
+                                                      } : undefined,
+                                                    }))}
+                                                    className="px-2 py-1 text-xs rounded border border-purple-500 text-purple-200 hover:bg-purple-500/10"
+                                                  >
+                                                    + Dynamic Cash
+                                                  </button>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => setConsequenceForm((p) => ({
+                                                      ...p,
+                                                      delayedConsequence: p.delayedConsequence ? {
+                                                        ...p.delayedConsequence,
+                                                        failureEffects: [...(p.delayedConsequence.failureEffects || []), { type: EventEffectType.Metric, metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationSeconds: '' }],
+                                                      } : undefined,
+                                                    }))}
+                                                    className="px-2 py-1 text-xs rounded border border-indigo-500 text-indigo-200 hover:bg-indigo-500/10"
+                                                  >
+                                                    + Metric Effect
+                                                  </button>
+                                                </div>
+                                                {/* Failure effects list - similar structure to success effects */}
+                                                {consequenceForm.delayedConsequence.failureEffects.map((ef, idx) => (
+                                                  <div key={idx} className={`grid gap-2 items-end ${ef.type === EventEffectType.Metric ? 'grid-cols-1 sm:grid-cols-6' : ef.type === EventEffectType.DynamicCash ? 'grid-cols-1 sm:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3'}`}>
+                                                    {/* Same effect editing UI as success effects - can be refactored but keeping it simple for now */}
+                                                    <div>
+                                                      <label className="block text-xs text-slate-400 mb-1">Type</label>
+                                                      <select
+                                                        value={ef.type}
+                                                        onChange={(e) => {
+                                                          const newEffect = e.target.value === EventEffectType.Cash ? { type: EventEffectType.Cash as const, amount: '0', label: '' } :
+                                                            e.target.value === EventEffectType.SkillLevel ? { type: EventEffectType.SkillLevel as const, amount: '0' } :
+                                                            e.target.value === EventEffectType.DynamicCash ? { type: EventEffectType.DynamicCash as const, expression: 'expenses*1', label: '' } :
+                                                            { type: EventEffectType.Metric as const, metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationSeconds: '', priority: '' };
+                                                          const newEffects = [...consequenceForm.delayedConsequence!.failureEffects!];
+                                                          newEffects[idx] = newEffect;
+                                                          setConsequenceForm((p) => ({
+                                                            ...p,
+                                                            delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, failureEffects: newEffects } : undefined,
+                                                          }));
+                                                        }}
+                                                        className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                      >
+                                                        <option value={EventEffectType.Cash}>Cash</option>
+                                                        <option value={EventEffectType.SkillLevel}>Skill Level</option>
+                                                        <option value={EventEffectType.DynamicCash}>Dynamic Cash</option>
+                                                        <option value={EventEffectType.Metric}>Metric Effect</option>
+                                                      </select>
+                                                    </div>
+                                                    {/* Effect fields - same pattern as success effects */}
+                                                    {ef.type === EventEffectType.Cash || ef.type === EventEffectType.SkillLevel ? (
+                                                      <>
+                                                        <div>
+                                                          <label className="block text-xs text-slate-400 mb-1">Amount</label>
+                                                          <input
+                                                            type="number"
+                                                            value={ef.amount}
+                                                            onChange={(e) => {
+                                                              const newEffects = [...consequenceForm.delayedConsequence!.failureEffects!];
+                                                              (newEffects[idx] as any).amount = e.target.value;
+                                                              setConsequenceForm((p) => ({
+                                                                ...p,
+                                                                delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, failureEffects: newEffects } : undefined,
+                                                              }));
+                                                            }}
+                                                            className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                          />
+                                                        </div>
+                                                        {ef.type === EventEffectType.Cash && (
+                                                          <div>
+                                                            <label className="block text-xs text-slate-400 mb-1">Label (optional)</label>
+                                                            <input
+                                                              value={ef.label ?? ''}
+                                                              onChange={(e) => {
+                                                                const newEffects = [...consequenceForm.delayedConsequence!.failureEffects!];
+                                                                (newEffects[idx] as any).label = e.target.value;
+                                                                setConsequenceForm((p) => ({
+                                                                  ...p,
+                                                                  delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, failureEffects: newEffects } : undefined,
+                                                                }));
+                                                              }}
+                                                              className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                            />
+                                                          </div>
+                                                        )}
+                                                      </>
+                                                    ) : ef.type === EventEffectType.DynamicCash ? (
+                                                      <>
+                                                        <div>
+                                                          <label className="block text-xs text-slate-400 mb-1">Expression</label>
+                                                          <input
+                                                            type="text"
+                                                            value={ef.expression}
+                                                            onChange={(e) => {
+                                                              const newEffects = [...consequenceForm.delayedConsequence!.failureEffects!];
+                                                              (newEffects[idx] as any).expression = e.target.value;
+                                                              setConsequenceForm((p) => ({
+                                                                ...p,
+                                                                delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, failureEffects: newEffects } : undefined,
+                                                              }));
+                                                            }}
+                                                            placeholder="expenses*3"
+                                                            className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                          />
+                                                        </div>
+                                                        <div>
+                                                          <label className="block text-xs text-slate-400 mb-1">Label (optional)</label>
+                                                          <input
+                                                            value={ef.label ?? ''}
+                                                            onChange={(e) => {
+                                                              const newEffects = [...consequenceForm.delayedConsequence!.failureEffects!];
+                                                              (newEffects[idx] as any).label = e.target.value;
+                                                              setConsequenceForm((p) => ({
+                                                                ...p,
+                                                                delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, failureEffects: newEffects } : undefined,
+                                                              }));
+                                                            }}
+                                                            className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                          />
+                                                        </div>
+                                                      </>
+                                                    ) : ef.type === EventEffectType.Metric ? (
+                                                      <>
+                                                        <div>
+                                                          <label className="block text-xs text-slate-400 mb-1">Metric</label>
+                                                          <select
+                                                            value={ef.metric}
+                                                            onChange={(e) => {
+                                                              const newEffects = [...consequenceForm.delayedConsequence!.failureEffects!];
+                                                              (newEffects[idx] as any).metric = e.target.value;
+                                                              setConsequenceForm((p) => ({
+                                                                ...p,
+                                                                delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, failureEffects: newEffects } : undefined,
+                                                              }));
+                                                            }}
+                                                            className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                          >
+                                                            {metricOptions.map((opt) => (
+                                                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                            ))}
+                                                          </select>
+                                                        </div>
+                                                        <div>
+                                                          <label className="block text-xs text-slate-400 mb-1">Effect Type</label>
+                                                          <select
+                                                            value={ef.effectType}
+                                                            onChange={(e) => {
+                                                              const newEffects = [...consequenceForm.delayedConsequence!.failureEffects!];
+                                                              (newEffects[idx] as any).effectType = e.target.value;
+                                                              setConsequenceForm((p) => ({
+                                                                ...p,
+                                                                delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, failureEffects: newEffects } : undefined,
+                                                              }));
+                                                            }}
+                                                            className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                          >
+                                                            {effectTypeOptions.map((opt) => (
+                                                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                            ))}
+                                                          </select>
+                                                        </div>
+                                                        <div>
+                                                          <label className="block text-xs text-slate-400 mb-1">Value</label>
+                                                          <input
+                                                            type="number"
+                                                            value={ef.value}
+                                                            onChange={(e) => {
+                                                              const newEffects = [...consequenceForm.delayedConsequence!.failureEffects!];
+                                                              (newEffects[idx] as any).value = e.target.value;
+                                                              setConsequenceForm((p) => ({
+                                                                ...p,
+                                                                delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, failureEffects: newEffects } : undefined,
+                                                              }));
+                                                            }}
+                                                            className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                          />
+                                                        </div>
+                                                        <div>
+                                                          <label className="block text-xs text-slate-400 mb-1">Duration (s)</label>
+                                                          <input
+                                                            type="number"
+                                                            min="0"
+                                                            step="1"
+                                                            placeholder="Empty = permanent"
+                                                            value={ef.durationSeconds}
+                                                            onChange={(e) => {
+                                                              const newEffects = [...consequenceForm.delayedConsequence!.failureEffects!];
+                                                              (newEffects[idx] as any).durationSeconds = e.target.value;
+                                                              setConsequenceForm((p) => ({
+                                                                ...p,
+                                                                delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, failureEffects: newEffects } : undefined,
+                                                              }));
+                                                            }}
+                                                            className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                                                          />
+                                                        </div>
+                                                      </>
+                                                    ) : null}
+                                                    <div className="flex items-center gap-2">
+                                                      <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                          const newEffects = consequenceForm.delayedConsequence!.failureEffects!.filter((_, i) => i !== idx);
+                                                          setConsequenceForm((p) => ({
+                                                            ...p,
+                                                            delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, failureEffects: newEffects.length > 0 ? newEffects : undefined } : undefined,
+                                                          }));
+                                                        }}
+                                                        className="text-xs text-rose-300 hover:text-rose-200 px-2 py-1 rounded"
+                                                      >
+                                                        Remove
+                                                      </button>
+                                                    </div>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
 
                                     <div className="md:col-span-2 flex flex-wrap gap-3">

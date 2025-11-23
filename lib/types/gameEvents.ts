@@ -20,12 +20,24 @@ export type GameEventEffect =
   | { type: EventEffectType.SkillLevel; amount: number }
   | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: number; durationSeconds?: number | null; priority?: number }
 
+export interface DelayedConsequence {
+  id: string;
+  delaySeconds: number;
+  successRequirements?: Requirement[]; // Optional - if not set or empty, defaults to success
+  successEffects: GameEventEffect[];
+  failureEffects?: GameEventEffect[]; // Optional - can have success-only delayed consequences
+  label?: string;
+  successDescription?: string; // Description shown on success
+  failureDescription?: string; // Description shown on failure
+}
+
 export interface GameEventConsequence {
   id: string;
   label?: string;
   description?: string;
   weight: number; // Positive integer weight; higher values increase selection chance
   effects: GameEventEffect[];
+  delayedConsequence?: DelayedConsequence; // Optional delayed consequence
 }
 
 export interface GameEventChoice {
