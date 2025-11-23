@@ -25,7 +25,7 @@ ON CONFLICT (id) DO UPDATE SET
   is_available = EXCLUDED.is_available;
 
 -- Step 2: Industry Simulation Config
-INSERT INTO industry_simulation_config (id, industry_id, business_metrics)
+INSERT INTO industry_simulation_config (id, industry_id, business_metrics, event_selection_mode, event_sequence)
 VALUES (
   'config-dental',
   'dental',
@@ -35,10 +35,14 @@ VALUES (
     "monthlyExpenses": 3000,
     "startingSkillLevel": 20,
     "startingFreedomScore": 160
-  }'::jsonb
+  }'::jsonb,
+  'sequence', -- Dental industry uses sequential events for tutorial
+  '["emergency-patient", "tutorial-cleaning", "equipment-breakdown", "expansion-opportunity"]'::jsonb
 )
 ON CONFLICT (industry_id) DO UPDATE SET
-  business_metrics = EXCLUDED.business_metrics;
+  business_metrics = EXCLUDED.business_metrics,
+  event_selection_mode = EXCLUDED.event_selection_mode,
+  event_sequence = EXCLUDED.event_sequence;
 
 -- Step 3: Services (5 basic dental services)
 INSERT INTO services (id, industry_id, name, duration, price, pricing_category, weightage, requirements)

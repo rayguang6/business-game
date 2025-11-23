@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useGameStore } from '../lib/store/gameStore';
 import {
   DEFAULT_INDUSTRY_ID,
@@ -22,6 +22,40 @@ export const useRandomEventTrigger = () => {
     triggered: new Set<number>(),
     key: '',
   });
+
+  // Cache for event sequencing data
+  const [sequencingConfig, setSequencingConfig] = useState<{
+    selectionMode: 'random' | 'sequence';
+    eventSequence: string[] | null;
+  }>({
+    selectionMode: 'random',
+    eventSequence: null,
+  });
+
+  // Load event sequencing config when industry changes
+  useEffect(() => {
+    const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+
+    const loadSequencingConfig = async () => {
+      try {
+        const { fetchIndustrySimulationConfig } = await import('@/lib/data/industrySimulationConfigRepository');
+        const config = await fetchIndustrySimulationConfig(industryId);
+
+        setSequencingConfig({
+          selectionMode: config?.eventSelectionMode ?? 'random',
+          eventSequence: config?.eventSequence ?? null,
+        });
+      } catch (error) {
+        console.error('Failed to load event sequencing config:', error);
+        setSequencingConfig({
+          selectionMode: 'random',
+          eventSequence: null,
+        });
+      }
+    };
+
+    loadSequencingConfig();
+  }, [selectedIndustry]);
 
   useEffect(() => {
     if (gameTime <= 0 || currentEvent) {
@@ -85,8 +119,29 @@ export const useRandomEventTrigger = () => {
         if (eligibleEvents.length === 0) {
           console.warn(`[Event Trigger] No eligible events for industry "${industryId}" at trigger point ${trigger}s. Total events: ${allEvents.length}, Eligible: 0`);
         } else {
-          const randomIndex = Math.floor(Math.random() * eligibleEvents.length);
-          setCurrentEvent(eligibleEvents[randomIndex]);
+          const { selectionMode, eventSequence } = sequencingConfig;
+
+          if (selectionMode === 'sequence' && eventSequence && eventSequence.length > 0) {
+            // Sequential selection
+            const sequenceIndex = store.eventSequenceIndex % eventSequence.length;
+            const targetEventId = eventSequence[sequenceIndex];
+
+            // Find the event in eligible events
+            const selectedEvent = eligibleEvents.find(event => event.id === targetEventId);
+
+            if (selectedEvent) {
+              store.advanceEventSequence();
+              setCurrentEvent(selectedEvent);
+            } else {
+              // Fallback to random if the sequenced event is not eligible
+              const randomIndex = Math.floor(Math.random() * eligibleEvents.length);
+              setCurrentEvent(eligibleEvents[randomIndex]);
+            }
+          } else {
+            // Random selection (default behavior)
+            const randomIndex = Math.floor(Math.random() * eligibleEvents.length);
+            setCurrentEvent(eligibleEvents[randomIndex]);
+          }
         }
         break;
       }

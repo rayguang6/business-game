@@ -26,7 +26,7 @@ ON CONFLICT (id) DO UPDATE SET
   is_available = EXCLUDED.is_available;
 
 -- Step 2: Industry Simulation Config
-INSERT INTO industry_simulation_config (id, industry_id, business_metrics)
+INSERT INTO industry_simulation_config (id, industry_id, business_metrics, event_selection_mode, event_sequence)
 VALUES (
   'config-freelance',
   'freelance',
@@ -36,10 +36,14 @@ VALUES (
     "monthlyExpenses": 1000,
     "startingSkillLevel": 0,
     "startingFreedomScore": 0
-  }'::jsonb
+  }'::jsonb,
+  'random', -- Freelance industry uses random events for unpredictability
+  '[]'::jsonb -- Empty sequence for random mode
 )
 ON CONFLICT (industry_id) DO UPDATE SET
-  business_metrics = EXCLUDED.business_metrics;
+  business_metrics = EXCLUDED.business_metrics,
+  event_selection_mode = EXCLUDED.event_selection_mode,
+  event_sequence = EXCLUDED.event_sequence;
 
 -- Step 3: Services (7 items - progression from quick to complex)
 INSERT INTO services (id, industry_id, name, duration, price, pricing_category, weightage, requirements)

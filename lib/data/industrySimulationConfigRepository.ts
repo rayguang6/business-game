@@ -19,6 +19,9 @@ export interface IndustrySimulationConfigResult {
   capacityImage?: string;
   winCondition?: WinCondition;
   loseCondition?: LoseCondition;
+  // Event sequencing
+  eventSelectionMode?: 'random' | 'sequence';
+  eventSequence?: string[];
   // customerImages and staffNamePool removed - they're global only (same across all industries)
 }
 
@@ -138,7 +141,7 @@ export async function fetchIndustrySimulationConfig(
 
   const { data, error } = await supabase
     .from('industry_simulation_config')
-    .select('business_metrics, business_stats, map_width, map_height, map_walls, map_config, entry_position, waiting_positions, service_room_positions, staff_positions, layout_config, capacity_image, win_condition, lose_condition')
+    .select('business_metrics, business_stats, map_width, map_height, map_walls, map_config, entry_position, waiting_positions, service_room_positions, staff_positions, layout_config, capacity_image, win_condition, lose_condition, event_selection_mode, event_sequence')
     .eq('industry_id', industryId)
     .maybeSingle();
 
@@ -215,7 +218,15 @@ export async function fetchIndustrySimulationConfig(
     const loseCondition = mapLoseCondition(data.lose_condition);
     if (loseCondition) result.loseCondition = loseCondition;
   }
-  
+
+  // Event sequencing
+  if (data.event_selection_mode) {
+    result.eventSelectionMode = data.event_selection_mode as 'random' | 'sequence';
+  }
+  if (data.event_sequence && Array.isArray(data.event_sequence)) {
+    result.eventSequence = data.event_sequence as string[];
+  }
+
   // customerImages and staffNamePool removed - they're global only
 
   return result;
@@ -242,6 +253,9 @@ export async function upsertIndustrySimulationConfig(
     capacityImage?: string | null;
     winCondition?: WinCondition;
     loseCondition?: LoseCondition;
+    // Event sequencing
+    eventSelectionMode?: 'random' | 'sequence';
+    eventSequence?: string[];
     // customerImages and staffNamePool removed - they're global only
   },
 ): Promise<{ success: boolean; message?: string }> {
@@ -281,6 +295,11 @@ export async function upsertIndustrySimulationConfig(
   if (config.capacityImage !== undefined) payload.capacity_image = config.capacityImage;
   if (config.winCondition !== undefined) payload.win_condition = config.winCondition;
   if (config.loseCondition !== undefined) payload.lose_condition = config.loseCondition;
+
+  // Event sequencing
+  if (config.eventSelectionMode !== undefined) payload.event_selection_mode = config.eventSelectionMode;
+  if (config.eventSequence !== undefined) payload.event_sequence = config.eventSequence;
+
   // customerImages and staffNamePool removed - they're global only
 
   const { error } = await supabase

@@ -9,6 +9,7 @@ import {
   fetchIndustrySimulationConfig,
   upsertIndustrySimulationConfig,
 } from '@/lib/data/industrySimulationConfigRepository';
+import { fetchEventsForIndustry } from '@/lib/data/eventRepository';
 
 type Operation = 'idle' | 'loading' | 'saving';
 
@@ -30,6 +31,12 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
   const [capacityImage, setCapacityImage] = useState<string>('');
   const [winCondition, setWinCondition] = useState<WinCondition | null>(null);
   const [loseCondition, setLoseCondition] = useState<LoseCondition | null>(null);
+
+  // Event sequencing
+  const [eventSelectionMode, setEventSelectionMode] = useState<'random' | 'sequence'>('random');
+  const [eventSequence, setEventSequence] = useState<string[]>([]);
+  const [events, setEvents] = useState<Array<{ id: string; title: string }>>([]);
+
   // customerImages and staffNamePool removed - they're global only
 
   const [operation, setOperation] = useState<Operation>('idle');
@@ -49,6 +56,9 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
       setCapacityImage('');
       setWinCondition(null);
       setLoseCondition(null);
+      setEventSelectionMode('random');
+      setEventSequence([]);
+      setEvents([]);
       return;
     }
 
@@ -80,7 +90,22 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
           setCapacityImage(config.capacityImage ?? '');
           if (config.winCondition) setWinCondition(config.winCondition);
           if (config.loseCondition) setLoseCondition(config.loseCondition);
+
+          // Load event sequencing from simulation config
+          setEventSelectionMode(config.eventSelectionMode ?? 'random');
+          setEventSequence(config.eventSequence ?? []);
+
           // customerImages and staffNamePool removed - they're global only
+        }
+
+        // Load events for sequencing
+        const eventsData = await fetchEventsForIndustry(industryId);
+        if (eventsData) {
+          const sortedEvents = eventsData
+            .slice()
+            .sort((a, b) => a.title.localeCompare(b.title))
+            .map(event => ({ id: event.id, title: event.title }));
+          setEvents(sortedEvents);
         }
       } catch (err) {
         console.error('Failed to load industry simulation config', err);
@@ -123,8 +148,13 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
         capacityImage: capacityImage || null,
         winCondition: winCondition ?? undefined,
         loseCondition: loseCondition ?? undefined,
+        // Event sequencing
+        eventSelectionMode: eventSelectionMode,
+        eventSequence: eventSequence,
         // customerImages and staffNamePool removed - they're global only
       });
+
+      // Event sequencing is now saved as part of the industry simulation config
 
       if (result.success) {
         setStatus({ type: 'success', message: 'Config saved successfully!' });
@@ -151,6 +181,8 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
     capacityImage,
     winCondition,
     loseCondition,
+    eventSelectionMode,
+    eventSequence,
   ]);
 
   const updateMetrics = useCallback((updates: Partial<BusinessMetrics>) => {
@@ -189,9 +221,7 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
   const updateWinCondition = useCallback((updates: Partial<WinCondition>) => {
     setWinCondition((prev) => {
       const current = prev || {
-        founderHoursMax: 40,
-        monthlyProfitTarget: 0,
-        consecutiveMonthsRequired: 2,
+        cashTarget: 50000,
       };
       return { ...current, ...updates };
     });
@@ -201,8 +231,7 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
     setLoseCondition((prev) => {
       const current = prev || {
         cashThreshold: 0,
-        reputationThreshold: 0,
-        founderHoursMax: 400,
+        timeThreshold: 0,
       };
       return { ...current, ...updates };
     });
@@ -222,6 +251,9 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
     capacityImage,
     winCondition,
     loseCondition,
+    eventSelectionMode,
+    eventSequence,
+    events,
     // Setters
     setBusinessMetrics,
     setBusinessStats,
@@ -235,6 +267,8 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
     setCapacityImage,
     setWinCondition,
     setLoseCondition,
+    setEventSelectionMode,
+    setEventSequence,
     // Update helpers
     updateMetrics,
     updateStats,
