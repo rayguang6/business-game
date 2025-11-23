@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '../../../../lib/store/gameStore';
 import { GameEvent, GameEventChoice, GameEventEffect, EventEffectType } from '../../../../lib/types/gameEvents';
 import { EffectType, GameMetric } from '@/lib/game/effectManager';
-import type { ResolvedEventOutcome } from '@/lib/store/slices/eventSlice';
+import type { ResolvedEventOutcome, ResolvedDelayedOutcome } from '@/lib/store/slices/eventSlice';
 
 const getEffectIcon = (type: GameEventEffect['type']) => {
   switch (type) {
@@ -44,6 +44,7 @@ const METRIC_LABELS: Record<GameMetric, string> = {
   [GameMetric.ServiceRevenueMultiplier]: 'Service Revenue Multiplier',
   [GameMetric.ServiceRevenueFlatBonus]: 'Service Revenue Bonus',
   [GameMetric.FreedomScore]: 'Freedom Score',
+  [GameMetric.GenerateLeads]: 'Generate Leads',
   // Tier-specific metrics
   [GameMetric.HighTierServiceRevenueMultiplier]: 'High-Tier Service Revenue',
   [GameMetric.HighTierServiceWeightageMultiplier]: 'High-Tier Service Selection',
@@ -85,6 +86,8 @@ const EventPopup: React.FC = () => {
   const resolveEventChoice = useGameStore((state) => state.resolveEventChoice);
   const lastEventOutcome = useGameStore((state) => state.lastEventOutcome);
   const clearLastEventOutcome = useGameStore((state) => state.clearLastEventOutcome);
+  const lastDelayedOutcome = useGameStore((state) => state.lastDelayedOutcome);
+  const clearLastDelayedOutcome = useGameStore((state) => state.clearLastDelayedOutcome);
   const [countdown, setCountdown] = useState<number | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -140,6 +143,80 @@ const EventPopup: React.FC = () => {
       }
     };
   }, [currentEvent?.id, resolveEventChoice]);
+
+  // Prioritize showing delayed outcome over regular outcome
+  if (lastDelayedOutcome && !currentEvent) {
+    return (
+      <div className="absolute inset-0 z-30 flex items-start md:items-center justify-center px-2 md:px-6 pt-16 md:pt-6 pb-2 md:pb-6 pointer-events-none">
+        <div className="absolute inset-0 bg-black/35 md:bg-black/50 backdrop-blur-sm pointer-events-auto" />
+        <div className="relative z-10 w-full max-w-[70%] md:max-w-md pointer-events-auto">
+          {/* Game-style frame */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[var(--game-primary-light)]/20 via-[var(--game-primary)]/15 to-[var(--game-primary-dark)]/20 rounded-md md:rounded-2xl border-2 border-[var(--game-primary)]/30 shadow-[0_0_30px_rgba(35,170,246,0.3)]" />
+          
+          <div className="relative bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-secondary)] rounded-md md:rounded-2xl shadow-xl p-2.5 md:p-6 border-2 border-[var(--border-primary)] max-h-[calc(100vh-5rem)] md:max-h-[70vh] overflow-y-auto">
+            <div className="flex items-center gap-1 md:gap-1.5 mb-1.5 md:mb-3">
+              <span className="text-[var(--game-primary-light)] text-sm md:text-xl drop-shadow-[0_0_4px_rgba(35,170,246,0.6)]">⏰</span>
+              <h3 className="text-xs md:text-lg font-semibold text-[var(--text-primary)] leading-tight flex-1" style={{
+                textShadow: '0 1px 2px rgba(0,0,0,0.8)'
+              }}>
+                {lastDelayedOutcome.label || 'Delayed Event Result'}
+              </h3>
+            </div>
+            <p className="text-[10px] md:text-sm text-[var(--text-secondary)] mb-1.5 md:mb-3 leading-snug">
+              From <span className="font-semibold text-[var(--game-primary-light)]">{lastDelayedOutcome.eventTitle}</span> - <span className="font-semibold text-[var(--game-primary-light)]">{lastDelayedOutcome.choiceLabel}</span>
+            </p>
+            {lastDelayedOutcome.description && (
+              <div className={`text-[10px] md:text-xs text-[var(--text-primary)] mb-1 md:mb-2 bg-[var(--bg-tertiary)]/50 rounded p-1.5 md:p-2 border border-[var(--border-secondary)] ${lastDelayedOutcome.success ? 'border-green-500/50' : 'border-red-500/50'}`}>
+                <div className="text-[var(--text-secondary)]">
+                  {lastDelayedOutcome.description}
+                </div>
+              </div>
+            )}
+            {lastDelayedOutcome.appliedEffects.length > 0 && (
+              <div className="bg-[var(--bg-tertiary)]/60 rounded p-1.5 md:p-3 mb-1 md:mb-2 border border-[var(--border-secondary)]">
+                <div className="text-[10px] md:text-xs font-semibold text-[var(--text-primary)] mb-0.5 md:mb-1">Effects:</div>
+                <ul className="space-y-0.5 text-[9px] md:text-xs">
+                  {lastDelayedOutcome.appliedEffects.map((effect, index) => {
+                    if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.SkillLevel) {
+                      return (
+                        <li key={index} className={`flex items-center gap-1 ${getEffectColorClass(effect.type, effect.amount)}`}>
+                          <span>{getEffectIcon(effect.type)}</span>
+                          <span>{formatEffect(effect).replace(getEffectIcon(effect.type) + ' ', '')}</span>
+                        </li>
+                      );
+                    }
+                    return null;
+                  }).filter(Boolean)}
+                </ul>
+              </div>
+            )}
+            {lastDelayedOutcome.appliedEffects.some(effect => effect.type === EventEffectType.Metric) && (
+              <div className="bg-[var(--game-primary)]/20 rounded p-1.5 md:p-3 mb-1 md:mb-2 border border-[var(--game-primary)]/40">
+                <div className="text-[10px] md:text-xs font-semibold text-[var(--game-primary-light)] mb-0.5">Active:</div>
+                <ul className="space-y-0.5 text-[9px] md:text-xs text-[var(--text-primary)]">
+                  {lastDelayedOutcome.appliedEffects
+                    .filter((effect): effect is Extract<GameEventEffect, { type: EventEffectType.Metric }> => effect.type === EventEffectType.Metric)
+                    .map((effect, index) => (
+                      <li key={index}>{formatMetricEffect(effect)}</li>
+                    ))}
+                </ul>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={clearLastDelayedOutcome}
+              className="mt-1.5 md:mt-3 w-full bg-gradient-to-b from-[var(--game-primary-light)] via-[var(--game-primary)] to-[var(--game-primary-dark)] hover:from-[var(--game-primary)] hover:via-[var(--game-primary-dark)] hover:to-[var(--game-primary-dark)] text-white text-[10px] md:text-sm font-semibold py-1.5 md:py-2 rounded border-2 border-black/20 shadow-lg hover:shadow-xl transition-all duration-200"
+              style={{
+                textShadow: '0 1px 2px rgba(0,0,0,0.8)'
+              }}
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Prioritize showing the outcome if present
   if (lastEventOutcome && !currentEvent) {

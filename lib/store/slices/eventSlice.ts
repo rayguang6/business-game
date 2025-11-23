@@ -150,13 +150,14 @@
 // ════════════════════════════════════════════════════════════════════════════════
 
 import { StateCreator } from 'zustand';
-import { GameEvent, GameEventChoice, GameEventConsequence, GameEventEffect, EventEffectType } from '../../types/gameEvents';
+import { GameEvent, GameEventChoice, GameEventConsequence, GameEventEffect, EventEffectType, DelayedConsequence } from '../../types/gameEvents';
 import { GameMetric, EffectType } from '../../game/effectManager';
 import type { GameStore } from '../gameStore';
 import { effectManager } from '@/lib/game/effectManager';
 import { getMonthlyBaseExpenses } from '@/lib/features/economy';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import { DynamicValueEvaluator } from '@/lib/game/dynamicValueEvaluator';
+import { checkRequirements } from '@/lib/game/requirementChecker';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // 🎯 RESOLVED EFFECT TYPES - Update this when adding new effects (STEP 2)
@@ -184,13 +185,42 @@ export interface ResolvedEventOutcome {
   consequenceDescription?: string;
 }
 
+export interface PendingDelayedConsequence {
+  id: string; // Unique identifier
+  eventId: string;
+  eventTitle: string;
+  choiceId: string;
+  choiceLabel: string;
+  consequenceId: string;
+  delayedConsequence: DelayedConsequence;
+  triggerTime: number; // gameTime when it should trigger
+}
+
+export interface ResolvedDelayedOutcome {
+  id: string;
+  eventId: string;
+  eventTitle: string;
+  choiceId: string;
+  choiceLabel: string;
+  consequenceId: string;
+  label?: string;
+  description?: string;
+  success: boolean;
+  appliedEffects: GameEventEffect[]; // Effects shown to player
+  pendingEffects: ResolvedEffect[]; // Pre-calculated values to apply when player clicks continue
+}
+
 export interface EventSlice {
   currentEvent: GameEvent | null;
   wasPausedBeforeEvent: boolean;
   lastEventOutcome: ResolvedEventOutcome | null;
+  pendingDelayedConsequences: PendingDelayedConsequence[];
+  lastDelayedOutcome: ResolvedDelayedOutcome | null;
+  wasPausedBeforeDelayedOutcome: boolean;
   setCurrentEvent: (event: GameEvent | null) => void;
   resolveEventChoice: (choiceId: string) => void;
   clearLastEventOutcome: () => void;
+  clearLastDelayedOutcome: () => void;
   resetEvents: () => void;
 }
 
@@ -350,6 +380,9 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
   currentEvent: null,
   wasPausedBeforeEvent: false,
   lastEventOutcome: null,
+  pendingDelayedConsequences: [],
+  lastDelayedOutcome: null,
+  wasPausedBeforeDelayedOutcome: false,
   setCurrentEvent: (event) => {
     if (event) {
       const store = get();
@@ -471,6 +504,23 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
       // console.log(`[Flag System] Flag "${choice.setsFlag}" set to true`);
     }
 
+    // Queue delayed consequence if present
+    const pendingDelayedConsequences: PendingDelayedConsequence[] = [];
+    if (consequence?.delayedConsequence) {
+      const delayedId = `${event.id}_${choice.id}_${consequence.id}_${Date.now()}`;
+      const triggerTime = store.gameTime + consequence.delayedConsequence.delaySeconds;
+      pendingDelayedConsequences.push({
+        id: delayedId,
+        eventId: event.id,
+        eventTitle: event.title,
+        choiceId: choice.id,
+        choiceLabel: choice.label,
+        consequenceId: consequence.id,
+        delayedConsequence: consequence.delayedConsequence,
+        triggerTime,
+      });
+    }
+
     set({
       lastEventOutcome: {
         eventId: event.id,
@@ -485,6 +535,7 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
         consequenceLabel: consequence?.label,
         consequenceDescription: consequence?.description,
       },
+      pendingDelayedConsequences: [...store.pendingDelayedConsequences, ...pendingDelayedConsequences],
     });
 
     store.setCurrentEvent(null);
@@ -586,6 +637,86 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
       currentEvent: null,
       wasPausedBeforeEvent: false,
       lastEventOutcome: null,
+      pendingDelayedConsequences: [],
+      lastDelayedOutcome: null,
+      wasPausedBeforeDelayedOutcome: false,
     });
+  },
+  clearLastDelayedOutcome: () => {
+    const store = get();
+    const shouldUnpause = !store.wasPausedBeforeDelayedOutcome;
+
+    // Apply pre-calculated effect values
+    const outcome = store.lastDelayedOutcome;
+    if (outcome?.pendingEffects) {
+      outcome.pendingEffects.forEach((resolvedEffect: ResolvedEffect) => {
+        if (resolvedEffect.type === EventEffectType.Cash && resolvedEffect.amount !== undefined) {
+          const { recordEventRevenue, recordEventExpense } = store;
+          if (resolvedEffect.amount >= 0) {
+            recordEventRevenue(resolvedEffect.amount, resolvedEffect.label ?? 'Delayed event revenue');
+          } else {
+            recordEventExpense(Math.abs(resolvedEffect.amount), resolvedEffect.label ?? 'Delayed event expense');
+          }
+        } else if (resolvedEffect.type === EventEffectType.SkillLevel && resolvedEffect.amount !== undefined) {
+          store.applySkillLevelChange(resolvedEffect.amount);
+        } else if (resolvedEffect.type === EventEffectType.Metric && resolvedEffect.metric && resolvedEffect.effectType !== undefined && resolvedEffect.value !== undefined) {
+          const { gameTime, metrics } = store;
+          
+          if (resolvedEffect.metric === GameMetric.Cash && resolvedEffect.effectType === EffectType.Add) {
+            store.applyCashChange(resolvedEffect.value);
+          } else if (resolvedEffect.metric === GameMetric.Time && resolvedEffect.effectType === EffectType.Add) {
+            store.applyTimeChange(resolvedEffect.value);
+          } else if (resolvedEffect.metric === GameMetric.SkillLevel && resolvedEffect.effectType === EffectType.Add) {
+            store.applySkillLevelChange(resolvedEffect.value);
+          } else if (resolvedEffect.metric === GameMetric.FreedomScore && resolvedEffect.effectType === EffectType.Add) {
+            store.applyFreedomScoreChange(resolvedEffect.value);
+          } else {
+            effectManager.add({
+              id: `delayed_${outcome.eventId}_${outcome.choiceId}_${Date.now()}`,
+              source: {
+                category: 'event',
+                id: outcome.eventId,
+                name: outcome.eventTitle,
+              },
+              metric: resolvedEffect.metric,
+              type: resolvedEffect.effectType,
+              value: resolvedEffect.value,
+              durationSeconds: resolvedEffect.durationSeconds,
+              priority: resolvedEffect.priority,
+            }, gameTime);
+            
+            if (resolvedEffect.metric === GameMetric.Cash) {
+              const currentCash = metrics.cash;
+              const newCash = effectManager.calculate(GameMetric.Cash, currentCash);
+              store.applyCashChange(newCash - currentCash);
+            } else if (resolvedEffect.metric === GameMetric.Time) {
+              const currentTime = metrics.time;
+              const newTime = effectManager.calculate(GameMetric.Time, currentTime);
+              store.applyTimeChange(newTime - currentTime);
+            } else if (resolvedEffect.metric === GameMetric.SkillLevel) {
+              const currentSkillLevel = metrics.skillLevel;
+              const newSkillLevel = effectManager.calculate(GameMetric.SkillLevel, currentSkillLevel);
+              store.applySkillLevelChange(newSkillLevel - currentSkillLevel);
+            } else if (resolvedEffect.metric === GameMetric.FreedomScore) {
+              const currentFreedomScore = metrics.freedomScore;
+              const newFreedomScore = effectManager.calculate(GameMetric.FreedomScore, currentFreedomScore);
+              store.applyFreedomScoreChange(newFreedomScore - currentFreedomScore);
+            }
+          }
+        }
+      });
+
+      // Check for game over after applying effects
+      store.checkGameOver();
+    }
+
+    set({
+      lastDelayedOutcome: null,
+      wasPausedBeforeDelayedOutcome: false,
+    });
+
+    if (shouldUnpause) {
+      store.unpauseGame();
+    }
   },
 });

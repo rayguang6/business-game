@@ -4,6 +4,7 @@ import type {
   GameEventChoice,
   GameEventConsequence,
   GameEventEffect,
+  DelayedConsequence,
 } from '@/lib/types/gameEvents';
 import { EventEffectType } from '@/lib/types/gameEvents';
 import type { IndustryId, Requirement } from '@/lib/game/types';
@@ -30,12 +31,24 @@ type RawChoice = {
   setsFlag?: string;
 };
 
+type RawDelayedConsequence = {
+  id?: string;
+  delaySeconds?: number;
+  successRequirements?: Requirement[];
+  successEffects?: RawEffect[];
+  failureEffects?: RawEffect[];
+  label?: string;
+  successDescription?: string;
+  failureDescription?: string;
+};
+
 type RawConsequence = {
   id?: string;
   label?: string;
   description?: string;
   weight?: number;
   effects?: RawEffect[];
+  delayedConsequence?: RawDelayedConsequence;
 };
 
 type RawEffect =
@@ -62,6 +75,38 @@ const isRawEffect = (value: unknown): value is RawEffect => {
   return validateAndParseGameEventEffects([value]).length === 1;
 };
 
+const mapDelayedConsequence = (raw: RawDelayedConsequence | undefined): DelayedConsequence | undefined => {
+  if (!raw || typeof raw !== 'object') {
+    return undefined;
+  }
+
+  const id = String(raw.id ?? '');
+  const delaySeconds = toNumber(raw.delaySeconds, 0);
+  
+  if (!id || delaySeconds <= 0) {
+    return undefined;
+  }
+
+  const successEffects = Array.isArray(raw.successEffects)
+    ? validateAndParseGameEventEffects(raw.successEffects).map(convertRawEffectToGameEventEffect)
+    : [];
+
+  const failureEffects = Array.isArray(raw.failureEffects)
+    ? validateAndParseGameEventEffects(raw.failureEffects).map(convertRawEffectToGameEventEffect)
+    : undefined;
+
+  return {
+    id,
+    delaySeconds,
+    successRequirements: Array.isArray(raw.successRequirements) ? raw.successRequirements : undefined,
+    successEffects,
+    failureEffects: failureEffects && failureEffects.length > 0 ? failureEffects : undefined,
+    label: raw.label,
+    successDescription: raw.successDescription,
+    failureDescription: raw.failureDescription,
+  };
+};
+
 const mapConsequences = (raw: RawConsequence[] | undefined): GameEventConsequence[] => {
   if (!Array.isArray(raw)) {
     return [];
@@ -77,6 +122,7 @@ const mapConsequences = (raw: RawConsequence[] | undefined): GameEventConsequenc
       effects: Array.isArray(consequence.effects)
         ? validateAndParseGameEventEffects(consequence.effects).map(convertRawEffectToGameEventEffect)
         : [],
+      delayedConsequence: mapDelayedConsequence(consequence.delayedConsequence),
     }));
 };
 
@@ -202,6 +248,23 @@ const convertGameEventEffectToRawEffect = (effect: GameEventEffect): RawEffect =
   }
 };
 
+const serializeDelayedConsequence = (delayed: DelayedConsequence | undefined): RawDelayedConsequence | undefined => {
+  if (!delayed) {
+    return undefined;
+  }
+
+  return {
+    id: delayed.id,
+    delaySeconds: delayed.delaySeconds,
+    successRequirements: delayed.successRequirements,
+    successEffects: delayed.successEffects.map(convertGameEventEffectToRawEffect),
+    failureEffects: delayed.failureEffects?.map(convertGameEventEffectToRawEffect),
+    label: delayed.label,
+    successDescription: delayed.successDescription,
+    failureDescription: delayed.failureDescription,
+  };
+};
+
 function serializeChoices(choices: GameEventChoice[]): RawChoice[] {
   return choices.map((choice) => ({
     id: choice.id,
@@ -216,6 +279,7 @@ function serializeChoices(choices: GameEventChoice[]): RawChoice[] {
       description: consequence.description,
       weight: consequence.weight,
       effects: consequence.effects.map(convertGameEventEffectToRawEffect),
+      delayedConsequence: serializeDelayedConsequence(consequence.delayedConsequence),
     })),
   }));
 }
