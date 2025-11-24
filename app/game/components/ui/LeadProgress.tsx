@@ -19,6 +19,89 @@ interface FeedbackItem {
   value: number;
 }
 
+// Animated sprite icon component for lead card
+function AnimatedLeadIcon() {
+  const [currentFrame, setCurrentFrame] = useState(0);
+  const [currentDirection, setCurrentDirection] = useState<'down' | 'left' | 'up' | 'right'>('down');
+  const directionChangeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const animationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Sprite size for the icon
+  const SPRITE_SIZE = 32; // Original sprite size
+  const ICON_SIZE = 24; // Display size (bigger icon)
+  const SCALE = ICON_SIZE / SPRITE_SIZE; // Scale factor
+  
+  // Use customer1 sprite
+  const spriteSheetPath = `/images/customer/customer1.png`;
+
+  // Calculate sprite sheet position based on direction and frame
+  // Spritesheet layout: 0-2=down, 3-5=left, 6-8=up, 9-11=right
+  const getSpritePosition = (localFrame: number, direction: typeof currentDirection) => {
+    const directionOffset = {
+      'down': 0,   // Frames 0-2
+      'left': 3,   // Frames 3-5
+      'up': 6,     // Frames 6-8
+      'right': 9   // Frames 9-11
+    };
+    
+    const baseFrame = directionOffset[direction];
+    return baseFrame + (localFrame % 3); // Cycle through 3 frames per direction
+  };
+
+  const spriteFrame = getSpritePosition(currentFrame, currentDirection);
+
+  // Randomly change direction every 2-4 seconds
+  useEffect(() => {
+    const changeDirection = () => {
+      const directions: Array<'down' | 'left' | 'up' | 'right'> = ['down', 'left', 'up', 'right'];
+      const randomDirection = directions[Math.floor(Math.random() * directions.length)];
+      setCurrentDirection(randomDirection);
+      setCurrentFrame(0); // Reset frame when changing direction
+    };
+
+    // Change direction immediately on mount, then periodically
+    changeDirection();
+    
+    directionChangeIntervalRef.current = setInterval(() => {
+      changeDirection();
+    }, 2000 + Math.random() * 2000); // Random interval between 2-4 seconds
+
+    return () => {
+      if (directionChangeIntervalRef.current) {
+        clearInterval(directionChangeIntervalRef.current);
+      }
+    };
+  }, []);
+
+  // Animate walking frames
+  useEffect(() => {
+    animationIntervalRef.current = setInterval(() => {
+      setCurrentFrame(prev => (prev + 1) % 3); // Cycle through 0, 1, 2
+    }, 200); // 200ms per frame for smooth animation
+
+    return () => {
+      if (animationIntervalRef.current) {
+        clearInterval(animationIntervalRef.current);
+      }
+    };
+  }, [currentDirection]);
+
+  return (
+    <div
+      className="inline-block overflow-hidden"
+      style={{
+        width: `${ICON_SIZE}px`,
+        height: `${ICON_SIZE}px`,
+        backgroundImage: `url(${spriteSheetPath})`,
+        backgroundSize: `${SPRITE_SIZE * 16 * SCALE}px ${SPRITE_SIZE * SCALE}px`, // Scaled background size
+        backgroundPosition: `-${spriteFrame * SPRITE_SIZE * SCALE}px 0px`,
+        backgroundRepeat: 'no-repeat',
+        imageRendering: 'pixelated', // Keep pixel art crisp
+      }}
+    />
+  );
+}
+
 export function LeadProgress({ position = 'bottom-right' }: LeadProgressProps) {
   const { leadProgress, conversionRate, customers } = useGameStore();
   const [previousProgress, setPreviousProgress] = useState(leadProgress);
@@ -248,14 +331,19 @@ export function LeadProgress({ position = 'bottom-right' }: LeadProgressProps) {
         <div className="relative z-10">
           {/* Header */}
           <div className="mb-0.5 sm:mb-1 md:mb-3.5">
-            <div className="flex items-center gap-0.5 sm:gap-0.5 md:gap-2 mb-0.5 md:mb-1.5">
-              <span className="text-micro sm:text-ultra-sm md:text-base drop-shadow-[0_0_4px_rgba(59,130,246,0.6)]">👥</span>
+            <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 mb-0.5 md:mb-1.5">
+              <div className="drop-shadow-[0_0_4px_rgba(59,130,246,0.6)] flex items-center justify-center flex-shrink-0" style={{ width: '24px', height: '24px' }}>
+                <AnimatedLeadIcon />
+              </div>
               <span className="text-micro sm:text-caption md:text-xs font-bold text-blue-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
                 Lead Conversion
               </span>
             </div>
-            <div className="text-micro sm:text-micro md:text-[10px] text-gray-300 pl-2 sm:pl-3 md:pl-6 leading-tight">
-              {conversionRate.toFixed(1)}% conversion rate
+            <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2">
+              <div className="flex-shrink-0" style={{ width: '24px' }}></div>
+              <div className="text-micro sm:text-micro md:text-[10px] text-gray-300 leading-tight">
+                {Math.round(conversionRate)}% conversion rate
+              </div>
             </div>
           </div>
 
