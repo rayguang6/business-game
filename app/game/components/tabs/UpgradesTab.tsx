@@ -386,7 +386,7 @@ function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
 
   return (
     <div
-      className={`relative w-full bg-gradient-to-b ${styles.cardGradient} rounded-xl sm:rounded-2xl border-2 ${styles.borderColor} ${styles.borderGlow} hover:scale-[1.02] transition-all duration-300 overflow-hidden group`}
+      className={`relative w-full h-full flex flex-col bg-gradient-to-b ${styles.cardGradient} rounded-xl sm:rounded-2xl border-2 ${styles.borderColor} ${styles.borderGlow} hover:scale-[1.02] transition-all duration-300 overflow-hidden group`}
     >
       {/* Hero Banner */}
       <div className={`h-10 sm:h-12 md:h-16 bg-gradient-to-r ${styles.cardGradient} relative overflow-hidden border-b-2 ${styles.borderColor}/50`}>
@@ -403,69 +403,61 @@ function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
 
       {/* Avatar Section */}
       <div className="relative -mt-6 sm:-mt-8 md:-mt-10 flex justify-center mb-1.5 sm:mb-2 md:mb-3">
-        <div className="relative">
-          <div className={`absolute inset-0 ${styles.avatarBg} rounded-full blur-md opacity-50 group-hover:opacity-70 transition-opacity`}></div>
-          <div className={`relative w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-24 ${styles.avatarBg} rounded-full flex items-center justify-center border-2 sm:border-3 md:border-4 ${styles.borderColor} shadow-lg group-hover:scale-110 transition-transform duration-300 overflow-hidden`}>
-            <div className="w-full h-full relative overflow-hidden">
-              <img
-                src={candidate.spriteImage || '/images/staff/staff1.png'}
-                alt={candidate.name}
-                className="w-[1600%] h-full object-cover object-left"
-                onError={(e) => {
-                  // Fallback to default sprite if custom sprite fails
-                  (e.target as HTMLImageElement).src = '/images/staff/staff1.png';
-                }}
-              />
-            </div>
-          </div>
+        <div className={`relative w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 aspect-square ${styles.avatarBg} rounded-xl border-2 sm:border-3 md:border-4 ${styles.borderColor} shadow-lg group-hover:scale-110 transition-transform duration-300 overflow-hidden`}>
+          <div className={`absolute inset-0 ${styles.avatarBg} rounded-xl blur-md opacity-50 group-hover:opacity-70 transition-opacity -z-10`}></div>
+          <img
+            src={candidate.spriteImage || '/images/staff/staff1.png'}
+            alt={candidate.name}
+            className="w-[1600%] h-full object-cover object-left select-none"
+            style={{ imageRendering: 'pixelated' }}
+            draggable={false}
+            onContextMenu={(e) => e.preventDefault()}
+            onDragStart={(e) => e.preventDefault()}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/images/staff/staff1.png';
+            }}
+          />
         </div>
       </div>
 
       {/* Name Section */}
       <div className="px-2 sm:px-3 md:px-4 pb-1.5 sm:pb-2 md:pb-3 text-center">
-        <h5 className="text-white font-bold text-heading-sm sm:text-heading mb-1 sm:mb-1.5 md:mb-2 tracking-tight">
+        <h5 className="text-white font-bold text-heading-sm sm:text-heading mb-1 sm:mb-1.5 md:mb-2 tracking-tight truncate px-2">
           {candidate.name}
         </h5>
-        <div className={`inline-block px-2 sm:px-2.5 md:px-3 py-0.5 sm:py-0.5 md:py-1 rounded-full ${styles.badgeBg} border ${styles.borderColor}`}>
-          <span className={`${styles.accentText} text-micro sm:text-caption md:text-xs font-semibold uppercase`}>
-            {candidate.role}
-          </span>
+        <div className="flex justify-center">
+          <div className={`inline-block px-2 sm:px-2.5 md:px-3 py-0.5 sm:py-0.5 md:py-1 rounded-full ${styles.badgeBg} border ${styles.borderColor}`}>
+            <span className={`${styles.accentText} text-micro sm:text-caption md:text-xs font-semibold uppercase whitespace-nowrap`}>
+              {candidate.role}
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Stats Panel */}
-      <div className="px-2 sm:px-3 md:px-4 pb-1.5 sm:pb-2 md:pb-3 space-y-1 sm:space-y-1.5 md:space-y-2">
+      <div className="px-2 sm:px-3 md:px-4 pb-1.5 sm:pb-2 md:pb-3 space-y-1 sm:space-y-1.5 flex-grow">
         {candidate.effects.length > 0 && (
-          <div className="bg-black/40 rounded-lg px-2 sm:px-2.5 md:px-3 py-1 sm:py-1.5 md:py-2 border border-white/10">
-            <div className="text-white/70 text-micro sm:text-ultra-sm md:text-[10px] uppercase tracking-wide mb-1 sm:mb-1.5 md:mb-2 font-semibold">Benefits</div>
-            <div className="space-y-1 sm:space-y-1 md:space-y-1.5">
-              {candidate.effects.map((effect, index) => {
-                const effectParts = formatStaffEffect(effect).split(' ');
-                const value = effectParts[0];
-                const label = effectParts.slice(1).join(' ');
-                return (
-                  <div key={index} className="flex items-center justify-between bg-black/20 rounded px-1.5 sm:px-2 py-0.5 sm:py-1">
-                    <span className="text-white text-caption sm:text-label font-medium flex items-center gap-1 sm:gap-1.5">
-                      <span className="text-micro sm:text-ultra-sm">{getEffectIcon(effect.metric)}</span>
-                      <span>{label}</span>
-                    </span>
-                    <span className="text-green-400 font-bold text-caption sm:text-label">{value}</span>
-                  </div>
-                );
-              })}
-            </div>
+          <div className="space-y-1 sm:space-y-1.5">
+            {candidate.effects.map((effect, index) => {
+              const effectParts = formatStaffEffect(effect).split(' ');
+              const value = effectParts[0];
+              const label = effectParts.slice(1).join(' ');
+              return (
+                <div key={index} className="flex items-center justify-between gap-2 min-w-0">
+                  <span className="text-white text-caption sm:text-label font-medium flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1">
+                    <span className="text-micro sm:text-ultra-sm flex-shrink-0">{getEffectIcon(effect.metric)}</span>
+                    <span className="truncate">{label}</span>
+                  </span>
+                  <span className="text-green-400 font-bold text-caption sm:text-label whitespace-nowrap flex-shrink-0">{value}</span>
+                </div>
+              );
+            })}
           </div>
         )}
 
-        <div className="bg-black/40 rounded-lg px-2 sm:px-2.5 md:px-3 py-1 sm:py-1.5 md:py-2 border border-white/10">
-          <div className="flex items-center justify-between">
-            <span className="text-white/80 text-caption sm:text-label font-medium flex items-center gap-1 sm:gap-1.5">
-              <span className="text-micro sm:text-ultra-sm">💰</span>
-              <span>Monthly Cost</span>
-            </span>
-            <span className={`font-bold text-caption sm:text-label ${canAfford ? 'text-[var(--game-secondary)]' : 'text-[var(--error)]'}`}>
-              ${Math.round(candidate.salary).toLocaleString()}
-            </span>
+        <div className="text-center pt-2 border-t border-white/10 mt-auto">
+          <div className={`text-lg sm:text-xl font-bold ${canAfford ? 'text-[var(--game-secondary)]' : 'text-[var(--error)]'}`}>
+            ${Math.round(candidate.salary).toLocaleString()}/m
           </div>
         </div>
       </div>
@@ -483,7 +475,7 @@ function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
         </div>
       </Modal>
 
-      <div className="px-2 sm:px-3 md:px-4 pb-2 sm:pb-3 md:pb-4 relative">
+      <div className="px-2 sm:px-3 md:px-4 pb-2 sm:pb-3 md:pb-4 relative mt-auto">
         <GameButton
           onClick={handleHire}
           disabled={!requirementsMet || !canAfford}
@@ -538,92 +530,81 @@ function HiredStaffCard({ member, onFire }: HiredStaffCardProps) {
 
   return (
     <div
-      className={`relative w-full bg-gradient-to-b ${styles.cardGradient} rounded-xl sm:rounded-2xl border-2 ${styles.borderColor} ${styles.borderGlow} hover:scale-[1.02] transition-all duration-300 overflow-hidden group`}
+      className={`relative w-full h-full flex flex-col bg-gradient-to-b ${styles.cardGradient} rounded-xl sm:rounded-2xl border-2 ${styles.borderColor} ${styles.borderGlow} hover:scale-[1.02] transition-all duration-300 overflow-hidden group`}
     >
-      {/* Hero Banner with Active Badge */}
+      {/* Hero Banner */}
       <div className={`h-10 sm:h-12 md:h-16 bg-gradient-to-r ${styles.cardGradient} relative overflow-hidden border-b-2 ${styles.borderColor}/50`}>
         <div className="absolute inset-0 bg-black/20"></div>
-        <div className="absolute top-1 sm:top-1.5 md:top-2 left-2 sm:left-2.5 md:left-3 right-2 sm:right-2.5 md:right-3 flex items-center justify-between z-10">
+        <div className="absolute top-1 sm:top-1.5 md:top-2 left-2 sm:left-2.5 md:left-3 right-2 sm:right-2.5 md:right-3 flex items-center z-10">
           <span className={`text-micro sm:text-ultra-sm md:text-xs font-bold ${styles.textColor} uppercase tracking-wide`}>
             {member.role}
-          </span>
-          <span className="bg-emerald-500 text-white px-1.5 sm:px-2 py-0.5 rounded-full text-micro sm:text-ultra-sm md:text-[10px] font-bold shadow-md border border-emerald-300/50">
-            ✓ Active
           </span>
         </div>
       </div>
 
       {/* Avatar Section */}
       <div className="relative -mt-6 sm:-mt-8 md:-mt-10 flex justify-center mb-1.5 sm:mb-2 md:mb-3">
-        <div className="relative">
-          <div className={`absolute inset-0 ${styles.avatarBg} rounded-full blur-md opacity-50 group-hover:opacity-70 transition-opacity`}></div>
-          <div className={`relative w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-24 ${styles.avatarBg} rounded-full flex items-center justify-center border-2 sm:border-3 md:border-4 ${styles.borderColor} shadow-lg group-hover:scale-110 transition-transform duration-300 overflow-hidden`}>
-            <div className="w-full h-full relative overflow-hidden">
-              <img
-                src={member.spriteImage || '/images/staff/staff1.png'}
-                alt={member.name}
-                className="w-[1600%] h-full object-cover object-left"
-                onError={(e) => {
-                  // Fallback to default sprite if custom sprite fails
-                  (e.target as HTMLImageElement).src = '/images/staff/staff1.png';
-                }}
-              />
-            </div>
-          </div>
+        <div className={`relative w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 aspect-square ${styles.avatarBg} rounded-xl border-2 sm:border-3 md:border-4 ${styles.borderColor} shadow-lg group-hover:scale-110 transition-transform duration-300 overflow-hidden`}>
+          <div className={`absolute inset-0 ${styles.avatarBg} rounded-xl blur-md opacity-50 group-hover:opacity-70 transition-opacity -z-10`}></div>
+          <img
+            src={member.spriteImage || '/images/staff/staff1.png'}
+            alt={member.name}
+            className="w-[1600%] h-full object-cover object-left select-none"
+            style={{ imageRendering: 'pixelated' }}
+            draggable={false}
+            onContextMenu={(e) => e.preventDefault()}
+            onDragStart={(e) => e.preventDefault()}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/images/staff/staff1.png';
+            }}
+          />
         </div>
       </div>
 
       {/* Name Section */}
       <div className="px-2 sm:px-3 md:px-4 pb-1.5 sm:pb-2 md:pb-3 text-center">
-        <h4 className="text-white font-bold text-heading-sm sm:text-heading mb-1 sm:mb-1.5 md:mb-2 tracking-tight">
+        <h4 className="text-white font-bold text-heading-sm sm:text-heading mb-1 sm:mb-1.5 md:mb-2 tracking-tight truncate px-2">
           {member.name}
         </h4>
-        <div className={`inline-block px-2 sm:px-2.5 md:px-3 py-0.5 sm:py-0.5 md:py-1 rounded-full ${styles.badgeBg} border ${styles.borderColor}`}>
-          <span className={`${styles.accentText} text-micro sm:text-caption md:text-xs font-semibold uppercase`}>
-            {member.role}
-          </span>
+        <div className="flex justify-center">
+          <div className={`inline-block px-2 sm:px-2.5 md:px-3 py-0.5 sm:py-0.5 md:py-1 rounded-full ${styles.badgeBg} border ${styles.borderColor}`}>
+            <span className={`${styles.accentText} text-micro sm:text-caption md:text-xs font-semibold uppercase whitespace-nowrap`}>
+              {member.role}
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Stats Panel */}
-      <div className="px-2 sm:px-3 md:px-4 pb-1.5 sm:pb-2 md:pb-3 space-y-1 sm:space-y-1.5 md:space-y-2">
+      <div className="px-2 sm:px-3 md:px-4 pb-1.5 sm:pb-2 md:pb-3 space-y-1 sm:space-y-1.5 flex-grow">
         {member.effects.length > 0 && (
-          <div className="bg-black/40 rounded-lg px-2 sm:px-2.5 md:px-3 py-1 sm:py-1.5 md:py-2 border border-white/10">
-            <div className="text-white/70 text-micro sm:text-ultra-sm md:text-[10px] uppercase tracking-wide mb-1 sm:mb-1.5 md:mb-2 font-semibold">Benefits</div>
-            <div className="space-y-1 sm:space-y-1 md:space-y-1.5">
-              {member.effects.map((effect, index) => {
-                const effectParts = formatStaffEffect(effect).split(' ');
-                const value = effectParts[0];
-                const label = effectParts.slice(1).join(' ');
-                return (
-                  <div key={index} className="flex items-center justify-between bg-black/20 rounded px-1.5 sm:px-2 py-0.5 sm:py-1">
-                    <span className="text-white text-caption sm:text-label font-medium flex items-center gap-1 sm:gap-1.5">
-                      <span className="text-micro sm:text-ultra-sm">{getEffectIcon(effect.metric)}</span>
-                      <span>{label}</span>
-                    </span>
-                    <span className="text-green-400 font-bold text-caption sm:text-label">{value}</span>
-                  </div>
-                );
-              })}
-            </div>
+          <div className="space-y-1 sm:space-y-1.5">
+            {member.effects.map((effect, index) => {
+              const effectParts = formatStaffEffect(effect).split(' ');
+              const value = effectParts[0];
+              const label = effectParts.slice(1).join(' ');
+              return (
+                <div key={index} className="flex items-center justify-between gap-2 min-w-0">
+                  <span className="text-white text-caption sm:text-label font-medium flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1">
+                    <span className="text-micro sm:text-ultra-sm flex-shrink-0">{getEffectIcon(effect.metric)}</span>
+                    <span className="truncate">{label}</span>
+                  </span>
+                  <span className="text-green-400 font-bold text-caption sm:text-label whitespace-nowrap flex-shrink-0">{value}</span>
+                </div>
+              );
+            })}
           </div>
         )}
 
-        <div className="bg-black/40 rounded-lg px-2 sm:px-2.5 md:px-3 py-1 sm:py-1.5 md:py-2 border border-white/10">
-          <div className="flex items-center justify-between">
-            <span className="text-white/80 text-caption sm:text-label font-medium flex items-center gap-1 sm:gap-1.5">
-              <span className="text-micro sm:text-ultra-sm">💰</span>
-              <span>Monthly Cost</span>
-            </span>
-            <span className="text-[var(--game-secondary)] font-bold text-caption sm:text-label">
-              ${Math.round(member.salary).toLocaleString()}
-            </span>
+        <div className="text-center pt-2 border-t border-white/10 mt-auto">
+          <div className="text-lg sm:text-xl font-bold text-[var(--game-secondary)]">
+            ${Math.round(member.salary).toLocaleString()}/m
           </div>
         </div>
       </div>
 
       {/* Fire Button */}
-      <div className="px-2 sm:px-3 md:px-4 pb-2 sm:pb-3 md:pb-4">
+      <div className="px-2 sm:px-3 md:px-4 pb-2 sm:pb-3 md:pb-4 mt-auto">
         <GameButton
           onClick={handleFireClick}
           color="red"
@@ -772,12 +753,16 @@ export function UpgradesTab() {
               Meet the team running your clinic every day.
             </p>
           </div>
-          <div className="max-w-6xl mx-auto grid gap-2 sm:gap-3 md:gap-4 grid-cols-[repeat(auto-fit,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fit,minmax(180px,1fr))] px-2 sm:px-3 md:px-4">
+          <div className="max-w-6xl mx-auto flex flex-wrap justify-center items-stretch gap-2 sm:gap-3 md:gap-4 px-2 sm:px-3 md:px-4">
             {hiredStaff.map((member) => (
-              <HiredStaffCard key={member.id} member={member} onFire={handleFireStaff} />
+              <div key={member.id} className="w-[160px] sm:w-[180px] flex">
+                <div className="w-full">
+                  <HiredStaffCard member={member} onFire={handleFireStaff} />
+                </div>
+              </div>
             ))}
             {hiredStaff.length === 0 && (
-              <div className="text-center text-muted text-xs sm:text-sm md:text-base py-6 sm:py-8 md:py-10 col-span-full">
+              <div className="text-center text-muted text-xs sm:text-sm md:text-base py-6 sm:py-8 md:py-10 w-full">
                 You haven&apos;t hired anyone yet. Pick a candidate below to build your team.
               </div>
             )}
@@ -792,16 +777,19 @@ export function UpgradesTab() {
               Choose who joins your clinic next. Hiring is instant and only adds their salary.
             </p>
           </div>
-          <div className="max-w-6xl mx-auto grid gap-2 sm:gap-3 md:gap-4 grid-cols-[repeat(auto-fit,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fit,minmax(200px,1fr))] px-2 sm:px-3 md:px-4">
+          <div className="max-w-6xl mx-auto flex flex-wrap justify-center items-stretch gap-2 sm:gap-3 md:gap-4 px-2 sm:px-3 md:px-4">
             {availableStaff.map((candidate) => (
-              <StaffCandidateCard
-                key={candidate.id}
-                candidate={candidate}
-                onHire={handleHireStaff}
-              />
+              <div key={candidate.id} className="w-[160px] sm:w-[200px] flex">
+                <div className="w-full">
+                  <StaffCandidateCard
+                    candidate={candidate}
+                    onHire={handleHireStaff}
+                  />
+                </div>
+              </div>
             ))}
             {availableStaff.length === 0 && (
-              <div className="text-center text-muted text-xs sm:text-sm md:text-base py-6 sm:py-8 md:py-10 col-span-full">
+              <div className="text-center text-muted text-xs sm:text-sm md:text-base py-6 sm:py-8 md:py-10 w-full">
                 All available staff have joined your team. Check back later!
               </div>
             )}
