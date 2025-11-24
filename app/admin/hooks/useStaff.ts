@@ -280,7 +280,6 @@ export function useStaff(industryId: string) {
       serviceSpeed,
     };
 
-    console.log('Saving staff preset with data:', presetData);
 
     setPresetOperation('saving');
     const result = await upsertStaffPreset(presetData);

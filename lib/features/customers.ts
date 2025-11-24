@@ -220,7 +220,7 @@ export function tickCustomer(customer: Customer): Customer {
       const nextStatus = customer.patienceLeft <= 1 ? CustomerStatus.LeavingAngry : CustomerStatus.Waiting;
       // Keep the facing direction from waiting position (or default to 'right' for backward compatibility)
       const waitingFacing = customer.waitingPositionFacing || 'right';
-      
+
       // Ensure facing direction is set correctly (in case it was overwritten)
       const finalFacingDirection = nextStatus === CustomerStatus.Waiting ? waitingFacing : customer.facingDirection;
 
@@ -229,6 +229,7 @@ export function tickCustomer(customer: Customer): Customer {
         patienceLeft: Math.max(0, customer.patienceLeft - 1),
         status: nextStatus,
         facingDirection: finalFacingDirection,
+        ...(nextStatus === CustomerStatus.LeavingAngry && { leavingTicks: 0 }), // Initialize animation timer
       };
     
     case CustomerStatus.WalkingToRoom:

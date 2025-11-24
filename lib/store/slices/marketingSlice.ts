@@ -105,7 +105,7 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
                 const newProgress = currentProgress + conversionRate;
 
                 // If progress reaches 100% or more, convert immediately
-                if (newProgress >= 100 && store.spawnCustomer && store.addCustomers && store.applyExpChange && store.recordEventRevenue) {
+                if (newProgress >= 100 && store.spawnCustomer && store.addCustomers && store.recordEventRevenue) {
                   // Calculate how many customers to spawn
                   const customersToSpawn = Math.floor(newProgress / 100);
 
@@ -115,9 +115,7 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
                     if (customer) {
                       store.addCustomers([customer]);
 
-                      // Apply customer rewards
-                      store.applyExpChange(1); // Skill level gain per happy customer
-
+                      // Note: EXP is awarded when customer completes service and leaves happy (handled in mechanics.ts)
                       // Record revenue
                       if (customer.service && store.recordEventRevenue) {
                         store.recordEventRevenue(customer.service.price, `Customer: ${customer.service.name}`);

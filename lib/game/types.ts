@@ -30,6 +30,7 @@ export interface BusinessStats {
   serviceRevenueMultiplier: number;
   serviceRevenueScale?: number;
   conversionRate?: number; // How much progress each lead adds toward customer conversion
+  failureRate?: number; // Base failure rate percentage (0-100)
 }
 
 export interface MapWall {

@@ -62,7 +62,6 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
       // Set flag if staff role sets one
       if (candidate.setsFlag) {
         store.setFlag(candidate.setsFlag, true);
-        // console.log(`[Flag System] Flag "${candidate.setsFlag}" set to true by hiring staff "${candidate.name}" (${candidate.role})`);
       }
 
       const replacement = createRandomStaffForIndustry(industryId, candidate.roleId);
@@ -116,7 +115,6 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
       // Unset flag if staff role sets one
       if (staffToFire.setsFlag) {
         store.setFlag(staffToFire.setsFlag, false);
-        // console.log(`[Flag System] Flag "${staffToFire.setsFlag}" set to false by firing staff "${staffToFire.name}" (${staffToFire.role})`);
       }
 
       // Create a replacement candidate and add to available staff

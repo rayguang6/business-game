@@ -111,10 +111,12 @@ export const EXP_PER_LEVEL = 100;
 
 // Helper functions for EXP/level system
 export function getLevel(exp: number, expPerLevel: number = EXP_PER_LEVEL): number {
+  if (!Number.isFinite(exp) || exp < 0) return 0;
   return Math.floor(exp / expPerLevel);
 }
 
 export function getLevelProgress(exp: number, expPerLevel: number = EXP_PER_LEVEL): number {
+  if (!Number.isFinite(exp) || exp < 0) return 0;
   return exp % expPerLevel;
 }
 
