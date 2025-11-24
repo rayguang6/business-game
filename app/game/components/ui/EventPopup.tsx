@@ -3,6 +3,7 @@ import { useGameStore } from '../../../../lib/store/gameStore';
 import { GameEvent, GameEventChoice, GameEventEffect, EventEffectType } from '../../../../lib/types/gameEvents';
 import { EffectType, GameMetric } from '@/lib/game/effectManager';
 import type { ResolvedEventOutcome, ResolvedDelayedOutcome } from '@/lib/store/slices/eventSlice';
+import GameButton from '@/app/components/ui/GameButton';
 
 const getEffectIcon = (type: GameEventEffect['type']) => {
   switch (type) {
@@ -350,27 +351,27 @@ const EventPopup: React.FC = () => {
                 </ul>
               </div>
             )}
-            <button
-              type="button"
-              onClick={() => {
-                if (outcomeTimeoutRef.current) {
-                  clearTimeout(outcomeTimeoutRef.current);
-                  outcomeTimeoutRef.current = null;
-                }
-                if (outcomeIntervalRef.current) {
-                  clearInterval(outcomeIntervalRef.current);
-                  outcomeIntervalRef.current = null;
-                }
-                setOutcomeCountdown(null);
-                clearLastEventOutcome();
-              }}
-              className="mt-1.5 md:mt-3 w-full bg-gradient-to-b from-[var(--game-primary-light)] via-[var(--game-primary)] to-[var(--game-primary-dark)] hover:from-[var(--game-primary)] hover:via-[var(--game-primary-dark)] hover:to-[var(--game-primary-dark)] text-white text-[10px] md:text-sm font-semibold py-1.5 md:py-2 rounded border-2 border-black/20 shadow-lg hover:shadow-xl transition-all duration-200"
-              style={{
-                textShadow: '0 1px 2px rgba(0,0,0,0.8)'
-              }}
-            >
-              Continue{outcomeCountdown !== null && outcomeCountdown > 0 ? ` (${outcomeCountdown}s)` : ''}
-            </button>
+            <div className="mt-1.5 md:mt-3">
+              <GameButton
+                color="blue"
+                fullWidth
+                size="sm"
+                onClick={() => {
+                  if (outcomeTimeoutRef.current) {
+                    clearTimeout(outcomeTimeoutRef.current);
+                    outcomeTimeoutRef.current = null;
+                  }
+                  if (outcomeIntervalRef.current) {
+                    clearInterval(outcomeIntervalRef.current);
+                    outcomeIntervalRef.current = null;
+                  }
+                  setOutcomeCountdown(null);
+                  clearLastEventOutcome();
+                }}
+              >
+                Continue{outcomeCountdown !== null && outcomeCountdown > 0 ? ` (${outcomeCountdown}s)` : ''}
+              </GameButton>
+            </div>
           </div>
         </div>
       </div>

@@ -151,14 +151,14 @@ export function LeadProgress({ position = 'bottom-right' }: LeadProgressProps) {
   const isNearComplete = progressPercent >= 90 && progressPercent < 100;
 
   const positionClasses = position === 'bottom-right'
-    ? 'bottom-2 right-2 md:bottom-4 md:right-4'
+    ? 'bottom-1 right-1 sm:bottom-2 sm:right-2 md:bottom-4 md:right-4'
     : position === 'bottom-left'
-    ? 'bottom-2 left-2 md:bottom-4 md:left-4'
-    : 'top-20 left-4';
+    ? 'bottom-1 left-1 sm:bottom-2 sm:left-2 md:bottom-4 md:left-4'
+    : 'top-16 sm:top-20 left-2 sm:left-4';
 
   return (
     <div className={`absolute ${positionClasses} z-40 pointer-events-none`}>
-      <div className="relative bg-black/60 backdrop-blur-lg text-white px-2 py-1.5 md:px-4 md:py-3.5 rounded-lg md:rounded-xl shadow-2xl border border-blue-500/30 min-w-[120px] md:min-w-[190px] overflow-hidden">
+      <div className="relative bg-black/60 backdrop-blur-lg text-white px-1.5 py-1 sm:px-2 sm:py-1.5 md:px-4 md:py-3.5 rounded-md sm:rounded-lg md:rounded-xl shadow-2xl border border-blue-500/30 min-w-[100px] sm:min-w-[120px] md:min-w-[190px] overflow-hidden">
         {/* Animated background glow */}
         <div 
           className={`absolute inset-0 transition-opacity duration-500 ${
@@ -214,7 +214,7 @@ export function LeadProgress({ position = 'bottom-right' }: LeadProgressProps) {
             style={{ zIndex: 50 }}
           >
             <div 
-              className="text-[9px] md:text-xs font-bold text-green-300"
+              className="text-micro sm:text-caption md:text-xs font-bold text-green-300"
               style={{
                 textShadow: '0 0 4px rgba(34, 197, 94, 0.8), 0 2px 4px rgba(0,0,0,0.8)',
                 animation: 'float-up 1.5s ease-out forwards',
@@ -230,7 +230,7 @@ export function LeadProgress({ position = 'bottom-right' }: LeadProgressProps) {
           {feedbackItems.map((item, index) => (
             <div
               key={item.id}
-              className="absolute text-[9px] md:text-xs font-bold text-blue-300 pointer-events-none"
+              className="absolute text-micro sm:text-caption md:text-xs font-bold text-blue-300 pointer-events-none"
               style={{
                 top: 'calc(50% + 8px)',
                 left: '50%',
@@ -247,23 +247,23 @@ export function LeadProgress({ position = 'bottom-right' }: LeadProgressProps) {
         {/* Content */}
         <div className="relative z-10">
           {/* Header */}
-          <div className="mb-1.5 md:mb-3.5">
-            <div className="flex items-center gap-1 md:gap-2 mb-0.5 md:mb-1.5">
-              <span className="text-xs md:text-base drop-shadow-[0_0_4px_rgba(59,130,246,0.6)]">👥</span>
-              <span className="text-[9px] md:text-xs font-bold text-blue-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+          <div className="mb-0.5 sm:mb-1 md:mb-3.5">
+            <div className="flex items-center gap-0.5 sm:gap-0.5 md:gap-2 mb-0.5 md:mb-1.5">
+              <span className="text-micro sm:text-ultra-sm md:text-base drop-shadow-[0_0_4px_rgba(59,130,246,0.6)]">👥</span>
+              <span className="text-micro sm:text-caption md:text-xs font-bold text-blue-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
                 Lead Conversion
               </span>
             </div>
-            <div className="text-[8px] md:text-[10px] text-gray-300 pl-4 md:pl-6 leading-tight">
+            <div className="text-micro sm:text-micro md:text-[10px] text-gray-300 pl-2 sm:pl-3 md:pl-6 leading-tight">
               {conversionRate.toFixed(1)}% conversion rate
             </div>
           </div>
 
           {/* Progress Bar */}
           <div className="relative mb-0.5 md:mb-1">
-            <div className="w-full bg-gray-800/60 rounded-full h-2 md:h-3 overflow-hidden border border-gray-700/50">
+            <div className="w-full bg-gray-800/60 rounded-full h-1.5 sm:h-2 md:h-3 overflow-hidden border border-gray-700/50">
               <div
-                className={`h-2 md:h-3 rounded-full transition-all duration-500 ease-out relative overflow-hidden ${
+                className={`h-1.5 sm:h-2 md:h-3 rounded-full transition-all duration-500 ease-out relative overflow-hidden ${
                   isComplete ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gradient-to-r from-blue-400 to-blue-600'
                 } ${isNearComplete ? 'animate-[pulse-bar_1s_ease-in-out_infinite]' : ''}`}
                 style={{
@@ -288,7 +288,7 @@ export function LeadProgress({ position = 'bottom-right' }: LeadProgressProps) {
             
             {/* Percentage overlay */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <span className={`text-[8px] md:text-[11px] font-bold ${
+              <span className={`text-micro sm:text-micro md:text-[11px] font-bold ${
                 isComplete ? 'text-green-200' : 'text-white'
               }`} style={{
                 textShadow: '0 1px 3px rgba(0,0,0,0.95), 0 0 8px rgba(59, 130, 246, 0.5)',
@@ -300,8 +300,8 @@ export function LeadProgress({ position = 'bottom-right' }: LeadProgressProps) {
 
           {/* Completion indicator */}
           {isComplete && (
-            <div className="mt-1 md:mt-2.5 text-center">
-              <div className="text-[8px] md:text-xs text-green-300 font-bold animate-pulse drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]">
+            <div className="mt-0.5 sm:mt-0.5 md:mt-2.5 text-center">
+              <div className="text-micro sm:text-ultra-sm md:text-xs text-green-300 font-bold animate-pulse drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]">
                 ✓ Ready to close!
               </div>
             </div>

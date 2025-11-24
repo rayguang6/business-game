@@ -11,6 +11,7 @@ import type { IndustryId } from '@/lib/game/types';
 import { Card } from '@/app/components/ui/Card';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
 import { Modal } from '@/app/components/ui/Modal';
+import GameButton from '@/app/components/ui/GameButton';
 
 const formatSeconds = (seconds: number): string => {
   const clamped = Math.max(0, Math.floor(seconds));
@@ -144,14 +145,14 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, on
   }, []);
 
   return (
-    <Card className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h4 className="text-primary font-semibold">{campaign.name}</h4>
-          <p className="text-secondary text-sm">{campaign.description}</p>
+    <Card className="space-y-1.5 sm:space-y-2 md:space-y-3">
+      <div className="flex items-center justify-between gap-1.5 sm:gap-2 md:gap-3">
+        <div className="flex-1 min-w-0">
+          <h4 className="text-primary font-semibold text-heading-sm truncate">{campaign.name}</h4>
+          <p className="text-secondary text-caption sm:text-label line-clamp-2 mt-0.5">{campaign.description}</p>
         </div>
-        <div className="text-right text-sm">
-          <div className="font-semibold" style={{ color: 'var(--game-secondary)' }}>
+        <div className="text-right flex-shrink-0">
+          <div className="font-semibold text-caption sm:text-label" style={{ color: 'var(--game-secondary)' }}>
             {(() => {
               const costParts: string[] = [];
               if (needsCash) costParts.push(`$${campaign.cost.toLocaleString()}`);
@@ -168,7 +169,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, on
         onClose={handleCloseModal}
         maxWidth="sm"
       >
-        <div className="text-center text-secondary text-sm leading-relaxed space-y-1">
+        <div className="text-center text-secondary text-body-sm leading-relaxed space-y-1">
           <h3 className="text-primary font-semibold mb-3">Requirements</h3>
           {requirementDescriptions.map((desc, idx) => (
             <div key={idx}>{desc}</div>
@@ -176,7 +177,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, on
         </div>
       </Modal>
 
-      <div className="flex flex-wrap items-center gap-3 text-xs text-secondary">
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:gap-3 text-caption sm:text-label text-secondary">
         {descriptions.every((item) => !item.text) ? (
           <span className="text-muted">No stat changes</span>
         ) : (
@@ -189,14 +190,12 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, on
       </div>
 
       <div className="relative">
-        <button
+        <GameButton
           onClick={() => onLaunch(campaign.id)}
           disabled={buttonDisabled}
-          className={`w-full py-3 rounded-lg text-sm font-semibold transition-colors min-h-[44px] ${
-            buttonDisabled
-              ? 'bg-[var(--bg-tertiary)] text-tertiary cursor-not-allowed border-2 border-[var(--border-primary)]'
-              : 'bg-[var(--success)] hover:bg-[var(--success-dark)] text-white border-2 border-[var(--success)]'
-          }`}
+          color={buttonDisabled ? 'gold' : 'green'}
+          fullWidth
+          size="sm"
         >
           {isOnCooldown
             ? `Cooldown: ${formatSeconds(cooldownRemaining)}`
@@ -205,11 +204,11 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, on
               : canAfford
                 ? 'Launch Campaign'
                 : needText}
-        </button>
+        </GameButton>
         {requirementDescriptions.length > 0 && !requirementsMet && !isOnCooldown && canAfford && (
           <button
             onClick={handleRequirementsClick}
-            className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--bg-tertiary)] hover:bg-[var(--game-primary)] text-white rounded-full text-xs font-bold shadow-md transition-colors flex items-center justify-center z-10 min-w-[20px] min-h-[20px]"
+            className="absolute -top-0.5 sm:-top-1 -right-0.5 sm:-right-1 w-4 h-4 sm:w-5 sm:h-5 bg-[var(--bg-tertiary)] hover:bg-[var(--game-primary)] text-white rounded-full text-micro sm:text-caption font-bold shadow-md transition-colors flex items-center justify-center z-10"
             title="Click to see requirements"
           >
             ?
@@ -247,21 +246,21 @@ export function MarketingTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-4 md:space-y-6">
       <div>
         <SectionHeading>Marketing Campaigns</SectionHeading>
-        <p className="text-secondary text-sm">
+        <p className="text-secondary text-xs sm:text-sm">
           Spend cash to run time-limited campaigns that boost demand and reputation.
         </p>
       </div>
 
       {message && (
         <Card variant="info" className="border-[var(--info)] bg-[var(--info)]/10">
-          <p className="text-secondary text-sm">{message}</p>
+          <p className="text-secondary text-xs sm:text-sm">{message}</p>
         </Card>
       )}
 
-      <div className="space-y-3">
+      <div className="space-y-2 sm:space-y-3">
         {availableCampaigns.map((campaign) => {
           const needsCash = campaign.cost > 0;
           const needsTime = campaign.timeCost !== undefined && campaign.timeCost > 0;

@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { useGameStore } from "../../../../lib/store/gameStore";
 import { getWinCondition } from "../../../../lib/game/config";
 import { DEFAULT_INDUSTRY_ID, IndustryId } from "../../../../lib/game/types";
+import GameButton from '@/app/components/ui/GameButton';
 
 const GameOverPopup: React.FC = () => {
   const isGameOver = useGameStore((state) => state.isGameOver);
@@ -77,16 +78,14 @@ const GameOverPopup: React.FC = () => {
           }`}>{title}</h2>
           <p className="text-gray-700 mb-8 text-lg">{message}</p>
 
-          <button
+          <GameButton
+            color={color === 'green' ? 'green' : 'blue'}
+            fullWidth
+            size="sm"
             onClick={handleGoHome}
-            className={`w-full font-bold py-3 px-6 rounded-lg transition duration-200 text-lg ${
-              color === 'green' 
-                ? 'bg-green-600 hover:bg-green-700 text-white' 
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
-            }`}
           >
             🏠 Back to Home
-          </button>
+          </GameButton>
         </div>
       </div>
     </div>

@@ -18,6 +18,6 @@ export interface TabConfig {
 export const TAB_CONFIGS: TabConfig[] = [
   { id: 'upgrades', label: 'Upgrades', icon: '/images/icons/upgrades.png', activeColor: 'text-purple-600' },
   { id: 'home', label: 'Home', icon: '/images/icons/home.png', activeColor: 'text-yellow-600', isHome: true },
-  { id: 'marketing', label: 'Marketing', icon: '/images/icons/marketing.png', activeColor: 'text-red-600' },
+  { id: 'marketing', label: 'Marketing', icon: '/images/icons/marketing.png', activeColor: 'text-green-600' },
 ];
 
