@@ -31,14 +31,14 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
   return (
     <>
       {/* Main TopBar Container */}
-      <div className="flex items-center px-2 md:px-4 py-1 md:py-2 h-14 md:h-16 mt-4">
+      <div className="flex items-center px-0.5 sm:px-1 md:px-4 py-0.5 sm:py-1 md:py-2 h-10 sm:h-12 md:h-16 mt-1 sm:mt-2 md:mt-4">
         
         {/* Left Section: Industry Details and Progress (40% width) */}
-        <div className="flex items-center w-[40%] pr-1 md:pr-2">
+        <div className="flex items-center w-[40%] pr-0.5 sm:pr-1 md:pr-2">
           {/* Circular Industry Image */}
           <button
             onClick={openSettings}
-            className="relative w-12 h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-r from-purple-400 to-purple-600 p-0.5 md:p-1 hover:opacity-80 transition-opacity flex-shrink-0 -mr-3 md:-mr-4 z-10"
+            className="relative w-6 h-6 sm:w-8 sm:h-8 md:w-16 md:h-16 rounded-full bg-gradient-to-r from-purple-400 to-purple-600 p-0.5 sm:p-0.5 md:p-1 hover:opacity-80 transition-opacity flex-shrink-0 -mr-1.5 sm:-mr-2 md:-mr-4 z-10"
           >
             <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
               {selectedIndustry.image ? (
@@ -50,7 +50,7 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="text-lg md:text-2xl">{selectedIndustry.icon}</div>
+                <div className="text-xs sm:text-sm md:text-2xl">{selectedIndustry.icon}</div>
               )}
             </div>
           </button>
@@ -58,22 +58,22 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
           {/* Industry Banner and Progress */}
           <div className="flex flex-col flex-1 min-w-0">
             {/* Industry Banner */}
-            <div className="flex items-center bg-gradient-to-r from-blue-600 to-blue-600/40 py-1 pl-4 md:pl-6 pr-1">
-              <div className="text-white mr-1 md:mr-1.5 flex-shrink-0 text-xs md:text-sm">{selectedIndustry.icon}</div>
-              <span className="text-white font-bold text-xs md:text-sm truncate">{selectedIndustry.name}</span>
-              <span className="text-white/90 font-semibold text-[10px] md:text-xs ml-1.5 md:ml-2 flex-shrink-0">(Stage 1)</span>
+            <div className="flex items-center bg-gradient-to-r from-blue-600 to-blue-600/40 py-0.5 sm:py-0.5 md:py-1 pl-1.5 sm:pl-2 md:pl-6 pr-0.5 sm:pr-1">
+              <div className="text-white mr-0.5 sm:mr-0.5 md:mr-1.5 flex-shrink-0 text-ultra-sm sm:text-caption md:text-sm">{selectedIndustry.icon}</div>
+              <span className="text-white font-bold text-ultra-sm sm:text-caption md:text-sm truncate">{selectedIndustry.name}</span>
+              <span className="text-white/90 font-semibold text-micro sm:text-ultra-sm md:text-xs ml-0.5 sm:ml-1 md:ml-2 flex-shrink-0">(Stage 1)</span>
             </div>
             
             {/* Progress Section */}
-            <div className="flex items-center gap-1 md:gap-1.5 bg-black/45 py-1 pl-4 md:pl-6">
-              <span className="text-yellow-400 text-[11px] md:text-xs font-bold flex-shrink-0 whitespace-nowrap">Month {currentMonth}</span>
-              <div className="w-20 md:w-28 bg-gray-600 rounded-full h-1.5 md:h-2 overflow-hidden flex-shrink-0">
+            <div className="flex items-center gap-0.5 sm:gap-0.5 md:gap-1.5 bg-black/45 py-0.5 sm:py-0.5 md:py-1 pl-1.5 sm:pl-2 md:pl-6">
+              <span className="text-yellow-400 text-micro sm:text-caption md:text-xs font-bold flex-shrink-0 whitespace-nowrap">Month {currentMonth}</span>
+              <div className="w-10 sm:w-16 md:w-28 bg-gray-600 rounded-full h-0.5 sm:h-1 md:h-2 overflow-hidden flex-shrink-0">
                 <div 
                   className="bg-green-500 h-full rounded-full transition-all duration-300"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
-              <div className="text-white text-[10px] md:text-xs leading-none font-bold flex-shrink-0 whitespace-nowrap">
+              <div className="text-white text-micro sm:text-ultra-sm md:text-xs leading-none font-bold flex-shrink-0 whitespace-nowrap">
                 {roundDurationSeconds - Math.floor(gameTime % roundDurationSeconds)}s
               </div>
             </div>
@@ -81,7 +81,7 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
         </div>
 
         {/* Right Section: Key Metrics (60% width) */}
-        <div className="flex-1 pl-1 md:pl-2 min-w-0 mt-3">
+        <div className="flex-1 pl-0.5 sm:pl-0.5 md:pl-2 min-w-0 mt-1 sm:mt-1.5 md:mt-3">
           <KeyMetrics />
         </div>
       </div>

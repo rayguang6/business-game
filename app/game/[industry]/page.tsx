@@ -20,6 +20,7 @@ import { TierMultiplierDebug } from '@/app/game/components/ui/TierMultiplierDebu
 import { useRandomEventTrigger } from '@/hooks/useRandomEventTrigger';
 import Image from 'next/image';
 import { IndustryId } from '@/lib/game/types';
+import GameButton from '@/app/components/ui/GameButton';
 import {
   loadGlobalSimulationSettings,
   loadIndustryContent,
@@ -270,50 +271,84 @@ export default function GamePage() {
       {/* Desktop: Right Section - Navigation & Tabs (50% width) */}
       <div className="relative z-20 bg-gray-900 border-t-2 md:border-t-0 md:border-l-2 border-gray-700 flex-1 md:h-full md:w-1/2 flex flex-col overflow-hidden">
         {/* Tab Content Area */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4">
           {activeTab === 'home' && <HomeTab />}
           {activeTab === 'upgrades' && <UpgradesTab />}
           {activeTab === 'marketing' && <MarketingTab />}
         </div>
         
-        {/* Bottom Navigation - Contained within right side only */}
-        <div className="relative z-30 bg-gray-900 border-t-2 border-gray-700 px-6 py-3 flex-shrink-0">
-          <div className="flex items-center justify-around">
-            {TAB_CONFIGS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as TabType)}
-                className={`relative flex flex-col items-center transition-all duration-200 
-                  ${activeTab === tab.id ? 'scale-110' : 'hover:scale-105'}`}
-              >
-                {/* Icon with subtle active state */}
-                <div className={`p-1 rounded-xl transition-all duration-200 ${
-                  tab.isHome 
-                    ? 'bg-gradient-to-br from-yellow-200 to-yellow-400 p-2 rounded-full' 
-                    : activeTab === tab.id 
-                      ? 'bg-gray-100/50 rounded-full' 
-                      : ''
-                }`}>
-                  <Image 
-                    src={tab.icon} 
-                    alt={tab.label}
-                    width={tab.isHome ? 48 : 32}
-                    height={tab.isHome ? 48 : 32}
-                    className={`mx-auto transition-all duration-200 ${
-                      activeTab === tab.id && !tab.isHome 
-                        ? 'brightness-110 contrast-110' 
-                        : ''
+        {/* Bottom Navigation - SurvivorIO style full-width sections */}
+        <div className="relative z-30 bg-black/90 border-t border-gray-800 flex-shrink-0">
+          <div className="flex h-full">
+            {TAB_CONFIGS.map((tab) => {
+              const isActive = activeTab === tab.id;
+              const tabColor = tab.activeColor === 'text-purple-600' ? '#9333ea' : 
+                              tab.activeColor === 'text-yellow-600' ? '#eab308' : 
+                              '#10b981';
+              
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as TabType)}
+                  className={`relative flex-1 flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 md:py-3 transition-all duration-200 group
+                    ${isActive ? '' : 'hover:bg-gray-900/50'}`}
+                  style={isActive ? {
+                    backgroundColor: `${tabColor}15`,
+                    borderTop: `2px solid ${tabColor}`
+                  } : {}}
+                >
+                  {/* Active background glow */}
+                  {isActive && (
+                    <div 
+                      className="absolute inset-0 opacity-20"
+                      style={{
+                        background: `linear-gradient(to top, ${tabColor}40, transparent)`
+                      }}
+                    ></div>
+                  )}
+                  
+                  {/* Icon */}
+                  <div className="relative z-10">
+                    <Image 
+                      src={tab.icon} 
+                      alt={tab.label}
+                      width={32}
+                      height={32}
+                      className={`w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 transition-all duration-200 ${
+                        isActive ? 'brightness-110 drop-shadow-[0_0_8px_currentColor]' : ''
+                      }`}
+                      style={isActive ? {
+                        filter: `drop-shadow(0 0 8px ${tabColor})`
+                      } : {}}
+                    />
+                  </div>
+                  
+                  {/* Label */}
+                  <span 
+                    className={`text-micro sm:text-caption font-bold transition-all duration-200 relative z-10 ${
+                      isActive ? '' : 'text-gray-300'
                     }`}
-                  />
-                </div>
-                
-                {/* Label */}
-                <span className={`text-xs font-semibold mt-1 
-                  ${activeTab === tab.id ? tab.activeColor : 'text-gray-300'}`}>
-                  {tab.label}
-                </span>
-              </button>
-            ))}
+                    style={isActive ? {
+                      color: tabColor,
+                      textShadow: `0 0 8px ${tabColor}60`
+                    } : {}}
+                  >
+                    {tab.label}
+                  </span>
+                  
+                  {/* Active indicator bar at bottom */}
+                  {isActive && (
+                    <div 
+                      className="absolute bottom-0 left-0 right-0 h-0.5"
+                      style={{
+                        background: `linear-gradient(to right, transparent, ${tabColor}, transparent)`,
+                        boxShadow: `0 0 8px ${tabColor}`
+                      }}
+                    ></div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -364,18 +399,22 @@ export default function GamePage() {
             </div>
             
             <div className="flex flex-col gap-2">
-              <button
+              <GameButton
+                color="red"
+                fullWidth
+                size="sm"
                 onClick={quitGame}
-                className="w-full text-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
               >
                 Quit Game (Back to Home)
-              </button>
-              <button
+              </GameButton>
+              <GameButton
+                color="gold"
+                fullWidth
+                size="sm"
                 onClick={closeSettings}
-                className="w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Close & Resume
-              </button>
+              </GameButton>
             </div>
           </div>
         </div>

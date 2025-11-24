@@ -127,14 +127,14 @@ export function KeyMetrics() {
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-y-1 md:gap-y-1 gap-x-3 md:gap-x-3">
+    <div className="grid grid-cols-2 gap-y-0.5 sm:gap-y-0.5 md:gap-y-1 gap-x-1 sm:gap-x-1.5 md:gap-x-3">
       {metricsData.map((metric, index) => (
         <div 
           key={index} 
-          className="flex items-center bg-black/65 py-1 px-1 md:px-1.5 rounded relative w-full min-w-0"
+          className="flex items-center bg-black/65 py-0.5 sm:py-0.5 md:py-1 px-0.5 sm:px-0.5 md:px-1.5 rounded relative w-full min-w-0"
         >
           {/* Icon positioned outside from the left */}
-          <div className="absolute -left-2 md:-left-2 top-1/2 transform -translate-y-1/2 w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center z-10 overflow-hidden">
+          <div className="absolute -left-1 sm:-left-1.5 md:-left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 md:w-6 md:h-6 rounded-full flex items-center justify-center z-10 overflow-hidden">
             {metric.image ? (
               <Image 
                 src={metric.image} 
@@ -144,13 +144,13 @@ export function KeyMetrics() {
                 className="w-full h-full object-cover rounded-full"
               />
             ) : (
-              <span className="text-white text-xs md:text-sm">{metric.icon}</span>
+              <span className="text-white text-micro sm:text-ultra-sm md:text-sm">{metric.icon}</span>
             )}
           </div>
 
-          <div className="flex flex-col min-w-0 flex-1 pl-1.5 md:pl-2">
+          <div className="flex flex-col min-w-0 flex-1 pl-0.5 sm:pl-1 md:pl-2">
             <span 
-              className={`text-[10px] md:text-xs font-semibold ${metric.color} truncate leading-tight`}
+              className={`text-caption font-semibold ${metric.color} truncate`}
               style={{
                 textShadow: '0 0 2px rgba(0, 0, 0, 0.95), 0 1px 1px rgba(0, 0, 0, 0.8), 0 -1px 1px rgba(0, 0, 0, 0.8)'
               }}
@@ -158,7 +158,7 @@ export function KeyMetrics() {
               {metric.label}
             </span>
             <span 
-              className="text-white text-[11px] md:text-sm font-bold truncate leading-tight"
+              className="text-white text-label font-bold truncate"
               style={{
                 textShadow: '0 0 3px rgba(0, 0, 0, 1), 0 1px 2px rgba(0, 0, 0, 0.9), 0 -1px 2px rgba(0, 0, 0, 0.9)'
               }}
