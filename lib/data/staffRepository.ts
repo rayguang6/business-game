@@ -222,7 +222,6 @@ export async function upsertStaffPreset(preset: {
     service_speed_override: preset.serviceSpeed ?? null,
   };
 
-  console.log('Upserting staff preset with payload:', payload);
 
   const { error } = await supabase
     .from('staff_presets')

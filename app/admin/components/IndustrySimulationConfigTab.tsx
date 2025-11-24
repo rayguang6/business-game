@@ -343,6 +343,11 @@ export function IndustrySimulationConfigTab({
               <label className="block text-xs text-slate-400 mb-1">Lead Conversion Rate</label>
               <input type="number" min="0.1" step="0.1" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getStats().conversionRate ?? 10} onChange={(e) => updateStats({ conversionRate: Number(e.target.value) })} />
             </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Failure Rate (%)</label>
+              <input type="number" min="0" max="100" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getStats().failureRate ?? 0} onChange={(e) => updateStats({ failureRate: Number(e.target.value) })} />
+              <p className="text-xs text-slate-500 mt-1">Base failure rate percentage (0-100%)</p>
+            </div>
           </div>
         </div>
 

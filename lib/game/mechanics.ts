@@ -137,6 +137,7 @@ interface ProcessCustomersParams {
     [GameMetric.ServiceRevenueMultiplier]: number;
     [GameMetric.ServiceRevenueFlatBonus]: number;
     serviceRevenueScale: number; // Not in GameMetric enum (config value, not an effect)
+    [GameMetric.FailureRate]: number;
   };
   industryId: string;
 }
@@ -376,15 +377,28 @@ function processCustomersForTick({
     // If customer is leaving happy, check failure rate and add revenue and skill level
     if (updatedCustomer.status === CustomerStatus.WalkingOutHappy) {
       // Check failure rate - customer might fail and leave angry instead
-      const failureRate = effectManager.calculate(GameMetric.FailureRate, 0);
-      const failed = Math.random() * 100 < failureRate;
+      const failed = Math.random() * 100 < gameMetrics.failureRate;
 
       if (failed) {
         // Service failed - customer becomes angry and leaves without revenue
         updatedCustomer.status = CustomerStatus.LeavingAngry;
+        updatedCustomer.leavingTicks = 0; // Initialize leaving animation
+
+        // Immediately deduct EXP when customer becomes angry
+        // Handle NaN/undefined properly
+        const expLossRaw = stats.expLossPerAngryCustomer;
+        const expLoss = (typeof expLossRaw === 'number' && !Number.isNaN(expLossRaw)) ? expLossRaw : 1;
+        const oldExp = metricsAccumulator.exp;
+        const newExp = Math.max(0, oldExp - expLoss);
+        
+        metricsAccumulator = {
+          ...metricsAccumulator,
+          exp: newExp,
+        };
+
         // Keep customer in game for exit animation (don't continue)
         updatedCustomers.push(updatedCustomer);
-        continue; // Skip to next customer (no revenue, no exp)
+        continue; // Skip to next customer (no revenue already handled)
       }
 
       // Service succeeded - customer leaves happy with revenue and exp
@@ -394,16 +408,21 @@ function processCustomersForTick({
       const serviceRevenue = Math.max(0, baseServiceValue) * serviceRevenueMultiplier * serviceRevenueScale;
 
       // Add revenue
-      const newCash = metricsAccumulator.cash + serviceRevenue;
+      const oldCash = metricsAccumulator.cash;
+      const newCash = oldCash + serviceRevenue;
 
       // Customers always leave satisfied, so apply the base exp gain
       // EXP is modified directly (like cash), not through effect multipliers
-      const expGain = stats.expGainPerHappyCustomer;
+      // Handle NaN/undefined properly
+      const expGainRaw = stats.expGainPerHappyCustomer;
+      const expGain = (typeof expGainRaw === 'number' && !Number.isNaN(expGainRaw)) ? expGainRaw : 1;
+      const oldExp = metricsAccumulator.exp;
+      const newExp = oldExp + expGain;
 
       metricsAccumulator = {
         ...metricsAccumulator,
         cash: newCash,
-        exp: metricsAccumulator.exp + expGain,
+        exp: newExp,
         totalRevenue: metricsAccumulator.totalRevenue + serviceRevenue,
       };
       revenueAccumulator += serviceRevenue;
@@ -412,27 +431,17 @@ function processCustomersForTick({
         category: RevenueCategory.Customer,
         label: updatedCustomer.service?.name ?? 'Dental service',
       });
+            
       // Play sound effect for service finished
       audioManager.playSoundEffect('serviceFinished');
       // Customer leaves happy - remove from game (don't push to updatedCustomers)
       continue; // Skip to next customer
     }
 
-    // If customer is leaving angry, deduct skill level and keep in game for exit animation
-    if (customer.status !== CustomerStatus.LeavingAngry && updatedCustomer.status === CustomerStatus.LeavingAngry) {
-      // Customer just became angry - deduct exp and keep in game for exit animation
-      const expLoss = stats.expLossPerAngryCustomer;
-      metricsAccumulator = {
-        ...metricsAccumulator,
-        exp: Math.max(0, metricsAccumulator.exp - expLoss),
-      };
-      updatedCustomers.push(updatedCustomer);
-      continue; // Skip to next customer
-    }
-
     // If customer is leaving angry, keep in game for exit animation
     if (customer.status === CustomerStatus.LeavingAngry) {
       const leavingTicks = (customer.leavingTicks ?? 0) + 1;
+
       if (leavingTicks >= stats.leavingAngryDurationTicks) {
         // Exit animation complete - remove from game
         continue; // Skip to next customer
@@ -584,6 +593,7 @@ export function tickOnce(state: TickInput): TickResult {
     ),
     serviceRevenueScale: baseStats.serviceRevenueScale ?? 1,
     conversionRate: effectManager.calculate(GameMetric.ConversionRate, baseStats.conversionRate ?? 10),
+    failureRate: effectManager.calculate(GameMetric.FailureRate, baseStats.failureRate ?? 0),
     monthlyExpenses: effectManager.calculate(
       GameMetric.MonthlyExpenses,
       getMonthlyBaseExpenses(industryId),
@@ -643,8 +653,6 @@ export function tickOnce(state: TickInput): TickResult {
             ...customer,
             service: selectedService,
           }];
-
-          console.log(`[Lead System] Lead converted to customer! Progress reached 100% (${gameMetrics.conversionRate}% per lead)`);
         } else {
           console.warn(`[Lead System] No services available for customer conversion`);
         }

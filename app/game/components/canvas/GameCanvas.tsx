@@ -88,7 +88,7 @@ export function GameCanvas() {
     ),
     serviceRevenueFlatBonus: effectManager.calculate(GameMetric.ServiceRevenueFlatBonus, 0),
     serviceRevenueScale: businessStats.serviceRevenueScale ?? 1,
-    failureRate: effectManager.calculate(GameMetric.FailureRate, 0),
+    failureRate: effectManager.calculate(GameMetric.FailureRate, businessStats.failureRate ?? 0),
   }), [businessStats]);
 
   const [metrics, setMetrics] = useState(() => computeMetrics());
