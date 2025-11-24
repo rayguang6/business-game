@@ -40,11 +40,13 @@ const METRIC_LABELS: Record<GameMetric, string> = {
   [GameMetric.ServiceSpeedMultiplier]: 'Service Speed',
   [GameMetric.ServiceRooms]: 'Service Rooms',
   [GameMetric.Exp]: 'EXP',
+  [GameMetric.FailureRate]: 'Failure Rate',
   // [GameMetric.HappyProbability] removed - not used in game mechanics
   [GameMetric.MonthlyExpenses]: 'Monthly Expenses',
   [GameMetric.ServiceRevenueMultiplier]: 'Service Revenue Multiplier',
   [GameMetric.ServiceRevenueFlatBonus]: 'Service Revenue Bonus',
   [GameMetric.FreedomScore]: 'Freedom Score',
+  [GameMetric.ConversionRate]: 'Lead Conversion Rate',
   [GameMetric.GenerateLeads]: 'Generate Leads',
   // Tier-specific metrics
   [GameMetric.HighTierServiceRevenueMultiplier]: 'High-Tier Service Revenue',

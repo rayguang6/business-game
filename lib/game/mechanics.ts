@@ -48,14 +48,14 @@ import { findPath } from '@/lib/game/pathfinding';
 import { audioManager, AudioFx } from '@/lib/audio/audioManager';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
 
-interface TickSnapshot {
+// Input parameters for the tick function
+interface TickInput {
   gameTick: number;
   gameTime: number;
   currentMonth: number;
   customers: Customer[];
   leads: Lead[];
   leadProgress: number;
-  conversionRate: number;
   metrics: Metrics;
   monthlyRevenue: number;
   monthlyExpenses: number;
@@ -72,7 +72,29 @@ interface TickSnapshot {
   availableConditions?: any[];
 }
 
-type TickResult = Omit<TickSnapshot, 'industryId'>;
+// Output/result of the tick function (includes calculated conversionRate)
+interface TickResult {
+  gameTick: number;
+  gameTime: number;
+  currentMonth: number;
+  customers: Customer[];
+  leads: Lead[];
+  leadProgress: number;
+  conversionRate: number; // Always calculated and returned
+  metrics: Metrics;
+  monthlyRevenue: number;
+  monthlyExpenses: number;
+  monthlyRevenueDetails: RevenueEntry[];
+  monthlyOneTimeCosts: number;
+  monthlyOneTimeCostDetails: OneTimeCost[];
+  monthlyOneTimeCostsPaid: number;
+  monthlyHistory: MonthlyHistoryEntry[];
+  upgrades: Upgrades;
+  monthlyExpenseAdjustments: number;
+  flags?: Record<string, boolean>;
+  availableFlags?: any[];
+  availableConditions?: any[];
+}
 
 interface MonthTransitionParams {
   currentMonth: number;
@@ -464,7 +486,7 @@ interface MonthPreparationState {
 }
 
 function applyMonthTransitionIfNeeded(
-  state: TickSnapshot,
+  state: TickInput,
   industryId: string,
   nextGameTime: number,
 ): MonthPreparationState {
@@ -522,7 +544,7 @@ function processCustomersWithEffects(params: ProcessCustomersParams): ProcessCus
  * Pure tick processor: given the current store state, returns updated fields.
  * (produce next tick given current snapshot.)
  */
-export function tickOnce(state: TickSnapshot): TickResult {
+export function tickOnce(state: TickInput): TickResult {
   const industryId = (state.industryId ?? DEFAULT_INDUSTRY_ID) as IndustryId;
   // Adds 1 to gameTime each time the configured tick cadence has elapsed.
   const nextTick = state.gameTick + 1;
@@ -534,7 +556,6 @@ export function tickOnce(state: TickSnapshot): TickResult {
   let customers = [...state.customers];
   let leads = [...(state.leads || [])];
   let leadProgress = state.leadProgress || 0;
-  let conversionRate = state.conversionRate || 10;
   let metrics = { ...preparedMonth.metrics };
   let monthlyRevenue = preparedMonth.monthlyRevenue;
   let monthlyExpenses = preparedMonth.monthlyExpenses;
@@ -562,6 +583,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
       0,
     ),
     serviceRevenueScale: baseStats.serviceRevenueScale ?? 1,
+    conversionRate: effectManager.calculate(GameMetric.ConversionRate, baseStats.conversionRate ?? 10),
     monthlyExpenses: effectManager.calculate(
       GameMetric.MonthlyExpenses,
       getMonthlyBaseExpenses(industryId),
@@ -585,7 +607,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
       leads = [...leads, lead];
 
       // Each lead spawn contributes to conversion progress
-      leadProgress += conversionRate;
+      leadProgress += gameMetrics.conversionRate;
 
       // If progress reaches 100%, convert to a customer
       if (leadProgress >= 100) {
@@ -622,13 +644,13 @@ export function tickOnce(state: TickSnapshot): TickResult {
             service: selectedService,
           }];
 
-          console.log(`[Lead System] Lead converted to customer! Progress reached 100% (${conversionRate}% per lead)`);
+          console.log(`[Lead System] Lead converted to customer! Progress reached 100% (${gameMetrics.conversionRate}% per lead)`);
         } else {
           console.warn(`[Lead System] No services available for customer conversion`);
         }
 
-        // Reset progress after conversion
-        leadProgress = 0;
+        // Carry over remaining progress after conversion
+        leadProgress = leadProgress % 100;
       }
   }
 
@@ -670,7 +692,7 @@ export function tickOnce(state: TickSnapshot): TickResult {
     customers,
     leads,
     leadProgress,
-    conversionRate,
+    conversionRate: gameMetrics.conversionRate,
     metrics,
     monthlyRevenue,
     monthlyExpenses,
