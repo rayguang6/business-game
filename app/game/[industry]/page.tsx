@@ -247,8 +247,8 @@ export default function GamePage() {
           <TopBar onSettingsOpen={openSettings} />
         </div>
 
-        <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 z-30">
-          {/* Fullscreen toggle anchored bottom-left to stay out of TopBar's way */}
+        <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 z-30">
+          {/* Fullscreen toggle anchored bottom-right */}
           <FullscreenToggle targetId="game-shell" />
         </div>
         

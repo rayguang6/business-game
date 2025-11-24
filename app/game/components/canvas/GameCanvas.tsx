@@ -48,7 +48,8 @@ export function GameCanvas() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState(350);
   const [scaleFactor, setScaleFactor] = useState(1);
-  const [showModifiers, setShowModifiers] = useState(true);
+  // Hide by default - toggle with 'D' key for debugging
+  const [showModifiers, setShowModifiers] = useState(false);
 
   // Calculate responsive canvas size
   useEffect(() => {
@@ -68,6 +69,23 @@ export function GameCanvas() {
     updateCanvasSize();
     window.addEventListener('resize', updateCanvasSize);
     return () => window.removeEventListener('resize', updateCanvasSize);
+  }, []);
+
+  // Keyboard shortcut to toggle debug stats (works in all environments)
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Press 'D' key to toggle debug stats
+      if (e.key === 'd' || e.key === 'D') {
+        // Only toggle if not typing in an input/textarea
+        const target = e.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          setShowModifiers((prev) => !prev);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
   }, []);
 
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
@@ -201,15 +219,9 @@ export function GameCanvas() {
 
   return (
     <div className="h-full w-full bg-[#8ed0fb] relative overflow-hidden flex items-center justify-center">
-      <div className="absolute bottom-3 right-3 z-40 space-y-2">
-        <button
-          type="button"
-          onClick={() => setShowModifiers((prev) => !prev)}
-          className="px-3 py-1 text-xs sm:text-sm font-semibold rounded-md bg-black/75 text-white hover:bg-black/80 transition-colors"
-        >
-          {showModifiers ? 'Hide Stats' : 'Show Stats'}
-        </button>
-        {showModifiers && (
+      {/* Debug stats panel - toggle with 'D' key */}
+      {showModifiers && (
+        <div className="absolute bottom-3 right-3 z-40">
           <div className="bg-black/75 text-white text-xs sm:text-[13px] px-3 py-2 rounded-lg shadow-lg space-y-1.5 max-w-[280px] max-h-[80vh] overflow-y-auto">
             <div className="font-semibold text-sm mb-1 sticky top-0 bg-black/75 pb-1">Live Modifiers</div>
             
@@ -383,11 +395,11 @@ export function GameCanvas() {
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Lead Progress Widget - Bottom Right */}
-      <LeadProgress position="bottom-right" />
+      {/* Lead Progress Widget - Bottom Left */}
+      <LeadProgress position="bottom-left" />
 
       {/* Canvas Container - Responsive with max constraints */}
       <div 

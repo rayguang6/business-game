@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
 
 interface LeadProgressProps {
-  position?: 'bottom-right' | 'top-left';
+  position?: 'bottom-right' | 'bottom-left' | 'top-left';
 }
 
 interface Particle {
@@ -152,6 +152,8 @@ export function LeadProgress({ position = 'bottom-right' }: LeadProgressProps) {
 
   const positionClasses = position === 'bottom-right'
     ? 'bottom-2 right-2 md:bottom-4 md:right-4'
+    : position === 'bottom-left'
+    ? 'bottom-2 left-2 md:bottom-4 md:left-4'
     : 'top-20 left-4';
 
   return (
