@@ -66,6 +66,7 @@ export default function AdminPage() {
     { value: GameMetric.MonthlyTimeCapacity, label: 'Monthly Time Capacity' },
     { value: GameMetric.Exp, label: 'EXP' },
     { value: GameMetric.FreedomScore, label: 'Freedom Score' },
+    { value: GameMetric.FailureRate, label: 'Failure Rate (%)' },
     { value: GameMetric.GenerateLeads, label: 'Generate Leads (immediate)' },
     { value: GameMetric.ServiceRooms, label: 'Service Rooms' },
     { value: GameMetric.MonthlyExpenses, label: 'Monthly Expenses' },

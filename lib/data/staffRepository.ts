@@ -203,6 +203,16 @@ export async function upsertStaffPreset(preset: {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
+  // Validate required fields
+  if (!preset.id || !preset.industryId || !preset.roleId) {
+    console.error('Missing required fields for staff preset:', {
+      id: preset.id,
+      industryId: preset.industryId,
+      roleId: preset.roleId
+    });
+    return { success: false, message: 'Missing required fields: id, industryId, and roleId are required.' };
+  }
+
   const payload: StaffPresetRow = {
     id: preset.id,
     industry_id: preset.industryId,
@@ -212,12 +222,18 @@ export async function upsertStaffPreset(preset: {
     service_speed_override: preset.serviceSpeed ?? null,
   };
 
+  console.log('Upserting staff preset with payload:', payload);
+
   const { error } = await supabase
     .from('staff_presets')
     .upsert(payload, { onConflict: 'industry_id,id' });
 
   if (error) {
-    console.error('Failed to upsert staff preset', error);
+    console.error('Failed to upsert staff preset:', {
+      error,
+      payload,
+      preset
+    });
     return { success: false, message: error.message };
   }
 

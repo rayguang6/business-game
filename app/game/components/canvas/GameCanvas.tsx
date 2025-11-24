@@ -88,6 +88,7 @@ export function GameCanvas() {
     ),
     serviceRevenueFlatBonus: effectManager.calculate(GameMetric.ServiceRevenueFlatBonus, 0),
     serviceRevenueScale: businessStats.serviceRevenueScale ?? 1,
+    failureRate: effectManager.calculate(GameMetric.FailureRate, 0),
   }), [businessStats]);
 
   const [metrics, setMetrics] = useState(() => computeMetrics());
@@ -116,6 +117,7 @@ export function GameCanvas() {
   const serviceRevenueMultiplier = metrics.serviceRevenueMultiplier;
   const serviceRevenueBonus = metrics.serviceRevenueFlatBonus;
   const serviceRevenueScale = metrics.serviceRevenueScale ?? 1;
+  const failureRate = metrics.failureRate;
   // No need for campaign timing in canvas - effects are handled by effectManager
 
   // Canvas coordinate system (for future 2D animations)
@@ -176,6 +178,10 @@ export function GameCanvas() {
             <div>
               <span className="text-gray-300">Payout scale:</span>{' '}
               <span className="font-semibold">×{serviceRevenueScale.toFixed(2)}</span>
+            </div>
+            <div>
+              <span className="text-gray-300">Failure rate:</span>{' '}
+              <span className="font-semibold">{failureRate.toFixed(1)}%</span>
             </div>
           </div>
         )}

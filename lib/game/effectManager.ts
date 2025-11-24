@@ -28,6 +28,7 @@ export enum GameMetric {
   ServiceRevenueMultiplier = 'serviceRevenueMultiplier',
   ServiceRevenueFlatBonus = 'serviceRevenueFlatBonus',
   FreedomScore = 'freedomScore', // Previously: FounderWorkingHours
+  FailureRate = 'failureRate', // Chance of business operations failing (0-100%)
   GenerateLeads = 'generateLeads', // Immediate lead generation (one-time action)
   // Tier-specific service metrics
   HighTierServiceRevenueMultiplier = 'highTierServiceRevenueMultiplier',
@@ -104,6 +105,11 @@ export const METRIC_CONSTRAINTS: Partial<Record<GameMetric, MetricConstraints>> 
   },
   [GameMetric.Exp]: {
     min: 0,           // Can't have negative skill level
+    roundToInt: true, // Must be whole number
+  },
+  [GameMetric.FailureRate]: {
+    min: 0,           // Can't have negative failure rate
+    max: 100,         // Can't exceed 100% failure rate
     roundToInt: true, // Must be whole number
   },
   // Add more constraints here only when needed
@@ -534,3 +540,4 @@ export function calculateMetricWithIndustry(
 
   return { value };
 }
+

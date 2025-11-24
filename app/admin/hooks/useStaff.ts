@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { fetchStaffDataForIndustry, upsertStaffRole, deleteStaffRole, upsertStaffPreset, deleteStaffPreset } from '@/lib/data/staffRepository';
 import type { StaffRoleConfig, StaffPreset } from '@/lib/game/staffConfig';
 import type { Requirement } from '@/lib/game/types';
@@ -73,6 +73,30 @@ export function useStaff(industryId: string) {
     if (presetsSorted.length > 0) {
       selectPreset(presetsSorted[0], false);
     }
+  }, [industryId]);
+
+  // Reset form state when industry changes
+  useEffect(() => {
+    setSelectedRoleId('');
+    setIsCreatingRole(false);
+    setRoleOperation('idle');
+    setRoleForm({
+      id: '',
+      name: '',
+      salary: '0',
+      effects: [],
+      spriteImage: '',
+      requirements: [],
+    });
+    setSelectedPresetId('');
+    setIsCreatingPreset(false);
+    setPresetOperation('idle');
+    setPresetForm({
+      id: '',
+      roleId: '',
+      name: '',
+    });
+    setStatus(null);
   }, [industryId]);
 
   const selectRole = useCallback((role: StaffRoleConfig, resetMsg = true) => {
@@ -233,21 +257,33 @@ export function useStaff(industryId: string) {
       setStatus('Preset id and role are required.');
       return;
     }
+
+    // Validate that the selected role exists for this industry
+    const roleExists = roles.some(role => role.id === roleId);
+    if (!roleExists) {
+      setStatus('Selected role does not exist for this industry.');
+      return;
+    }
     const salary = presetForm.salary !== undefined && presetForm.salary !== '' ? Number(presetForm.salary) : undefined;
     const serviceSpeed = presetForm.serviceSpeed !== undefined && presetForm.serviceSpeed !== '' ? Number(presetForm.serviceSpeed) : undefined;
     if ((salary !== undefined && (!Number.isFinite(salary) || salary < 0)) || (serviceSpeed !== undefined && (!Number.isFinite(serviceSpeed) || serviceSpeed < 0))) {
       setStatus('Overrides must be non-negative numbers.');
       return;
     }
-    setPresetOperation('saving');
-    const result = await upsertStaffPreset({
+
+    const presetData = {
       id,
       industryId,
       roleId,
       name: name || undefined,
       salary,
       serviceSpeed,
-    });
+    };
+
+    console.log('Saving staff preset with data:', presetData);
+
+    setPresetOperation('saving');
+    const result = await upsertStaffPreset(presetData);
     setPresetOperation('idle');
     if (!result.success) {
       setStatus(result.message ?? 'Failed to save preset.');
