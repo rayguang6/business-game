@@ -29,6 +29,7 @@ export enum GameMetric {
   ServiceRevenueFlatBonus = 'serviceRevenueFlatBonus',
   FreedomScore = 'freedomScore', // Previously: FounderWorkingHours
   FailureRate = 'failureRate', // Chance of business operations failing (0-100%)
+  ConversionRate = 'conversionRate', // How much progress each lead adds toward customer conversion
   GenerateLeads = 'generateLeads', // Immediate lead generation (one-time action)
   // Tier-specific service metrics
   HighTierServiceRevenueMultiplier = 'highTierServiceRevenueMultiplier',
@@ -111,6 +112,10 @@ export const METRIC_CONSTRAINTS: Partial<Record<GameMetric, MetricConstraints>> 
     min: 0,           // Can't have negative failure rate
     max: 100,         // Can't exceed 100% failure rate
     roundToInt: true, // Must be whole number
+  },
+  [GameMetric.ConversionRate]: {
+    min: 0.1,         // Can't have negative or zero conversion rate
+    roundToInt: false, // Can be decimal
   },
   // Add more constraints here only when needed
   // Metrics without constraints will work fine (no validation)
