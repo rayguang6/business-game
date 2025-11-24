@@ -48,6 +48,7 @@ const METRIC_LABELS: Record<GameMetric, string> = {
   [GameMetric.FreedomScore]: 'Freedom Score',
   [GameMetric.ConversionRate]: 'Lead Conversion Rate',
   [GameMetric.GenerateLeads]: 'Generate Leads',
+  // Note: ExpGainPerHappyCustomer and ExpLossPerAngryCustomer are config-only (not modifiable by events)
   // Tier-specific metrics
   [GameMetric.HighTierServiceRevenueMultiplier]: 'High-Tier Service Revenue',
   [GameMetric.HighTierServiceWeightageMultiplier]: 'High-Tier Service Selection',
@@ -92,8 +93,11 @@ const EventPopup: React.FC = () => {
   const lastDelayedOutcome = useGameStore((state) => state.lastDelayedOutcome);
   const clearLastDelayedOutcome = useGameStore((state) => state.clearLastDelayedOutcome);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [outcomeCountdown, setOutcomeCountdown] = useState<number | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const outcomeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const outcomeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     // Clear any existing timers first
@@ -117,9 +121,7 @@ const EventPopup: React.FC = () => {
       return;
     }
 
-    // DISABLED: Auto-select timer for easier testing and tweaking
-    // Uncomment below to re-enable auto-select after 10 seconds
-    /*
+    // Auto-select timer - automatically selects the default choice after 10 seconds
     setCountdown(10);
 
     // Schedule auto-selection using the captured choice id
@@ -133,7 +135,6 @@ const EventPopup: React.FC = () => {
         return prev > 0 ? prev - 1 : 0;
       });
     }, 1_000);
-    */
 
     return () => {
       if (timeoutRef.current) {
@@ -146,6 +147,63 @@ const EventPopup: React.FC = () => {
       }
     };
   }, [currentEvent?.id, resolveEventChoice]);
+
+  // Auto-dismiss outcome popups after 5 seconds
+  useEffect(() => {
+    // Clear any existing outcome timers
+    if (outcomeTimeoutRef.current) {
+      clearTimeout(outcomeTimeoutRef.current);
+      outcomeTimeoutRef.current = null;
+    }
+    if (outcomeIntervalRef.current) {
+      clearInterval(outcomeIntervalRef.current);
+      outcomeIntervalRef.current = null;
+    }
+
+    // Auto-dismiss delayed outcome
+    if (lastDelayedOutcome && !currentEvent) {
+      setOutcomeCountdown(5);
+      outcomeTimeoutRef.current = setTimeout(() => {
+        clearLastDelayedOutcome();
+        setOutcomeCountdown(null);
+      }, 5_000);
+
+      outcomeIntervalRef.current = setInterval(() => {
+        setOutcomeCountdown((prev) => {
+          if (prev === null) return prev;
+          return prev > 0 ? prev - 1 : 0;
+        });
+      }, 1_000);
+    }
+    // Auto-dismiss regular outcome
+    else if (lastEventOutcome && !currentEvent) {
+      setOutcomeCountdown(5);
+      outcomeTimeoutRef.current = setTimeout(() => {
+        clearLastEventOutcome();
+        setOutcomeCountdown(null);
+      }, 5_000);
+
+      outcomeIntervalRef.current = setInterval(() => {
+        setOutcomeCountdown((prev) => {
+          if (prev === null) return prev;
+          return prev > 0 ? prev - 1 : 0;
+        });
+      }, 1_000);
+    } else {
+      setOutcomeCountdown(null);
+    }
+
+    return () => {
+      if (outcomeTimeoutRef.current) {
+        clearTimeout(outcomeTimeoutRef.current);
+        outcomeTimeoutRef.current = null;
+      }
+      if (outcomeIntervalRef.current) {
+        clearInterval(outcomeIntervalRef.current);
+        outcomeIntervalRef.current = null;
+      }
+    };
+  }, [lastDelayedOutcome, lastEventOutcome, currentEvent, clearLastDelayedOutcome, clearLastEventOutcome]);
 
   // Prioritize showing delayed outcome over regular outcome
   if (lastDelayedOutcome && !currentEvent) {
@@ -207,13 +265,24 @@ const EventPopup: React.FC = () => {
             )}
             <button
               type="button"
-              onClick={clearLastDelayedOutcome}
+              onClick={() => {
+                if (outcomeTimeoutRef.current) {
+                  clearTimeout(outcomeTimeoutRef.current);
+                  outcomeTimeoutRef.current = null;
+                }
+                if (outcomeIntervalRef.current) {
+                  clearInterval(outcomeIntervalRef.current);
+                  outcomeIntervalRef.current = null;
+                }
+                setOutcomeCountdown(null);
+                clearLastDelayedOutcome();
+              }}
               className="mt-1.5 md:mt-3 w-full bg-gradient-to-b from-[var(--game-primary-light)] via-[var(--game-primary)] to-[var(--game-primary-dark)] hover:from-[var(--game-primary)] hover:via-[var(--game-primary-dark)] hover:to-[var(--game-primary-dark)] text-white text-[10px] md:text-sm font-semibold py-1.5 md:py-2 rounded border-2 border-black/20 shadow-lg hover:shadow-xl transition-all duration-200"
               style={{
                 textShadow: '0 1px 2px rgba(0,0,0,0.8)'
               }}
             >
-              Continue
+              Continue{outcomeCountdown !== null && outcomeCountdown > 0 ? ` (${outcomeCountdown}s)` : ''}
             </button>
           </div>
         </div>
@@ -283,13 +352,24 @@ const EventPopup: React.FC = () => {
             )}
             <button
               type="button"
-              onClick={clearLastEventOutcome}
+              onClick={() => {
+                if (outcomeTimeoutRef.current) {
+                  clearTimeout(outcomeTimeoutRef.current);
+                  outcomeTimeoutRef.current = null;
+                }
+                if (outcomeIntervalRef.current) {
+                  clearInterval(outcomeIntervalRef.current);
+                  outcomeIntervalRef.current = null;
+                }
+                setOutcomeCountdown(null);
+                clearLastEventOutcome();
+              }}
               className="mt-1.5 md:mt-3 w-full bg-gradient-to-b from-[var(--game-primary-light)] via-[var(--game-primary)] to-[var(--game-primary-dark)] hover:from-[var(--game-primary)] hover:via-[var(--game-primary-dark)] hover:to-[var(--game-primary-dark)] text-white text-[10px] md:text-sm font-semibold py-1.5 md:py-2 rounded border-2 border-black/20 shadow-lg hover:shadow-xl transition-all duration-200"
               style={{
                 textShadow: '0 1px 2px rgba(0,0,0,0.8)'
               }}
             >
-              Continue
+              Continue{outcomeCountdown !== null && outcomeCountdown > 0 ? ` (${outcomeCountdown}s)` : ''}
             </button>
           </div>
         </div>
@@ -397,6 +477,11 @@ const EventPopup: React.FC = () => {
                         {choice.label}
                       </span>
                     </div>
+                    {isDefault && countdown !== null && countdown > 0 && (
+                      <div className="flex-shrink-0 px-1.5 md:px-2 py-0.5 md:py-1 bg-black/60 border border-white/30 rounded text-[9px] md:text-xs font-semibold text-white whitespace-nowrap">
+                        ⏱ {countdown}s
+                      </div>
+                    )}
                     {hasCost && choice.cost !== undefined && (
                       <div className="flex-shrink-0 px-1.5 md:px-2 py-0.5 md:py-1 bg-black/40 border border-black/60 rounded text-[9px] md:text-xs font-semibold text-red-300 whitespace-nowrap">
                         ${choice.cost.toLocaleString()}
@@ -414,13 +499,6 @@ const EventPopup: React.FC = () => {
                     }}>
                       {choice.description}
                     </span>
-                  )}
-                  {isDefault && (
-                    <div className="relative z-10 mt-1 pt-1 border-t border-white/10 w-full">
-                      <span className="text-[8px] md:text-xs text-white/70 italic">
-                        ⭐ Recommended
-                      </span>
-                    </div>
                   )}
                 </button>
               );

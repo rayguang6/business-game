@@ -10,33 +10,59 @@ import {
 } from './types';
 
 // -----------------------------------------------------------------------------
-// Shared
+// Shared - Global Defaults
 // -----------------------------------------------------------------------------
+// These are the recommended global defaults that work for most industries.
+// Industries can override specific values that differ from these defaults.
+//
+// Global (set once, shared):
+// - Game engine timing (ticksPerSecond, monthDurationSeconds, leavingAngryDurationTicks)
+// - Game pacing (eventTriggerSeconds)
+// - Default balance values (expGainPerHappyCustomer, expLossPerAngryCustomer, conversionRate)
+// - Reasonable defaults (customerSpawnIntervalSeconds, customerPatienceSeconds, etc.)
+//
+// Industry-specific (commonly overridden):
+// - Starting values (startingCash, monthlyExpenses) - vary significantly by industry
+// - Customer behavior (customerSpawnIntervalSeconds, customerPatienceSeconds) - varies by industry
+// - Revenue models (serviceRevenueMultiplier, serviceRevenueScale) - varies by industry
+// - Risk levels (failureRate) - varies by industry
+// - Map positions (customerSpawnPosition, treatmentRooms) - unique per industry
 const DEFAULT_BUSINESS_METRICS: BusinessMetrics = {
-  startingCash: 15000,
-  monthlyExpenses: 5000,
-  startingExp: 10, // Previously: startingSkillLevel
-  startingFreedomScore: 360, // Previously: founderWorkHours - 12 hours * 30 days
+  // Generic defaults - industries should override these
+  startingCash: 10000, // Generic default - industries typically override (freelance: 3000, dental: 15000, restaurant: 20000)
+  monthlyExpenses: 3000, // Generic default - industries typically override (freelance: 1000, dental: 5000, restaurant: 8000)
+  // Global defaults - rarely overridden
+  startingExp: 10, // Everyone starts at same skill level
+  startingFreedomScore: 360, // Standard starting freedom (12 hours * 30 days) - industries can override for special cases
 } as const;
 
 const DEFAULT_BUSINESS_STATS: BusinessStats = {
+  // Game engine timing (GLOBAL - never change)
   ticksPerSecond: 10,
   monthDurationSeconds: 60,
-  customerSpawnIntervalSeconds: 3,
-  customerPatienceSeconds: 10,
   leavingAngryDurationTicks: 10,
+  
+  // Game pacing (GLOBAL - shared across industries)
+  eventTriggerSeconds: [15, 30, 45],
+  
+  // Default balance values (GLOBAL - override only if needed for balance)
+  expGainPerHappyCustomer: 2, // Default EXP gain - industries can override if needed
+  expLossPerAngryCustomer: 1, // Default EXP loss - industries can override if needed
+  conversionRate: 10, // Default conversion rate - industries can override (freelance: 15, luxury: 5)
+  
+  // Reasonable defaults (GLOBAL - industries commonly override)
+  customerSpawnIntervalSeconds: 3, // Default spawn rate - industries override (fast food: 1.5, consulting: 5)
+  customerPatienceSeconds: 10, // Default patience - industries override (fast food: 5, spa: 15)
+  serviceRevenueMultiplier: 1, // Default pricing - industries override (dental: 1.2, restaurant: 0.8)
+  serviceRevenueScale: 10, // Default revenue scale - industries override (freelance: 5, restaurant: 15)
+  failureRate: 0, // Default no failures - industries override (restaurant: 20, medical: 5)
+  
+  // Industry-specific defaults (industries should override)
   customerSpawnPosition: {
     x: 4,
     y: 9,
-  },
-  treatmentRooms: 2,
-  expGainPerHappyCustomer: 1, // Previously: skillLevelGainPerHappyCustomer
-  expLossPerAngryCustomer: 1, // Previously: skillLevelLossPerAngryCustomer
-  // baseHappyProbability removed - not used in game mechanics
-  eventTriggerSeconds: [15, 30, 45],
-  serviceRevenueMultiplier: 1,
-  serviceRevenueScale: 10,
-  conversionRate: 10, // How much progress each lead adds toward customer conversion
+  }, // Map-specific - each industry has different layout
+  treatmentRooms: 2, // Industry-specific - different concepts (chairs, tables, booths)
 } as const;
 
 export const DEFAULT_MOVEMENT_CONFIG: MovementConfig = {

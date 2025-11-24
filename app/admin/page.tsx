@@ -186,6 +186,8 @@ export default function AdminPage() {
                 saving={industrySimConfig.operation === 'saving'}
                 businessMetrics={industrySimConfig.businessMetrics}
                 businessStats={industrySimConfig.businessStats}
+                globalMetrics={globalConfig.metrics}
+                globalStats={globalConfig.stats}
                 mapWidth={industrySimConfig.mapWidth}
                 mapHeight={industrySimConfig.mapHeight}
                 mapWalls={industrySimConfig.mapWalls}

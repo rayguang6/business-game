@@ -10,10 +10,11 @@ import { SpriteCustomer } from './SpriteCustomer';
 import { SpriteLead } from './SpriteLead';
 import { SpriteStaff } from './SpriteStaff';
 import { GridOverlay } from './GridOverlay';
-import { DEFAULT_INDUSTRY_ID, getBusinessStats, getLayoutConfig, getCapacityImageForIndustry } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getBusinessStats, getLayoutConfig, getCapacityImageForIndustry, getSimulationConfig } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import { useConfigStore } from '@/lib/store/configStore';
+import { getMonthlyBaseExpenses } from '@/lib/features/economy';
 
 // Canvas scaling configuration
 const CANVAS_CONFIG = {
@@ -70,26 +71,65 @@ export function GameCanvas() {
   }, []);
 
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+  // Get businessStats fresh each time (same as mechanics.ts does)
   const businessStats = useMemo(() => getBusinessStats(industryId), [industryId]);
   const layoutOverride = useConfigStore((state) => state.industryConfigs[industryId]?.layout);
   const layout = useMemo(() => layoutOverride ?? getLayoutConfig(industryId), [layoutOverride, industryId]);
   
-  const computeMetrics = useCallback(() => ({
-    spawnIntervalSeconds: effectManager.calculate(
-      GameMetric.SpawnIntervalSeconds,
-      businessStats.customerSpawnIntervalSeconds,
-    ),
-    serviceSpeedMultiplier: effectManager.calculate(GameMetric.ServiceSpeedMultiplier, 1.0),
-    serviceRooms: effectManager.calculate(GameMetric.ServiceRooms, businessStats.treatmentRooms),
-    exp: 0, // Exp effects are applied directly when customers complete services
-    serviceRevenueMultiplier: effectManager.calculate(
-      GameMetric.ServiceRevenueMultiplier,
-      businessStats.serviceRevenueMultiplier ?? 1,
-    ),
-    serviceRevenueFlatBonus: effectManager.calculate(GameMetric.ServiceRevenueFlatBonus, 0),
-    serviceRevenueScale: businessStats.serviceRevenueScale ?? 1,
-    failureRate: effectManager.calculate(GameMetric.FailureRate, businessStats.failureRate ?? 0),
-  }), [businessStats]);
+  const computeMetrics = useCallback(() => {
+    // Mirror exactly what mechanics.ts does (line 580-605)
+    // This ensures we use the same calculation path as the game
+    const baseStats = getBusinessStats(industryId);
+    const baseMonthlyExpenses = getMonthlyBaseExpenses(industryId);
+    
+    // Calculate metrics exactly like mechanics.ts does
+    // Note: Game uses fallbacks (?? 1, ?? 10, ?? 0) for calculations to work
+    // But we also track base values (without fallbacks) to show N/A when missing
+    // Check if values exist in the returned config (not using fallbacks)
+    return {
+      // Calculated values (with effects applied) - same as game uses
+      spawnIntervalSeconds: effectManager.calculate(
+        GameMetric.SpawnIntervalSeconds,
+        baseStats.customerSpawnIntervalSeconds,
+      ),
+      serviceSpeedMultiplier: effectManager.calculate(GameMetric.ServiceSpeedMultiplier, 1.0),
+      serviceRooms: effectManager.calculate(GameMetric.ServiceRooms, baseStats.treatmentRooms),
+      serviceRevenueMultiplier: effectManager.calculate(
+        GameMetric.ServiceRevenueMultiplier,
+        baseStats.serviceRevenueMultiplier ?? 1,
+      ),
+      serviceRevenueFlatBonus: effectManager.calculate(GameMetric.ServiceRevenueFlatBonus, 0),
+      serviceRevenueScale: baseStats.serviceRevenueScale ?? 1,
+      conversionRate: effectManager.calculate(GameMetric.ConversionRate, baseStats.conversionRate ?? 10),
+      failureRate: effectManager.calculate(GameMetric.FailureRate, baseStats.failureRate ?? 0),
+      monthlyExpenses: effectManager.calculate(GameMetric.MonthlyExpenses, baseMonthlyExpenses),
+      monthlyTimeCapacity: effectManager.calculate(GameMetric.MonthlyTimeCapacity, 0),
+      // EXP gain/loss are config-only (read directly from baseStats, not modifiable by effects)
+      expGainPerHappyCustomer: (typeof baseStats.expGainPerHappyCustomer === 'number' && !Number.isNaN(baseStats.expGainPerHappyCustomer))
+        ? baseStats.expGainPerHappyCustomer
+        : 1,
+      expLossPerAngryCustomer: (typeof baseStats.expLossPerAngryCustomer === 'number' && !Number.isNaN(baseStats.expLossPerAngryCustomer))
+        ? baseStats.expLossPerAngryCustomer
+        : 1,
+      // Tier-specific multipliers
+      highTierRevenueMultiplier: effectManager.calculate(GameMetric.HighTierServiceRevenueMultiplier, 1),
+      midTierRevenueMultiplier: effectManager.calculate(GameMetric.MidTierServiceRevenueMultiplier, 1),
+      lowTierRevenueMultiplier: effectManager.calculate(GameMetric.LowTierServiceRevenueMultiplier, 1),
+      highTierWeightageMultiplier: effectManager.calculate(GameMetric.HighTierServiceWeightageMultiplier, 1),
+      midTierWeightageMultiplier: effectManager.calculate(GameMetric.MidTierServiceWeightageMultiplier, 1),
+      lowTierWeightageMultiplier: effectManager.calculate(GameMetric.LowTierServiceWeightageMultiplier, 1),
+      
+      // Base values (without fallbacks) - check if they exist in config
+      // If value exists in baseStats, use it; otherwise check if it's using default
+      baseServiceRevenueMultiplier: baseStats.serviceRevenueMultiplier,
+      baseServiceRevenueScale: baseStats.serviceRevenueScale,
+      baseConversionRate: baseStats.conversionRate,
+      baseFailureRate: baseStats.failureRate,
+      baseTreatmentRooms: baseStats.treatmentRooms,
+      baseExpGainPerHappy: baseStats.expGainPerHappyCustomer,
+      baseExpLossPerAngry: baseStats.expLossPerAngryCustomer,
+    };
+  }, [industryId]);
 
   const [metrics, setMetrics] = useState(() => computeMetrics());
 
@@ -106,19 +146,41 @@ export function GameCanvas() {
   // Get service room positions for rendering beds (from database or fallback)
   const serviceRoomPositions = layout.serviceRoomPositions;
   // Use serviceRooms from metrics (no cap - handled by upgrades)
-  const serviceRooms = Math.max(1, Math.round(metrics.serviceRooms));
+  // For display: show undefined to indicate missing config
+  // For array operations: use fallback to prevent crashes
+  const serviceRoomsDisplay = metrics.serviceRooms !== undefined 
+    ? Math.max(1, Math.round(metrics.serviceRooms))
+    : undefined;
+  const serviceRooms = serviceRoomsDisplay ?? 1; // Fallback for array operations
   const mapBackground = selectedIndustry.mapImage ?? '/images/maps/dental-map.png';
   const staffPositions = layout.staffPositions;
   const TILE_SIZE = 32;
 
+  // Use calculated values (with effects) - these match what the game uses
   const spawnIntervalSeconds = metrics.spawnIntervalSeconds;
   const customersPerMinute = spawnIntervalSeconds > 0 ? 60 / spawnIntervalSeconds : null;
   const serviceSpeedMultiplier = metrics.serviceSpeedMultiplier;
   const serviceRevenueMultiplier = metrics.serviceRevenueMultiplier;
   const serviceRevenueBonus = metrics.serviceRevenueFlatBonus;
-  const serviceRevenueScale = metrics.serviceRevenueScale ?? 1;
+  const serviceRevenueScale = metrics.serviceRevenueScale;
   const failureRate = metrics.failureRate;
-  // No need for campaign timing in canvas - effects are handled by effectManager
+  // Use conversionRate from calculated metrics (same as game uses)
+  const conversionRateValue = metrics.conversionRate;
+  const monthlyExpensesValue = metrics.monthlyExpenses;
+  const monthlyTimeCapacity = metrics.monthlyTimeCapacity;
+  
+  // Base stats (non-editable) - read directly from config (same as game uses)
+  const expGainPerHappy = metrics.expGainPerHappyCustomer; // Read directly from config
+  const expLossPerAngry = metrics.expLossPerAngryCustomer; // Read directly from config
+  const hasExpGainConfig = typeof metrics.baseExpGainPerHappy === 'number' && !Number.isNaN(metrics.baseExpGainPerHappy);
+  const hasExpLossConfig = typeof metrics.baseExpLossPerAngry === 'number' && !Number.isNaN(metrics.baseExpLossPerAngry);
+  
+  const customerPatience = businessStats.customerPatienceSeconds;
+  const monthDuration = businessStats.monthDurationSeconds;
+  
+  // Check if base values exist (to show N/A when missing)
+  const baseConversionRate = metrics.baseConversionRate;
+  const showConversionRate = baseConversionRate !== undefined && conversionRateValue !== baseConversionRate;
 
   // Canvas coordinate system (for future 2D animations)
   const canvasCoordinates = {
@@ -148,40 +210,177 @@ export function GameCanvas() {
           {showModifiers ? 'Hide Stats' : 'Show Stats'}
         </button>
         {showModifiers && (
-          <div className="bg-black/75 text-white text-xs sm:text-[13px] px-3 py-2 rounded-lg shadow-lg space-y-1 max-w-[240px]">
-            <div className="font-semibold text-sm">Live Modifiers</div>
-            <div>
-              <span className="text-gray-300">Customer spawn interval:</span>{' '}
-              <span className="font-semibold">
-                {spawnIntervalSeconds.toFixed(2)}s
-                {customersPerMinute != null ? ` (${customersPerMinute.toFixed(1)}/min)` : ''}
-              </span>
+          <div className="bg-black/75 text-white text-xs sm:text-[13px] px-3 py-2 rounded-lg shadow-lg space-y-1.5 max-w-[280px] max-h-[80vh] overflow-y-auto">
+            <div className="font-semibold text-sm mb-1 sticky top-0 bg-black/75 pb-1">Live Modifiers</div>
+            
+            {/* Customer Flow Section */}
+            <div className="space-y-1 border-b border-gray-600 pb-1">
+              <div className="text-[10px] text-gray-400 uppercase tracking-wide">Customer Flow</div>
+              <div>
+                <span className="text-gray-300">Spawn interval:</span>{' '}
+                <span className="font-semibold">
+                  {spawnIntervalSeconds.toFixed(2)}s
+                  {customersPerMinute != null ? ` (${customersPerMinute.toFixed(1)}/min)` : ''}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-300">Conversion rate:</span>{' '}
+                <span className="font-semibold">{conversionRateValue.toFixed(1)}%</span>
+                {baseConversionRate === undefined ? (
+                  <span className="text-red-400 text-[10px] ml-1">(base: N/A)</span>
+                ) : showConversionRate && (
+                  <span className="text-gray-400 text-[10px] ml-1">(base: {baseConversionRate}%)</span>
+                )}
+              </div>
             </div>
-            <div>
-              <span className="text-gray-300">Service speed:</span>{' '}
-              <span className="font-semibold">×{serviceSpeedMultiplier.toFixed(2)}</span>
+
+            {/* Service Performance Section */}
+            <div className="space-y-1 border-b border-gray-600 pb-1">
+              <div className="text-[10px] text-gray-400 uppercase tracking-wide">Service Performance</div>
+              <div>
+                <span className="text-gray-300">Service speed:</span>{' '}
+                <span className="font-semibold">×{serviceSpeedMultiplier.toFixed(2)}</span>
+              </div>
+              <div>
+                <span className="text-gray-300">{serviceRoomsLabel}:</span>{' '}
+                {serviceRoomsDisplay !== undefined ? (
+                  <span className="font-semibold">{serviceRoomsDisplay}</span>
+                ) : (
+                  <span className="text-red-400">N/A</span>
+                )}
+              </div>
+              {failureRate > 0 && (
+                <div>
+                  <span className="text-gray-300">Failure rate:</span>{' '}
+                  <span className="font-semibold text-red-400">{failureRate.toFixed(1)}%</span>
+                  {metrics.baseFailureRate === undefined && (
+                    <span className="text-red-400 text-[10px] ml-1">(base: N/A)</span>
+                  )}
+                </div>
+              )}
             </div>
-            <div>
-              <span className="text-gray-300">{serviceRoomsLabel}:</span>{' '}
-              <span className="font-semibold">{serviceRooms}</span>
+
+            {/* Revenue Modifiers Section */}
+            <div className="space-y-1 border-b border-gray-600 pb-1">
+              <div className="text-[10px] text-gray-400 uppercase tracking-wide">Revenue Modifiers</div>
+              <div>
+                <span className="text-gray-300">Price multiplier:</span>{' '}
+                <span className="font-semibold">×{serviceRevenueMultiplier.toFixed(2)}</span>
+                {metrics.baseServiceRevenueMultiplier === undefined && (
+                  <span className="text-red-400 text-[10px] ml-1">(base: N/A)</span>
+                )}
+              </div>
+              {serviceRevenueBonus !== 0 && (
+                <div>
+                  <span className="text-gray-300">Price bonus:</span>{' '}
+                  <span className="font-semibold">
+                    {serviceRevenueBonus >= 0 ? '+' : '-'}${Math.abs(serviceRevenueBonus).toFixed(0)}
+                  </span>
+                </div>
+              )}
+              {serviceRevenueScale !== 1 && (
+                <div>
+                  <span className="text-gray-300">Payout scale:</span>{' '}
+                  <span className="font-semibold">×{serviceRevenueScale.toFixed(2)}</span>
+                  {metrics.baseServiceRevenueScale === undefined && (
+                    <span className="text-red-400 text-[10px] ml-1">(base: N/A)</span>
+                  )}
+                </div>
+              )}
             </div>
-            <div>
-              <span className="text-gray-300">Service price bonus:</span>{' '}
-              <span className="font-semibold">
-                {serviceRevenueBonus >= 0 ? '+' : '-'}${Math.abs(serviceRevenueBonus).toFixed(0)}
-              </span>
+
+            {/* Expenses & Capacity Section */}
+            {(monthlyExpensesValue > 0 || monthlyTimeCapacity > 0) && (
+              <div className="space-y-1 border-b border-gray-600 pb-1">
+                <div className="text-[10px] text-gray-400 uppercase tracking-wide">Expenses & Capacity</div>
+                {monthlyExpensesValue > 0 && (
+                  <div>
+                    <span className="text-gray-300">Monthly expenses:</span>{' '}
+                    <span className="font-semibold">${monthlyExpensesValue.toLocaleString()}</span>
+                  </div>
+                )}
+                {monthlyTimeCapacity > 0 && (
+                  <div>
+                    <span className="text-gray-300">Time capacity bonus:</span>{' '}
+                    <span className="font-semibold">+{monthlyTimeCapacity}h/month</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tier Modifiers Section (always shown) */}
+            <div className="space-y-1 border-b border-gray-600 pb-1">
+              <div className="text-[10px] text-gray-400 uppercase tracking-wide">Tier Modifiers</div>
+              <div className="pl-2 space-y-0.5">
+                <div className="text-[10px] text-gray-400">Revenue Multipliers:</div>
+                <div className="text-[11px] flex justify-between">
+                  <span className="text-gray-300">High:</span>
+                  <span className="font-semibold">×{metrics.highTierRevenueMultiplier.toFixed(2)}</span>
+                </div>
+                <div className="text-[11px] flex justify-between">
+                  <span className="text-gray-300">Mid:</span>
+                  <span className="font-semibold">×{metrics.midTierRevenueMultiplier.toFixed(2)}</span>
+                </div>
+                <div className="text-[11px] flex justify-between">
+                  <span className="text-gray-300">Low:</span>
+                  <span className="font-semibold">×{metrics.lowTierRevenueMultiplier.toFixed(2)}</span>
+                </div>
+              </div>
+              <div className="pl-2 space-y-0.5 mt-1">
+                <div className="text-[10px] text-gray-400">Selection Weight:</div>
+                <div className="text-[11px] flex justify-between">
+                  <span className="text-gray-300">High:</span>
+                  <span className="font-semibold">×{metrics.highTierWeightageMultiplier.toFixed(2)}</span>
+                </div>
+                <div className="text-[11px] flex justify-between">
+                  <span className="text-gray-300">Mid:</span>
+                  <span className="font-semibold">×{metrics.midTierWeightageMultiplier.toFixed(2)}</span>
+                </div>
+                <div className="text-[11px] flex justify-between">
+                  <span className="text-gray-300">Low:</span>
+                  <span className="font-semibold">×{metrics.lowTierWeightageMultiplier.toFixed(2)}</span>
+                </div>
+              </div>
             </div>
-            <div>
-              <span className="text-gray-300">Service price multiplier:</span>{' '}
-              <span className="font-semibold">×{serviceRevenueMultiplier.toFixed(2)}</span>
+
+            {/* EXP Modifiers Section (config-only, not modifiable by effects) */}
+            <div className="space-y-1 border-b border-gray-600 pb-1">
+              <div className="text-[10px] text-gray-400 uppercase tracking-wide">EXP Modifiers</div>
+              <div>
+                <span className="text-gray-300">EXP per happy:</span>{' '}
+                <span className="font-semibold text-green-400">+{expGainPerHappy}</span>
+                {!hasExpGainConfig && (
+                  <span className="text-red-400 text-[10px] ml-1">(base: N/A)</span>
+                )}
+              </div>
+              <div>
+                <span className="text-gray-300">EXP per angry:</span>{' '}
+                <span className="font-semibold text-red-400">-{expLossPerAngry}</span>
+                {!hasExpLossConfig && (
+                  <span className="text-red-400 text-[10px] ml-1">(base: N/A)</span>
+                )}
+              </div>
             </div>
-            <div>
-              <span className="text-gray-300">Payout scale:</span>{' '}
-              <span className="font-semibold">×{serviceRevenueScale.toFixed(2)}</span>
-            </div>
-            <div>
-              <span className="text-gray-300">Failure rate:</span>{' '}
-              <span className="font-semibold">{failureRate.toFixed(1)}%</span>
+
+            {/* Base Stats Section (non-editable) */}
+            <div className="space-y-1">
+              <div className="text-[10px] text-gray-400 uppercase tracking-wide">Base Stats</div>
+              <div>
+                <span className="text-gray-300">Customer patience:</span>{' '}
+                {customerPatience !== undefined ? (
+                  <span className="font-semibold">{customerPatience}s</span>
+                ) : (
+                  <span className="text-red-400">N/A</span>
+                )}
+              </div>
+              <div>
+                <span className="text-gray-300">Month duration:</span>{' '}
+                {monthDuration !== undefined ? (
+                  <span className="font-semibold">{monthDuration}s</span>
+                ) : (
+                  <span className="text-red-400">N/A</span>
+                )}
+              </div>
             </div>
           </div>
         )}

@@ -38,6 +38,7 @@ const METRIC_LABELS: Record<GameMetric, string> = {
   [GameMetric.ServiceRevenueMultiplier]: 'Service revenue',
   [GameMetric.ServiceRevenueFlatBonus]: 'Average ticket',
   [GameMetric.FreedomScore]: 'Freedom Score',
+  // Note: ExpGainPerHappyCustomer and ExpLossPerAngryCustomer are config-only (not modifiable by marketing)
   // Tier-specific metrics
   [GameMetric.HighTierServiceRevenueMultiplier]: 'High-tier revenue',
   [GameMetric.HighTierServiceWeightageMultiplier]: 'High-tier selection',
