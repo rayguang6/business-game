@@ -45,6 +45,12 @@ export function GlobalConfigTab({
       <div className="p-6 border-b border-slate-800">
         <h2 className="text-2xl font-semibold">Global Simulation Config</h2>
         <p className="text-sm text-slate-400 mt-1">Edit core defaults used by all industries.</p>
+        <div className="mt-3 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+          <p className="text-xs text-slate-300">
+            <span className="font-semibold">How it works:</span> Values set here become defaults for all industries.
+            Industries can override specific values in their own config. Priority: <span className="font-mono text-slate-200">Industry → Global → Code Defaults</span>
+          </p>
+        </div>
       </div>
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
@@ -57,7 +63,10 @@ export function GlobalConfigTab({
             <label className="block text-sm font-semibold text-slate-300">Business Metrics</label>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Starting Cash</label>
+                <label className="block text-xs text-slate-400 mb-1">
+                  Starting Cash
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded">Commonly Overridden</span>
+                </label>
                 <input
                   type="number"
                   min="0"
@@ -67,7 +76,10 @@ export function GlobalConfigTab({
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Monthly Expenses</label>
+                <label className="block text-xs text-slate-400 mb-1">
+                  Monthly Expenses
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded">Commonly Overridden</span>
+                </label>
                 <input
                   type="number"
                   min="0"
@@ -77,7 +89,10 @@ export function GlobalConfigTab({
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Starting EXP</label>
+                <label className="block text-xs text-slate-400 mb-1">
+                  Starting EXP
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-blue-500/20 text-blue-300 rounded">Global Default</span>
+                </label>
                 <input
                   type="number"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
@@ -115,7 +130,10 @@ export function GlobalConfigTab({
             <label className="block text-sm font-semibold text-slate-300">Business Stats</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Ticks Per Second</label>
+                <label className="block text-xs text-slate-400 mb-1">
+                  Ticks Per Second
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-green-500/20 text-green-300 rounded">Never Override</span>
+                </label>
                 <input
                   type="number"
                   min="1"
@@ -125,7 +143,10 @@ export function GlobalConfigTab({
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Month Duration (sec)</label>
+                <label className="block text-xs text-slate-400 mb-1">
+                  Month Duration (sec)
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-green-500/20 text-green-300 rounded">Never Override</span>
+                </label>
                 <input
                   type="number"
                   min="1"
@@ -135,7 +156,10 @@ export function GlobalConfigTab({
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Customer Spawn Interval (sec)</label>
+                <label className="block text-xs text-slate-400 mb-1">
+                  Customer Spawn Interval (sec)
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded">Commonly Overridden</span>
+                </label>
                 <input
                   type="number"
                   min="0"
@@ -145,7 +169,10 @@ export function GlobalConfigTab({
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Customer Patience (sec)</label>
+                <label className="block text-xs text-slate-400 mb-1">
+                  Customer Patience (sec)
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded">Commonly Overridden</span>
+                </label>
                 <input
                   type="number"
                   min="0"
@@ -155,7 +182,10 @@ export function GlobalConfigTab({
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Leaving Angry Duration (ticks)</label>
+                <label className="block text-xs text-slate-400 mb-1">
+                  Leaving Angry Duration (ticks)
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-green-500/20 text-green-300 rounded">Never Override</span>
+                </label>
                 <input
                   type="number"
                   min="0"
@@ -165,7 +195,10 @@ export function GlobalConfigTab({
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Treatment Rooms</label>
+                <label className="block text-xs text-slate-400 mb-1">
+                  Treatment Rooms
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded">Commonly Overridden</span>
+                </label>
                 <input
                   type="number"
                   min="0"
@@ -175,30 +208,49 @@ export function GlobalConfigTab({
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">EXP Gain per Happy Customer</label>
+                <label className="block text-xs text-slate-400 mb-1">
+                  EXP Gain per Happy Customer
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-blue-500/20 text-blue-300 rounded">Global Default</span>
+                </label>
                 <input
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.expGainPerHappyCustomer}
-                  onChange={(e) => onUpdateStats({ expGainPerHappyCustomer: Number(e.target.value) })}
+                  value={stats.expGainPerHappyCustomer ?? ''}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? undefined : Number(e.target.value);
+                    if (value !== undefined && !isNaN(value)) {
+                      onUpdateStats({ expGainPerHappyCustomer: value });
+                    }
+                  }}
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">EXP Loss per Angry Customer</label>
+                <label className="block text-xs text-slate-400 mb-1">
+                  EXP Loss per Angry Customer
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-blue-500/20 text-blue-300 rounded">Global Default</span>
+                </label>
                 <input
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.expLossPerAngryCustomer}
-                  onChange={(e) => onUpdateStats({ expLossPerAngryCustomer: Number(e.target.value) })}
+                  value={stats.expLossPerAngryCustomer ?? ''}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? undefined : Number(e.target.value);
+                    if (value !== undefined && !isNaN(value)) {
+                      onUpdateStats({ expLossPerAngryCustomer: value });
+                    }
+                  }}
                 />
               </div>
               <div>
                 {/* baseHappyProbability removed - not used in game mechanics */}
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-xs text-slate-400 mb-1">Event Trigger Seconds (comma-separated)</label>
+                <label className="block text-xs text-slate-400 mb-1">
+                  Event Trigger Seconds (comma-separated)
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-green-500/20 text-green-300 rounded">Never Override</span>
+                </label>
                 <input
                   type="text"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
@@ -207,7 +259,10 @@ export function GlobalConfigTab({
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Service Revenue Multiplier</label>
+                <label className="block text-xs text-slate-400 mb-1">
+                  Service Revenue Multiplier
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded">Commonly Overridden</span>
+                </label>
                 <input
                   type="number"
                   step="0.01"
@@ -218,7 +273,10 @@ export function GlobalConfigTab({
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Service Revenue Scale</label>
+                <label className="block text-xs text-slate-400 mb-1">
+                  Service Revenue Scale
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded">Commonly Overridden</span>
+                </label>
                 <input
                   type="number"
                   min="0"
@@ -228,7 +286,10 @@ export function GlobalConfigTab({
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Spawn Position X</label>
+                <label className="block text-xs text-slate-400 mb-1">
+                  Spawn Position X
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded">Always Override</span>
+                </label>
                 <input
                   type="number"
                   min="0"
@@ -242,7 +303,10 @@ export function GlobalConfigTab({
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Spawn Position Y</label>
+                <label className="block text-xs text-slate-400 mb-1">
+                  Spawn Position Y
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded">Always Override</span>
+                </label>
                 <input
                   type="number"
                   min="0"

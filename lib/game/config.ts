@@ -117,20 +117,30 @@ export function getSimulationConfig(
 }
 
 export function getBusinessMetrics(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
-  // Check industry-specific override first
+  // Get global config first (as base)
+  const globalConfig = getGlobalConfigOverride();
+  const globalMetrics = globalConfig?.businessMetrics;
+  
+  // Check industry-specific override
   const industryConfig = getIndustryOverride(industryId);
-  if (industryConfig?.businessMetrics) {
-    return { ...industryConfig.businessMetrics };
+  const industryMetrics = industryConfig?.businessMetrics;
+  
+  // Get code defaults as fallback
+  const defaultMetrics = getSimulationConfig(industryId).businessMetrics;
+  
+  // Merge: industry-specific overrides global, global overrides defaults
+  // This ensures all fields are present (industry > global > defaults)
+  if (industryMetrics) {
+    return { ...defaultMetrics, ...globalMetrics, ...industryMetrics };
   }
   
-  // Check global config
-  const globalConfig = getGlobalConfigOverride();
-  if (globalConfig?.businessMetrics) {
-    return { ...globalConfig.businessMetrics };
+  // Use global config merged with defaults if available
+  if (globalMetrics) {
+    return { ...defaultMetrics, ...globalMetrics };
   }
   
   // Fallback to code defaults
-  return { ...getSimulationConfig(industryId).businessMetrics };
+  return { ...defaultMetrics };
 }
 
 export function getBusinessStats(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
@@ -142,9 +152,13 @@ export function getBusinessStats(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
   const industryConfig = getIndustryOverride(industryId);
   const industryStats = industryConfig?.businessStats;
   
-  // Merge: industry-specific overrides global, but preserve eventTriggerSeconds from global if not set in industry
+  // Get code defaults as fallback
+  const defaultStats = getSimulationConfig(industryId).businessStats;
+  
+  // Merge: industry-specific overrides global, global overrides defaults
+  // This ensures all fields are present (industry > global > defaults)
   if (industryStats) {
-    const merged = { ...industryStats };
+    const merged = { ...defaultStats, ...globalStats, ...industryStats };
     // If industry config doesn't have eventTriggerSeconds or it's empty, use global
     if (!merged.eventTriggerSeconds || merged.eventTriggerSeconds.length === 0) {
       if (globalStats?.eventTriggerSeconds && globalStats.eventTriggerSeconds.length > 0) {
@@ -154,13 +168,13 @@ export function getBusinessStats(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
     return merged;
   }
   
-  // Use global config if available
+  // Use global config merged with defaults if available
   if (globalStats) {
-    return { ...globalStats };
+    return { ...defaultStats, ...globalStats };
   }
   
   // Fallback to code defaults
-  return { ...getSimulationConfig(industryId).businessStats };
+  return { ...defaultStats };
 }
 
 export function getMapConfigForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {

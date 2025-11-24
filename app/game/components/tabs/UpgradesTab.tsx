@@ -28,6 +28,7 @@ const METRIC_LABELS: Partial<Record<GameMetric, string>> = {
   [GameMetric.ServiceRevenueMultiplier]: 'Service Price',
   [GameMetric.ServiceRevenueFlatBonus]: 'Service Price',
   [GameMetric.FreedomScore]: 'Freedom Score',
+  // Note: ExpGainPerHappyCustomer and ExpLossPerAngryCustomer are config-only (not modifiable by upgrades)
 };
 
 const formatMagnitude = (value: number): string => {

@@ -138,6 +138,9 @@ interface ProcessCustomersParams {
     [GameMetric.ServiceRevenueFlatBonus]: number;
     serviceRevenueScale: number; // Not in GameMetric enum (config value, not an effect)
     [GameMetric.FailureRate]: number;
+    // EXP gain/loss are config-only (read directly from baseStats, not modifiable by effects)
+    expGainPerHappyCustomer: number;
+    expLossPerAngryCustomer: number;
   };
   industryId: string;
 }
@@ -276,8 +279,8 @@ function processCustomersForTick({
   let metricsAccumulator: Metrics = { ...metrics };
   let revenueAccumulator = monthlyRevenue;
   const revenueDetails = [...monthlyRevenueDetails];
-  const stats = getBusinessStats(industryId);
   // Skill level effects are applied directly in the effect system
+  // EXP gain/loss values now come from gameMetrics (calculated via effectManager)
   const serviceRevenueMultiplier = gameMetrics.serviceRevenueMultiplier > 0
     ? gameMetrics.serviceRevenueMultiplier
     : 1;
@@ -385,9 +388,8 @@ function processCustomersForTick({
         updatedCustomer.leavingTicks = 0; // Initialize leaving animation
 
         // Immediately deduct EXP when customer becomes angry
-        // Handle NaN/undefined properly
-        const expLossRaw = stats.expLossPerAngryCustomer;
-        const expLoss = (typeof expLossRaw === 'number' && !Number.isNaN(expLossRaw)) ? expLossRaw : 1;
+        // Use calculated value from effectManager (can be modified by upgrades/staff/events)
+        const expLoss = gameMetrics.expLossPerAngryCustomer;
         const oldExp = metricsAccumulator.exp;
         const newExp = Math.max(0, oldExp - expLoss);
         
@@ -411,11 +413,9 @@ function processCustomersForTick({
       const oldCash = metricsAccumulator.cash;
       const newCash = oldCash + serviceRevenue;
 
-      // Customers always leave satisfied, so apply the base exp gain
-      // EXP is modified directly (like cash), not through effect multipliers
-      // Handle NaN/undefined properly
-      const expGainRaw = stats.expGainPerHappyCustomer;
-      const expGain = (typeof expGainRaw === 'number' && !Number.isNaN(expGainRaw)) ? expGainRaw : 1;
+      // Customers always leave satisfied, so apply the exp gain
+      // Use calculated value from effectManager (can be modified by upgrades/staff/events)
+      const expGain = gameMetrics.expGainPerHappyCustomer;
       const oldExp = metricsAccumulator.exp;
       const newExp = oldExp + expGain;
 
@@ -441,8 +441,9 @@ function processCustomersForTick({
     // If customer is leaving angry, keep in game for exit animation
     if (customer.status === CustomerStatus.LeavingAngry) {
       const leavingTicks = (customer.leavingTicks ?? 0) + 1;
-
-      if (leavingTicks >= stats.leavingAngryDurationTicks) {
+      // Get leaving duration from base stats (not modifiable by effects - animation timing only)
+      const baseStats = getBusinessStats(industryId);
+      if (leavingTicks >= baseStats.leavingAngryDurationTicks) {
         // Exit animation complete - remove from game
         continue; // Skip to next customer
       }
@@ -602,6 +603,13 @@ export function tickOnce(state: TickInput): TickResult {
       GameMetric.FreedomScore,
       getFounderWorkingHoursBase(industryId),
     ),
+    // EXP gain/loss are config-only (read directly from baseStats, not modifiable by effects)
+    expGainPerHappyCustomer: (typeof baseStats.expGainPerHappyCustomer === 'number' && !Number.isNaN(baseStats.expGainPerHappyCustomer))
+      ? baseStats.expGainPerHappyCustomer
+      : 1,
+    expLossPerAngryCustomer: (typeof baseStats.expLossPerAngryCustomer === 'number' && !Number.isNaN(baseStats.expLossPerAngryCustomer))
+      ? baseStats.expLossPerAngryCustomer
+      : 1,
   };
   monthlyExpenses = gameMetrics.monthlyExpenses;
 

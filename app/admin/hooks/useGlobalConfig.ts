@@ -4,6 +4,7 @@ import { DEFAULT_GLOBAL_SIMULATION_CONFIG } from '@/lib/game/industryConfigs';
 import { DEFAULT_WIN_CONDITION, DEFAULT_LOSE_CONDITION, type WinCondition, type LoseCondition } from '@/lib/game/winConditions';
 import type { BusinessMetrics, BusinessStats, MovementConfig, MapConfig, SimulationLayoutConfig } from '@/lib/game/types';
 import type { Operation } from './types';
+import { useConfigStore } from '@/lib/store/configStore';
 
 export function useGlobalConfig() {
   const initialGlobal = DEFAULT_GLOBAL_SIMULATION_CONFIG;
@@ -32,8 +33,10 @@ export function useGlobalConfig() {
         if (isMounted && global) {
           if (global.businessMetrics) setMetrics(global.businessMetrics);
           if (global.businessStats) {
-            setStats(global.businessStats);
-            setEventSecondsInput((global.businessStats.eventTriggerSeconds || []).join(','));
+            // Merge with defaults to ensure all fields are present
+            const mergedStats = { ...initialGlobal.businessStats, ...global.businessStats };
+            setStats(mergedStats);
+            setEventSecondsInput((mergedStats.eventTriggerSeconds || []).join(','));
           }
           if (global.movement) setMovementJSON(JSON.stringify(global.movement, null, 2));
           if (global.mapConfig) {
@@ -121,6 +124,20 @@ export function useGlobalConfig() {
       setStatus(result.message ?? 'Failed to save global config.');
       return;
     }
+
+    // Update the config store so the game immediately sees the changes
+    useConfigStore.getState().setGlobalConfig({
+      businessMetrics,
+      businessStats,
+      movement,
+      mapConfig,
+      layoutConfig,
+      capacityImage: capacityImage || undefined,
+      customerImages: customerImages.length > 0 ? customerImages : undefined,
+      staffNamePool: staffNamePool.length > 0 ? staffNamePool : undefined,
+      winCondition,
+      loseCondition,
+    });
 
     setStatus('Global config saved.');
   }, [metrics, stats, eventSecondsInput, movementJSON, mapConfigJSON, layoutConfigJSON, capacityImage, customerImages, staffNamePool, winCondition, loseCondition]);
