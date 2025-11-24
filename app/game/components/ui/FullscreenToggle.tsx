@@ -123,7 +123,7 @@ export function FullscreenToggle({ targetId }: FullscreenToggleProps) {
       aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
     >
       {isFullscreen ? (
-        // Exit fullscreen icon (compress)
+        // Exit fullscreen icon (compress - arrows pointing inward)
         <svg
           width="16"
           height="16"
@@ -134,24 +134,15 @@ export function FullscreenToggle({ targetId }: FullscreenToggleProps) {
           aria-hidden="true"
         >
           <path
-            d="M5 3H3V5M11 3H13V5M5 13H3V11M11 13H13V11"
+            d="M6 6L3 3M10 6L13 3M6 10L3 13M10 10L13 13"
             stroke="currentColor"
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-          <rect
-            x="6"
-            y="6"
-            width="4"
-            height="4"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            fill="none"
-          />
         </svg>
       ) : (
-        // Enter fullscreen icon (expand)
+        // Enter fullscreen icon (expand - arrows pointing outward)
         <svg
           width="16"
           height="16"

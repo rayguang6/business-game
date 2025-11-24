@@ -2,7 +2,6 @@
 import React from 'react';
 import Image from 'next/image';
 import { Industry } from '@/lib/features/industries';
-import { getBusinessMetrics } from '@/lib/game/config';
 
 interface IndustryCardProps {
   industry: Industry;
@@ -10,11 +9,6 @@ interface IndustryCardProps {
 }
 
 export default function IndustryCard({ industry, onClick }: IndustryCardProps) {
-  // Get starting stats for this industry
-  const metrics = getBusinessMetrics(industry.id);
-  const startingCash = metrics.startingCash || 15000;
-  const startingExp = metrics.startingExp || 10; // Previously: startingSkillLevel
-
   return (
     <button
       onClick={onClick}
@@ -23,12 +17,6 @@ export default function IndustryCard({ industry, onClick }: IndustryCardProps) {
     >
       {/* Game-style Card Frame */}
       <div className="absolute inset-0 bg-gradient-to-br from-[var(--game-primary-light)]/20 via-[var(--game-primary)]/10 to-[var(--game-primary-dark)]/20 rounded-2xl border-4 border-[var(--game-primary)]/30 group-hover:border-[var(--game-primary)] group-hover:shadow-[0_0_30px_rgba(35,170,246,0.5)] transition-all duration-300 z-0" />
-      
-      {/* Decorative corner accents (Pokemon-style) */}
-      <div className="absolute top-2 left-2 w-8 h-8 border-t-4 border-l-4 border-[var(--game-secondary)]/40 rounded-tl-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      <div className="absolute top-2 right-2 w-8 h-8 border-t-4 border-r-4 border-[var(--game-secondary)]/40 rounded-tr-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      <div className="absolute bottom-2 left-2 w-8 h-8 border-b-4 border-l-4 border-[var(--game-secondary)]/40 rounded-bl-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      <div className="absolute bottom-2 right-2 w-8 h-8 border-b-4 border-r-4 border-[var(--game-secondary)]/40 rounded-br-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
       {/* Main Card Content */}
       <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl border-2 border-white/50 group-hover:bg-white transition-all duration-300">
@@ -62,40 +50,11 @@ export default function IndustryCard({ industry, onClick }: IndustryCardProps) {
         </div>
 
         {/* Industry Info Section */}
-        <div className="p-4 sm:p-5 md:p-6 bg-gradient-to-b from-white to-gray-50/50">
+        <div className="p-4 sm:p-5 md:p-6">
           {/* Description */}
-          <p className="text-sm sm:text-base text-gray-700 text-center font-medium leading-relaxed mb-4 min-h-[3rem] flex items-center justify-center">
+          <p className="text-sm sm:text-base text-gray-700 text-center font-medium leading-relaxed">
             {industry.description}
           </p>
-
-          {/* Stats Section (RPG/Tycoon style) */}
-          <div className="grid grid-cols-2 gap-3 pt-4 border-t-2 border-gray-200 group-hover:border-[var(--game-primary)]/30 transition-colors duration-300">
-            {/* Starting Cash */}
-            <div className="flex flex-col items-center p-2 bg-gradient-to-br from-[var(--success)]/10 to-[var(--success)]/5 rounded-lg border border-[var(--success)]/20 group-hover:border-[var(--success)]/40 transition-all duration-300">
-              <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Starting Cash</div>
-              <div className="text-lg sm:text-xl font-bold text-[var(--success-dark)] flex items-center gap-1">
-                <span>💰</span>
-                <span>${(startingCash / 1000).toFixed(0)}k</span>
-              </div>
-            </div>
-
-            {/* Starting Skill Level */}
-            <div className="flex flex-col items-center p-2 bg-gradient-to-br from-[var(--game-secondary)]/10 to-[var(--game-secondary)]/5 rounded-lg border border-[var(--game-secondary)]/20 group-hover:border-[var(--game-secondary)]/40 transition-all duration-300">
-              <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Skill Level</div>
-              <div className="text-lg sm:text-xl font-bold text-[var(--game-secondary-dark)] flex items-center gap-1">
-                <span>⭐</span>
-                <span>{startingExp}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Select Button Hint */}
-          <div className="mt-4 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[var(--game-primary)]/10 to-[var(--game-primary-dark)]/10 rounded-lg border border-[var(--game-primary)]/20 group-hover:from-[var(--game-primary)]/20 group-hover:to-[var(--game-primary-dark)]/20 group-hover:border-[var(--game-primary)]/40 transition-all duration-300">
-              <span className="text-sm font-semibold text-[var(--game-primary-dark)]">Click to Select</span>
-              <span className="text-[var(--game-primary)] group-hover:translate-x-1 transition-transform duration-300">→</span>
-            </div>
-          </div>
         </div>
       </div>
 
