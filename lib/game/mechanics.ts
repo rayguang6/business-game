@@ -351,16 +351,29 @@ function processCustomersForTick({
       }
     }
 
-    // If customer is leaving happy, add revenue and skill level
+    // If customer is leaving happy, check failure rate and add revenue and skill level
     if (updatedCustomer.status === CustomerStatus.WalkingOutHappy) {
+      // Check failure rate - customer might fail and leave angry instead
+      const failureRate = effectManager.calculate(GameMetric.FailureRate, 0);
+      const failed = Math.random() * 100 < failureRate;
+
+      if (failed) {
+        // Service failed - customer becomes angry and leaves without revenue
+        updatedCustomer.status = CustomerStatus.LeavingAngry;
+        // Keep customer in game for exit animation (don't continue)
+        updatedCustomers.push(updatedCustomer);
+        continue; // Skip to next customer (no revenue, no exp)
+      }
+
+      // Service succeeded - customer leaves happy with revenue and exp
       const servicePrice = updatedCustomer.service.price;
       const tierMultiplier = getTierRevenueMultiplier(updatedCustomer.service.pricingCategory);
       const baseServiceValue = (servicePrice * tierMultiplier) + serviceRevenueFlatBonus;
       const serviceRevenue = Math.max(0, baseServiceValue) * serviceRevenueMultiplier * serviceRevenueScale;
-      
+
       // Add revenue
       const newCash = metricsAccumulator.cash + serviceRevenue;
-      
+
       // Customers always leave satisfied, so apply the base exp gain
       // EXP is modified directly (like cash), not through effect multipliers
       const expGain = stats.expGainPerHappyCustomer;
