@@ -158,6 +158,8 @@ import { getMonthlyBaseExpenses } from '@/lib/features/economy';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import { DynamicValueEvaluator } from '@/lib/game/dynamicValueEvaluator';
 import { checkRequirements } from '@/lib/game/requirementChecker';
+import { SourceType } from '@/lib/config/sourceTypes';
+import { SourceHelpers } from '@/lib/utils/financialTracking';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // 🎯 RESOLVED EFFECT TYPES - Update this when adding new effects (STEP 2)
@@ -252,25 +254,36 @@ const applyEventEffect = (
   event: GameEvent,
   choice: GameEventChoice,
   store: GameStore,
+  consequence?: GameEventConsequence | null,
 ): void => {
   switch (effect.type) {
     case EventEffectType.Cash: {
       // Cash effects should be handled by the game's revenue system
       const { recordEventRevenue, recordEventExpense } = store;
+      const sourceInfo = SourceHelpers.fromEvent(event.id, event.title);
+      const label = effect.label ?? `${event.title} - ${choice.label}`;
       if (effect.amount >= 0) {
-        recordEventRevenue(effect.amount, effect.label ?? `${event.title} - ${choice.label}`);
+        recordEventRevenue(effect.amount, sourceInfo, label);
       } else {
-        recordEventExpense(Math.abs(effect.amount), effect.label ?? `${event.title} - ${choice.label}`);
+        recordEventExpense(Math.abs(effect.amount), sourceInfo, label);
       }
       return; // Don't use effectManager for cash (handled by revenue system)
     }
     case EventEffectType.DynamicCash: {
       const value = calculateDynamicCashValue(effect, store);
       const { recordEventRevenue, recordEventExpense } = store;
+      const sourceInfo = SourceHelpers.fromEvent(event.id, event.title, {
+        choiceId: choice.id,
+        choiceLabel: choice.label,
+        consequenceId: consequence?.id,
+        consequenceLabel: consequence?.label,
+        effectLabel: effect.label,
+      });
+      const label = effect.label ?? `${event.title} - ${choice.label}`;
       if (value >= 0) {
-        recordEventRevenue(value, effect.label ?? `${event.title} - ${choice.label}`);
+        recordEventRevenue(value, sourceInfo, label);
       } else {
-        recordEventExpense(Math.abs(value), effect.label ?? `${event.title} - ${choice.label}`);
+        recordEventExpense(Math.abs(value), sourceInfo, label);
       }
       return;
     }
@@ -288,10 +301,17 @@ const applyEventEffect = (
           && effect.effectType === EffectType.Add) {
         if (effect.metric === GameMetric.Cash) {
           const { recordEventRevenue, recordEventExpense } = store;
+          const sourceInfo = SourceHelpers.fromEvent(event.id, event.title, {
+            choiceId: choice.id,
+            choiceLabel: choice.label,
+            consequenceId: consequence?.id,
+            consequenceLabel: consequence?.label,
+          });
+          const label = `${event.title} - ${choice.label}`;
           if (effect.value >= 0) {
-            recordEventRevenue(effect.value, `${event.title} - ${choice.label}`);
+            recordEventRevenue(effect.value, sourceInfo, label);
           } else {
-            recordEventExpense(Math.abs(effect.value), `${event.title} - ${choice.label}`);
+            recordEventExpense(Math.abs(effect.value), sourceInfo, label);
           }
         } else if (effect.metric === GameMetric.Time) {
           store.applyTimeChange(effect.value);
@@ -428,7 +448,12 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
 
     const cost = Math.max(0, choice.cost ?? 0);
     if (cost > 0) {
-      store.recordEventExpense(cost, `${event.title} - ${choice.label} (cost)`);
+      const sourceInfo = SourceHelpers.fromEvent(event.id, event.title, {
+        choiceId: choice.id,
+        choiceLabel: choice.label,
+        effectLabel: `${choice.label} (cost)`,
+      });
+      store.recordEventExpense(cost, sourceInfo, `${event.title} - ${choice.label} (cost)`);
     }
 
     const timeCost = Math.max(0, choice.timeCost ?? 0);
@@ -554,10 +579,18 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
         if (resolvedEffect.type === EventEffectType.Cash && resolvedEffect.amount !== undefined) {
           // Cash effects go through revenue system
           const { recordEventRevenue, recordEventExpense } = store;
+          const sourceInfo = SourceHelpers.fromEvent(outcome.eventId || 'unknown', outcome.eventTitle, {
+            choiceId: outcome.choiceId,
+            choiceLabel: outcome.choiceLabel,
+            consequenceId: outcome.consequenceId || undefined,
+            consequenceLabel: outcome.consequenceLabel || undefined,
+            effectLabel: resolvedEffect.label,
+          });
+          const label = resolvedEffect.label ?? `${outcome.eventTitle} - ${outcome.choiceLabel}`;
           if (resolvedEffect.amount >= 0) {
-            recordEventRevenue(resolvedEffect.amount, resolvedEffect.label ?? 'Event revenue');
+            recordEventRevenue(resolvedEffect.amount, sourceInfo, label);
           } else {
-            recordEventExpense(Math.abs(resolvedEffect.amount), resolvedEffect.label ?? 'Event expense');
+            recordEventExpense(Math.abs(resolvedEffect.amount), sourceInfo, label);
           }
         } else if (resolvedEffect.type === EventEffectType.Exp && resolvedEffect.amount !== undefined) {
           // Skill level effects directly modify skill level
@@ -568,7 +601,19 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
           
           // For direct state metrics (Cash, Time, SkillLevel, FreedomScore), apply immediately if Add effect
           if (resolvedEffect.metric === GameMetric.Cash && resolvedEffect.effectType === EffectType.Add) {
-            store.applyCashChange(resolvedEffect.value);
+            // Cash effects should go through revenue/expense tracking (same as EventEffectType.Cash)
+            const { recordEventRevenue, recordEventExpense } = store;
+            const sourceInfo = {
+              type: SourceType.Event,
+              id: outcome.eventId || 'unknown',
+              name: outcome.eventTitle,
+            };
+            const label = resolvedEffect.label ?? `${outcome.eventTitle} - ${outcome.choiceLabel}`;
+            if (resolvedEffect.value >= 0) {
+              recordEventRevenue(resolvedEffect.value, sourceInfo, label);
+            } else {
+              recordEventExpense(Math.abs(resolvedEffect.value), sourceInfo, label);
+            }
           } else if (resolvedEffect.metric === GameMetric.Time && resolvedEffect.effectType === EffectType.Add) {
             store.applyTimeChange(resolvedEffect.value);
           } else if (resolvedEffect.metric === GameMetric.Exp && resolvedEffect.effectType === EffectType.Add) {
@@ -651,10 +696,17 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
       outcome.pendingEffects.forEach((resolvedEffect: ResolvedEffect) => {
         if (resolvedEffect.type === EventEffectType.Cash && resolvedEffect.amount !== undefined) {
           const { recordEventRevenue, recordEventExpense } = store;
+          const sourceInfo = SourceHelpers.fromEvent(outcome.eventId || 'unknown', outcome.eventTitle, {
+            choiceId: outcome.choiceId,
+            choiceLabel: outcome.choiceLabel,
+            consequenceId: outcome.consequenceId || undefined,
+            effectLabel: resolvedEffect.label,
+          });
+          const label = resolvedEffect.label ?? `${outcome.eventTitle} - ${outcome.choiceLabel}`;
           if (resolvedEffect.amount >= 0) {
-            recordEventRevenue(resolvedEffect.amount, resolvedEffect.label ?? 'Delayed event revenue');
+            recordEventRevenue(resolvedEffect.amount, sourceInfo, label);
           } else {
-            recordEventExpense(Math.abs(resolvedEffect.amount), resolvedEffect.label ?? 'Delayed event expense');
+            recordEventExpense(Math.abs(resolvedEffect.amount), sourceInfo, label);
           }
         } else if (resolvedEffect.type === EventEffectType.Exp && resolvedEffect.amount !== undefined) {
           store.applyExpChange(resolvedEffect.amount);
@@ -662,7 +714,20 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
           const { gameTime, metrics } = store;
           
           if (resolvedEffect.metric === GameMetric.Cash && resolvedEffect.effectType === EffectType.Add) {
-            store.applyCashChange(resolvedEffect.value);
+            // Cash effects should go through revenue/expense tracking (same as EventEffectType.Cash)
+            const { recordEventRevenue, recordEventExpense } = store;
+            const sourceInfo = SourceHelpers.fromEvent(outcome.eventId || 'unknown', outcome.eventTitle, {
+              choiceId: outcome.choiceId,
+              choiceLabel: outcome.choiceLabel,
+              consequenceId: outcome.consequenceId || undefined,
+              effectLabel: resolvedEffect.label,
+            });
+            const label = resolvedEffect.label ?? `${outcome.eventTitle} - ${outcome.choiceLabel}`;
+            if (resolvedEffect.value >= 0) {
+              recordEventRevenue(resolvedEffect.value, sourceInfo, label);
+            } else {
+              recordEventExpense(Math.abs(resolvedEffect.value), sourceInfo, label);
+            }
           } else if (resolvedEffect.metric === GameMetric.Time && resolvedEffect.effectType === EffectType.Add) {
             store.applyTimeChange(resolvedEffect.value);
           } else if (resolvedEffect.metric === GameMetric.Exp && resolvedEffect.effectType === EffectType.Add) {

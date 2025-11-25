@@ -18,7 +18,15 @@ export async function fetchIndustriesFromSupabase(): Promise<Industry[] | null> 
     .from('industries')
     .select('id,name,icon,description,image,map_image,is_available');
 
-  if (error || !data) {
+  if (error) {
+    // Log error in development for debugging, but don't expose to users
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Supabase query error:', error);
+    }
+    return null;
+  }
+
+  if (!data) {
     return null;
   }
 

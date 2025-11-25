@@ -79,6 +79,7 @@ export function EventsTab({
   const [jsonImportText, setJsonImportText] = useState('');
   const [jsonImportErrors, setJsonImportErrors] = useState<string[]>([]);
   const [jsonImporting, setJsonImporting] = useState(false);
+  const [showLabelTooltip, setShowLabelTooltip] = useState<string | null>(null);
 
   // Choice/consequence state (managed internally)
   const [selectedChoiceId, setSelectedChoiceId] = useState<string>('');
@@ -1267,9 +1268,33 @@ export function EventsTab({
                                                   />
                                                 </div>
                                                 {ef.type === EventEffectType.Cash && (
-                                                  <div>
-                                                    <label className="block text-xs text-slate-400 mb-1">Label (optional)</label>
+                                                  <div className="relative">
+                                                    <label className="flex items-center gap-1 text-xs text-slate-400 mb-1">
+                                                      Label (optional)
+                                                      <button
+                                                        type="button"
+                                                        onClick={() => setShowLabelTooltip(showLabelTooltip === `cash-${idx}` ? null : `cash-${idx}`)}
+                                                        className="text-slate-500 hover:text-slate-300 cursor-pointer text-xs"
+                                                        aria-label="Help"
+                                                      >
+                                                        ?
+                                                      </button>
+                                                      {showLabelTooltip === `cash-${idx}` && (
+                                                        <div className="absolute left-0 top-6 z-50 w-64 p-2 bg-slate-800 border border-slate-600 rounded-lg shadow-lg text-xs text-slate-300">
+                                                          <p className="mb-1">Used in PnL display. Takes priority over choice/consequence names.</p>
+                                                          <p>If empty, shows: &quot;{eventForm.title} - [choice label]&quot;</p>
+                                                          <button
+                                                            type="button"
+                                                            onClick={() => setShowLabelTooltip(null)}
+                                                            className="mt-2 text-slate-400 hover:text-slate-200 text-xs"
+                                                          >
+                                                            Close
+                                                          </button>
+                                                        </div>
+                                                      )}
+                                                    </label>
                                                     <input
+                                                      placeholder="e.g. Partnership Bonus, Client Payment"
                                                       value={ef.label ?? ''}
                                                       onChange={(e) => {
                                                         const newEffects = [...consequenceForm.effects];
@@ -1297,9 +1322,33 @@ export function EventsTab({
                                                     className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
                                                   />
                                                 </div>
-                                                <div>
-                                                  <label className="block text-xs text-slate-400 mb-1">Label (optional)</label>
+                                                <div className="relative">
+                                                  <label className="flex items-center gap-1 text-xs text-slate-400 mb-1">
+                                                    Label (optional)
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => setShowLabelTooltip(showLabelTooltip === `dynamic-${idx}` ? null : `dynamic-${idx}`)}
+                                                      className="text-slate-500 hover:text-slate-300 cursor-pointer text-xs"
+                                                      aria-label="Help"
+                                                    >
+                                                      ?
+                                                    </button>
+                                                    {showLabelTooltip === `dynamic-${idx}` && (
+                                                      <div className="absolute left-0 top-6 z-50 w-64 p-2 bg-slate-800 border border-slate-600 rounded-lg shadow-lg text-xs text-slate-300">
+                                                        <p className="mb-1">Used in PnL display. Takes priority over choice/consequence names.</p>
+                                                        <p>If empty, shows: &quot;{eventForm.title} - [choice label]&quot;</p>
+                                                        <button
+                                                          type="button"
+                                                          onClick={() => setShowLabelTooltip(null)}
+                                                          className="mt-2 text-slate-400 hover:text-slate-200 text-xs"
+                                                        >
+                                                          Close
+                                                        </button>
+                                                      </div>
+                                                    )}
+                                                  </label>
                                                   <input
+                                                    placeholder="e.g. Partnership Bonus, Client Payment"
                                                     value={ef.label ?? ''}
                                                     onChange={(e) => {
                                                       const newEffects = [...consequenceForm.effects];
@@ -1465,9 +1514,29 @@ export function EventsTab({
                                                 className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
                                               />
                                             </div>
-                                            <div>
-                                              <label className="block text-sm font-semibold text-slate-300 mb-1">
+                                            <div className="relative">
+                                              <label className="flex items-center gap-1 text-sm font-semibold text-slate-300 mb-1">
                                                 Title <span className="text-slate-400">(shown to player)</span>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => setShowLabelTooltip(showLabelTooltip === 'delayed-title' ? null : 'delayed-title')}
+                                                  className="text-slate-500 hover:text-slate-300 cursor-pointer text-xs"
+                                                  aria-label="Help"
+                                                >
+                                                  ?
+                                                </button>
+                                                {showLabelTooltip === 'delayed-title' && (
+                                                  <div className="absolute left-0 top-6 z-50 w-64 p-2 bg-slate-800 border border-slate-600 rounded-lg shadow-lg text-xs text-slate-300">
+                                                    <p>What the player will see as the popup title when the delayed consequence triggers.</p>
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => setShowLabelTooltip(null)}
+                                                      className="mt-2 text-slate-400 hover:text-slate-200 text-xs"
+                                                    >
+                                                      Close
+                                                    </button>
+                                                  </div>
+                                                )}
                                               </label>
                                               <input
                                                 value={consequenceForm.delayedConsequence.label || ''}
@@ -1480,13 +1549,30 @@ export function EventsTab({
                                                 placeholder="e.g., 'Partnership Opportunity', 'Market Response'"
                                                 className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
                                               />
-                                              <div className="text-xs text-slate-500 mt-1">
-                                                What the player will see as the popup title
-                                              </div>
                                             </div>
-                                            <div>
-                                              <label className="block text-sm font-semibold text-slate-300 mb-1">
+                                            <div className="relative">
+                                              <label className="flex items-center gap-1 text-sm font-semibold text-slate-300 mb-1">
                                                 Success Description <span className="text-slate-400">(shown on success)</span>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => setShowLabelTooltip(showLabelTooltip === 'delayed-success-desc' ? null : 'delayed-success-desc')}
+                                                  className="text-slate-500 hover:text-slate-300 cursor-pointer text-xs"
+                                                  aria-label="Help"
+                                                >
+                                                  ?
+                                                </button>
+                                                {showLabelTooltip === 'delayed-success-desc' && (
+                                                  <div className="absolute left-0 top-6 z-50 w-64 p-2 bg-slate-800 border border-slate-600 rounded-lg shadow-lg text-xs text-slate-300">
+                                                    <p>Message shown when requirements are met (or always if no requirements are set).</p>
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => setShowLabelTooltip(null)}
+                                                      className="mt-2 text-slate-400 hover:text-slate-200 text-xs"
+                                                    >
+                                                      Close
+                                                    </button>
+                                                  </div>
+                                                )}
                                               </label>
                                               <textarea
                                                 rows={2}
@@ -1500,13 +1586,30 @@ export function EventsTab({
                                                 placeholder="e.g., 'Your investment has paid off - the partnership is successful!'"
                                                 className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
                                               />
-                                              <div className="text-xs text-slate-500 mt-1">
-                                                Message shown when requirements are met
-                                              </div>
                                             </div>
-                                            <div>
-                                              <label className="block text-sm font-semibold text-slate-300 mb-1">
+                                            <div className="relative">
+                                              <label className="flex items-center gap-1 text-sm font-semibold text-slate-300 mb-1">
                                                 Failure Description <span className="text-slate-400">(shown on failure)</span>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => setShowLabelTooltip(showLabelTooltip === 'delayed-failure-desc' ? null : 'delayed-failure-desc')}
+                                                  className="text-slate-500 hover:text-slate-300 cursor-pointer text-xs"
+                                                  aria-label="Help"
+                                                >
+                                                  ?
+                                                </button>
+                                                {showLabelTooltip === 'delayed-failure-desc' && (
+                                                  <div className="absolute left-0 top-6 z-50 w-64 p-2 bg-slate-800 border border-slate-600 rounded-lg shadow-lg text-xs text-slate-300">
+                                                    <p>Message shown when requirements are not met. Optional - if not provided, failure effects will still apply but no message will be shown.</p>
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => setShowLabelTooltip(null)}
+                                                      className="mt-2 text-slate-400 hover:text-slate-200 text-xs"
+                                                    >
+                                                      Close
+                                                    </button>
+                                                  </div>
+                                                )}
                                               </label>
                                               <textarea
                                                 rows={2}
@@ -1520,21 +1623,36 @@ export function EventsTab({
                                                 placeholder="e.g., 'Unfortunately, the partnership fell through due to market conditions.'"
                                                 className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
                                               />
-                                              <div className="text-xs text-slate-500 mt-1">
-                                                Message shown when requirements are not met
-                                              </div>
                                             </div>
                                           </div>
 
                                           {/* Success Requirements */}
-                                          <div>
-                                            <label className="block text-sm font-semibold text-slate-300 mb-2">
+                                          <div className="relative">
+                                            <label className="flex items-center gap-1 text-sm font-semibold text-slate-300 mb-2">
                                               Success Requirements
                                               <span className="text-slate-400 ml-1">(optional - if empty, always succeeds)</span>
+                                              <button
+                                                type="button"
+                                                onClick={() => setShowLabelTooltip(showLabelTooltip === 'delayed-requirements' ? null : 'delayed-requirements')}
+                                                className="text-slate-500 hover:text-slate-300 cursor-pointer text-xs"
+                                                aria-label="Help"
+                                              >
+                                                ?
+                                              </button>
+                                              {showLabelTooltip === 'delayed-requirements' && (
+                                                <div className="absolute left-0 top-6 z-50 w-64 p-2 bg-slate-800 border border-slate-600 rounded-lg shadow-lg text-xs text-slate-300">
+                                                  <p className="mb-1">Choose flags/conditions that must be met for success.</p>
+                                                  <p>If none selected, the delayed consequence will always succeed and show the success description.</p>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => setShowLabelTooltip(null)}
+                                                    className="mt-2 text-slate-400 hover:text-slate-200 text-xs"
+                                                  >
+                                                    Close
+                                                  </button>
+                                                </div>
+                                              )}
                                             </label>
-                                            <div className="text-xs text-slate-500 mb-2">
-                                              Choose flags/conditions that must be met for success. If none selected, the delayed consequence will always succeed.
-                                            </div>
                                             <RequirementsSelector
                                               flags={flags}
                                               conditions={conditions}
@@ -1551,12 +1669,32 @@ export function EventsTab({
                                           </div>
 
                                           {/* Success Effects */}
-                                          <div>
+                                          <div className="relative">
                                             <div className="flex items-center justify-between mb-2">
                                               <div>
-                                                <span className="text-sm font-semibold text-slate-300">Success Effects</span>
-                                                <div className="text-xs text-slate-500">
-                                                  Applied when requirements are met (or always if no requirements)
+                                                <div className="flex items-center gap-1">
+                                                  <span className="text-sm font-semibold text-slate-300">Success Effects</span>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => setShowLabelTooltip(showLabelTooltip === 'delayed-success-effects' ? null : 'delayed-success-effects')}
+                                                    className="text-slate-500 hover:text-slate-300 cursor-pointer text-xs"
+                                                    aria-label="Help"
+                                                  >
+                                                    ?
+                                                  </button>
+                                                  {showLabelTooltip === 'delayed-success-effects' && (
+                                                    <div className="absolute left-0 top-6 z-50 w-64 p-2 bg-slate-800 border border-slate-600 rounded-lg shadow-lg text-xs text-slate-300">
+                                                      <p>Applied when requirements are met (or always if no requirements are set).</p>
+                                                      <p className="mt-1">These effects will be applied when the delayed consequence succeeds.</p>
+                                                      <button
+                                                        type="button"
+                                                        onClick={() => setShowLabelTooltip(null)}
+                                                        className="mt-2 text-slate-400 hover:text-slate-200 text-xs"
+                                                      >
+                                                        Close
+                                                      </button>
+                                                    </div>
+                                                  )}
                                                 </div>
                                               </div>
                                               <div className="flex gap-2 flex-wrap">
@@ -1663,8 +1801,12 @@ export function EventsTab({
                                                       </div>
                                                       {ef.type === EventEffectType.Cash && (
                                                         <div>
-                                                          <label className="block text-xs text-slate-400 mb-1">Label (optional)</label>
+                                                          <label className="block text-xs text-slate-400 mb-1">
+                                                            Label (optional)
+                                                            <span className="ml-1 text-slate-500 cursor-help" title="Used in PnL display. Takes priority over choice/consequence names. If empty, shows: '[Event Title] - [choice label]'">ℹ️</span>
+                                                          </label>
                                                           <input
+                                                            placeholder="e.g. Partnership Bonus, Client Payment"
                                                             value={ef.label ?? ''}
                                                             onChange={(e) => {
                                                               const newEffects = [...consequenceForm.delayedConsequence!.successEffects];
@@ -1698,9 +1840,33 @@ export function EventsTab({
                                                           className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
                                                         />
                                                       </div>
-                                                      <div>
-                                                        <label className="block text-xs text-slate-400 mb-1">Label (optional)</label>
+                                                      <div className="relative">
+                                                        <label className="flex items-center gap-1 text-xs text-slate-400 mb-1">
+                                                          Label (optional)
+                                                          <button
+                                                            type="button"
+                                                            onClick={() => setShowLabelTooltip(showLabelTooltip === `delayed-success-dynamic-${idx}` ? null : `delayed-success-dynamic-${idx}`)}
+                                                            className="text-slate-500 hover:text-slate-300 cursor-pointer text-xs"
+                                                            aria-label="Help"
+                                                          >
+                                                            ?
+                                                          </button>
+                                                          {showLabelTooltip === `delayed-success-dynamic-${idx}` && (
+                                                            <div className="absolute left-0 top-6 z-50 w-64 p-2 bg-slate-800 border border-slate-600 rounded-lg shadow-lg text-xs text-slate-300">
+                                                              <p className="mb-1">Used in PnL display. Takes priority over choice/consequence names.</p>
+                                                              <p>If empty, shows: &quot;{eventForm.title} - [choice label]&quot;</p>
+                                                              <button
+                                                                type="button"
+                                                                onClick={() => setShowLabelTooltip(null)}
+                                                                className="mt-2 text-slate-400 hover:text-slate-200 text-xs"
+                                                              >
+                                                                Close
+                                                              </button>
+                                                            </div>
+                                                          )}
+                                                        </label>
                                                         <input
+                                                          placeholder="e.g. Partnership Bonus, Client Payment"
                                                           value={ef.label ?? ''}
                                                           onChange={(e) => {
                                                             const newEffects = [...consequenceForm.delayedConsequence!.successEffects];
@@ -1812,12 +1978,32 @@ export function EventsTab({
                                           </div>
 
                                           {/* Failure Effects (Optional) */}
-                                          <div>
+                                          <div className="relative">
                                             <div className="flex items-center justify-between mb-2">
                                               <div>
-                                                <span className="text-sm font-semibold text-slate-300">Failure Effects (optional)</span>
-                                                <div className="text-xs text-slate-500">
-                                                  Applied when requirements are not met (only needed if you want different effects for failure)
+                                                <div className="flex items-center gap-1">
+                                                  <span className="text-sm font-semibold text-slate-300">Failure Effects (optional)</span>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => setShowLabelTooltip(showLabelTooltip === 'delayed-failure-effects' ? null : 'delayed-failure-effects')}
+                                                    className="text-slate-500 hover:text-slate-300 cursor-pointer text-xs"
+                                                    aria-label="Help"
+                                                  >
+                                                    ?
+                                                  </button>
+                                                  {showLabelTooltip === 'delayed-failure-effects' && (
+                                                    <div className="absolute left-0 top-6 z-50 w-64 p-2 bg-slate-800 border border-slate-600 rounded-lg shadow-lg text-xs text-slate-300">
+                                                      <p>Applied when requirements are not met.</p>
+                                                      <p className="mt-1">Optional - if not provided, no effects will be applied on failure. These effects will only trigger if success requirements are set and not met.</p>
+                                                      <button
+                                                        type="button"
+                                                        onClick={() => setShowLabelTooltip(null)}
+                                                        className="mt-2 text-slate-400 hover:text-slate-200 text-xs"
+                                                      >
+                                                        Close
+                                                      </button>
+                                                    </div>
+                                                  )}
                                                 </div>
                                               </div>
                                               <button
@@ -1849,9 +2035,6 @@ export function EventsTab({
                                             </div>
                                             {consequenceForm.delayedConsequence?.failureEffects && (
                                               <div className="space-y-2">
-                                                <div className="text-xs text-slate-400 mb-2">
-                                                  These effects are applied when requirements are not met. If no failure effects are defined, no effects will be applied on failure.
-                                                </div>
                                                 {/* Add effect buttons and editor similar to success effects */}
                                                 <div className="flex gap-2 flex-wrap mb-2">
                                                   <button
@@ -1956,8 +2139,12 @@ export function EventsTab({
                                                         </div>
                                                         {ef.type === EventEffectType.Cash && (
                                                           <div>
-                                                            <label className="block text-xs text-slate-400 mb-1">Label (optional)</label>
+                                                            <label className="block text-xs text-slate-400 mb-1">
+                                                              Label (optional)
+                                                              <span className="ml-1 text-slate-500 cursor-help" title="Used in PnL display. Takes priority over choice/consequence names. If empty, shows: '[Event Title] - [choice label]'">ℹ️</span>
+                                                            </label>
                                                             <input
+                                                              placeholder="e.g. Partnership Bonus, Client Payment"
                                                               value={ef.label ?? ''}
                                                               onChange={(e) => {
                                                                 const newEffects = [...consequenceForm.delayedConsequence!.failureEffects!];
@@ -1991,9 +2178,33 @@ export function EventsTab({
                                                             className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
                                                           />
                                                         </div>
-                                                        <div>
-                                                          <label className="block text-xs text-slate-400 mb-1">Label (optional)</label>
+                                                        <div className="relative">
+                                                          <label className="flex items-center gap-1 text-xs text-slate-400 mb-1">
+                                                            Label (optional)
+                                                            <button
+                                                              type="button"
+                                                              onClick={() => setShowLabelTooltip(showLabelTooltip === `delayed-failure-dynamic-${idx}` ? null : `delayed-failure-dynamic-${idx}`)}
+                                                              className="text-slate-500 hover:text-slate-300 cursor-pointer text-xs"
+                                                              aria-label="Help"
+                                                            >
+                                                              ?
+                                                            </button>
+                                                            {showLabelTooltip === `delayed-failure-dynamic-${idx}` && (
+                                                              <div className="absolute left-0 top-6 z-50 w-64 p-2 bg-slate-800 border border-slate-600 rounded-lg shadow-lg text-xs text-slate-300">
+                                                                <p className="mb-1">Used in PnL display. Takes priority over choice/consequence names.</p>
+                                                                <p>If empty, shows: &quot;{eventForm.title} - [choice label]&quot;</p>
+                                                                <button
+                                                                  type="button"
+                                                                  onClick={() => setShowLabelTooltip(null)}
+                                                                  className="mt-2 text-slate-400 hover:text-slate-200 text-xs"
+                                                                >
+                                                                  Close
+                                                                </button>
+                                                              </div>
+                                                            )}
+                                                          </label>
                                                           <input
+                                                            placeholder="e.g. Partnership Bonus, Client Payment"
                                                             value={ef.label ?? ''}
                                                             onChange={(e) => {
                                                               const newEffects = [...consequenceForm.delayedConsequence!.failureEffects!];

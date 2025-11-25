@@ -159,8 +159,11 @@ export function FinanceTab() {
           <div className="space-y-4">
             {monthlyHistory.slice(-5).reverse().map((w, index) => {
               // Calculate recurring vs one-time expenses
+              // w.expenses only includes expenses deducted at month end (recurring + unpaid one-time costs)
+              // To get recurring expenses, subtract only the unpaid one-time costs
+              const unpaidOneTimeCosts = w.oneTimeCosts?.reduce((sum, cost) => sum + (cost.alreadyDeducted ? 0 : cost.amount), 0) || 0;
               const oneTimeCostsTotal = w.oneTimeCosts?.reduce((sum, cost) => sum + cost.amount, 0) || 0;
-              const recurringExpenses = w.expenses - oneTimeCostsTotal;
+              const recurringExpenses = w.expenses - unpaidOneTimeCosts;
               const revenueBreakdown: RevenueEntry[] =
                 w.revenueBreakdown && w.revenueBreakdown.length > 0
                   ? w.revenueBreakdown

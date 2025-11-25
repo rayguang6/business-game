@@ -13,16 +13,10 @@ import {
 } from '@/lib/game/config';
 import { IndustryId, UpgradeId } from '@/lib/game/types';
 import { getUpgradeLevel } from './upgrades';
-import { Upgrades } from '@/lib/store/types';
+import { Upgrades, ExpenseBreakdownItem } from '@/lib/store/types';
 import { EffectType, GameMetric, effectManager } from '@/lib/game/effectManager';
 import { Staff } from '@/lib/features/staff';
-
-export interface ExpenseBreakdownItem {
-  label: string;
-  amount: number;
-  category: 'base' | 'upgrade' | 'event' | 'staff'; //TODO: Turn into Global Enum
-  sourceId?: string;
-}
+import { SourceType } from '@/lib/config/sourceTypes';
 
 // Mechanics
 /**
@@ -54,9 +48,9 @@ function calculateUpgradeExpenseFromDefinition(
 
 export function buildMonthlyExpenseBreakdown(
   upgrades: Upgrades,
-  monthlyOneTimeCosts: number = 0,
   industryId: IndustryId,
   staffMembers: Staff[] = [],
+  gameTime?: number,
 ): ExpenseBreakdownItem[] {
   const availableUpgrades = getUpgradesForIndustry(industryId);
   const upgradeMap = new Map(availableUpgrades.map((upgrade) => [upgrade.id, upgrade]));
@@ -65,18 +59,24 @@ export function buildMonthlyExpenseBreakdown(
       label: 'Base operations',
       amount: getMonthlyBaseExpenses(industryId),
       category: 'base',
+      sourceType: SourceType.Base, // SourceType.Base as string
+      sourceName: 'Base operations',
     },
   ];
 
-  const totalStaffSalary = staffMembers.reduce((sum, staff) => sum + (staff.salary ?? 0), 0);
-  if (totalStaffSalary > 0) {
-    breakdown.push({
-      label: 'Staff salaries',
-      amount: totalStaffSalary,
-      category: 'staff',
-    });
-  }
+  // Add each staff member's salary individually (not combined)
+  staffMembers.forEach((staff) => {
+    if (staff.salary > 0) {
+      breakdown.push({
+        label: `Salary: ${staff.name}`,
+        amount: staff.salary,
+        category: 'staff',
+        sourceId: staff.id,
+      });
+    }
+  });
 
+  // Add each upgrade's monthly expense individually
   Object.entries(upgrades)
     .filter(([_, level]) => level > 0)
     .forEach(([upgradeId, level]) => {
@@ -91,17 +91,51 @@ export function buildMonthlyExpenseBreakdown(
           amount: additionalExpenses,
           category: 'upgrade',
           sourceId: upgrade.id,
+          sourceType: SourceType.Upgrade, // SourceType.Upgrade as string
+          sourceName: upgrade.name,
         });
       }
     });
 
-  if (monthlyOneTimeCosts > 0) {
+  // Add event-based monthly expense changes (from effectManager)
+  // Get all active effects that modify MonthlyExpenses
+  const monthlyExpenseEffects = effectManager.getEffectsForMetric(GameMetric.MonthlyExpenses);
+  
+  // Filter for event-based Add effects (these add flat amounts to monthly expenses)
+  // Note: We only show Add effects as they're straightforward to display individually
+  // Percent/Multiply effects affect everything proportionally, so harder to attribute
+  // Also filter out expired effects if gameTime is provided
+  const eventAddEffects = monthlyExpenseEffects.filter((effect) => {
+    // Must be from event, Add type, and positive value
+    if (effect.source.category !== 'event' || effect.type !== EffectType.Add || effect.value <= 0) {
+      return false;
+    }
+    
+    // Filter expired effects if gameTime is provided
+    if (gameTime !== undefined && effect.durationSeconds !== null && effect.durationSeconds !== undefined) {
+      const isExpired = gameTime >= effect.createdAt + effect.durationSeconds;
+      if (isExpired) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
+  
+  eventAddEffects.forEach((effect) => {
     breakdown.push({
-      label: 'One-time costs',
-      amount: monthlyOneTimeCosts,
+      label: effect.source.name || 'Event effect',
+      amount: effect.value,
       category: 'event',
+      sourceId: effect.source.id,
+        sourceType: SourceType.Event, // SourceType.Event as string
+      sourceName: effect.source.name || 'Event effect',
     });
-  }
+  });
+
+  // Note: One-time costs are NOT included here - they're tracked separately in monthlyOneTimeCostDetails
+  // This breakdown only includes recurring monthly expenses (base, staff, upgrades, event-based changes)
+  // Each item is shown individually - no combining
 
   return breakdown;
 }

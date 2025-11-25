@@ -1,5 +1,7 @@
 import { effectManager, GameMetric, EffectType } from '@/lib/game/effectManager';
 import type { UpgradeEffect, Requirement } from '@/lib/game/types';
+import type { SourceInfo } from '@/lib/config/sourceTypes';
+import { SourceHelpers } from '@/lib/utils/financialTracking';
 
 export interface Staff {
   id: string;
@@ -36,8 +38,8 @@ export function addStaffEffects(staff: Staff, store?: {
   applyTimeChange?: (amount: number) => void;
   applyExpChange?: (amount: number) => void;
   applyFreedomScoreChange?: (amount: number) => void;
-  recordEventRevenue?: (amount: number, label?: string) => void;
-  recordEventExpense?: (amount: number, label: string) => void;
+  recordEventRevenue?: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => void;
+  recordEventExpense?: (amount: number, labelOrSource: string | SourceInfo, label?: string) => void;
 }): void {
   // Monthly salary expense (always applied)
   if (staff.salary > 0) {
@@ -64,10 +66,12 @@ export function addStaffEffects(staff: Staff, store?: {
       // Apply directly to state
       if (effect.metric === GameMetric.Cash) {
         if (store.recordEventRevenue && store.recordEventExpense) {
+          const sourceInfo: SourceInfo = SourceHelpers.fromStaff(staff.id, staff.name);
+          const label = `Staff: ${staff.name}`;
           if (effect.value >= 0) {
-            store.recordEventRevenue(effect.value, `Staff: ${staff.name}`);
+            store.recordEventRevenue(effect.value, sourceInfo, label);
           } else {
-            store.recordEventExpense(Math.abs(effect.value), `Staff: ${staff.name}`);
+            store.recordEventExpense(Math.abs(effect.value), sourceInfo, label);
           }
         } else if (store.applyCashChange) {
           store.applyCashChange(effect.value);

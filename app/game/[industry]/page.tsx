@@ -17,6 +17,7 @@ import EventPopup from '@/app/game/components/ui/EventPopup';
 import GameOverPopup from '@/app/game/components/ui/GameOverPopup';
 import { FlagDebug } from '@/app/game/components/ui/FlagDebug';
 import { TierMultiplierDebug } from '@/app/game/components/ui/TierMultiplierDebug';
+import { ExpenseValidatorDebug } from '@/app/game/components/ui/ExpenseValidatorDebug';
 import { useRandomEventTrigger } from '@/hooks/useRandomEventTrigger';
 import Image from 'next/image';
 import { IndustryId } from '@/lib/game/types';
@@ -262,6 +263,7 @@ export default function GamePage() {
             <>
               <FlagDebug />
               <TierMultiplierDebug />
+              <ExpenseValidatorDebug />
             </>
           )}
         </div>
