@@ -3,7 +3,7 @@ import { getMonthlyBaseExpenses } from '@/lib/features/economy';
 import { tickOnce } from '@/lib/game/mechanics';
 import { GameState, RevenueCategory, OneTimeCostCategory } from '../types';
 import { SourceType, SourceInfo } from '@/lib/config/sourceTypes';
-import { mapSourceTypeToRevenueCategory, mapSourceTypeToOneTimeCostCategory, ensureValidSourceInfo } from '@/lib/utils/financialTracking';
+import { mapSourceTypeToRevenueCategory, mapSourceTypeToOneTimeCostCategory, ensureValidSourceInfo, SourceHelpers } from '@/lib/utils/financialTracking';
 import { Lead } from '@/lib/features/leads';
 import { getInitialMetrics } from './metricsSlice';
 import { DEFAULT_INDUSTRY_ID, getUpgradesForIndustry, getWinCondition, getLoseCondition, getStartingTime, getBusinessStats } from '@/lib/game/config';
@@ -45,6 +45,16 @@ const getInitialGameState = (
     leads: [],
     leadProgress: 0,
     conversionRate: businessStats.conversionRate ?? 10, // From business config with fallback
+    customersServed: 0,
+    customersLeftImpatient: 0,
+    customersServiceFailed: 0,
+    monthlyTimeSpent: 0,
+    monthlyTimeSpentDetails: [],
+    monthlyLeadsSpawned: 0,
+    monthlyCustomersGenerated: 0,
+    monthlyCustomersServed: 0,
+    monthlyCustomersLeftImpatient: 0,
+    monthlyCustomersServiceFailed: 0,
     metrics: getInitialMetrics(industryId),
     upgrades: {},
     flags: {},
@@ -68,6 +78,20 @@ export interface GameSlice {
   leadProgress: number;
   conversionRate: number;
 
+  // Customer Tracking (lifetime)
+  customersServed: number;
+  customersLeftImpatient: number;
+  customersServiceFailed: number;
+
+  // Monthly Tracking (reset each month)
+  monthlyLeadsSpawned: number;
+  monthlyCustomersGenerated: number;
+  monthlyCustomersServed: number;
+  monthlyCustomersLeftImpatient: number;
+  monthlyCustomersServiceFailed: number;
+  monthlyTimeSpent: number;
+  monthlyTimeSpentDetails: import('../types').TimeSpentEntry[];
+
   // Flag management
   flags: Record<string, boolean>;
 
@@ -89,6 +113,9 @@ export interface GameSlice {
   // Record expense with source tracking
   // Supports both: recordEventExpense(amount, label) and recordEventExpense(amount, sourceInfo, label?)
   recordEventExpense: (amount: number, labelOrSource: string | SourceInfo, label?: string) => void;
+  // Record time spent with source tracking
+  // Supports both: recordTimeSpent(amount, label) and recordTimeSpent(amount, sourceInfo, label?)
+  recordTimeSpent: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => void;
   checkGameOver: () => void;
   checkWinConditionAtMonthEnd: () => void;
   
@@ -118,6 +145,20 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     leads: [],
     leadProgress: 0,
     conversionRate: 10, // Will be overridden by getInitialGameState
+
+    // Customer Tracking (lifetime)
+    customersServed: 0,
+    customersLeftImpatient: 0,
+    customersServiceFailed: 0,
+
+    // Monthly Tracking (reset each month)
+    monthlyLeadsSpawned: 0,
+    monthlyCustomersGenerated: 0,
+    monthlyCustomersServed: 0,
+    monthlyCustomersLeftImpatient: 0,
+    monthlyCustomersServiceFailed: 0,
+    monthlyTimeSpent: 0,
+    monthlyTimeSpentDetails: [],
   
   startGame: () => {
     const { resetEvents, resetMonthlyTracking, resetFlags, resetEventSequence } = get();
@@ -265,8 +306,48 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
         availableFlags: state.availableFlags,
         availableConditions: state.availableConditions,
         staffMembers: state.hiredStaff || [],
+        monthlyLeadsSpawned: state.monthlyLeadsSpawned || 0,
+        monthlyCustomersGenerated: state.monthlyCustomersGenerated || 0,
+        monthlyCustomersServed: state.monthlyCustomersServed || 0,
+        monthlyCustomersLeftImpatient: state.monthlyCustomersLeftImpatient || 0,
+        monthlyCustomersServiceFailed: state.monthlyCustomersServiceFailed || 0,
+        monthlyTimeSpent: state.monthlyTimeSpent || 0,
+        monthlyTimeSpentDetails: state.monthlyTimeSpentDetails || [],
       });
-      return { ...state, ...updated };
+      // Update customer tracking counters (lifetime only - monthly is tracked in mechanics.ts)
+      const customerUpdates: Partial<GameState> = {};
+      if (updated.customersServed !== undefined) {
+        customerUpdates.customersServed = (state.customersServed || 0) + updated.customersServed;
+      }
+      if (updated.customersLeftImpatient !== undefined) {
+        customerUpdates.customersLeftImpatient = (state.customersLeftImpatient || 0) + updated.customersLeftImpatient;
+      }
+      if (updated.customersServiceFailed !== undefined) {
+        customerUpdates.customersServiceFailed = (state.customersServiceFailed || 0) + updated.customersServiceFailed;
+      }
+      // Monthly tracking values come directly from tick result (already calculated in mechanics.ts)
+      if (updated.monthlyLeadsSpawned !== undefined) {
+        customerUpdates.monthlyLeadsSpawned = updated.monthlyLeadsSpawned;
+      }
+      if (updated.monthlyCustomersGenerated !== undefined) {
+        customerUpdates.monthlyCustomersGenerated = updated.monthlyCustomersGenerated;
+      }
+      if (updated.monthlyCustomersServed !== undefined) {
+        customerUpdates.monthlyCustomersServed = updated.monthlyCustomersServed;
+      }
+      if (updated.monthlyCustomersLeftImpatient !== undefined) {
+        customerUpdates.monthlyCustomersLeftImpatient = updated.monthlyCustomersLeftImpatient;
+      }
+      if (updated.monthlyCustomersServiceFailed !== undefined) {
+        customerUpdates.monthlyCustomersServiceFailed = updated.monthlyCustomersServiceFailed;
+      }
+      if (updated.monthlyTimeSpent !== undefined) {
+        customerUpdates.monthlyTimeSpent = updated.monthlyTimeSpent;
+      }
+      if (updated.monthlyTimeSpentDetails !== undefined) {
+        customerUpdates.monthlyTimeSpentDetails = updated.monthlyTimeSpentDetails;
+      }
+      return { ...state, ...updated, ...customerUpdates };
     });
     
     // Check if a new month just started (month transition happened)
@@ -408,6 +489,17 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     }
   },
   applyTimeChange: (amount: number) => {
+    // If time is being spent (negative), track it with fallback "Other" source
+    if (amount < 0) {
+      const { recordTimeSpent } = get();
+      if (recordTimeSpent) {
+        // Use recordTimeSpent with fallback "Other" source for unregistered time deductions
+        recordTimeSpent(amount, 'Time spent');
+        return; // recordTimeSpent already updates metrics and calls checkGameOver
+      }
+    }
+    
+    // For positive amounts (time gained) or if recordTimeSpent is not available, just update time
     set((state) => ({
       metrics: { ...state.metrics, time: state.metrics.time + amount },
     }));
@@ -503,6 +595,59 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       },
       { deductNow: true },
     );
+  },
+
+  recordTimeSpent: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => {
+    // Only track when time is being spent (negative amount)
+    if (amount >= 0) {
+      // If time is being added, just apply the change without tracking
+      const { applyTimeChange } = get();
+      if (applyTimeChange) {
+        applyTimeChange(amount);
+      }
+      return;
+    }
+
+    // Handle both old API (label: string) and new API (source: SourceInfo, label?: string)
+    let sourceInfo: SourceInfo;
+    let finalLabel: string;
+    
+    if (typeof labelOrSource === 'object' && labelOrSource !== null) {
+      // New API: recordTimeSpent(amount, sourceInfo, optionalLabel)
+      sourceInfo = ensureValidSourceInfo(labelOrSource, `time_${Date.now()}`, 'Time spent');
+      finalLabel = label || sourceInfo.name;
+    } else {
+      // Old API: recordTimeSpent(amount, label) - use "Other" source type for unregistered sources
+      finalLabel = labelOrSource || 'Time spent';
+      // Create "Other" source info for unregistered time deductions
+      sourceInfo = SourceHelpers.other(`other_time_${Date.now()}`, finalLabel);
+    }
+
+    const timeSpent = Math.abs(amount); // Convert to positive for tracking
+    
+    set((state) => ({
+      metrics: {
+        ...state.metrics,
+        time: state.metrics.time + amount, // Deduct time
+        totalTimeSpent: state.metrics.totalTimeSpent + timeSpent,
+      },
+      monthlyTimeSpent: state.monthlyTimeSpent + timeSpent,
+      monthlyTimeSpentDetails: [
+        ...state.monthlyTimeSpentDetails,
+        {
+          amount: timeSpent,
+          label: finalLabel,
+          sourceId: sourceInfo.id,
+          sourceType: sourceInfo.type,
+          sourceName: sourceInfo.name,
+        },
+      ],
+    }));
+
+    const { checkGameOver } = get();
+    if (checkGameOver) {
+      checkGameOver();
+    }
   },
 
   checkGameOver: () => {

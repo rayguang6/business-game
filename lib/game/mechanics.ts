@@ -5,6 +5,7 @@ import {
   MonthlyHistoryEntry,
   OneTimeCost,
   RevenueEntry,
+  TimeSpentEntry,
   REVENUE_CATEGORY_LABELS,
   RevenueCategory,
   getLevel,
@@ -74,6 +75,13 @@ interface TickInput {
   availableFlags?: any[];
   availableConditions?: any[];
   staffMembers?: Staff[];
+  monthlyLeadsSpawned?: number;
+  monthlyCustomersGenerated?: number;
+  monthlyCustomersServed?: number;
+  monthlyCustomersLeftImpatient?: number;
+  monthlyCustomersServiceFailed?: number;
+  monthlyTimeSpent?: number;
+  monthlyTimeSpentDetails?: TimeSpentEntry[];
 }
 
 // Output/result of the tick function (includes calculated conversionRate)
@@ -98,6 +106,16 @@ interface TickResult {
   flags?: Record<string, boolean>;
   availableFlags?: any[];
   availableConditions?: any[];
+  customersServed?: number; // Customers served this tick
+  customersLeftImpatient?: number; // Customers left impatient this tick
+  customersServiceFailed?: number; // Customers service failed this tick
+  monthlyLeadsSpawned?: number;
+  monthlyCustomersGenerated?: number;
+  monthlyCustomersServed?: number;
+  monthlyCustomersLeftImpatient?: number;
+  monthlyCustomersServiceFailed?: number;
+  monthlyTimeSpent?: number;
+  monthlyTimeSpentDetails?: TimeSpentEntry[];
 }
 
 interface MonthTransitionParams {
@@ -114,6 +132,13 @@ interface MonthTransitionParams {
   upgrades: Upgrades;
   industryId: string;
   staffMembers?: Staff[];
+  monthlyLeadsSpawned?: number;
+  monthlyCustomersGenerated?: number;
+  monthlyCustomersServed?: number;
+  monthlyCustomersLeftImpatient?: number;
+  monthlyCustomersServiceFailed?: number;
+  monthlyTimeSpent?: number;
+  monthlyTimeSpentDetails?: TimeSpentEntry[];
 }
 
 interface MonthTransitionResult {
@@ -127,6 +152,13 @@ interface MonthTransitionResult {
   monthlyHistory: MonthlyHistoryEntry[];
   currentMonth: number;
   monthlyExpenseAdjustments: number;
+  monthlyLeadsSpawned: number;
+  monthlyCustomersGenerated: number;
+  monthlyCustomersServed: number;
+  monthlyCustomersLeftImpatient: number;
+  monthlyCustomersServiceFailed: number;
+  monthlyTimeSpent: number;
+  monthlyTimeSpentDetails: TimeSpentEntry[];
 }
 
 interface ProcessCustomersParams {
@@ -155,6 +187,9 @@ interface ProcessCustomersResult {
   metrics: Metrics;
   monthlyRevenue: number;
   monthlyRevenueDetails: RevenueEntry[];
+  customersServed: number; // Customers who completed service successfully this tick
+  customersLeftImpatient: number; // Customers who left due to impatience this tick
+  customersServiceFailed: number; // Customers whose service failed this tick
 }
 
 const summarizeRevenueByCategory = (entries: RevenueEntry[]): RevenueEntry[] => {
@@ -225,6 +260,13 @@ function processMonthTransition({
   upgrades,
   industryId,
   staffMembers = [],
+  monthlyLeadsSpawned = 0,
+  monthlyCustomersGenerated = 0,
+  monthlyCustomersServed = 0,
+  monthlyCustomersLeftImpatient = 0,
+  monthlyCustomersServiceFailed = 0,
+  monthlyTimeSpent = 0,
+  monthlyTimeSpentDetails = [],
 }: MonthTransitionParams): MonthTransitionResult {
   const monthResult = endOfMonth(
     metrics.cash,
@@ -295,6 +337,13 @@ function processMonthTransition({
       level: currentLevel,
       levelChange: currentLevel - previousLevel,
       freedomScore: metrics.freedomScore,
+      leadsSpawned: monthlyLeadsSpawned,
+      customersGenerated: monthlyCustomersGenerated,
+      customersServed: monthlyCustomersServed,
+      customersLeftImpatient: monthlyCustomersLeftImpatient,
+      customersServiceFailed: monthlyCustomersServiceFailed,
+      timeSpent: monthlyTimeSpent,
+      timeSpentDetails: monthlyTimeSpentDetails,
     },
   ];
 
@@ -312,6 +361,14 @@ function processMonthTransition({
     monthlyHistory: updatedHistory,
     currentMonth: currentMonth + 1,
     monthlyExpenseAdjustments: 0, // Kept for backward compatibility but no longer used in calculations
+    // Reset monthly tracking fields
+    monthlyLeadsSpawned: 0,
+    monthlyCustomersGenerated: 0,
+    monthlyCustomersServed: 0,
+    monthlyCustomersLeftImpatient: 0,
+    monthlyCustomersServiceFailed: 0,
+    monthlyTimeSpent: 0,
+    monthlyTimeSpentDetails: [],
   };
 }
 
@@ -328,6 +385,9 @@ function processCustomersForTick({
   let metricsAccumulator: Metrics = { ...metrics };
   let revenueAccumulator = monthlyRevenue;
   const revenueDetails = [...monthlyRevenueDetails];
+  let customersServedCount = 0;
+  let customersLeftImpatientCount = 0;
+  let customersServiceFailedCount = 0;
   // Skill level effects are applied directly in the effect system
   // EXP gain/loss values now come from gameMetrics (calculated via effectManager)
   const serviceRevenueMultiplier = gameMetrics.serviceRevenueMultiplier > 0
@@ -435,6 +495,7 @@ function processCustomersForTick({
         // Service failed - customer becomes angry and leaves without revenue
         updatedCustomer.status = CustomerStatus.LeavingAngry;
         updatedCustomer.leavingTicks = 0; // Initialize leaving animation
+        customersServiceFailedCount++;
 
         // Immediately deduct EXP when customer becomes angry
         // Use calculated value from effectManager (can be modified by upgrades/staff/events)
@@ -453,6 +514,7 @@ function processCustomersForTick({
       }
 
       // Service succeeded - customer leaves happy with revenue and exp
+      customersServedCount++;
       const servicePrice = updatedCustomer.service.price;
       const tierMultiplier = getTierRevenueMultiplier(updatedCustomer.service.pricingCategory);
       const baseServiceValue = (servicePrice * tierMultiplier) + serviceRevenueFlatBonus;
@@ -488,7 +550,13 @@ function processCustomersForTick({
     }
 
     // If customer is leaving angry, keep in game for exit animation
-    if (customer.status === CustomerStatus.LeavingAngry) {
+    // Check if customer just transitioned to LeavingAngry (was Waiting, now LeavingAngry = impatience)
+    if (customer.status === CustomerStatus.LeavingAngry || updatedCustomer.status === CustomerStatus.LeavingAngry) {
+      // If customer was Waiting and now is LeavingAngry, they left due to impatience
+      if (customer.status === CustomerStatus.Waiting && updatedCustomer.status === CustomerStatus.LeavingAngry) {
+        customersLeftImpatientCount++;
+      }
+      
       const leavingTicks = (customer.leavingTicks ?? 0) + 1;
       // Get leaving duration from base stats (not modifiable by effects - animation timing only)
       const baseStats = getBusinessStats(industryId);
@@ -509,6 +577,9 @@ function processCustomersForTick({
     metrics: metricsAccumulator,
     monthlyRevenue: revenueAccumulator,
     monthlyRevenueDetails: revenueDetails,
+    customersServed: customersServedCount,
+    customersLeftImpatient: customersLeftImpatientCount,
+    customersServiceFailed: customersServiceFailedCount,
   };
 }
 
@@ -542,6 +613,13 @@ interface MonthPreparationState {
   monthlyHistory: MonthlyHistoryEntry[];
   currentMonth: number;
   monthlyExpenseAdjustments: number;
+  monthlyLeadsSpawned: number;
+  monthlyCustomersGenerated: number;
+  monthlyCustomersServed: number;
+  monthlyCustomersLeftImpatient: number;
+  monthlyCustomersServiceFailed: number;
+  monthlyTimeSpent: number;
+  monthlyTimeSpentDetails: TimeSpentEntry[];
 }
 
 function applyMonthTransitionIfNeeded(
@@ -560,6 +638,13 @@ function applyMonthTransitionIfNeeded(
     monthlyHistory: [...state.monthlyHistory],
     currentMonth: state.currentMonth,
     monthlyExpenseAdjustments: state.monthlyExpenseAdjustments ?? 0,
+    monthlyLeadsSpawned: state.monthlyLeadsSpawned ?? 0,
+    monthlyCustomersGenerated: state.monthlyCustomersGenerated ?? 0,
+    monthlyCustomersServed: state.monthlyCustomersServed ?? 0,
+    monthlyCustomersLeftImpatient: state.monthlyCustomersLeftImpatient ?? 0,
+    monthlyCustomersServiceFailed: state.monthlyCustomersServiceFailed ?? 0,
+    monthlyTimeSpent: state.monthlyTimeSpent ?? 0,
+    monthlyTimeSpentDetails: state.monthlyTimeSpentDetails ?? [],
   });
 
   if (!isNewMonth(nextGameTime, state.gameTime, industryId)) {
@@ -580,6 +665,13 @@ function applyMonthTransitionIfNeeded(
     upgrades: state.upgrades,
     industryId,
     staffMembers: state.staffMembers ?? [],
+    monthlyLeadsSpawned: state.monthlyLeadsSpawned ?? 0,
+    monthlyCustomersGenerated: state.monthlyCustomersGenerated ?? 0,
+    monthlyCustomersServed: state.monthlyCustomersServed ?? 0,
+    monthlyCustomersLeftImpatient: state.monthlyCustomersLeftImpatient ?? 0,
+    monthlyCustomersServiceFailed: state.monthlyCustomersServiceFailed ?? 0,
+    monthlyTimeSpent: state.monthlyTimeSpent ?? 0,
+    monthlyTimeSpentDetails: state.monthlyTimeSpentDetails ?? [],
   });
 
   return {
@@ -593,6 +685,13 @@ function applyMonthTransitionIfNeeded(
     monthlyHistory: transition.monthlyHistory,
     currentMonth: transition.currentMonth,
     monthlyExpenseAdjustments: transition.monthlyExpenseAdjustments,
+    monthlyLeadsSpawned: transition.monthlyLeadsSpawned,
+    monthlyCustomersGenerated: transition.monthlyCustomersGenerated,
+    monthlyCustomersServed: transition.monthlyCustomersServed,
+    monthlyCustomersLeftImpatient: transition.monthlyCustomersLeftImpatient,
+    monthlyCustomersServiceFailed: transition.monthlyCustomersServiceFailed,
+    monthlyTimeSpent: transition.monthlyTimeSpent,
+    monthlyTimeSpentDetails: transition.monthlyTimeSpentDetails,
   };
 }
 
@@ -626,6 +725,13 @@ export function tickOnce(state: TickInput): TickResult {
   const monthlyHistory = [...preparedMonth.monthlyHistory];
   const currentMonth = preparedMonth.currentMonth;
   const monthlyExpenseAdjustments = preparedMonth.monthlyExpenseAdjustments;
+  let monthlyLeadsSpawned = preparedMonth.monthlyLeadsSpawned;
+  let monthlyCustomersGenerated = preparedMonth.monthlyCustomersGenerated;
+  let monthlyCustomersServed = preparedMonth.monthlyCustomersServed;
+  let monthlyCustomersLeftImpatient = preparedMonth.monthlyCustomersLeftImpatient;
+  let monthlyCustomersServiceFailed = preparedMonth.monthlyCustomersServiceFailed;
+  let monthlyTimeSpent = preparedMonth.monthlyTimeSpent;
+  let monthlyTimeSpentDetails = [...preparedMonth.monthlyTimeSpentDetails];
 
   // Calculate all metrics using effectManager (includes upgrades, marketing, staff effects)
   const baseStats = getBusinessStats(industryId);
@@ -673,6 +779,8 @@ export function tickOnce(state: TickInput): TickResult {
       // LEAD SYSTEM: Spawn leads that accumulate toward customer conversion
       const lead = createLead(industryId);
       leads = [...leads, lead];
+      metrics.totalLeadsSpawned = (metrics.totalLeadsSpawned || 0) + 1;
+      monthlyLeadsSpawned += 1;
 
       // Each lead spawn contributes to conversion progress
       leadProgress += gameMetrics.conversionRate;
@@ -711,6 +819,8 @@ export function tickOnce(state: TickInput): TickResult {
             ...customer,
             service: selectedService,
           }];
+          metrics.totalCustomersGenerated = (metrics.totalCustomersGenerated || 0) + 1;
+          monthlyCustomersGenerated += 1;
         } else {
           console.warn(`[Lead System] No services available for customer conversion`);
         }
@@ -746,6 +856,11 @@ export function tickOnce(state: TickInput): TickResult {
   metrics = processedCustomersForTick.metrics;
   monthlyRevenue = processedCustomersForTick.monthlyRevenue;
   monthlyRevenueDetails = processedCustomersForTick.monthlyRevenueDetails;
+  
+  // Accumulate per-tick customer tracking into monthly totals
+  monthlyCustomersServed += processedCustomersForTick.customersServed;
+  monthlyCustomersLeftImpatient += processedCustomersForTick.customersLeftImpatient;
+  monthlyCustomersServiceFailed += processedCustomersForTick.customersServiceFailed;
 
   // FreedomScore is now direct state (like Cash/Time/SkillLevel)
   // It's modified directly via applyFreedomScoreChange(), not calculated here
@@ -769,5 +884,15 @@ export function tickOnce(state: TickInput): TickResult {
     monthlyHistory,
     upgrades: state.upgrades,
     monthlyExpenseAdjustments,
+    customersServed: processedCustomersForTick.customersServed,
+    customersLeftImpatient: processedCustomersForTick.customersLeftImpatient,
+    customersServiceFailed: processedCustomersForTick.customersServiceFailed,
+    monthlyLeadsSpawned,
+    monthlyCustomersGenerated,
+    monthlyCustomersServed,
+    monthlyCustomersLeftImpatient,
+    monthlyCustomersServiceFailed,
+    monthlyTimeSpent,
+    monthlyTimeSpentDetails,
   };
 }

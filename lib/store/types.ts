@@ -15,6 +15,9 @@ export interface Metrics {
   totalExpenses: number;
   exp: number; // Previously: skillLevel (reputation)
   freedomScore: number; // Previously: founderWorkingHours
+  totalLeadsSpawned: number; // Lifetime count of leads spawned
+  totalCustomersGenerated: number; // Lifetime count of customers spawned
+  totalTimeSpent: number; // Lifetime time spent (in hours)
 }
 
 // Map of upgrade ID to current level
@@ -73,6 +76,13 @@ export interface MonthlyHistoryEntry {
   freedomScore: number; // Previously: founderWorkingHours
   revenueBreakdown?: RevenueEntry[];
   expenseBreakdown?: ExpenseBreakdownItem[]; // Individual operating expenses breakdown
+  leadsSpawned?: number; // Leads spawned in this month
+  customersGenerated?: number; // Customers generated in this month
+  customersServed?: number; // Customers served in this month
+  customersLeftImpatient?: number; // Customers left impatient in this month
+  customersServiceFailed?: number; // Customers service failed in this month
+  timeSpent?: number; // Time spent in this month
+  timeSpentDetails?: TimeSpentEntry[]; // Breakdown of time spent
 }
 
 export interface ExpenseBreakdownItem {
@@ -82,6 +92,14 @@ export interface ExpenseBreakdownItem {
   sourceId?: string;
   sourceType?: SourceType;  // SourceType enum value (for better tracking)
   sourceName?: string;      // Display name of the source
+}
+
+export interface TimeSpentEntry {
+  amount: number; // hours spent
+  label: string;
+  sourceId?: string;
+  sourceType?: SourceType;
+  sourceName?: string;
 }
 
 export interface GameState {
@@ -121,6 +139,22 @@ export interface GameState {
   leads: Lead[];
   leadProgress: number; // Progress toward converting a lead to customer (0-100)
   conversionRate: number; // How much progress each lead adds (default: 10)
+
+  // Customer Tracking
+  customersServed: number; // Customers who completed service successfully
+  customersLeftImpatient: number; // Customers who left due to impatience
+  customersServiceFailed: number; // Customers whose service failed
+
+  // Time Tracking
+  monthlyTimeSpent: number; // Time spent in current month
+  monthlyTimeSpentDetails: TimeSpentEntry[]; // Detailed breakdown of time spent this month
+
+  // Monthly Tracking (reset each month)
+  monthlyLeadsSpawned: number; // Leads spawned in current month
+  monthlyCustomersGenerated: number; // Customers generated in current month
+  monthlyCustomersServed: number; // Customers served in current month
+  monthlyCustomersLeftImpatient: number; // Customers left impatient in current month
+  monthlyCustomersServiceFailed: number; // Customers service failed in current month
 }
 
 // EXP per level configuration

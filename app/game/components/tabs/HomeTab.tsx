@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useFinanceData } from '@/hooks/useFinanceData';
-import { RevenueCategory, type RevenueEntry, type OneTimeCost, REVENUE_CATEGORY_LABELS } from '@/lib/store/types';
+import { RevenueCategory, type RevenueEntry, type OneTimeCost, type TimeSpentEntry, REVENUE_CATEGORY_LABELS } from '@/lib/store/types';
 import { useGameStore } from '@/lib/store/gameStore';
 import { Card } from '@/app/components/ui/Card';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
@@ -14,6 +14,9 @@ import {
 } from '@/lib/config/categoryConfig';
 import { getRevenueDisplayLabel, getExpenseDisplayLabel } from '@/lib/utils/financialTracking';
 import { SourceType } from '@/lib/config/sourceTypes';
+import { DEFAULT_INDUSTRY_ID, getStartingTime } from '@/lib/game/config';
+import { effectManager, GameMetric } from '@/lib/game/effectManager';
+import type { IndustryId } from '@/lib/game/types';
 
 export function HomeTab() {
   const {
@@ -32,6 +35,28 @@ export function HomeTab() {
   const monthlyOneTimeCostDetails = useGameStore((state) => state.monthlyOneTimeCostDetails || []);
   const monthlyOneTimeCostsPaid = useGameStore((state) => state.monthlyOneTimeCostsPaid || 0);
   const currentMonth = useGameStore((state) => state.currentMonth);
+  
+  // Get tracking data
+  const selectedIndustry = useGameStore((state) => state.selectedIndustry);
+  const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+  const totalLeadsSpawned = useGameStore((state) => state.metrics.totalLeadsSpawned || 0);
+  const totalCustomersGenerated = useGameStore((state) => state.metrics.totalCustomersGenerated || 0);
+  const customersServed = useGameStore((state) => state.customersServed || 0);
+  const customersLeftImpatient = useGameStore((state) => state.customersLeftImpatient || 0);
+  const customersServiceFailed = useGameStore((state) => state.customersServiceFailed || 0);
+  const monthlyLeadsSpawned = useGameStore((state) => state.monthlyLeadsSpawned || 0);
+  const monthlyCustomersGenerated = useGameStore((state) => state.monthlyCustomersGenerated || 0);
+  const monthlyCustomersServed = useGameStore((state) => state.monthlyCustomersServed || 0);
+  const monthlyCustomersLeftImpatient = useGameStore((state) => state.monthlyCustomersLeftImpatient || 0);
+  const monthlyCustomersServiceFailed = useGameStore((state) => state.monthlyCustomersServiceFailed || 0);
+  const totalTimeSpent = useGameStore((state) => state.metrics.totalTimeSpent || 0);
+  const monthlyTimeSpent = useGameStore((state) => state.monthlyTimeSpent || 0);
+  const monthlyTimeSpentDetails = useGameStore((state) => state.monthlyTimeSpentDetails || []);
+  const currentTime = metrics.time;
+  const startingTime = getStartingTime(industryId);
+  const timeCapacityBonus = effectManager.calculate(GameMetric.MonthlyTimeCapacity, 0);
+  const maxTime = startingTime + timeCapacityBonus;
+  const showTime = startingTime > 0 || currentTime > 0;
 
   // Collapsible state for current month sections (auto-expanded by default)
   const [isRevenueExpanded, setIsRevenueExpanded] = useState(true);
@@ -39,6 +64,7 @@ export function HomeTab() {
   const [isOneTimeExpensesExpanded, setIsOneTimeExpensesExpanded] = useState(true);
   const [isMonthlyCostsExpanded, setIsMonthlyCostsExpanded] = useState(false);
   const [isMonthlyExpensesExpanded, setIsMonthlyExpensesExpanded] = useState(false);
+  const [isTimeSpentExpanded, setIsTimeSpentExpanded] = useState(true);
   
   // Collapsible state for monthly history (per month)
   const [expandedMonths, setExpandedMonths] = useState<Set<number>>(new Set());
@@ -87,9 +113,104 @@ export function HomeTab() {
   const currentMonthProjectedExpenses = monthlyExpenses + monthlyOneTimeCosts;
   const currentMonthProjectedProfit = monthlyRevenue - currentMonthProjectedExpenses;
 
+  // Create current month entry to merge with history
+  const currentMonthEntry = {
+    month: currentMonth,
+    revenue: monthlyRevenue,
+    expenses: currentMonthTotalExpenses,
+    oneTimeCosts: monthlyOneTimeCostDetails,
+    profit: currentMonthProjectedProfit,
+    exp: metrics.exp,
+    expChange: 0,
+    level: Math.floor(metrics.exp / 100),
+    levelChange: 0,
+    freedomScore: metrics.freedomScore,
+    revenueBreakdown: monthlyRevenueDetails,
+    expenseBreakdown: operatingExpenses,
+    leadsSpawned: monthlyLeadsSpawned,
+    customersGenerated: monthlyCustomersGenerated,
+    customersServed: monthlyCustomersServed,
+    customersLeftImpatient: monthlyCustomersLeftImpatient,
+    customersServiceFailed: monthlyCustomersServiceFailed,
+    timeSpent: monthlyTimeSpent,
+    timeSpentDetails: monthlyTimeSpentDetails,
+  };
+
+  // Combine current month with history (current month first, then history)
+  const allMonths = [currentMonthEntry, ...monthlyHistory];
+
   return (
     <div className="space-y-4">
-      {/* Lifetime Totals - Moved to Top */}
+      {/* Lifetime Totals - Leads, Customers, Time - At Top */}
+      <div className="grid grid-cols-3 gap-3">
+        {/* Total Leads Card */}
+        <Card>
+          <div className="flex flex-col items-center text-center py-2">
+            <span className="text-xl mb-1">💡</span>
+            <div className="text-xs text-secondary mb-1">Total Leads</div>
+            <div className="text-xl font-bold" style={{ color: 'var(--game-primary)' }}>
+              {totalLeadsSpawned.toLocaleString()}
+            </div>
+          </div>
+        </Card>
+
+        {/* Total Customers Card */}
+        <Card>
+          <div className="flex flex-col items-center text-center py-2">
+            <span className="text-xl mb-1">👥</span>
+            <div className="text-xs text-secondary mb-1">Total Customers</div>
+            <div className="text-xl font-bold mb-1.5" style={{ color: 'var(--game-primary)' }}>
+              {totalCustomersGenerated.toLocaleString()}
+            </div>
+            <div className="pt-1.5 border-t w-full" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+              <div className="space-y-1 text-xs">
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-tertiary flex items-center gap-1">
+                    <span>✅</span>
+                    <span>Served</span>
+                  </span>
+                  <span className="font-semibold" style={{ color: 'var(--success)' }}>
+                    {customersServed.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-tertiary flex items-center gap-1">
+                    <span>💨</span>
+                    <span>Left</span>
+                  </span>
+                  <span className="font-semibold" style={{ color: 'var(--warning)' }}>
+                    {customersLeftImpatient.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-tertiary flex items-center gap-1">
+                    <span>❌</span>
+                    <span>Failed</span>
+                  </span>
+                  <span className="font-semibold" style={{ color: 'var(--error)' }}>
+                    {customersServiceFailed.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Total Time Spent Card */}
+        {showTime && (
+          <Card>
+            <div className="flex flex-col items-center text-center py-2">
+              <span className="text-xl mb-1">⏰</span>
+              <div className="text-xs text-secondary mb-1">Total Time Spent</div>
+              <div className="text-xl font-bold" style={{ color: 'var(--warning)' }}>
+                {totalTimeSpent.toFixed(1)}h
+              </div>
+            </div>
+          </Card>
+        )}
+      </div>
+
+      {/* Lifetime Totals - Financial */}
       <div className="grid grid-cols-3 gap-4">
         <Card>
           <div className="flex flex-col">
@@ -100,14 +221,6 @@ export function HomeTab() {
             <div className="text-2xl font-bold" style={{ color: 'var(--success)' }}>
               ${lifetimeRevenue.toLocaleString()}
             </div>
-            {monthlyHistory.length > 0 && (
-              <div className="text-xs text-tertiary mt-1">
-                {monthlyHistory.length} completed {monthlyHistory.length === 1 ? 'month' : 'months'}
-                {monthlyRevenue > 0 && (
-                  <span className="ml-1">+ ${monthlyRevenue.toLocaleString()} this month</span>
-                )}
-              </div>
-            )}
           </div>
         </Card>
         
@@ -120,16 +233,6 @@ export function HomeTab() {
             <div className="text-2xl font-bold" style={{ color: 'var(--error)' }}>
               ${lifetimeExpenses.toLocaleString()}
             </div>
-            {monthlyHistory.length > 0 && (
-              <div className="text-xs text-tertiary mt-1">
-                Avg: ${Math.round(lifetimeExpenses / monthlyHistory.length).toLocaleString()}/mo
-                {currentMonthProjectedExpenses > 0 && (
-                  <span className="ml-1 opacity-75">
-                    (+ ${currentMonthProjectedExpenses.toLocaleString()} projected)
-                  </span>
-                )}
-              </div>
-            )}
           </div>
         </Card>
         
@@ -142,16 +245,6 @@ export function HomeTab() {
             <div className={`text-2xl font-bold ${lifetimeProfit >= 0 ? '' : ''}`} style={{ color: lifetimeProfit >= 0 ? 'var(--success)' : 'var(--error)' }}>
               ${lifetimeProfit.toLocaleString()}
             </div>
-            {lifetimeRevenue > 0 && (
-              <div className="text-xs text-tertiary mt-1">
-                Margin: {((lifetimeProfit / lifetimeRevenue) * 100).toFixed(1)}%
-                {currentMonthProjectedProfit !== undefined && (
-                  <span className="ml-1 opacity-75">
-                    (this month: {((currentMonthProjectedProfit / monthlyRevenue) * 100).toFixed(1)}%)
-                  </span>
-                )}
-              </div>
-            )}
           </div>
         </Card>
       </div>
@@ -228,255 +321,15 @@ export function HomeTab() {
         )}
       </Card>
 
-      {/* Current Month - Main Focus */}
-      <Card>
-        <div className="flex items-center justify-between mb-4 pb-3 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-base" style={{ color: 'var(--game-primary)' }}>
-              📅 Month {currentMonth}
-            </span>
-            <span className="text-white px-2 py-0.5 rounded text-xs font-semibold" style={{ backgroundColor: 'var(--success)' }}>
-              Active
-            </span>
-          </div>
-          <div className="flex flex-col items-end">
-            <div className="text-xs text-secondary mb-1">Projected Profit</div>
-            <div className={`text-2xl font-bold ${currentMonthProjectedProfit >= 0 ? '' : ''}`} style={{ color: currentMonthProjectedProfit >= 0 ? 'var(--success)' : 'var(--error)' }}>
-              ${currentMonthProjectedProfit.toLocaleString()}
-            </div>
-            <div className="text-xs text-tertiary mt-0.5 text-right max-w-[140px]">
-              {monthlyOneTimeCostsPaid > 0 && monthlyOneTimeCostsPaid < monthlyOneTimeCosts ? (
-                <>${monthlyOneTimeCostsPaid.toLocaleString()} already paid</>
-              ) : monthlyOneTimeCostsPaid === monthlyOneTimeCosts && monthlyOneTimeCosts > 0 ? (
-                <>One-time costs already deducted</>
-              ) : (
-                <>Recurring expenses deducted at month end</>
-              )}
-            </div>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-6">
-          {/* Revenue Section */}
-          <div className="space-y-3">
-            <div className="flex justify-between items-baseline pb-2 border-b" style={{ borderColor: 'rgba(16, 185, 129, 0.3)' }}>
-              <span className="text-sm font-medium text-secondary">Revenue</span>
-              <span className="text-xl font-bold" style={{ color: 'var(--success)' }}>
-                ${monthlyRevenue.toLocaleString()}
-              </span>
-            </div>
-            <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-              {monthlyRevenueDetails.length > 0 ? (
-                (() => {
-                  // Group customer payments together, show others individually
-                  const customerPayments = monthlyRevenueDetails
-                    .filter((e) => e.category === RevenueCategory.Customer)
-                    .reduce((sum, e) => sum + e.amount, 0);
-                  
-                  const otherRevenues = monthlyRevenueDetails.filter(
-                    (e) => e.category !== RevenueCategory.Customer
-                  );
-                  
-                  return (
-                    <>
-                      <div 
-                        className="flex justify-between items-center cursor-pointer"
-                        onClick={() => setIsRevenueExpanded(!isRevenueExpanded)}
-                      >
-                        <span className="text-xs font-semibold text-secondary">Revenue Breakdown</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold" style={{ color: 'var(--success)' }}>
-                            ${monthlyRevenue.toLocaleString()}
-                          </span>
-                          <span className="text-xs" style={{ color: 'var(--success)' }}>
-                            {isRevenueExpanded ? '▼' : '▶'}
-                          </span>
-                        </div>
-                      </div>
-                      {isRevenueExpanded && (
-                        <div className="space-y-1.5 mt-2 pt-2 border-t" style={{ borderColor: 'rgba(16, 185, 129, 0.3)' }}>
-                          {customerPayments > 0 && (
-                            <div key="customer-payments" className="flex justify-between items-center py-1 px-2 rounded" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}>
-                              <span className="text-xs text-tertiary flex items-center gap-1.5">
-                                <span>{getRevenueIcon(RevenueCategory.Customer)}</span>
-                                <span>Customer payments</span>
-                              </span>
-                              <span className="text-xs font-semibold" style={{ color: 'var(--success)' }}>
-                                ${customerPayments.toLocaleString()}
-                              </span>
-                            </div>
-                          )}
-                          {otherRevenues.map((entry, index) => {
-                            // Use sourceType for icon if available, otherwise fall back to category/label
-                            const icon = entry.sourceType 
-                              ? getIconForSourceType(entry.sourceType)
-                              : getRevenueIcon(entry.category, entry.label, entry.sourceType);
-                            const displayLabel = getRevenueDisplayLabel(entry);
-                            
-                            return (
-                              <div key={`rev-${index}`} className="flex justify-between items-center py-1 px-2 rounded" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}>
-                                <span className="text-xs text-tertiary flex items-center gap-1.5">
-                                  <span>{icon}</span>
-                                  <span>{displayLabel}</span>
-                                </span>
-                                <span className="text-xs font-semibold" style={{ color: 'var(--success)' }}>
-                                  ${entry.amount.toLocaleString()}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </>
-                  );
-                })()
-              ) : (
-                <div className="text-tertiary text-xs">No revenue yet</div>
-              )}
-            </div>
-          </div>
-          
-          {/* Expenses Section */}
-          <div className="space-y-3">
-            <div className="flex justify-between items-baseline pb-2 border-b" style={{ borderColor: 'rgba(239, 68, 68, 0.3)' }}>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-secondary">Total Expenses</span>
-                <span className="text-xs text-tertiary">
-                  {monthlyOneTimeCostsPaid > 0 ? (
-                    <>
-                      ${monthlyOneTimeCostsPaid.toLocaleString()} already paid, 
-                      ${(currentMonthTotalExpenses - monthlyOneTimeCostsPaid).toLocaleString()} at month end
-                    </>
-                  ) : (
-                    <>${monthlyExpenses.toLocaleString()} recurring + ${monthlyOneTimeCosts.toLocaleString()} one-time (deducted at month end)</>
-                  )}
-                </span>
-              </div>
-              <span className="text-xl font-bold" style={{ color: 'var(--error)' }}>
-                ${currentMonthTotalExpenses.toLocaleString()}
-              </span>
-            </div>
-            <div className="space-y-3">
-              {/* Operating Expenses - Grouped */}
-              {operatingExpenses.length > 0 && (
-                <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                  <div 
-                    className="flex justify-between items-center cursor-pointer"
-                    onClick={() => setIsOperatingExpensesExpanded(!isOperatingExpensesExpanded)}
-                  >
-                    <div className="flex flex-col">
-                      <span className="text-xs font-semibold text-secondary">Operating Expenses (Monthly)</span>
-                      <span className="text-xs text-tertiary opacity-75">Deducted at month end</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold" style={{ color: 'var(--error)' }}>
-                        ${monthlyExpenses.toLocaleString()}
-                      </span>
-                      <span className="text-xs" style={{ color: 'var(--error)' }}>
-                        {isOperatingExpensesExpanded ? '▼' : '▶'}
-                      </span>
-                    </div>
-                  </div>
-                  {isOperatingExpensesExpanded && (
-                    <div className="space-y-1.5 mt-2 pt-2 border-t" style={{ borderColor: 'rgba(239, 68, 68, 0.3)' }}>
-                      {operatingExpenses.map((entry, index) => {
-                        // Use sourceType for icon if available, otherwise use category
-                        const icon = entry.sourceType 
-                          ? getIconForSourceType(entry.sourceType)
-                          : getExpenseBreakdownIcon(entry.category);
-                        const displayLabel = getExpenseDisplayLabel(entry);
-                        
-                        return (
-                          <div key={`op-exp-${index}`} className="flex justify-between items-center py-1 px-2 rounded" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}>
-                            <span className="text-xs text-tertiary flex items-center gap-1.5">
-                              <span>{icon}</span>
-                              <span>{displayLabel}</span>
-                            </span>
-                            <span className="text-xs font-semibold" style={{ color: 'var(--error)' }}>
-                              ${entry.amount.toLocaleString()}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {/* One-Time Expenses - Grouped */}
-              {monthlyOneTimeCostDetails.length > 0 && (
-                <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
-                  <div 
-                    className="flex justify-between items-center cursor-pointer"
-                    onClick={() => setIsOneTimeExpensesExpanded(!isOneTimeExpensesExpanded)}
-                  >
-                    <div className="flex flex-col">
-                      <span className="text-xs font-semibold text-secondary">One-Time Expenses</span>
-                      <span className="text-xs text-tertiary opacity-75">
-                        {monthlyOneTimeCostsPaid === monthlyOneTimeCosts 
-                          ? 'All already deducted from cash' 
-                          : monthlyOneTimeCostsPaid > 0
-                          ? `$${monthlyOneTimeCostsPaid.toLocaleString()} paid, $${(monthlyOneTimeCosts - monthlyOneTimeCostsPaid).toLocaleString()} at month end`
-                          : 'Deducted at month end'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold" style={{ color: 'var(--warning)' }}>
-                        ${monthlyOneTimeCosts.toLocaleString()}
-                      </span>
-                      <span className="text-xs" style={{ color: 'var(--warning)' }}>
-                        {isOneTimeExpensesExpanded ? '▼' : '▶'}
-                      </span>
-                    </div>
-                  </div>
-                  {isOneTimeExpensesExpanded && (
-                    <div className="space-y-1.5 mt-2 pt-2 border-t" style={{ borderColor: 'rgba(251, 191, 36, 0.3)' }}>
-                      {monthlyOneTimeCostDetails.map((cost, index) => {
-                        // Use sourceType for icon if available, otherwise use category
-                        const icon = cost.sourceType 
-                          ? getIconForSourceType(cost.sourceType)
-                          : getOneTimeCostIcon(cost.category);
-                        const displayLabel = getExpenseDisplayLabel(cost);
-                        const isPaid = cost.alreadyDeducted;
-                        
-                        return (
-                          <div key={`one-time-${index}`} className="flex justify-between items-center py-1 px-2 rounded" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}>
-                            <span className="text-xs text-tertiary flex items-center gap-1.5">
-                              <span>{icon}</span>
-                              <span>{displayLabel}</span>
-                              {isPaid && (
-                                <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', color: 'var(--success)' }}>
-                                  Paid
-                                </span>
-                              )}
-                            </span>
-                            <span className="text-xs font-semibold" style={{ color: 'var(--warning)' }}>
-                              ${cost.amount.toLocaleString()}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {operatingExpenses.length === 0 && monthlyOneTimeCostDetails.length === 0 && (
-                <div className="text-tertiary text-xs">No expenses yet</div>
-              )}
-            </div>
-          </div>
-        </div>
-      </Card>
-
       {/* Monthly History */}
-      {monthlyHistory.length > 0 && (
+      {allMonths.length > 0 && (
         <Card>
           <SectionHeading>
             <span style={{ color: 'var(--game-secondary)' }}>📈</span> Monthly History
           </SectionHeading>
           <div className="space-y-3 max-h-[600px] overflow-y-auto">
-            {[...monthlyHistory].reverse().map((w, index) => {
+            {[currentMonthEntry, ...[...monthlyHistory].reverse()].map((w, index) => {
+              const isCurrentMonth = w.month === currentMonth;
               // Calculate one-time costs breakdown
               const oneTimeCostsTotal = w.oneTimeCosts?.reduce((sum, cost) => sum + cost.amount, 0) || 0;
               // w.expenses only includes expenses deducted at month end (recurring + unpaid one-time costs)
@@ -497,43 +350,91 @@ export function HomeTab() {
               const isExpanded = isMonthExpanded(w.month);
               
               return (
-                <Card key={`month-${w.month}`} className="bg-[var(--bg-tertiary)]">
+                <Card 
+                  key={`month-${w.month}`} 
+                  className="bg-[var(--bg-tertiary)]"
+                  style={isCurrentMonth ? { 
+                    border: '2px solid var(--game-primary)', 
+                    backgroundColor: 'rgba(59, 130, 246, 0.15)' 
+                  } : {}}
+                >
                   {/* Summary Header - Always Visible */}
                   <div 
-                    className="flex items-center justify-between cursor-pointer"
+                    className="cursor-pointer"
                     onClick={() => toggleMonthExpansion(w.month)}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs" style={{ color: 'var(--game-secondary)' }}>
-                        {isExpanded ? '▼' : '▶'}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm" style={{ color: 'var(--game-secondary)' }}>Month {w.month}</span>
-                        {index === 0 && (
-                          <span className="text-white px-2 py-0.5 rounded text-xs font-semibold" style={{ backgroundColor: 'var(--success)' }}>Latest</span>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs" style={{ color: 'var(--game-secondary)' }}>
+                          {isExpanded ? '▼' : '▶'}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`font-bold text-sm ${isCurrentMonth ? '' : ''}`} style={{ color: isCurrentMonth ? 'var(--game-primary)' : 'var(--game-secondary)' }}>
+                            Month {w.month}
+                          </span>
+                          {isCurrentMonth && (
+                            <span className="text-white px-2 py-0.5 rounded text-xs font-semibold" style={{ backgroundColor: 'var(--game-primary)' }}>Active</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-6">
+                        <div className="flex flex-col items-end">
+                          <div className="text-xs text-secondary mb-0.5">Revenue</div>
+                          <div className="text-sm font-bold" style={{ color: 'var(--success)' }}>
+                            ${w.revenue.toLocaleString()}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <div className="text-xs text-secondary mb-0.5">Expenses</div>
+                          <div className="text-sm font-bold" style={{ color: 'var(--error)' }}>
+                            ${w.expenses.toLocaleString()}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <div className="text-xs text-secondary mb-0.5">Profit</div>
+                          <div className={`text-lg font-bold ${w.profit >= 0 ? '' : ''}`} style={{ color: w.profit >= 0 ? 'var(--success)' : 'var(--error)' }}>
+                            ${w.profit.toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Leads, Customers, Time - Always Visible */}
+                    {(w.leadsSpawned !== undefined || 
+                      w.customersGenerated !== undefined || 
+                      (showTime && w.timeSpent !== undefined)) && (
+                      <div className="flex items-center gap-4 text-xs pt-2 border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+                        {w.leadsSpawned !== undefined && (
+                          <div className="flex items-center gap-1.5">
+                            <span>💡</span>
+                            <span className="text-tertiary">Leads:</span>
+                            <span className="font-semibold" style={{ color: 'var(--game-primary)' }}>
+                              {(w.leadsSpawned ?? 0).toLocaleString()}
+                            </span>
+                          </div>
+                        )}
+                        {w.customersGenerated !== undefined && (
+                          <div className="flex items-center gap-1.5">
+                            <span>👥</span>
+                            <span className="text-tertiary">Customers:</span>
+                            <span className="font-semibold" style={{ color: 'var(--game-primary)' }}>
+                              {(w.customersGenerated ?? 0).toLocaleString()}
+                            </span>
+                            <span className="text-tertiary ml-1">
+                              (✅{(w.customersServed ?? 0).toLocaleString()} 💨{(w.customersLeftImpatient ?? 0).toLocaleString()} ❌{(w.customersServiceFailed ?? 0).toLocaleString()})
+                            </span>
+                          </div>
+                        )}
+                        {showTime && w.timeSpent !== undefined && (
+                          <div className="flex items-center gap-1.5">
+                            <span>⏰</span>
+                            <span className="text-tertiary">Time:</span>
+                            <span className="font-semibold" style={{ color: 'var(--warning)' }}>
+                              {(w.timeSpent ?? 0).toFixed(1)}h
+                            </span>
+                          </div>
                         )}
                       </div>
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <div className="flex flex-col items-end">
-                        <div className="text-xs text-secondary mb-0.5">Revenue</div>
-                        <div className="text-sm font-bold" style={{ color: 'var(--success)' }}>
-                          ${w.revenue.toLocaleString()}
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <div className="text-xs text-secondary mb-0.5">Expenses</div>
-                        <div className="text-sm font-bold" style={{ color: 'var(--error)' }}>
-                          ${w.expenses.toLocaleString()}
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <div className="text-xs text-secondary mb-0.5">Profit</div>
-                        <div className={`text-lg font-bold ${w.profit >= 0 ? '' : ''}`} style={{ color: w.profit >= 0 ? 'var(--success)' : 'var(--error)' }}>
-                          ${w.profit.toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
                   
                   {/* Detailed Breakdown - Only when Expanded */}

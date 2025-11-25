@@ -49,6 +49,7 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
   applyFreedomScoreChange?: (amount: number) => void;
   recordEventRevenue?: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => void;
   recordEventExpense?: (amount: number, labelOrSource: string | SourceInfo, label?: string) => void;
+  recordTimeSpent?: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => void;
   spawnLead?: () => Lead;
   updateLeads?: (leads: Lead[]) => void;
   spawnCustomer?: () => Customer;
@@ -75,8 +76,14 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
         } else if (store.applyCashChange) {
           store.applyCashChange(effect.value);
         }
-      } else if (effect.metric === GameMetric.Time && store.applyTimeChange) {
-        store.applyTimeChange(effect.value);
+      } else if (effect.metric === GameMetric.Time) {
+        // Use recordTimeSpent for negative values (time spent), applyTimeChange for positive (time gained)
+        if (effect.value < 0 && store.recordTimeSpent) {
+          const sourceInfo: SourceInfo = SourceHelpers.fromMarketing(campaign.id, campaign.name);
+          store.recordTimeSpent(effect.value, sourceInfo, campaign.name);
+        } else if (store.applyTimeChange) {
+          store.applyTimeChange(effect.value);
+        }
       } else if (effect.metric === GameMetric.Exp && store.applyExpChange) {
         store.applyExpChange(effect.value);
       } else if (effect.metric === GameMetric.FreedomScore && store.applyFreedomScoreChange) {
@@ -253,12 +260,11 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
     }
     
     if (needsTime) {
-      set((state) => ({
-        metrics: {
-          ...state.metrics,
-          time: state.metrics.time - campaign.timeCost!,
-        },
-      }));
+      const { recordTimeSpent } = get();
+      if (recordTimeSpent) {
+        const sourceInfo = SourceHelpers.fromMarketing(campaign.id, campaign.name);
+        recordTimeSpent(-campaign.timeCost!, sourceInfo, campaign.name);
+      }
     }
 
     // Register effects to effectManager (expiration handled automatically)
@@ -271,6 +277,7 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       applyFreedomScoreChange: store.applyFreedomScoreChange,
       recordEventRevenue: store.recordEventRevenue,
       recordEventExpense: store.recordEventExpense,
+      recordTimeSpent: store.recordTimeSpent,
       spawnLead: store.spawnLead,
       updateLeads: store.updateLeads,
       spawnCustomer: store.spawnCustomer,

@@ -269,12 +269,11 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
     }
     
     if (needsTime) {
-      set((state) => ({
-        metrics: {
-          ...state.metrics,
-          time: state.metrics.time - upgrade.timeCost!,
-        },
-      }));
+      const { recordTimeSpent } = get();
+      if (recordTimeSpent) {
+        const sourceInfo = SourceHelpers.fromUpgrade(upgrade.id, upgrade.name, newLevel);
+        recordTimeSpent(-upgrade.timeCost!, sourceInfo, upgradeLabel);
+      }
     }
 
     set((state) => {
