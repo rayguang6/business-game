@@ -2,6 +2,8 @@ import { StateCreator } from 'zustand';
 import { getMonthlyBaseExpenses } from '@/lib/features/economy';
 import { tickOnce } from '@/lib/game/mechanics';
 import { GameState, RevenueCategory, OneTimeCostCategory } from '../types';
+import { SourceType, SourceInfo } from '@/lib/config/sourceTypes';
+import { mapSourceTypeToRevenueCategory, mapSourceTypeToOneTimeCostCategory, ensureValidSourceInfo } from '@/lib/utils/financialTracking';
 import { Lead } from '@/lib/features/leads';
 import { getInitialMetrics } from './metricsSlice';
 import { DEFAULT_INDUSTRY_ID, getUpgradesForIndustry, getWinCondition, getLoseCondition, getStartingTime, getBusinessStats } from '@/lib/game/config';
@@ -81,8 +83,12 @@ export interface GameSlice {
   applyTimeChange: (amount: number) => void;
   applyExpChange: (amount: number) => void; // Previously: applySkillLevelChange
   applyFreedomScoreChange: (amount: number) => void;
-  recordEventRevenue: (amount: number, label?: string) => void;
-  recordEventExpense: (amount: number, label: string) => void;
+  // Record revenue with source tracking
+  // Supports both: recordEventRevenue(amount, label) and recordEventRevenue(amount, sourceInfo, label?)
+  recordEventRevenue: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => void;
+  // Record expense with source tracking
+  // Supports both: recordEventExpense(amount, label) and recordEventExpense(amount, sourceInfo, label?)
+  recordEventExpense: (amount: number, labelOrSource: string | SourceInfo, label?: string) => void;
   checkGameOver: () => void;
   checkWinConditionAtMonthEnd: () => void;
   
@@ -258,6 +264,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
         flags: state.flags,
         availableFlags: state.availableFlags,
         availableConditions: state.availableConditions,
+        staffMembers: state.hiredStaff || [],
       });
       return { ...state, ...updated };
     });
@@ -426,15 +433,34 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
   },
 
   //adds a revenue ledger entry, bumps monthly revenue, and updates cash/total revenue.
-  recordEventRevenue: (amount: number, label: string = 'Event revenue') => {
+  // Supports both old API (label only) and new API (with SourceInfo)
+  recordEventRevenue: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => {
+    // Handle both old API (label: string) and new API (source: SourceInfo, label?: string)
+    let sourceInfo: SourceInfo;
+    let finalLabel: string;
+    
+    if (typeof labelOrSource === 'object' && labelOrSource !== null) {
+      // New API: recordEventRevenue(amount, sourceInfo, optionalLabel)
+      sourceInfo = ensureValidSourceInfo(labelOrSource, `legacy_${Date.now()}`, 'Event revenue');
+      finalLabel = label || sourceInfo.name;
+    } else {
+      // Old API: recordEventRevenue(amount, label)
+      finalLabel = labelOrSource || 'Event revenue';
+      // Create default source info for backward compatibility
+      sourceInfo = ensureValidSourceInfo(undefined, `legacy_${Date.now()}`, finalLabel);
+    }
+    
     set((state) => ({
       monthlyRevenue: state.monthlyRevenue + amount,
       monthlyRevenueDetails: [
         ...state.monthlyRevenueDetails,
         {
           amount,
-          category: RevenueCategory.Event,
-          label,
+          category: mapSourceTypeToRevenueCategory(sourceInfo.type),
+          label: finalLabel,
+          sourceId: sourceInfo.id,
+          sourceType: sourceInfo.type,
+          sourceName: sourceInfo.name,
         },
       ],
       metrics: {
@@ -446,14 +472,37 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
   },
 
   // registers a one-time cost via monthlySlice.addOneTimeCost (which handles immediate deductions when requested).
-  recordEventExpense: (amount: number, label: string) => {
+  // Supports both old API (label only) and new API (with SourceInfo)
+  recordEventExpense: (amount: number, labelOrSource: string | SourceInfo, label?: string) => {
     const { addOneTimeCost } = get();
-    if (addOneTimeCost) {
-      addOneTimeCost(
-        { label, amount, category: OneTimeCostCategory.Event },
-        { deductNow: true },
-      );
+    if (!addOneTimeCost) return;
+    
+    // Handle both old API (label: string) and new API (source: SourceInfo, label?: string)
+    let sourceInfo: SourceInfo;
+    let finalLabel: string;
+    
+    if (typeof labelOrSource === 'object' && labelOrSource !== null) {
+      // New API: recordEventExpense(amount, sourceInfo, optionalLabel)
+      sourceInfo = ensureValidSourceInfo(labelOrSource, `legacy_${Date.now()}`, 'Expense');
+      finalLabel = label || sourceInfo.name || 'Expense';
+    } else {
+      // Old API: recordEventExpense(amount, label)
+      finalLabel = labelOrSource || 'Expense';
+      // Create default source info for backward compatibility
+      sourceInfo = ensureValidSourceInfo(undefined, `legacy_${Date.now()}`, finalLabel);
     }
+    
+    addOneTimeCost(
+      {
+        label: finalLabel,
+        amount,
+        category: mapSourceTypeToOneTimeCostCategory(sourceInfo.type),
+        sourceId: sourceInfo.id,
+        sourceType: sourceInfo.type,
+        sourceName: sourceInfo.name,
+      },
+      { deductNow: true },
+    );
   },
 
   checkGameOver: () => {

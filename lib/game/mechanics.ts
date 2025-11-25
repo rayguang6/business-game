@@ -42,7 +42,10 @@ import {
   endOfMonth,
   getMonthlyBaseExpenses,
   calculateUpgradeMonthlyExpenses,
+  buildMonthlyExpenseBreakdown,
 } from '@/lib/features/economy';
+import { Staff } from '@/lib/features/staff';
+import { ExpenseBreakdownItem } from '@/lib/store/types';
 import { getWaitingPositions, getServiceRoomPosition } from '@/lib/game/positioning';
 import { findPath } from '@/lib/game/pathfinding';
 import { audioManager, AudioFx } from '@/lib/audio/audioManager';
@@ -70,6 +73,7 @@ interface TickInput {
   flags?: Record<string, boolean>;
   availableFlags?: any[];
   availableConditions?: any[];
+  staffMembers?: Staff[];
 }
 
 // Output/result of the tick function (includes calculated conversionRate)
@@ -109,6 +113,7 @@ interface MonthTransitionParams {
   monthlyExpenseAdjustments: number;
   upgrades: Upgrades;
   industryId: string;
+  staffMembers?: Staff[];
 }
 
 interface MonthTransitionResult {
@@ -153,17 +158,33 @@ interface ProcessCustomersResult {
 }
 
 const summarizeRevenueByCategory = (entries: RevenueEntry[]): RevenueEntry[] => {
-  const totals = new Map<RevenueCategory, number>();
-
-  entries.forEach((entry) => {
-    totals.set(entry.category, (totals.get(entry.category) ?? 0) + entry.amount);
+  const result: RevenueEntry[] = [];
+  
+  // Combine customer payments (too many to show individually)
+  const customerPayments = entries
+    .filter((entry) => entry.category === RevenueCategory.Customer)
+    .reduce((sum, entry) => sum + entry.amount, 0);
+  
+  if (customerPayments > 0) {
+    result.push({
+      category: RevenueCategory.Customer,
+      amount: customerPayments,
+      label: 'Customer payments',
+    });
+  }
+  
+  // Show all other revenue sources individually (events, staff, upgrades, etc.)
+  const nonCustomerEntries = entries.filter((entry) => entry.category !== RevenueCategory.Customer);
+  nonCustomerEntries.forEach((entry) => {
+    result.push({
+      category: entry.category,
+      amount: entry.amount,
+      label: entry.label || REVENUE_CATEGORY_LABELS[entry.category],
+      sourceId: entry.sourceId,
+    });
   });
-
-  return Array.from(totals.entries()).map(([category, amount]) => ({
-    category,
-    amount,
-    label: REVENUE_CATEGORY_LABELS[category],
-  }));
+  
+  return result;
 };
 
 // Runs endOfMonth to subtract expenses from cash and calculate profit.
@@ -171,8 +192,8 @@ const summarizeRevenueByCategory = (entries: RevenueEntry[]): RevenueEntry[] => 
 // Adds a MonthlyHistoryEntry so the UI can show a month-by-month log.
 // Resets monthly accumulators (monthlyRevenue, monthlyOneTimeCosts, details arrays).
 // Recomputes monthlyExpenses for the new month: base + upgrade-driven expenses.
-// Resets monthlyExpenseAdjustments to 0 (any upgrade deltas have now been rolled forward).
-// metrics.totalExpenses goes up by the new expenses (minus any adjustments we already tracked mid-month).
+// Expenses are now only added to totalExpenses at month end.
+// Only expenses actually deducted (recurring + unpaid one-time costs) are added to totalExpenses.
 
 /**
  * Gets the revenue multiplier for a service tier
@@ -203,6 +224,7 @@ function processMonthTransition({
   monthlyExpenseAdjustments,
   upgrades,
   industryId,
+  staffMembers = [],
 }: MonthTransitionParams): MonthTransitionResult {
   const monthResult = endOfMonth(
     metrics.cash,
@@ -213,8 +235,24 @@ function processMonthTransition({
     industryId,
   );
   const revenueBreakdown = summarizeRevenueByCategory(monthlyRevenueDetails);
-  const alreadyAccounted = monthlyExpenseAdjustments ?? 0;
-  const netExpensesForMetrics = Math.max(0, monthResult.totalExpenses - alreadyAccounted);
+  
+  // Build expense breakdown for this month (all operating expenses individually)
+  // Note: gameTime not available here, but effects are already filtered by effectManager.tick() in the game loop
+  const expenseBreakdown = buildMonthlyExpenseBreakdown(upgrades, industryId, staffMembers);
+  
+  // Calculate expenses that were actually deducted at month end:
+  // - Recurring expenses (monthlyExpenses) are always deducted at month end
+  // - One-time costs: only add those that weren't already paid (deductNow: true)
+  //   (Already-paid one-time costs were added to totalExpenses immediately when deducted)
+  // Validate edge case: paid should never exceed total
+  if (monthlyOneTimeCostsPaid > monthlyOneTimeCosts) {
+    console.warn(
+      `Data inconsistency detected: monthlyOneTimeCostsPaid (${monthlyOneTimeCostsPaid}) > monthlyOneTimeCosts (${monthlyOneTimeCosts}). ` +
+      `This may indicate a bug or data corruption.`
+    );
+  }
+  const payableOneTimeCosts = Math.max(0, monthlyOneTimeCosts - monthlyOneTimeCostsPaid);
+  const expensesActuallyDeducted = monthlyExpenses + payableOneTimeCosts;
 
   // Refresh time budget at start of new month
   const baseTimeBudget = getStartingTime(industryId);
@@ -225,22 +263,33 @@ function processMonthTransition({
     ...metrics,
     cash: monthResult.cash,
     time: timeBudget, // Refresh time budget each month
-    totalExpenses: metrics.totalExpenses + netExpensesForMetrics,
+    // Only add expenses that were actually deducted at month end
+    totalExpenses: metrics.totalExpenses + expensesActuallyDeducted,
   };
 
   const previousExp = monthlyHistory.length > 0 ? monthlyHistory[monthlyHistory.length - 1].exp : 0;
   const previousLevel = monthlyHistory.length > 0 ? monthlyHistory[monthlyHistory.length - 1].level : 0;
   const currentLevel = getLevel(updatedMetrics.exp);
 
+  // Calculate profit that matches the expenses stored in history
+  // History expenses = expensesActuallyDeducted (recurring + unpaid one-time costs)
+  // So profit should be revenue - expensesActuallyDeducted (not monthResult.profit which uses ALL one-time costs)
+  const historyProfit = monthlyRevenue - expensesActuallyDeducted;
+
   const updatedHistory: MonthlyHistoryEntry[] = [
     ...monthlyHistory,
     {
       month: currentMonth,
       revenue: monthlyRevenue,
-      expenses: monthResult.totalExpenses,
+      // Use expensesActuallyDeducted to match what was actually deducted and added to metrics.totalExpenses
+      // This ensures history entries match the lifetime totals
+      expenses: expensesActuallyDeducted,
       oneTimeCosts: monthlyOneTimeCostDetails,
       revenueBreakdown,
-      profit: monthResult.profit,
+      expenseBreakdown, // Store individual operating expenses breakdown
+      // Profit should match the expenses: revenue - expensesActuallyDeducted
+      // (monthResult.profit uses ALL one-time costs, but we only store expensesActuallyDeducted)
+      profit: historyProfit,
       exp: updatedMetrics.exp,
       expChange: updatedMetrics.exp - previousExp,
       level: currentLevel,
@@ -262,7 +311,7 @@ function processMonthTransition({
     monthlyOneTimeCostsPaid: 0,
     monthlyHistory: updatedHistory,
     currentMonth: currentMonth + 1,
-    monthlyExpenseAdjustments: 0,
+    monthlyExpenseAdjustments: 0, // Kept for backward compatibility but no longer used in calculations
   };
 }
 
@@ -530,6 +579,7 @@ function applyMonthTransitionIfNeeded(
     monthlyExpenseAdjustments: state.monthlyExpenseAdjustments ?? 0,
     upgrades: state.upgrades,
     industryId,
+    staffMembers: state.staffMembers ?? [],
   });
 
   return {

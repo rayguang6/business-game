@@ -56,6 +56,8 @@ export const createMonthlySlice: StateCreator<GameStore, [], [], MonthlySlice> =
   },
   
   // Central place to log one-off expenses; optionally deducts cash immediately.
+  // If deductNow is true, also adds to totalExpenses immediately (since cash is deducted immediately).
+  // Otherwise, expenses are added to totalExpenses at month end.
   addOneTimeCost: (cost: OneTimeCostInput, options = {}) => {
     const { deductNow = false } = options;
 
@@ -68,6 +70,13 @@ export const createMonthlySlice: StateCreator<GameStore, [], [], MonthlySlice> =
       monthlyOneTimeCostsPaid: deductNow
         ? state.monthlyOneTimeCostsPaid + cost.amount
         : state.monthlyOneTimeCostsPaid,
+      // If deducted immediately, also add to totalExpenses immediately
+      metrics: deductNow
+        ? {
+            ...state.metrics,
+            totalExpenses: state.metrics.totalExpenses + cost.amount,
+          }
+        : state.metrics,
     }));
 
     if (deductNow) {

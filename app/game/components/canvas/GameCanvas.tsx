@@ -71,8 +71,13 @@ export function GameCanvas() {
     return () => window.removeEventListener('resize', updateCanvasSize);
   }, []);
 
-  // Keyboard shortcut to toggle debug stats (works in all environments)
+  // Keyboard shortcut to toggle debug stats (development mode only)
   useEffect(() => {
+    // Only enable in development mode
+    if (process.env.NODE_ENV !== 'development') {
+      return;
+    }
+
     const handleKeyPress = (e: KeyboardEvent) => {
       // Press 'D' key to toggle debug stats
       if (e.key === 'd' || e.key === 'D') {
@@ -219,8 +224,8 @@ export function GameCanvas() {
 
   return (
     <div className="h-full w-full bg-[#8ed0fb] relative overflow-hidden flex items-center justify-center">
-      {/* Debug stats panel - toggle with 'D' key */}
-      {showModifiers && (
+      {/* Debug stats panel - toggle with 'D' key (development mode only) */}
+      {process.env.NODE_ENV === 'development' && showModifiers && (
         <div className="absolute bottom-3 right-3 z-40">
           <div className="bg-black/75 text-white text-xs sm:text-[13px] px-3 py-2 rounded-lg shadow-lg space-y-1.5 max-w-[280px] max-h-[80vh] overflow-y-auto">
             <div className="font-semibold text-sm mb-1 sticky top-0 bg-black/75 pb-1">Live Modifiers</div>

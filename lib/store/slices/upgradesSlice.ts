@@ -12,6 +12,8 @@ import { GameStore } from '../gameStore';
 import type { IndustryId } from '@/lib/game/types';
 import { effectManager, GameMetric, EffectType } from '@/lib/game/effectManager';
 import { checkRequirements } from '@/lib/game/requirementChecker';
+import { SourceType, SourceInfo } from '@/lib/config/sourceTypes';
+import { SourceHelpers } from '@/lib/utils/financialTracking';
 
 const findUpgradeDefinition = (industryId: IndustryId, upgradeId: UpgradeId): UpgradeDefinition | undefined => {
   return getUpgradesForIndustry(industryId).find((upgrade) => upgrade.id === upgradeId);
@@ -65,8 +67,8 @@ export interface UpgradeEffectStore {
   applyTimeChange?: (amount: number) => void;
   applyExpChange?: (amount: number) => void;
   applyFreedomScoreChange?: (amount: number) => void;
-  recordEventRevenue?: (amount: number, label?: string) => void;
-  recordEventExpense?: (amount: number, label: string) => void;
+  recordEventRevenue?: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => void;
+  recordEventExpense?: (amount: number, labelOrSource: string | SourceInfo, label?: string) => void;
   previousLevel?: number; // Previous level for calculating delta (0 if first purchase)
 }
 
@@ -98,10 +100,12 @@ export function addUpgradeEffects(upgrade: UpgradeDefinition, level: number, sto
         switch (effect.metric) {
           case GameMetric.Cash:
             if (store.recordEventRevenue && store.recordEventExpense) {
+              const sourceInfo: SourceInfo = SourceHelpers.fromUpgrade(upgrade.id, upgrade.name, level);
+              const label = level > 1 ? `${upgrade.name} (Lvl ${level})` : upgrade.name;
               if (delta >= 0) {
-                store.recordEventRevenue(delta, `Upgrade: ${upgrade.name}`);
+                store.recordEventRevenue(delta, sourceInfo, label);
               } else {
-                store.recordEventExpense(Math.abs(delta), `Upgrade: ${upgrade.name}`);
+                store.recordEventExpense(Math.abs(delta), sourceInfo, label);
               }
             } else if (store.applyCashChange) {
               store.applyCashChange(delta);
@@ -249,11 +253,15 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
     if (needsCash) {
       const { addOneTimeCost } = get();
       if (addOneTimeCost) {
+        const sourceInfo = SourceHelpers.fromUpgrade(upgrade.id, upgrade.name, newLevel);
         addOneTimeCost(
           {
             label: upgradeLabel,
             amount: upgrade.cost,
             category: OneTimeCostCategory.Upgrade,
+            sourceId: sourceInfo.id,
+            sourceType: sourceInfo.type,
+            sourceName: sourceInfo.name,
           },
           { deductNow: true },
         );
@@ -272,12 +280,8 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
     set((state) => {
       return {
         upgrades: nextUpgrades,
-        metrics: {
-          ...state.metrics,
-          totalExpenses: state.metrics.totalExpenses + Math.max(0, monthlyExpenseDelta),
-        },
+        // Don't update totalExpenses here - expenses are only added at month end
         monthlyExpenses: effectManager.calculate(GameMetric.MonthlyExpenses, getMonthlyBaseExpenses(industryId)),
-        monthlyExpenseAdjustments: state.monthlyExpenseAdjustments + Math.max(0, monthlyExpenseDelta),
       };
     });
 

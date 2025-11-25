@@ -6,6 +6,7 @@ import { Industry } from '@/lib/features/industries';
 import { Customer } from '@/lib/features/customers';
 import { Lead } from '@/lib/features/leads';
 import { UpgradeId } from '@/lib/game/config';
+import { SourceType } from '@/lib/config/sourceTypes';
 
 export interface Metrics {
   cash: number;
@@ -22,7 +23,7 @@ export type Upgrades = Record<UpgradeId, number>;
 export enum RevenueCategory {
   Customer = 'customer',
   Event = 'event',
-  Other = 'other',
+  Other = 'other', // Fallback for unregistered revenue sources
 }
 
 export const REVENUE_CATEGORY_LABELS: Record<RevenueCategory, string> = {
@@ -35,21 +36,27 @@ export interface RevenueEntry {
   amount: number;
   category: RevenueCategory;
   label?: string;
-  sourceId?: string;
+  sourceId?: string;        // ID of the source (event.id, upgrade.id, staff.id, etc.)
+  sourceType?: SourceType;  // SourceType enum value (for better tracking)
+  sourceName?: string;      // Display name of the source
 }
 
 export enum OneTimeCostCategory {
   Upgrade = 'upgrade',
-  Repair = 'repair',
   Event = 'event',
   Marketing = 'marketing',
   Staff = 'staff',
+  Other = 'other', // Fallback for unregistered one-time cost sources
+  // Repair = 'repair', // Reserved for future use, not currently implemented
 }
 
 export interface OneTimeCost {
   label: string;
   amount: number;
   category: OneTimeCostCategory;
+  sourceId?: string;        // ID of the source (upgrade.id, event.id, staff.id, etc.)
+  sourceType?: SourceType;  // SourceType enum value (for better tracking)
+  sourceName?: string;      // Display name of the source
   alreadyDeducted?: boolean;
 }
 
@@ -65,6 +72,16 @@ export interface MonthlyHistoryEntry {
   levelChange: number; // Level change during the month
   freedomScore: number; // Previously: founderWorkingHours
   revenueBreakdown?: RevenueEntry[];
+  expenseBreakdown?: ExpenseBreakdownItem[]; // Individual operating expenses breakdown
+}
+
+export interface ExpenseBreakdownItem {
+  label: string;
+  amount: number;
+  category: 'base' | 'upgrade' | 'staff' | 'event' | 'other'; // Added 'other' fallback
+  sourceId?: string;
+  sourceType?: SourceType;  // SourceType enum value (for better tracking)
+  sourceName?: string;      // Display name of the source
 }
 
 export interface GameState {

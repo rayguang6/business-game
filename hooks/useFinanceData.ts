@@ -19,13 +19,14 @@ export const useFinanceData = () => {
     upgrades,
     selectedIndustry,
     hiredStaff,
+    gameTime,
   } = useGameStore();
   const industryId = selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
   const businessMetrics = getBusinessMetrics(industryId);
 
   const expenseBreakdown = useMemo(
-    () => buildMonthlyExpenseBreakdown(upgrades, monthlyOneTimeCosts, industryId, hiredStaff),
-    [upgrades, monthlyOneTimeCosts, industryId, hiredStaff],
+    () => buildMonthlyExpenseBreakdown(upgrades, industryId, hiredStaff, gameTime),
+    [upgrades, industryId, hiredStaff, gameTime],
   );
 
   const revenueBreakdown = useMemo(() => {

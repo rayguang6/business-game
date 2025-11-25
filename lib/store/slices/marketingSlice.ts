@@ -8,6 +8,8 @@ import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import { useConfigStore } from '@/lib/store/configStore';
 import type { Customer } from '@/lib/features/customers';
 import type { Lead } from '@/lib/features/leads';
+import { SourceType, SourceInfo } from '@/lib/config/sourceTypes';
+import { SourceHelpers } from '@/lib/utils/financialTracking';
 
 // Marketing campaign effect (simplified from full Effect, no ID/source yet)
 export interface CampaignEffect {
@@ -45,8 +47,8 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
   applyTimeChange?: (amount: number) => void;
   applyExpChange?: (amount: number) => void;
   applyFreedomScoreChange?: (amount: number) => void;
-  recordEventRevenue?: (amount: number, label?: string) => void;
-  recordEventExpense?: (amount: number, label: string) => void;
+  recordEventRevenue?: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => void;
+  recordEventExpense?: (amount: number, labelOrSource: string | SourceInfo, label?: string) => void;
   spawnLead?: () => Lead;
   updateLeads?: (leads: Lead[]) => void;
   spawnCustomer?: () => Customer;
@@ -64,10 +66,11 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
       // Apply directly to state
       if (effect.metric === GameMetric.Cash) {
         if (store.recordEventRevenue && store.recordEventExpense) {
+          const sourceInfo: SourceInfo = SourceHelpers.fromMarketing(campaign.id, campaign.name);
           if (effect.value >= 0) {
-            store.recordEventRevenue(effect.value, campaign.name);
+            store.recordEventRevenue(effect.value, sourceInfo, campaign.name);
           } else {
-            store.recordEventExpense(Math.abs(effect.value), campaign.name);
+            store.recordEventExpense(Math.abs(effect.value), sourceInfo, campaign.name);
           }
         } else if (store.applyCashChange) {
           store.applyCashChange(effect.value);
@@ -118,7 +121,8 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
                       // Note: EXP is awarded when customer completes service and leaves happy (handled in mechanics.ts)
                       // Record revenue
                       if (customer.service && store.recordEventRevenue) {
-                        store.recordEventRevenue(customer.service.price, `Customer: ${customer.service.name}`);
+                        const sourceInfo = SourceHelpers.fromCustomer(customer.id, customer.service.name);
+                        store.recordEventRevenue(customer.service.price, sourceInfo, `Customer: ${customer.service.name}`);
                       }
                     }
                   }
@@ -235,10 +239,14 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
     if (needsCash) {
       const { addOneTimeCost } = get();
       if (addOneTimeCost) {
+        const sourceInfo = SourceHelpers.fromMarketing(campaign.id, campaign.name);
         const costEntry: OneTimeCost = {
           label: campaign.name,
           amount: campaign.cost,
           category: OneTimeCostCategory.Marketing,
+          sourceId: sourceInfo.id,
+          sourceType: sourceInfo.type,
+          sourceName: sourceInfo.name,
         };
         addOneTimeCost(costEntry, { deductNow: true });
       }

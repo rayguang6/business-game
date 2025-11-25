@@ -10,6 +10,7 @@ import { DEFAULT_INDUSTRY_ID, type IndustryId } from '@/lib/game/types';
 import { effectManager } from '@/lib/game/effectManager';
 import { checkRequirements } from '@/lib/game/requirementChecker';
 import { OneTimeCostCategory } from '../types';
+import { SourceHelpers } from '@/lib/utils/financialTracking';
 
 export interface StaffSlice {
   hiredStaff: Staff[];
@@ -102,11 +103,15 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
 
       // Record severance as one-time cost for P&L tracking
       if (store.addOneTimeCost) {
+        const sourceInfo = SourceHelpers.fromStaff(staffToFire.id, staffToFire.name, { action: 'Severance' });
         store.addOneTimeCost(
           {
             label: `Severance: ${staffToFire.name}`,
             amount: severanceCost,
             category: OneTimeCostCategory.Staff,
+            sourceId: sourceInfo.id,
+            sourceType: sourceInfo.type,
+            sourceName: sourceInfo.name,
           },
           { deductNow: true }, // Deduct cash immediately
         );
