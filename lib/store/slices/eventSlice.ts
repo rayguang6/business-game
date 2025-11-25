@@ -314,7 +314,19 @@ const applyEventEffect = (
             recordEventExpense(Math.abs(effect.value), sourceInfo, label);
           }
         } else if (effect.metric === GameMetric.Time) {
-          store.applyTimeChange(effect.value);
+          // Use recordTimeSpent for negative values (time spent), applyTimeChange for positive (time gained)
+          if (effect.value < 0 && store.recordTimeSpent) {
+            const sourceInfo = SourceHelpers.fromEvent(event.id, event.title, {
+              choiceId: choice.id,
+              choiceLabel: choice.label,
+              consequenceId: consequence?.id,
+              consequenceLabel: consequence?.label,
+            });
+            const timeLabel = `${event.title} - ${choice.label}`;
+            store.recordTimeSpent(effect.value, sourceInfo, timeLabel);
+          } else if (store.applyTimeChange) {
+            store.applyTimeChange(effect.value);
+          }
         } else if (effect.metric === GameMetric.Exp) {
           store.applyExpChange(effect.value);
         } else if (effect.metric === GameMetric.FreedomScore) {
@@ -457,8 +469,13 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
     }
 
     const timeCost = Math.max(0, choice.timeCost ?? 0);
-    if (timeCost > 0) {
-      store.applyTimeChange(-timeCost);
+    if (timeCost > 0 && store.recordTimeSpent) {
+      const sourceInfo = SourceHelpers.fromEvent(event.id, event.title, {
+        choiceId: choice.id,
+        choiceLabel: choice.label,
+      });
+      const timeLabel = `${event.title} - ${choice.label}`;
+      store.recordTimeSpent(-timeCost, sourceInfo, timeLabel);
     }
 
     const consequence = pickConsequence(choice);

@@ -38,6 +38,8 @@ export const getInitialMonthlyState = () => ({
   monthlyOneTimeCostsPaid: 0,
   monthlyHistory: [],
   monthlyExpenseAdjustments: 0,
+  monthlyTimeSpent: 0,
+  monthlyTimeSpentDetails: [],
 });
 
 export const createMonthlySlice: StateCreator<GameStore, [], [], MonthlySlice> = (set, get) => ({

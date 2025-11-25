@@ -14,6 +14,9 @@ export const getInitialMetrics = (industryId: IndustryId = DEFAULT_INDUSTRY_ID):
     totalExpenses: 0,
     exp: metrics.startingExp ?? 0, // Previously: startingSkillLevel - defaults to 0
     freedomScore: metrics.startingFreedomScore ?? 0, // Previously: founderWorkHours - defaults to 0
+    totalLeadsSpawned: 0,
+    totalCustomersGenerated: 0,
+    totalTimeSpent: 0,
   };
 };
 
