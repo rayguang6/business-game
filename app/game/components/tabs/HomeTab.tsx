@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFinanceData } from '@/hooks/useFinanceData';
 import { RevenueCategory, type RevenueEntry, type OneTimeCost, type TimeSpentEntry, REVENUE_CATEGORY_LABELS } from '@/lib/store/types';
 import { useGameStore } from '@/lib/store/gameStore';
@@ -67,7 +67,17 @@ export function HomeTab() {
   const [isTimeSpentExpanded, setIsTimeSpentExpanded] = useState(true);
   
   // Collapsible state for monthly history (per month)
-  const [expandedMonths, setExpandedMonths] = useState<Set<number>>(new Set());
+  // Initialize with current month expanded by default
+  const [expandedMonths, setExpandedMonths] = useState<Set<number>>(new Set([currentMonth]));
+  
+  // Auto-expand current month when it changes (new month starts)
+  useEffect(() => {
+    setExpandedMonths(prev => {
+      const newSet = new Set(prev);
+      newSet.add(currentMonth);
+      return newSet;
+    });
+  }, [currentMonth]);
   
   const toggleMonthExpansion = (month: number) => {
     setExpandedMonths(prev => {
@@ -83,10 +93,15 @@ export function HomeTab() {
   
   const isMonthExpanded = (month: number) => expandedMonths.has(month);
 
+  // Calculate unpaid one-time costs (those not yet deducted)
+  // Some one-time costs are deducted immediately (deductNow: true), others are deferred to month end
+  const unpaidOneTimeCosts = Math.max(0, monthlyOneTimeCosts - monthlyOneTimeCostsPaid);
+  
   // Calculate current month projected totals (not yet deducted)
   // monthlyExpenses = recurring monthly expenses (base + upgrades + staff)
-  // monthlyOneTimeCosts = total of all one-time purchases/expenses
-  const currentMonthTotalExpenses = monthlyExpenses + monthlyOneTimeCosts;
+  // unpaidOneTimeCosts = one-time costs that will be deducted at month end
+  // Note: Already-paid one-time costs (deductNow: true) are NOT included here as they're already deducted
+  const currentMonthTotalExpenses = monthlyExpenses + unpaidOneTimeCosts;
 
   // Operating expenses breakdown (only recurring expenses - base, staff, upgrades)
   const operatingExpenses = monthlyExpenseBreakdown;
@@ -102,7 +117,7 @@ export function HomeTab() {
   // Calculate lifetime totals: Only use metrics (actual deducted amounts)
   // metrics.totalRevenue = all revenue that's been added to cash (completed months + current month)
   // metrics.totalExpenses = all expenses that have been deducted from cash
-  //   - Completed months: all expenses (recurring + one-time costs)
+  //   - Completed months: all expenses (recurring + unpaid one-time costs)
   //   - Current month: one-time costs with deductNow=true (deducted immediately)
   //   - Current month recurring expenses: will be added at month end
   const lifetimeRevenue = metrics.totalRevenue; // Already includes current month revenue (added immediately)
@@ -110,7 +125,8 @@ export function HomeTab() {
   const lifetimeProfit = lifetimeRevenue - lifetimeExpenses;
   
   // Current month projected totals (for display purposes only)
-  const currentMonthProjectedExpenses = monthlyExpenses + monthlyOneTimeCosts;
+  // Only includes expenses that will be deducted at month end (recurring + unpaid one-time costs)
+  const currentMonthProjectedExpenses = monthlyExpenses + unpaidOneTimeCosts;
   const currentMonthProjectedProfit = monthlyRevenue - currentMonthProjectedExpenses;
 
   // Create current month entry to merge with history
