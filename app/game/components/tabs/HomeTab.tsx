@@ -38,6 +38,7 @@ export function HomeTab() {
   const [isOperatingExpensesExpanded, setIsOperatingExpensesExpanded] = useState(true);
   const [isOneTimeExpensesExpanded, setIsOneTimeExpensesExpanded] = useState(true);
   const [isMonthlyCostsExpanded, setIsMonthlyCostsExpanded] = useState(false);
+  const [isMonthlyExpensesExpanded, setIsMonthlyExpensesExpanded] = useState(false);
   
   // Collapsible state for monthly history (per month)
   const [expandedMonths, setExpandedMonths] = useState<Set<number>>(new Set());
@@ -154,6 +155,78 @@ export function HomeTab() {
           </div>
         </Card>
       </div>
+
+      {/* Monthly Expenses - Burn Rate */}
+      <Card>
+        <div 
+          className="flex items-center justify-between cursor-pointer"
+          onClick={() => setIsMonthlyExpensesExpanded(!isMonthlyExpensesExpanded)}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🔥</span>
+            <div className="flex flex-col">
+              <div className="text-sm font-semibold text-secondary">Monthly Expenses (Burn Rate)</div>
+              <div className="text-xs text-tertiary">Recurring expenses deducted at month end</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col items-end">
+              <div className="text-3xl font-bold" style={{ color: 'var(--error)' }}>
+                ${monthlyExpenses.toLocaleString()}/mo
+              </div>
+              {monthlyExpenses > 0 && (
+                <div className="text-xs text-tertiary mt-1">
+                  {metrics.cash > 0 ? (
+                    <>Runway: {Math.floor(metrics.cash / monthlyExpenses)} months</>
+                  ) : (
+                    <>No cash remaining</>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="text-lg" style={{ color: 'var(--error)' }}>
+              {isMonthlyExpensesExpanded ? '▼' : '▶'}
+            </div>
+          </div>
+        </div>
+        
+        {isMonthlyExpensesExpanded && operatingExpenses.length > 0 && (
+          <div className="mt-4 pt-4 border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+            <div className="space-y-2">
+              <div className="text-xs font-semibold text-secondary mb-2">Expense Breakdown</div>
+              {operatingExpenses.map((entry, index) => {
+                // Use sourceType for icon if available, otherwise use category
+                const icon = entry.sourceType 
+                  ? getIconForSourceType(entry.sourceType)
+                  : getExpenseBreakdownIcon(entry.category);
+                const displayLabel = getExpenseDisplayLabel(entry);
+                
+                return (
+                  <div 
+                    key={`monthly-exp-${index}`} 
+                    className="flex justify-between items-center py-2 px-3 rounded" 
+                    style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)' }}
+                  >
+                    <span className="text-sm text-tertiary flex items-center gap-2">
+                      <span>{icon}</span>
+                      <span>{displayLabel}</span>
+                    </span>
+                    <span className="text-sm font-semibold" style={{ color: 'var(--error)' }}>
+                      ${entry.amount.toLocaleString()}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        
+        {isMonthlyExpensesExpanded && operatingExpenses.length === 0 && (
+          <div className="mt-4 pt-4 border-t text-center text-tertiary text-sm" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+            No recurring expenses yet
+          </div>
+        )}
+      </Card>
 
       {/* Current Month - Main Focus */}
       <Card>
