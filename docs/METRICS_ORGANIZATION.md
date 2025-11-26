@@ -64,9 +64,9 @@ These metrics are calculated on-demand using the effect system:
   - Base: 1.0
   - Display: ×{value}
 
-- **ServiceRooms** (`GameMetric.ServiceRooms`)
+- **ServiceCapacity** (`GameMetric.ServiceCapacity`)
   - Number of available service rooms
-  - Base: `businessStats.treatmentRooms`
+  - Base: `businessStats.serviceCapacity`
   - Display: Integer count
 
 - **FailureRate** (`GameMetric.FailureRate`)

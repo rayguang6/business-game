@@ -24,7 +24,7 @@ export interface UpgradeEffects {
   spawnIntervalTicks: number;
   serviceSpeedMultiplier: number;
   exp: number; // Direct exp (effects modify this directly)
-  treatmentRooms: number;
+  serviceCapacity: number;
   monthlyExpenses: number;
   // happyProbability removed - not used in game mechanics
   serviceRevenueMultiplier: number;
@@ -74,7 +74,7 @@ export function getUpgradeEffects(
     spawnIntervalTicks,
     serviceSpeedMultiplier: Math.max(0.1, effectManager.calculate(GameMetric.ServiceSpeedMultiplier, baseMetrics.serviceSpeedMultiplier)),
     exp: baseMetrics.exp, // Exp is modified directly, not calculated here
-    treatmentRooms: Math.max(1, Math.round(effectManager.calculate(GameMetric.ServiceRooms, baseMetrics.treatmentRooms))),
+    serviceCapacity: Math.max(1, Math.round(effectManager.calculate(GameMetric.ServiceCapacity, baseMetrics.serviceCapacity))),
     monthlyExpenses: effectManager.calculate(GameMetric.MonthlyExpenses, baseMetrics.monthlyExpenses),
     // happyProbability removed - not used in game mechanics
     serviceRevenueMultiplier: Math.max(0, effectManager.calculate(GameMetric.ServiceRevenueMultiplier, baseMetrics.serviceRevenueMultiplier)),
@@ -111,11 +111,11 @@ export function getEffectiveExp(
   return getUpgradeEffects(upgrades, industryId).exp;
 }
 
-export function getEffectiveTreatmentRooms(
+export function getEffectiveServiceCapacity(
   upgrades: Upgrades,
   industryId: IndustryId,
 ): number {
-  return getUpgradeEffects(upgrades, industryId).treatmentRooms;
+  return getUpgradeEffects(upgrades, industryId).serviceCapacity;
 }
 
 export function shouldSpawnCustomerWithUpgrades(

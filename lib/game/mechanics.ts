@@ -170,7 +170,7 @@ interface ProcessCustomersParams {
     // Using GameMetric enum values ensures consistency with effectManager
     // Note: SkillLevel is handled directly (like cash), not through effect system
     [GameMetric.ServiceSpeedMultiplier]: number;
-    [GameMetric.ServiceRooms]: number;
+    [GameMetric.ServiceCapacity]: number;
     [GameMetric.ServiceRevenueMultiplier]: number;
     [GameMetric.ServiceRevenueFlatBonus]: number;
     serviceRevenueScale: number; // Not in GameMetric enum (config value, not an effect)
@@ -380,7 +380,7 @@ function processCustomersForTick({
   gameMetrics,
   industryId,
 }: ProcessCustomersParams): ProcessCustomersResult {
-  const roomsRemaining = [...getAvailableRooms(customers, gameMetrics.serviceRooms, industryId)];
+  const roomsRemaining = [...getAvailableRooms(customers, gameMetrics.serviceCapacity, industryId)];
   const updatedCustomers: Customer[] = [];
   let metricsAccumulator: Metrics = { ...metrics };
   let revenueAccumulator = monthlyRevenue;
@@ -738,7 +738,7 @@ export function tickOnce(state: TickInput): TickResult {
   const gameMetrics = {
     spawnIntervalSeconds: effectManager.calculate(GameMetric.SpawnIntervalSeconds, baseStats.customerSpawnIntervalSeconds),
     serviceSpeedMultiplier: effectManager.calculate(GameMetric.ServiceSpeedMultiplier, 1.0),
-    serviceRooms: effectManager.calculate(GameMetric.ServiceRooms, baseStats.treatmentRooms),
+    serviceCapacity: effectManager.calculate(GameMetric.ServiceCapacity, baseStats.serviceCapacity),
     // Skill level is handled directly (like cash), not through effect system
     serviceRevenueMultiplier: effectManager.calculate(
       GameMetric.ServiceRevenueMultiplier,

@@ -20,7 +20,7 @@ const toMetricValues = (base: BaseUpgradeMetrics): MetricValues => ({
   [GameMetric.SpawnIntervalSeconds]: base.spawnIntervalSeconds,
   [GameMetric.ServiceSpeedMultiplier]: base.serviceSpeedMultiplier,
   [GameMetric.Exp]: base.exp,
-  [GameMetric.ServiceRooms]: base.treatmentRooms,
+  [GameMetric.ServiceCapacity]: base.serviceCapacity,
   // [GameMetric.HappyProbability] removed - not used in game mechanics
   [GameMetric.ServiceRevenueMultiplier]: base.serviceRevenueMultiplier,
   [GameMetric.ServiceRevenueFlatBonus]: base.serviceRevenueFlatBonus,
@@ -38,7 +38,7 @@ const fromMetricValues = (values: MetricValues): BaseUpgradeMetrics => ({
   spawnIntervalSeconds: values[GameMetric.SpawnIntervalSeconds],
   serviceSpeedMultiplier: values[GameMetric.ServiceSpeedMultiplier],
   exp: values[GameMetric.Exp],
-  treatmentRooms: values[GameMetric.ServiceRooms],
+  serviceCapacity: values[GameMetric.ServiceCapacity],
   // happyProbability removed - not used in game mechanics
   serviceRevenueMultiplier: values[GameMetric.ServiceRevenueMultiplier],
   serviceRevenueFlatBonus: values[GameMetric.ServiceRevenueFlatBonus],

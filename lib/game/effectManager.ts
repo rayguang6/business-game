@@ -21,7 +21,7 @@ export enum GameMetric {
   MonthlyTimeCapacity = 'monthlyTimeCapacity', // Monthly time capacity increase (permanent)
   SpawnIntervalSeconds = 'spawnIntervalSeconds',
   ServiceSpeedMultiplier = 'serviceSpeedMultiplier',
-  ServiceRooms = 'serviceRooms',
+  ServiceCapacity = 'serviceCapacity',
   Exp = 'exp', // Direct exp modification (add/subtract)
   // HappyProbability removed - not used in game mechanics (customers happy/angry based on patience)
   MonthlyExpenses = 'monthlyExpenses',
@@ -95,8 +95,8 @@ export const METRIC_CONSTRAINTS: Partial<Record<GameMetric, MetricConstraints>> 
     min: 0,           // Can't have negative monthly capacity
     roundToInt: true, // Must be whole number
   },
-  [GameMetric.ServiceRooms]: {
-    min: 1,           // Can't have negative rooms
+  [GameMetric.ServiceCapacity]: {
+    min: 1,           // Can't have negative capacity
     // max removed - capacity handled by upgrades
     roundToInt: true, // Must be whole number
   },
@@ -194,7 +194,7 @@ const applyConstraints = (value: number, metric: GameMetric): number => {
     result = Math.min(constraints.max, result);
   }
 
-  // Round to integer if needed (e.g., for ServiceRooms, FreedomScore)
+  // Round to integer if needed (e.g., for ServiceCapacity, FreedomScore)
   if (constraints.roundToInt) {
     result = Math.round(result);
   }

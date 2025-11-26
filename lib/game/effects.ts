@@ -98,9 +98,9 @@ const applyUpgradeEffectsToCombined = (
         result = { ...result, exp: updated };
         break;
       }
-      case GameMetric.ServiceRooms: {
-        const updated = applyUpgradeEffectMetric(result.treatmentRooms, effect);
-        result = { ...result, treatmentRooms: Math.max(1, Math.round(updated)) };
+      case GameMetric.ServiceCapacity: {
+        const updated = applyUpgradeEffectMetric(result.serviceCapacity, effect);
+        result = { ...result, serviceCapacity: Math.max(1, Math.round(updated)) };
         break;
       }
       case GameMetric.MonthlyExpenses: {
@@ -197,10 +197,10 @@ const applyMultipliersToCombined = (
         };
         break;
       }
-      case GameMetric.ServiceRooms: {
+      case GameMetric.ServiceCapacity: {
         result = {
           ...result,
-          treatmentRooms: Math.max(1, Math.round(combined.treatmentRooms * safeMultiplier)),
+          serviceCapacity: Math.max(1, Math.round(combined.serviceCapacity * safeMultiplier)),
         };
         break;
       }

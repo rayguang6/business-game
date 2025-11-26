@@ -206,7 +206,7 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
         customerPatienceSeconds: 10,
         leavingAngryDurationTicks: 10,
         customerSpawnPosition: { x: 4, y: 9 },
-        treatmentRooms: 2,
+        serviceCapacity: 2,
         expGainPerHappyCustomer: 1, // Previously: skillLevelGainPerHappyCustomer
         expLossPerAngryCustomer: 1, // Previously: skillLevelLossPerAngryCustomer
         // baseHappyProbability removed - not used in game mechanics

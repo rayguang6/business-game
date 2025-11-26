@@ -22,7 +22,7 @@ export interface BusinessStats {
     x: number;
     y: number;
   };
-  treatmentRooms: number;
+  serviceCapacity: number;
   expGainPerHappyCustomer: number; // Previously: skillLevelGainPerHappyCustomer
   expLossPerAngryCustomer: number; // Previously: skillLevelLossPerAngryCustomer
   // baseHappyProbability removed - customers are happy/angry based on patience, not probability
@@ -94,7 +94,7 @@ export interface BaseUpgradeMetrics {
   spawnIntervalSeconds: number;
   serviceSpeedMultiplier: number;
   exp: number; // Direct exp (effects modify this directly)
-  treatmentRooms: number;
+  serviceCapacity: number;
   // happyProbability removed - not used in game mechanics
   serviceRevenueMultiplier: number;
   serviceRevenueFlatBonus: number;

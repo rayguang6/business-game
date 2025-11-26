@@ -69,7 +69,7 @@ export default function AdminPage() {
     { value: GameMetric.FailureRate, label: 'Failure Rate (%)' },
   { value: GameMetric.GenerateLeads, label: 'Generate Leads (immediate)' },
   { value: GameMetric.ConversionRate, label: 'Lead Conversion Rate' },
-  { value: GameMetric.ServiceRooms, label: 'Service Rooms' },
+  { value: GameMetric.ServiceCapacity, label: 'Service Capacity' },
     { value: GameMetric.MonthlyExpenses, label: 'Monthly Expenses' },
     { value: GameMetric.ServiceSpeedMultiplier, label: 'Service Speed Multiplier' },
     { value: GameMetric.SpawnIntervalSeconds, label: 'Spawn Interval (seconds)' },

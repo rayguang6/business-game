@@ -128,7 +128,7 @@ export function IndustrySimulationConfigTab({
     customerPatienceSeconds: 10,
     leavingAngryDurationTicks: 10,
     customerSpawnPosition: { x: 4, y: 9 },
-    treatmentRooms: 2,
+    serviceCapacity: 2,
     expGainPerHappyCustomer: 1,
     expLossPerAngryCustomer: 1,
     eventTriggerSeconds: [],
@@ -461,18 +461,18 @@ export function IndustrySimulationConfigTab({
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">
-                Treatment Rooms
-                {globalStats?.treatmentRooms !== undefined && !businessStats?.treatmentRooms && (
-                  <span className="ml-2 text-[10px] text-slate-500">(global: {globalStats.treatmentRooms})</span>
+                Service Capacity
+                {globalStats?.serviceCapacity !== undefined && !businessStats?.serviceCapacity && (
+                  <span className="ml-2 text-[10px] text-slate-500">(global: {globalStats.serviceCapacity})</span>
                 )}
               </label>
               <input 
                 type="number" 
                 min="0" 
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getStats().treatmentRooms} 
-                onChange={(e) => updateStats({ treatmentRooms: e.target.value === '' ? undefined : Number(e.target.value) })} 
-                placeholder={globalStats?.treatmentRooms?.toString()}
+                value={getStats().serviceCapacity} 
+                onChange={(e) => updateStats({ serviceCapacity: e.target.value === '' ? undefined : Number(e.target.value) })} 
+                placeholder={globalStats?.serviceCapacity?.toString()}
               />
             </div>
             <div>

@@ -31,7 +31,7 @@ const METRIC_LABELS: Record<GameMetric, string> = {
   [GameMetric.GenerateLeads]: 'Generate leads',
   [GameMetric.ConversionRate]: 'Lead conversion rate',
   [GameMetric.ServiceSpeedMultiplier]: 'Service speed',
-  [GameMetric.ServiceRooms]: 'Service rooms',
+  [GameMetric.ServiceCapacity]: 'Service capacity',
   [GameMetric.Exp]: 'EXP',
   [GameMetric.FailureRate]: 'Failure rate',
   // [GameMetric.HappyProbability] removed - not used in game mechanics

@@ -232,7 +232,7 @@ export function UpgradesTab({
                       title="Effects"
                       description="Choose a metric and how to apply it. Add = flat amount, Percent = +/-%, Multiply = × factor, Set = exact value. Note: Value must be a number (0 is valid)."
                       defaultEffect={{
-                        metric: GameMetric.ServiceRooms,
+                        metric: GameMetric.ServiceCapacity,
                         type: EffectType.Add,
                         value: '1', // Changed from '0' to '1' so users see a non-zero default
                       }}
