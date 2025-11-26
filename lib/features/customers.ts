@@ -302,7 +302,7 @@ export function getAvailableSlots(customers: Customer[], maxRooms?: number, indu
     .map(c => c.roomId!);
   
   // Get the requested room count (no cap - handled by upgrades)
-  const requestedRoomCount = maxRooms || getBusinessStats(industryId).treatmentRooms;
+  const requestedRoomCount = maxRooms || getBusinessStats(industryId).serviceCapacity;
   const roomCount = Math.max(1, Math.round(requestedRoomCount));
   
   return Array.from({ length: roomCount }, (_, i) => i + 1)

@@ -26,7 +26,7 @@ import {
 // - Customer behavior (customerSpawnIntervalSeconds, customerPatienceSeconds) - varies by industry
 // - Revenue models (serviceRevenueMultiplier, serviceRevenueScale) - varies by industry
 // - Risk levels (failureRate) - varies by industry
-// - Map positions (customerSpawnPosition, treatmentRooms) - unique per industry
+// - Map positions (customerSpawnPosition, serviceCapacity) - unique per industry
 const DEFAULT_BUSINESS_METRICS: BusinessMetrics = {
   // Generic defaults - industries should override these
   startingCash: 10000, // Generic default - industries typically override (freelance: 3000, dental: 15000, restaurant: 20000)
@@ -62,7 +62,7 @@ const DEFAULT_BUSINESS_STATS: BusinessStats = {
     x: 4,
     y: 9,
   }, // Map-specific - each industry has different layout
-  treatmentRooms: 2, // Industry-specific - different concepts (chairs, tables, booths)
+  serviceCapacity: 2, // Industry-specific - different concepts (chairs, tables, booths)
 } as const;
 
 export const DEFAULT_MOVEMENT_CONFIG: MovementConfig = {

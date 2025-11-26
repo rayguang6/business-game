@@ -19,7 +19,7 @@ const METRIC_LABELS: Partial<Record<GameMetric, string>> = {
   [GameMetric.Cash]: 'Cash',
   [GameMetric.Time]: 'Available Time',
   [GameMetric.MonthlyTimeCapacity]: 'Monthly Time Capacity',
-  [GameMetric.ServiceRooms]: 'Service Rooms',
+  [GameMetric.ServiceCapacity]: 'Service Capacity',
   [GameMetric.MonthlyExpenses]: 'Monthly Expenses',
   [GameMetric.ServiceSpeedMultiplier]: 'Service Speed',
   [GameMetric.SpawnIntervalSeconds]: 'Customer Spawn',
@@ -58,7 +58,7 @@ const formatEffect = (effect: UpgradeEffect): string => {
         return `${sign}${formatMagnitude(value)}h ${label}`;
       case GameMetric.SpawnIntervalSeconds:
         return `${sign}${formatMagnitude(value)}s ${label} Interval`;
-      case GameMetric.ServiceRooms:
+      case GameMetric.ServiceCapacity:
         return `${sign}${formatMagnitude(value)} ${label}`;
       default:
         return `${sign}${formatMagnitude(value)} ${label}`;

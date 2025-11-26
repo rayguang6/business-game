@@ -129,7 +129,7 @@ Only set values in **Industry Config** that differ from global defaults:
 ```typescript
 {
   customerSpawnPosition: { x: 4, y: 9 },  // Unique per industry map
-  treatmentRooms: 2,                      // Different concepts (chairs, tables, booths)
+  serviceCapacity: 2,                      // Different concepts (chairs, tables, booths)
   // ... layout positions
 }
 ```

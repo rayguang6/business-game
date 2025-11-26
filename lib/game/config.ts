@@ -373,7 +373,7 @@ export function getBaseUpgradeMetricsForIndustry(
     spawnIntervalSeconds: stats.customerSpawnIntervalSeconds,
     serviceSpeedMultiplier: 1,
     exp: 0, // EXP starts at 0, modified by effects
-    treatmentRooms: stats.treatmentRooms,
+    serviceCapacity: stats.serviceCapacity,
     // happyProbability removed - not used in game mechanics (customers happy/angry based on patience)
     serviceRevenueMultiplier: stats.serviceRevenueMultiplier ?? 1,
     serviceRevenueFlatBonus: 0,

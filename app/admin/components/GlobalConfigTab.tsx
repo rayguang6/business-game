@@ -196,15 +196,15 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">
-                  Treatment Rooms
+                  Service Capacity
                   <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded">Commonly Overridden</span>
                 </label>
                 <input
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.treatmentRooms}
-                  onChange={(e) => onUpdateStats({ treatmentRooms: Number(e.target.value) })}
+                  value={stats.serviceCapacity}
+                  onChange={(e) => onUpdateStats({ serviceCapacity: Number(e.target.value) })}
                 />
               </div>
               <div>

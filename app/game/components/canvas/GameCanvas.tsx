@@ -116,7 +116,7 @@ export function GameCanvas() {
         baseStats.customerSpawnIntervalSeconds,
       ),
       serviceSpeedMultiplier: effectManager.calculate(GameMetric.ServiceSpeedMultiplier, 1.0),
-      serviceRooms: effectManager.calculate(GameMetric.ServiceRooms, baseStats.treatmentRooms),
+      serviceCapacity: effectManager.calculate(GameMetric.ServiceCapacity, baseStats.serviceCapacity),
       serviceRevenueMultiplier: effectManager.calculate(
         GameMetric.ServiceRevenueMultiplier,
         baseStats.serviceRevenueMultiplier ?? 1,
@@ -148,7 +148,7 @@ export function GameCanvas() {
       baseServiceRevenueScale: baseStats.serviceRevenueScale,
       baseConversionRate: baseStats.conversionRate,
       baseFailureRate: baseStats.failureRate,
-      baseTreatmentRooms: baseStats.treatmentRooms,
+      baseServiceCapacity: baseStats.serviceCapacity,
       baseExpGainPerHappy: baseStats.expGainPerHappyCustomer,
       baseExpLossPerAngry: baseStats.expLossPerAngryCustomer,
     };
@@ -165,16 +165,16 @@ export function GameCanvas() {
   }, [computeMetrics]);
 
   if (!selectedIndustry) return null;
-  const serviceRoomsLabel = 'Service Rooms';
+  const serviceCapacityLabel = 'Service Capacity';
   // Get service room positions for rendering beds (from database or fallback)
   const serviceRoomPositions = layout.serviceRoomPositions;
-  // Use serviceRooms from metrics (no cap - handled by upgrades)
+  // Use serviceCapacity from metrics (no cap - handled by upgrades)
   // For display: show undefined to indicate missing config
   // For array operations: use fallback to prevent crashes
-  const serviceRoomsDisplay = metrics.serviceRooms !== undefined 
-    ? Math.max(1, Math.round(metrics.serviceRooms))
+  const serviceCapacityDisplay = metrics.serviceCapacity !== undefined 
+    ? Math.max(1, Math.round(metrics.serviceCapacity))
     : undefined;
-  const serviceRooms = serviceRoomsDisplay ?? 1; // Fallback for array operations
+  const serviceCapacity = serviceCapacityDisplay ?? 1; // Fallback for array operations
   const mapBackground = selectedIndustry.mapImage ?? '/images/maps/dental-map.png';
   const staffPositions = layout.staffPositions;
   const TILE_SIZE = 32;
@@ -259,9 +259,9 @@ export function GameCanvas() {
                 <span className="font-semibold">×{serviceSpeedMultiplier.toFixed(2)}</span>
               </div>
               <div>
-                <span className="text-gray-300">{serviceRoomsLabel}:</span>{' '}
-                {serviceRoomsDisplay !== undefined ? (
-                  <span className="font-semibold">{serviceRoomsDisplay}</span>
+                <span className="text-gray-300">{serviceCapacityLabel}:</span>{' '}
+                {serviceCapacityDisplay !== undefined ? (
+                  <span className="font-semibold">{serviceCapacityDisplay}</span>
                 ) : (
                   <span className="text-red-400">N/A</span>
                 )}
@@ -450,7 +450,7 @@ export function GameCanvas() {
           })}
 
           {/* Render beds at service room positions (only for active rooms) */}
-          {serviceRoomPositions.slice(0, serviceRooms).map((position, index) => {
+          {serviceRoomPositions.slice(0, serviceCapacity).map((position, index) => {
             // Use capacity image from config (industry-specific or global)
             const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
             const bedImagePath = getCapacityImageForIndustry(industryId);
@@ -578,17 +578,17 @@ export function GameCanvas() {
                   className="font-semibold text-gray-700"
                   style={{ fontSize: `${12 * scaleFactor}px` }}
                 >
-                  {serviceRoomsLabel}
+                  {serviceCapacityLabel}
                 </h4>
                 <div 
                   className="text-gray-500"
                   style={{ fontSize: `${12 * scaleFactor}px` }}
                 >
-                  {customers.filter((c) => c.status === CustomerStatus.InService).length}/{serviceRooms} in service
+                  {customers.filter((c) => c.status === CustomerStatus.InService).length}/{serviceCapacity} in service
                 </div>
               </div>
               <div className="space-y-2">
-                {Array.from({ length: serviceRooms }, (_, index) => (
+                {Array.from({ length: serviceCapacity }, (_, index) => (
                   <TreatmentRoom 
                     key={index + 1} 
                     roomId={index + 1} 

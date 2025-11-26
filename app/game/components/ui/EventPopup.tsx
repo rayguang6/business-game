@@ -39,7 +39,7 @@ const METRIC_LABELS: Record<GameMetric, string> = {
   [GameMetric.MonthlyTimeCapacity]: 'Monthly Time Capacity',
   [GameMetric.SpawnIntervalSeconds]: 'Customer Spawn Speed',
   [GameMetric.ServiceSpeedMultiplier]: 'Service Speed',
-  [GameMetric.ServiceRooms]: 'Service Rooms',
+  [GameMetric.ServiceCapacity]: 'Service Capacity',
   [GameMetric.Exp]: 'EXP',
   [GameMetric.FailureRate]: 'Failure Rate',
   // [GameMetric.HappyProbability] removed - not used in game mechanics
