@@ -3,7 +3,6 @@
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import type { StaffRoleConfig, StaffPreset } from '@/lib/game/staffConfig';
 import type { GameFlag } from '@/lib/data/flagRepository';
-import type { GameCondition } from '@/lib/types/conditions';
 import type { Requirement } from '@/lib/game/types';
 import { RequirementsSelector } from './RequirementsSelector';
 import { EffectsList } from './EffectsList';
@@ -41,8 +40,7 @@ interface StaffTabProps {
   presetDeleting: boolean;
   flags: GameFlag[];
   flagsLoading: boolean;
-  conditions: GameCondition[];
-  conditionsLoading: boolean;
+  upgrades?: import('@/lib/game/types').UpgradeDefinition[];
   metricOptions: Array<{ value: GameMetric; label: string }>;
   effectTypeOptions: Array<{ value: EffectType; label: string; hint: string }>;
   onSelectRole: (role: StaffRoleConfig) => void;
@@ -77,8 +75,7 @@ export function StaffTab({
   presetDeleting,
   flags,
   flagsLoading,
-  conditions,
-  conditionsLoading,
+  upgrades = [],
   metricOptions,
   effectTypeOptions,
   onSelectRole,
@@ -201,9 +198,9 @@ export function StaffTab({
                         <label className="block text-sm font-semibold text-slate-300 mb-2">Requirements</label>
                         <RequirementsSelector
                           flags={flags}
-                          conditions={conditions}
+                          upgrades={upgrades}
+                          staffRoles={staffRoles}
                           flagsLoading={flagsLoading}
-                          conditionsLoading={conditionsLoading}
                           requirements={roleForm.requirements || []}
                           onRequirementsChange={(requirements) => onUpdateRoleForm({ requirements })}
                         />

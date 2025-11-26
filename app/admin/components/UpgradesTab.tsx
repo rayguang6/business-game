@@ -31,8 +31,8 @@ interface UpgradesTabProps {
   upgradeDeleting: boolean;
   flags: GameFlag[];
   flagsLoading: boolean;
-  conditions: GameCondition[];
-  conditionsLoading: boolean;
+  upgrades?: UpgradeDefinition[];
+  staffRoles?: import('@/lib/game/staffConfig').StaffRoleConfig[];
   metricOptions: Array<{ value: GameMetric; label: string }>;
   effectTypeOptions: Array<{ value: EffectType; label: string; hint: string }>;
   onSelectUpgrade: (upgrade: UpgradeDefinition) => void;
@@ -57,8 +57,8 @@ export function UpgradesTab({
   upgradeDeleting,
   flags,
   flagsLoading,
-  conditions,
-  conditionsLoading,
+  upgrades: allUpgrades = [],
+  staffRoles = [],
   metricOptions,
   effectTypeOptions,
   onSelectUpgrade,
@@ -216,9 +216,9 @@ export function UpgradesTab({
                       <label className="block text-sm font-semibold text-slate-300 mb-2">Requirements</label>
                       <RequirementsSelector
                         flags={flags}
-                        conditions={conditions}
+                        upgrades={allUpgrades}
+                        staffRoles={staffRoles}
                         flagsLoading={flagsLoading}
-                        conditionsLoading={conditionsLoading}
                         requirements={upgradeForm.requirements || []}
                         onRequirementsChange={(requirements) => onUpdateForm({ requirements })}
                       />

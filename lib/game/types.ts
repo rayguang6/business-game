@@ -63,15 +63,19 @@ export interface UpgradeEffect {
 }
 
 /**
- * Requirement with explicit type and expected value support
- * - type: specifies whether this is a flag or condition requirement
- * - expected: true means the requirement must be met (YES), false means must NOT be met (NO)
- * - id: clean ID without prefixes (e.g., "staff_trained", not "flag_staff_trained")
+ * Requirement with explicit type and value support
+ * - type: specifies the requirement type (flag, upgrade, metric, staff)
+ * - id: identifier for the requirement (flag ID, upgrade ID, metric name, staff role ID)
+ * - expected: for flag - true means must be met, false means must NOT be met
+ * - operator: for numeric types (upgrade, metric, staff) - comparison operator
+ * - value: for numeric types - the value to compare against
  */
 export interface Requirement {
-  type: 'flag' | 'condition';  // Explicit type
-  id: string;                  // Clean ID without prefixes
-  expected?: boolean;          // true = must be met, false = must NOT be met
+  type: 'flag' | 'upgrade' | 'metric' | 'staff';
+  id: string;
+  expected?: boolean;  // For flag: true = must be met, false = must NOT be met
+  operator?: '>=' | '<=' | '>' | '<' | '==';  // For numeric types: comparison operator
+  value?: number;      // For numeric types: value to compare against
 }
 
 export interface UpgradeDefinition {

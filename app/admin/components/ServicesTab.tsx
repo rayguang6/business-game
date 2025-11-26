@@ -1,8 +1,8 @@
 'use client';
 
-import type { IndustryServiceDefinition, Requirement } from '@/lib/game/types';
+import type { IndustryServiceDefinition, Requirement, UpgradeDefinition } from '@/lib/game/types';
 import type { GameFlag } from '@/lib/data/flagRepository';
-import type { GameCondition } from '@/lib/types/conditions';
+import type { StaffRoleConfig } from '@/lib/game/staffConfig';
 import { RequirementsSelector } from './RequirementsSelector';
 import { makeUniqueId, slugify } from './utils';
 
@@ -18,8 +18,8 @@ interface ServicesTabProps {
   serviceDeleting: boolean;
   flags: GameFlag[];
   flagsLoading: boolean;
-  conditions: GameCondition[];
-  conditionsLoading: boolean;
+  upgrades?: UpgradeDefinition[];
+  staffRoles?: StaffRoleConfig[];
   onSelectService: (service: IndustryServiceDefinition) => void;
   onCreateService: () => void;
   onSaveService: () => Promise<void>;
@@ -40,8 +40,8 @@ export function ServicesTab({
   serviceDeleting,
   flags,
   flagsLoading,
-  conditions,
-  conditionsLoading,
+  upgrades,
+  staffRoles,
   onSelectService,
   onCreateService,
   onSaveService,
@@ -179,9 +179,9 @@ export function ServicesTab({
                       <label className="block text-sm font-semibold text-slate-300 mb-2">Requirements</label>
                       <RequirementsSelector
                         flags={flags}
-                        conditions={conditions}
+                        upgrades={upgrades || []}
+                        staffRoles={staffRoles || []}
                         flagsLoading={flagsLoading}
-                        conditionsLoading={conditionsLoading}
                         requirements={serviceForm.requirements || []}
                         onRequirementsChange={(requirements) => onUpdateForm({ requirements })}
                       />

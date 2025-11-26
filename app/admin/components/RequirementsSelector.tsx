@@ -2,27 +2,45 @@
 
 import { useState } from 'react';
 import type { GameFlag } from '@/lib/data/flagRepository';
-import type { GameCondition } from '@/lib/types/conditions';
-import type { Requirement } from '@/lib/game/types';
+import type { Requirement, UpgradeDefinition } from '@/lib/game/types';
+import type { StaffRoleConfig } from '@/lib/game/staffConfig';
 
 interface RequirementsSelectorProps {
   flags: GameFlag[];
-  conditions: GameCondition[];
+  upgrades?: UpgradeDefinition[];
+  staffRoles?: StaffRoleConfig[];
   flagsLoading: boolean;
-  conditionsLoading: boolean;
   requirements?: Requirement[];
   onRequirementsChange?: (requirements: Requirement[]) => void;
 }
 
+const METRIC_OPTIONS = [
+  { id: 'cash', name: 'Cash' },
+  { id: 'exp', name: 'Experience' },
+  { id: 'level', name: 'Level' },
+  { id: 'expenses', name: 'Expenses' },
+  { id: 'gameTime', name: 'Game Time' },
+  { id: 'freedomScore', name: 'Freedom Score' },
+] as const;
+
+const OPERATOR_OPTIONS = [
+  { value: '>=', label: '>=' },
+  { value: '<=', label: '<=' },
+  { value: '>', label: '>' },
+  { value: '<', label: '<' },
+  { value: '==', label: '==' },
+] as const;
+
 export function RequirementsSelector({
   flags,
-  conditions,
+  upgrades = [],
+  staffRoles = [],
   flagsLoading,
-  conditionsLoading,
   requirements = [],
   onRequirementsChange,
 }: RequirementsSelectorProps) {
   const [search, setSearch] = useState<string>('');
+  const [editingRequirement, setEditingRequirement] = useState<string | null>(null);
 
   const filteredFlags = (flags || []).filter(
     (flag) =>
@@ -30,23 +48,33 @@ export function RequirementsSelector({
       (flag.description || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  const filteredConditions = (conditions || []).filter(
-    (condition) =>
-      condition.name.toLowerCase().includes(search.toLowerCase()) ||
-      condition.description.toLowerCase().includes(search.toLowerCase()) ||
-      condition.metric.toLowerCase().includes(search.toLowerCase())
+  const filteredUpgrades = (upgrades || []).filter(
+    (upgrade) =>
+      upgrade.name.toLowerCase().includes(search.toLowerCase()) ||
+      upgrade.id.toLowerCase().includes(search.toLowerCase())
   );
 
-  const isRequirementSelected = (cleanId: string, type: 'flag' | 'condition'): boolean => {
+  const filteredStaffRoles = (staffRoles || []).filter(
+    (role) =>
+      role.name.toLowerCase().includes(search.toLowerCase()) ||
+      role.id.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const filteredMetrics = METRIC_OPTIONS.filter(
+    (metric) =>
+      metric.name.toLowerCase().includes(search.toLowerCase()) ||
+      metric.id.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const isRequirementSelected = (cleanId: string, type: Requirement['type']): boolean => {
     return requirements.some(req => req.id === cleanId && req.type === type);
   };
 
-  const getRequirementExpected = (cleanId: string, type: 'flag' | 'condition'): boolean | undefined => {
-    const req = requirements.find(r => r.id === cleanId && r.type === type);
-    return req?.expected;
+  const getRequirement = (cleanId: string, type: Requirement['type']): Requirement | undefined => {
+    return requirements.find(r => r.id === cleanId && r.type === type);
   };
 
-  const handleToggle = (cleanId: string, type: 'flag' | 'condition') => {
+  const handleToggle = (cleanId: string, type: Requirement['type'], defaultOperator?: string, defaultValue?: number) => {
     if (!onRequirementsChange) return;
 
     const existingIndex = requirements.findIndex(req => req.id === cleanId && req.type === type);
@@ -54,19 +82,39 @@ export function RequirementsSelector({
     if (existingIndex >= 0) {
       // Remove if already selected
       onRequirementsChange(requirements.filter((_, index) => index !== existingIndex));
+      setEditingRequirement(null);
     } else {
-      // Add with default expected: true (must be met)
-      onRequirementsChange([...requirements, { type, id: cleanId, expected: true }]);
+      // Add with defaults
+      const newReq: Requirement = { type, id: cleanId };
+      if (type === 'flag') {
+        newReq.expected = true;
+      } else if (type === 'upgrade' || type === 'metric' || type === 'staff') {
+        newReq.operator = (defaultOperator || '>=') as any;
+        newReq.value = defaultValue ?? (type === 'upgrade' ? 1 : type === 'staff' ? 1 : 0);
+      }
+      onRequirementsChange([...requirements, newReq]);
+      setEditingRequirement(`${type}-${cleanId}`);
     }
   };
 
-  const handleToggleExpected = (cleanId: string, type: 'flag' | 'condition') => {
+  const handleToggleExpected = (cleanId: string, type: 'flag') => {
     if (!onRequirementsChange) return;
 
     const updated = requirements.map(req => {
       if (req.id === cleanId && req.type === type) {
-        // Toggle between true and false
         return { ...req, expected: req.expected === false ? true : false };
+      }
+      return req;
+    });
+    onRequirementsChange(updated);
+  };
+
+  const handleUpdateNumericRequirement = (cleanId: string, type: 'upgrade' | 'metric' | 'staff', operator: string, value: number) => {
+    if (!onRequirementsChange) return;
+
+    const updated = requirements.map(req => {
+      if (req.id === cleanId && req.type === type) {
+        return { ...req, operator: operator as any, value };
       }
       return req;
     });
@@ -83,12 +131,12 @@ export function RequirementsSelector({
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="🔍 Search flags and conditions..."
+          placeholder="🔍 Search requirements..."
           className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
       </div>
 
-      {flagsLoading || conditionsLoading ? (
+      {flagsLoading ? (
         <div className="text-sm text-slate-400 py-4">Loading requirements...</div>
       ) : (
         <>
@@ -104,7 +152,8 @@ export function RequirementsSelector({
                   {filteredFlags.map((flag) => {
                     // Use flag ID directly (no prefix handling)
                     const isSelected = isRequirementSelected(flag.id, 'flag');
-                    const expected = getRequirementExpected(flag.id, 'flag');
+                    const req = getRequirement(flag.id, 'flag');
+                    const expected = req?.expected;
 
                     return (
                       <div
@@ -156,23 +205,23 @@ export function RequirementsSelector({
             </div>
           )}
 
-          {/* Conditions Section */}
-          {filteredConditions.length > 0 && (
+          {/* Upgrades Section */}
+          {filteredUpgrades.length > 0 && (
             <div>
               <h4 className="text-sm font-semibold text-slate-300 mb-2 flex items-center gap-2">
-                <span>📊</span> Conditions{' '}
-                <span className="text-xs text-slate-400 font-normal">({filteredConditions.length})</span>
+                <span>⚙️</span> Upgrades{' '}
+                <span className="text-xs text-slate-400 font-normal">({filteredUpgrades.length})</span>
               </h4>
               <div className="max-h-48 overflow-y-auto pr-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {filteredConditions.map((condition) => {
-                    // Use condition ID directly (no prefix handling)
-                    const isSelected = isRequirementSelected(condition.id, 'condition');
-                    const expected = getRequirementExpected(condition.id, 'condition');
+                  {filteredUpgrades.map((upgrade) => {
+                    const isSelected = isRequirementSelected(upgrade.id, 'upgrade');
+                    const req = getRequirement(upgrade.id, 'upgrade');
+                    const isEditing = editingRequirement === `upgrade-${upgrade.id}`;
 
                     return (
                       <div
-                        key={condition.id}
+                        key={upgrade.id}
                         className={`px-3 py-2 rounded-lg border transition-colors ${
                           isSelected
                             ? 'bg-blue-500/20 border-blue-500 text-blue-200'
@@ -183,38 +232,60 @@ export function RequirementsSelector({
                           <input
                             type="checkbox"
                             checked={isSelected}
-                            onChange={() => handleToggle(condition.id, 'condition')}
+                            onChange={() => handleToggle(upgrade.id, 'upgrade')}
                             className="w-4 h-4 rounded border-slate-500 bg-slate-800 text-blue-600 focus:ring-blue-500 focus:ring-2"
                           />
-                          <span className="text-sm flex-1">{condition.name}</span>
-                          <span className="text-xs text-slate-400">
-                            ({condition.metric}{' '}
-                            {condition.operator === 'greater'
-                              ? '&gt;'
-                              : condition.operator === 'less'
-                                ? '&lt;'
-                                : condition.operator === 'equals'
-                                  ? '='
-                                  : condition.operator === 'greater_equal'
-                                    ? '&gt;='
-                                    : '&lt;='}{' '}
-                            {condition.value})
-                          </span>
+                          <span className="text-sm flex-1">{upgrade.name}</span>
                         </div>
                         {isSelected && (
-                          <div className="flex items-center gap-2 mt-2 ml-6">
-                            <span className="text-xs text-slate-400">Must be:</span>
-                            <button
-                              type="button"
-                              onClick={() => handleToggleExpected(condition.id, 'condition')}
-                              className={`px-2 py-1 text-xs rounded border transition-colors ${
-                                expected === false
-                                  ? 'bg-red-500/20 border-red-500 text-red-200'
-                                  : 'bg-green-500/20 border-green-500 text-green-200'
-                              }`}
-                            >
-                              {expected === false ? 'NO' : 'YES'}
-                            </button>
+                          <div className="mt-2 ml-6 space-y-2">
+                            {isEditing ? (
+                              <div className="flex flex-col gap-2">
+                                <div className="flex gap-2">
+                                  <select
+                                    value={req?.operator || '>='}
+                                    onChange={(e) => {
+                                      handleUpdateNumericRequirement(upgrade.id, 'upgrade', e.target.value, req?.value || 1);
+                                    }}
+                                    className="flex-1 rounded bg-slate-900 border border-slate-600 px-2 py-1 text-xs text-slate-200"
+                                  >
+                                    {OPERATOR_OPTIONS.map(op => (
+                                      <option key={op.value} value={op.value}>{op.label}</option>
+                                    ))}
+                                  </select>
+                                  <input
+                                    type="number"
+                                    value={req?.value ?? 1}
+                                    onChange={(e) => {
+                                      const val = parseInt(e.target.value) || 1;
+                                      handleUpdateNumericRequirement(upgrade.id, 'upgrade', req?.operator || '>=', val);
+                                    }}
+                                    className="w-20 rounded bg-slate-900 border border-slate-600 px-2 py-1 text-xs text-slate-200"
+                                    min="0"
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingRequirement(null)}
+                                  className="text-xs text-slate-400 hover:text-slate-300"
+                                >
+                                  Done
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-slate-400">
+                                  Level {req?.operator || '>='} {req?.value ?? 1}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingRequirement(`upgrade-${upgrade.id}`)}
+                                  className="text-xs text-blue-400 hover:text-blue-300 underline"
+                                >
+                                  Edit
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -225,17 +296,290 @@ export function RequirementsSelector({
             </div>
           )}
 
+          {/* Metrics Section */}
+          {filteredMetrics.length > 0 && (
+            <div>
+              <h4 className="text-sm font-semibold text-slate-300 mb-2 flex items-center gap-2">
+                <span>📊</span> Metrics{' '}
+                <span className="text-xs text-slate-400 font-normal">({filteredMetrics.length})</span>
+              </h4>
+              <div className="max-h-48 overflow-y-auto pr-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {filteredMetrics.map((metric) => {
+                    const isSelected = isRequirementSelected(metric.id, 'metric');
+                    const req = getRequirement(metric.id, 'metric');
+                    const isEditing = editingRequirement === `metric-${metric.id}`;
+
+                    return (
+                      <div
+                        key={metric.id}
+                        className={`px-3 py-2 rounded-lg border transition-colors ${
+                          isSelected
+                            ? 'bg-green-500/20 border-green-500 text-green-200'
+                            : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-slate-500'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggle(metric.id, 'metric')}
+                            className="w-4 h-4 rounded border-slate-500 bg-slate-800 text-green-600 focus:ring-green-500 focus:ring-2"
+                          />
+                          <span className="text-sm flex-1">{metric.name}</span>
+                        </div>
+                        {isSelected && (
+                          <div className="mt-2 ml-6 space-y-2">
+                            {isEditing ? (
+                              <div className="flex flex-col gap-2">
+                                <div className="flex gap-2">
+                                  <select
+                                    value={req?.operator || '>='}
+                                    onChange={(e) => {
+                                      handleUpdateNumericRequirement(metric.id, 'metric', e.target.value, req?.value || 0);
+                                    }}
+                                    className="flex-1 rounded bg-slate-900 border border-slate-600 px-2 py-1 text-xs text-slate-200"
+                                  >
+                                    {OPERATOR_OPTIONS.map(op => (
+                                      <option key={op.value} value={op.value}>{op.label}</option>
+                                    ))}
+                                  </select>
+                                  <input
+                                    type="number"
+                                    value={req?.value ?? 0}
+                                    onChange={(e) => {
+                                      const val = parseFloat(e.target.value) || 0;
+                                      handleUpdateNumericRequirement(metric.id, 'metric', req?.operator || '>=', val);
+                                    }}
+                                    className="w-24 rounded bg-slate-900 border border-slate-600 px-2 py-1 text-xs text-slate-200"
+                                    step={metric.id === 'expenses' || metric.id === 'cash' ? '1' : '0.1'}
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingRequirement(null)}
+                                  className="text-xs text-slate-400 hover:text-slate-300"
+                                >
+                                  Done
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-slate-400">
+                                  {req?.operator || '>='} {req?.value ?? 0}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingRequirement(`metric-${metric.id}`)}
+                                  className="text-xs text-green-400 hover:text-green-300 underline"
+                                >
+                                  Edit
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Staff Section */}
+          {filteredStaffRoles.length > 0 && (
+            <div>
+              <h4 className="text-sm font-semibold text-slate-300 mb-2 flex items-center gap-2">
+                <span>👥</span> Staff{' '}
+                <span className="text-xs text-slate-400 font-normal">({filteredStaffRoles.length})</span>
+              </h4>
+              <div className="max-h-48 overflow-y-auto pr-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {filteredStaffRoles.map((role) => {
+                    const isSelected = isRequirementSelected(role.id, 'staff');
+                    const req = getRequirement(role.id, 'staff');
+                    const isEditing = editingRequirement === `staff-${role.id}`;
+
+                    return (
+                      <div
+                        key={role.id}
+                        className={`px-3 py-2 rounded-lg border transition-colors ${
+                          isSelected
+                            ? 'bg-orange-500/20 border-orange-500 text-orange-200'
+                            : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-slate-500'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggle(role.id, 'staff')}
+                            className="w-4 h-4 rounded border-slate-500 bg-slate-800 text-orange-600 focus:ring-orange-500 focus:ring-2"
+                          />
+                          <span className="text-sm flex-1">{role.name}</span>
+                        </div>
+                        {isSelected && (
+                          <div className="mt-2 ml-6 space-y-2">
+                            {isEditing ? (
+                              <div className="flex flex-col gap-2">
+                                <div className="flex gap-2">
+                                  <select
+                                    value={req?.operator || '>='}
+                                    onChange={(e) => {
+                                      handleUpdateNumericRequirement(role.id, 'staff', e.target.value, req?.value || 1);
+                                    }}
+                                    className="flex-1 rounded bg-slate-900 border border-slate-600 px-2 py-1 text-xs text-slate-200"
+                                  >
+                                    {OPERATOR_OPTIONS.map(op => (
+                                      <option key={op.value} value={op.value}>{op.label}</option>
+                                    ))}
+                                  </select>
+                                  <input
+                                    type="number"
+                                    value={req?.value ?? 1}
+                                    onChange={(e) => {
+                                      const val = parseInt(e.target.value) || 1;
+                                      handleUpdateNumericRequirement(role.id, 'staff', req?.operator || '>=', val);
+                                    }}
+                                    className="w-20 rounded bg-slate-900 border border-slate-600 px-2 py-1 text-xs text-slate-200"
+                                    min="0"
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingRequirement(null)}
+                                  className="text-xs text-slate-400 hover:text-slate-300"
+                                >
+                                  Done
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-slate-400">
+                                  Count {req?.operator || '>='} {req?.value ?? 1}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingRequirement(`staff-${role.id}`)}
+                                  className="text-xs text-orange-400 hover:text-orange-300 underline"
+                                >
+                                  Edit
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Total Staff Option */}
+          {filteredStaffRoles.length > 0 && (
+            <div>
+              <div className="max-h-48 overflow-y-auto pr-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {(() => {
+                    const isSelected = isRequirementSelected('*', 'staff');
+                    const req = getRequirement('*', 'staff');
+                    const isEditing = editingRequirement === 'staff-*';
+
+                    return (
+                      <div
+                        className={`px-3 py-2 rounded-lg border transition-colors ${
+                          isSelected
+                            ? 'bg-orange-500/20 border-orange-500 text-orange-200'
+                            : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-slate-500'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggle('*', 'staff')}
+                            className="w-4 h-4 rounded border-slate-500 bg-slate-800 text-orange-600 focus:ring-orange-500 focus:ring-2"
+                          />
+                          <span className="text-sm flex-1">Total Staff (Any Role)</span>
+                        </div>
+                        {isSelected && (
+                          <div className="mt-2 ml-6 space-y-2">
+                            {isEditing ? (
+                              <div className="flex flex-col gap-2">
+                                <div className="flex gap-2">
+                                  <select
+                                    value={req?.operator || '>='}
+                                    onChange={(e) => {
+                                      handleUpdateNumericRequirement('*', 'staff', e.target.value, req?.value || 1);
+                                    }}
+                                    className="flex-1 rounded bg-slate-900 border border-slate-600 px-2 py-1 text-xs text-slate-200"
+                                  >
+                                    {OPERATOR_OPTIONS.map(op => (
+                                      <option key={op.value} value={op.value}>{op.label}</option>
+                                    ))}
+                                  </select>
+                                  <input
+                                    type="number"
+                                    value={req?.value ?? 1}
+                                    onChange={(e) => {
+                                      const val = parseInt(e.target.value) || 1;
+                                      handleUpdateNumericRequirement('*', 'staff', req?.operator || '>=', val);
+                                    }}
+                                    className="w-20 rounded bg-slate-900 border border-slate-600 px-2 py-1 text-xs text-slate-200"
+                                    min="0"
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingRequirement(null)}
+                                  className="text-xs text-slate-400 hover:text-slate-300"
+                                >
+                                  Done
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-slate-400">
+                                  Count {req?.operator || '>='} {req?.value ?? 1}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingRequirement('staff-*')}
+                                  className="text-xs text-orange-400 hover:text-orange-300 underline"
+                                >
+                                  Edit
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Empty State */}
           {(() => {
-            if ((flags || []).length === 0 && (conditions || []).length === 0) {
+            const hasAnyData = (flags || []).length > 0 || (upgrades || []).length > 0 || 
+                              (staffRoles || []).length > 0;
+            const hasFilteredResults = filteredFlags.length > 0 || filteredUpgrades.length > 0 || 
+                                      filteredMetrics.length > 0 || filteredStaffRoles.length > 0;
+
+            if (!hasAnyData) {
               return (
                 <div className="text-sm text-slate-400 py-4 text-center">
-                  No flags or conditions available. Create some first!
+                  No requirements available. Create flags, upgrades, or staff roles first!
                 </div>
               );
             }
 
-            if (filteredFlags.length === 0 && filteredConditions.length === 0 && search) {
+            if (!hasFilteredResults && search) {
               return (
                 <div className="text-sm text-slate-400 py-4 text-center">
                   No results found for &quot;{search}&quot;

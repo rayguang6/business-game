@@ -3,11 +3,14 @@ import { fetchEventsForIndustry, upsertEventForIndustry, deleteEventById } from 
 import type { GameEvent, GameEventChoice } from '@/lib/types/gameEvents';
 import type { Operation } from './types';
 
+import type { Requirement } from '@/lib/game/types';
+
 interface EventForm {
   id: string;
   title: string;
   category: 'opportunity' | 'risk';
   summary: string;
+  requirements?: Requirement[];
 }
 
 export function useEvents(industryId: string) {
@@ -49,6 +52,7 @@ export function useEvents(industryId: string) {
       title: event.title,
       category: event.category,
       summary: event.summary,
+      requirements: event.requirements || [],
     });
     setChoices(event.choices || []);
     if (resetMsg) setStatus(null);
@@ -66,6 +70,7 @@ export function useEvents(industryId: string) {
       title: '',
       category: 'opportunity',
       summary: '',
+      requirements: [],
     });
     setChoices([]);
     setStatus(null);
@@ -91,7 +96,14 @@ export function useEvents(industryId: string) {
       setStatus(`Saved locally. Missing required fields: ${missingFields.join(', ')}. Fill them to persist.`);
       return;
     }
-    const payload: GameEvent = { id, title, category, summary, choices: nextChoices } as GameEvent;
+    const payload: GameEvent = { 
+      id, 
+      title, 
+      category, 
+      summary, 
+      choices: nextChoices,
+      requirements: form.requirements && form.requirements.length > 0 ? form.requirements : undefined,
+    } as GameEvent;
     setOperation('saving');
     const result = await upsertEventForIndustry(industryId, payload);
     setOperation('idle');
@@ -131,6 +143,7 @@ export function useEvents(industryId: string) {
       title: '',
       category: 'opportunity',
       summary: '',
+      requirements: [],
     });
     setChoices([]);
     setStatus('Event deleted.');

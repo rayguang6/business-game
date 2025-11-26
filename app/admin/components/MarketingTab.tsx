@@ -2,9 +2,9 @@
 
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import type { GameFlag } from '@/lib/data/flagRepository';
-import type { GameCondition } from '@/lib/types/conditions';
 import type { MarketingCampaign } from '@/lib/store/slices/marketingSlice';
-import type { Requirement } from '@/lib/game/types';
+import type { Requirement, UpgradeDefinition } from '@/lib/game/types';
+import type { StaffRoleConfig } from '@/lib/game/staffConfig';
 import { RequirementsSelector } from './RequirementsSelector';
 import { EffectsList } from './EffectsList';
 import { makeUniqueId, slugify } from './utils';
@@ -35,8 +35,8 @@ interface MarketingTabProps {
   campaignDeleting: boolean;
   flags: GameFlag[];
   flagsLoading: boolean;
-  conditions: GameCondition[];
-  conditionsLoading: boolean;
+  upgrades?: UpgradeDefinition[];
+  staffRoles?: StaffRoleConfig[];
   metricOptions: Array<{ value: GameMetric; label: string }>;
   effectTypeOptions: Array<{ value: EffectType; label: string; hint: string }>;
   onSelectCampaign: (campaign: MarketingCampaign) => void;
@@ -60,8 +60,8 @@ export function MarketingTab({
   campaignDeleting,
   flags,
   flagsLoading,
-  conditions,
-  conditionsLoading,
+  upgrades = [],
+  staffRoles = [],
   metricOptions,
   effectTypeOptions,
   onSelectCampaign,
@@ -206,9 +206,9 @@ export function MarketingTab({
                   <label className="block text-sm font-semibold text-slate-300 mb-2">Requirements</label>
                   <RequirementsSelector
                     flags={flags}
-                    conditions={conditions}
+                    upgrades={upgrades}
+                    staffRoles={staffRoles}
                     flagsLoading={flagsLoading}
-                    conditionsLoading={conditionsLoading}
                     requirements={campaignForm.requirements || []}
                     onRequirementsChange={(requirements) => onUpdateForm({ requirements })}
                   />
