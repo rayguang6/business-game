@@ -351,8 +351,8 @@ export default function AdminPage() {
                 eventDeleting={events.deleting}
                 flags={flags.flags}
                 flagsLoading={flags.loading}
-                conditions={conditions.conditions}
-                conditionsLoading={conditions.loading}
+                upgrades={upgrades.upgrades}
+                staffRoles={staff.roles}
                 metricOptions={METRIC_OPTIONS}
                 effectTypeOptions={EFFECT_TYPE_OPTIONS}
                 onSelectEvent={events.selectEvent}
@@ -393,8 +393,8 @@ export default function AdminPage() {
                 campaignDeleting={marketing.deleting}
                 flags={flags.flags}
                 flagsLoading={flags.loading}
-                conditions={conditions.conditions}
-                conditionsLoading={conditions.loading}
+                upgrades={upgrades.upgrades}
+                staffRoles={staff.roles}
                 metricOptions={METRIC_OPTIONS}
                 effectTypeOptions={EFFECT_TYPE_OPTIONS}
                 onSelectCampaign={marketing.selectCampaign}
@@ -432,8 +432,7 @@ export default function AdminPage() {
                 upgradeDeleting={upgrades.deleting}
                 flags={flags.flags}
                 flagsLoading={flags.loading}
-                conditions={conditions.conditions}
-                conditionsLoading={conditions.loading}
+                staffRoles={staff.roles}
                 metricOptions={METRIC_OPTIONS}
                 effectTypeOptions={EFFECT_TYPE_OPTIONS}
                 onSelectUpgrade={upgrades.selectUpgrade}
@@ -470,8 +469,8 @@ export default function AdminPage() {
                 serviceDeleting={services.deleting}
                 flags={flags.flags}
                 flagsLoading={flags.loading}
-                conditions={conditions.conditions}
-                conditionsLoading={conditions.loading}
+                upgrades={upgrades.upgrades}
+                staffRoles={staff.roles}
                 onSelectService={services.selectService}
                 onCreateService={services.createService}
                 onSaveService={services.saveService}
@@ -511,8 +510,7 @@ export default function AdminPage() {
                 presetDeleting={staff.presetDeleting}
                 flags={flags.flags}
                 flagsLoading={flags.loading}
-                conditions={conditions.conditions}
-                conditionsLoading={conditions.loading}
+                upgrades={upgrades.upgrades}
                 metricOptions={METRIC_OPTIONS}
                 effectTypeOptions={EFFECT_TYPE_OPTIONS}
                 onSelectRole={staff.selectRole}

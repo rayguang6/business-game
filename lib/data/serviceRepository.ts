@@ -89,15 +89,38 @@ export async function deleteServiceById(id: string): Promise<{ success: boolean;
 }
 
 function mapRowToService(row: ServiceRow): IndustryServiceDefinition {
-  // Parse requirements - ensure it's a valid array
+  // Parse requirements - ensure it's a valid array with all fields
   let requirements: Requirement[] = [];
   if (row.requirements) {
     if (Array.isArray(row.requirements)) {
-      requirements = row.requirements.map((req: any) => ({
-        type: req.type || 'flag',
-        id: req.id || '',
-        expected: req.expected !== undefined ? req.expected : true,
-      })).filter((req: Requirement) => req.id.length > 0);
+      requirements = row.requirements
+        .map((req: any) => {
+          // Validate requirement has required fields
+          if (!req.type || !req.id) {
+            return null;
+          }
+          
+          const requirement: Requirement = {
+            type: req.type,
+            id: req.id,
+          };
+          
+          // Add optional fields based on type
+          if (req.type === 'flag') {
+            requirement.expected = req.expected !== undefined ? req.expected : true;
+          } else if (['metric', 'upgrade', 'staff'].includes(req.type)) {
+            // Numeric types need operator and value
+            if (req.operator) {
+              requirement.operator = req.operator;
+            }
+            if (req.value !== undefined && req.value !== null) {
+              requirement.value = typeof req.value === 'number' ? req.value : Number(req.value);
+            }
+          }
+          
+          return requirement;
+        })
+        .filter((req: Requirement | null): req is Requirement => req !== null && req.id.length > 0);
     }
   }
 

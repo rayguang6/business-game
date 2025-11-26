@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import type { GameFlag } from '@/lib/data/flagRepository';
-import type { GameCondition } from '@/lib/types/conditions';
 import type { GameEvent, GameEventChoice, GameEventConsequence, GameEventEffect, DelayedConsequence } from '@/lib/types/gameEvents';
 import { EventEffectType } from '@/lib/types/gameEvents';
-import type { Requirement } from '@/lib/game/types';
+import type { Requirement, UpgradeDefinition } from '@/lib/game/types';
+import type { StaffRoleConfig } from '@/lib/game/staffConfig';
 import { RequirementsSelector } from './RequirementsSelector';
 import { makeUniqueId, slugify } from './utils';
 
@@ -22,14 +22,15 @@ interface EventsTabProps {
     title: string;
     category: 'opportunity' | 'risk';
     summary: string;
+    requirements?: Requirement[];
   };
   eventChoices: GameEventChoice[];
   eventSaving: boolean;
   eventDeleting: boolean;
   flags: GameFlag[];
   flagsLoading: boolean;
-  conditions: GameCondition[];
-  conditionsLoading: boolean;
+  upgrades?: UpgradeDefinition[];
+  staffRoles?: StaffRoleConfig[];
   metricOptions: Array<{ value: GameMetric; label: string }>;
   effectTypeOptions: Array<{ value: EffectType; label: string; hint: string }>;
   onSelectEvent: (event: GameEvent) => void;
@@ -58,8 +59,8 @@ export function EventsTab({
   eventDeleting,
   flags,
   flagsLoading,
-  conditions,
-  conditionsLoading,
+  upgrades = [],
+  staffRoles = [],
   metricOptions,
   effectTypeOptions,
   onSelectEvent,
@@ -933,6 +934,18 @@ export function EventsTab({
                             className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                           />
                         </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-semibold text-slate-300 mb-2">Event Requirements</label>
+                          <p className="text-xs text-slate-400 mb-2">Requirements that must be met for this event to be eligible for selection. If empty, event is always eligible.</p>
+                          <RequirementsSelector
+                            flags={flags}
+                            upgrades={upgrades || []}
+                            staffRoles={staffRoles || []}
+                            flagsLoading={flagsLoading}
+                            requirements={eventForm.requirements || []}
+                            onRequirementsChange={(requirements) => onUpdateEventForm({ requirements })}
+                          />
+                        </div>
                         <div className="md:col-span-2 flex flex-wrap gap-3">
                           <button
                             type="button"
@@ -1655,9 +1668,9 @@ export function EventsTab({
                                             </label>
                                             <RequirementsSelector
                                               flags={flags}
-                                              conditions={conditions}
+                                              upgrades={upgrades}
+                                              staffRoles={staffRoles}
                                               flagsLoading={flagsLoading}
-                                              conditionsLoading={conditionsLoading}
                                               requirements={consequenceForm.delayedConsequence.successRequirements}
                                               onRequirementsChange={(reqs) => {
                                                 setConsequenceForm((p) => ({

@@ -1,46 +1,93 @@
 import type { GameStore } from '@/lib/store/gameStore';
-import { evaluateCondition } from './conditionEvaluator';
 import type { Requirement } from './types';
+import { getUpgradeLevel } from '@/lib/features/upgrades';
+import { getLevel } from '@/lib/store/types';
 
 /**
- * Evaluates a single requirement with explicit type and expected value
+ * Compares two numeric values using the specified operator
+ */
+function compareNumericValues(actual: number, operator: string, expected: number): boolean {
+  switch (operator) {
+    case '>=': return actual >= expected;
+    case '<=': return actual <= expected;
+    case '>': return actual > expected;
+    case '<': return actual < expected;
+    case '==': return actual === expected;
+    default: return actual >= expected; // Default to >=
+  }
+}
+
+/**
+ * Gets a metric value by its ID string
+ */
+function getMetricValueById(metricId: string, store: GameStore): number {
+  const { metrics, gameTime } = store;
+  
+  switch (metricId) {
+    case 'cash': return metrics.cash;
+    case 'exp': return metrics.exp;
+    case 'level': return getLevel(metrics.exp);
+    case 'expenses': return metrics.totalExpenses;
+    case 'gameTime': return gameTime;
+    case 'freedomScore': return metrics.freedomScore;
+    default:
+      console.warn(`[Requirements] Unknown metric: ${metricId}`);
+      return 0;
+  }
+}
+
+/**
+ * Evaluates a single requirement
  * @param req - The requirement to check
  * @param store - The current game store state
- * @returns true if the requirement matches the expected value
+ * @returns true if the requirement is met
  */
 function evaluateRequirement(req: Requirement, store: GameStore): boolean {
-  const { type, id, expected } = req;
-
-  // Default expected to true if not specified (must be met)
-  const isExpected = expected !== false;
-
-  let actualValue = false;
+  const { type, id, expected, operator, value } = req;
 
   if (type === 'flag') {
-    // Flags use clean IDs (no prefix) - check directly
+    // Flag requirement: check if flag is set
     const flagValue = store.flags?.[id];
-    actualValue = flagValue === true;
-  } else if (type === 'condition') {
-    if (!store.availableConditions || !Array.isArray(store.availableConditions)) {
-      console.warn(`[Requirements] availableConditions not initialized`);
-      actualValue = false;
-    } else {
-      // Conditions use clean IDs (no prefix) - find by exact match
-      const condition = store.availableConditions.find(c => c.id === id);
-      if (!condition) {
-        console.warn(`[Requirements] Condition not found: ${id}`);
-        actualValue = false;
-      } else {
-        actualValue = evaluateCondition(condition, store);
-      }
-    }
-  } else {
-    console.warn(`[Requirements] Unknown requirement type: ${type}`);
-    actualValue = false;
+    const isExpected = expected !== false; // Default to true
+    return flagValue === isExpected;
   }
-
-  // Return true if actual value matches expected value
-  return actualValue === isExpected;
+  
+  if (type === 'upgrade') {
+    // Upgrade requirement: check upgrade level
+    const currentLevel = getUpgradeLevel(store.upgrades, id);
+    const requiredLevel = value ?? 1;
+    const op = operator ?? '>=';
+    return compareNumericValues(currentLevel, op, requiredLevel);
+  }
+  
+  if (type === 'metric') {
+    // Metric requirement: check metric value
+    const metricValue = getMetricValueById(id, store);
+    const requiredValue = value ?? 0;
+    const op = operator ?? '>=';
+    return compareNumericValues(metricValue, op, requiredValue);
+  }
+  
+  if (type === 'staff') {
+    // Staff requirement: check staff count
+    const staff = (store as any).hiredStaff || [];
+    let count = 0;
+    
+    if (id === '*') {
+      // Total staff count
+      count = staff.length;
+    } else {
+      // Specific role count
+      count = staff.filter((s: any) => s.roleId === id).length;
+    }
+    
+    const requiredCount = value ?? 1;
+    const op = operator ?? '>=';
+    return compareNumericValues(count, op, requiredCount);
+  }
+  
+  console.warn(`[Requirements] Unknown requirement type: ${type}`);
+  return false;
 }
 
 /**
@@ -60,11 +107,11 @@ export function checkRequirements(requirements: Requirement[], store: GameStore)
  * @returns Human-readable description
  */
 export function getRequirementDescription(req: Requirement, store: GameStore): string {
-  const { type, id, expected } = req;
+  const { type, id, expected, operator, value } = req;
   const prefix = expected === false ? "NOT " : "";
 
   if (type === 'flag') {
-    // Flags use clean IDs - find by exact match
+    // Flag requirement description
     if (store.availableFlags && Array.isArray(store.availableFlags)) {
       const flag = store.availableFlags.find(f => f.id === id);
       if (flag) {
@@ -72,15 +119,45 @@ export function getRequirementDescription(req: Requirement, store: GameStore): s
       }
     }
     return `${prefix}${id}`;
-  } else if (type === 'condition') {
-    // Conditions use clean IDs - find by exact match
-    if (store.availableConditions && Array.isArray(store.availableConditions)) {
-      const condition = store.availableConditions.find(c => c.id === id);
-      if (condition) {
-        return `${prefix}${condition.name}`;
-      }
+  }
+  
+  if (type === 'upgrade') {
+    // Upgrade requirement description
+    const upgrade = store.getAvailableUpgrades?.()?.find(u => u.id === id);
+    const currentLevel = getUpgradeLevel(store.upgrades, id);
+    const requiredLevel = value ?? 1;
+    const op = operator ?? '>=';
+    const upgradeName = upgrade?.name || id;
+    return `${upgradeName} Level ${op} ${requiredLevel} (Current: ${currentLevel})`;
+  }
+  
+  if (type === 'metric') {
+    // Metric requirement description
+    const metricValue = getMetricValueById(id, store);
+    const requiredValue = value ?? 0;
+    const op = operator ?? '>=';
+    return `${id} ${op} ${requiredValue} (Current: ${metricValue})`;
+  }
+  
+  if (type === 'staff') {
+    // Staff requirement description
+    const staff = (store as any).hiredStaff || [];
+    let count = 0;
+    let label = '';
+    
+    if (id === '*') {
+      count = staff.length;
+      const requiredCount = value ?? 1;
+      const op = operator ?? '>=';
+      return `Total Staff ${op} ${requiredCount} (Current: ${count})`;
+    } else {
+      const role = (store as any).availableStaffRoles?.find((r: any) => r.id === id);
+      count = staff.filter((s: any) => s.roleId === id).length;
+      const requiredCount = value ?? 1;
+      const op = operator ?? '>=';
+      label = role?.name || id;
+      return `${label} ${op} ${requiredCount} (Current: ${count})`;
     }
-    return `${prefix}Condition: ${id}`;
   }
 
   return `${prefix}${id}`;
