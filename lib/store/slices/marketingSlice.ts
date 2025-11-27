@@ -115,7 +115,7 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
                 const newProgress = currentProgress + conversionRate;
 
                 // If progress reaches 100% or more, convert immediately
-                if (newProgress >= 100 && store.spawnCustomer && store.addCustomers && store.recordEventRevenue) {
+                if (newProgress >= 100 && store.spawnCustomer && store.addCustomers) {
                   // Calculate how many customers to spawn
                   const customersToSpawn = Math.floor(newProgress / 100);
 
@@ -125,12 +125,8 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
                     if (customer) {
                       store.addCustomers([customer]);
 
-                      // Note: EXP is awarded when customer completes service and leaves happy (handled in mechanics.ts)
-                      // Record revenue
-                      if (customer.service && store.recordEventRevenue) {
-                        const sourceInfo = SourceHelpers.fromCustomer(customer.id, customer.service.name);
-                        store.recordEventRevenue(customer.service.price, sourceInfo, `Customer: ${customer.service.name}`);
-                      }
+                      // Note: Revenue and EXP are awarded when customer completes service and leaves happy (handled in mechanics.ts)
+                      // Do NOT record revenue here - it will be recorded when the service is completed
                     }
                   }
 
@@ -281,11 +277,7 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       spawnLead: store.spawnLead,
       updateLeads: store.updateLeads,
       spawnCustomer: store.spawnCustomer,
-      addCustomers: (customers: Customer[]) => {
-        set((state) => ({
-          customers: [...state.customers, ...customers],
-        }));
-      },
+      addCustomers: store.addCustomers, // Use store method which properly handles customer tracking
       getState: () => get(),
       updateLeadProgress: (progress: number) => {
         set((state) => ({
