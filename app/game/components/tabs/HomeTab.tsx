@@ -575,6 +575,54 @@ export function HomeTab() {
                           </div>
                         </div>
                       </div>
+                      
+                      {/* Time Spent Breakdown - Full Width */}
+                      {showTime && w.timeSpent !== undefined && w.timeSpent > 0 && (
+                        <div className="mt-4 pt-4 border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-baseline pb-2 border-b" style={{ borderColor: 'rgba(251, 191, 36, 0.3)' }}>
+                              <span className="text-sm font-medium text-secondary">Time Spent</span>
+                              <span className="text-lg font-bold" style={{ color: 'var(--warning)' }}>
+                                {(w.timeSpent ?? 0).toFixed(1)}h
+                              </span>
+                            </div>
+                            {w.timeSpentDetails && w.timeSpentDetails.length > 0 ? (
+                              <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+                                <div className="space-y-1.5">
+                                  {w.timeSpentDetails.map((timeEntry, timeIndex) => {
+                                    // Use sourceType for icon if available, otherwise fallback to default time icon
+                                    const icon = timeEntry.sourceType 
+                                      ? getIconForSourceType(timeEntry.sourceType)
+                                      : '⏰';
+                                    const displayLabel = timeEntry.sourceName || timeEntry.label || 'Time spent';
+                                    
+                                    return (
+                                      <div key={`time-${timeIndex}`} className="flex justify-between items-center py-1 px-2 rounded" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}>
+                                        <span className="text-xs text-tertiary flex items-center gap-1.5">
+                                          <span>{icon}</span>
+                                          <span>{displayLabel}</span>
+                                        </span>
+                                        <span className="text-xs font-semibold" style={{ color: 'var(--warning)' }}>
+                                          {timeEntry.amount.toFixed(1)}h
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs text-tertiary">Time spent</span>
+                                  <span className="text-xs font-semibold" style={{ color: 'var(--warning)' }}>
+                                    {(w.timeSpent ?? 0).toFixed(1)}h
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </Card>

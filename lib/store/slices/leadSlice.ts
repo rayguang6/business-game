@@ -16,6 +16,17 @@ export const createLeadSlice: StateCreator<GameState, [], [], LeadSlice> = (set,
   spawnLead: () => {
     const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
     const lead = createLead(industryId);
+    
+    // Track lead spawn in metrics (for all sources: auto-spawn, marketing, events, etc.)
+    set((state) => ({
+      metrics: {
+        ...state.metrics,
+        totalLeadsSpawned: (state.metrics.totalLeadsSpawned || 0) + 1,
+      },
+      // Also track monthly leads for history
+      monthlyLeadsSpawned: (state.monthlyLeadsSpawned || 0) + 1,
+    }));
+    
     return lead;
   },
   

@@ -13,6 +13,7 @@ export interface CustomerSlice {
   customers: Customer[];
   
   spawnCustomer: () => Customer;
+  addCustomers: (customers: Customer[]) => void;
   removeCustomer: (customerId: string) => void;
   startService: (customerId: string) => void;
   updateCustomers: (customers: Customer[]) => void;
@@ -48,10 +49,29 @@ export const createCustomerSlice: StateCreator<GameState, [], [], CustomerSlice>
     // Create customer with a manually constructed customer object to use our filtered service
     const customer = createCustomer(1, industryId);
     // Override the service that was randomly selected without requirements
-    return {
+    const customerWithService = {
       ...customer,
       service: selectedService,
     };
+    
+    // Track customer generation in metrics (for all sources: lead conversion, marketing, events, etc.)
+    set((state) => ({
+      metrics: {
+        ...state.metrics,
+        totalCustomersGenerated: (state.metrics.totalCustomersGenerated || 0) + 1,
+      },
+      // Also track monthly customers for history
+      monthlyCustomersGenerated: (state.monthlyCustomersGenerated || 0) + 1,
+    }));
+    
+    return customerWithService;
+  },
+  
+  addCustomers: (customers: Customer[]) => {
+    // Add customers to the array (metrics tracking is handled by spawnCustomer when called)
+    set((state) => ({
+      customers: [...state.customers, ...customers],
+    }));
   },
   
   removeCustomer: (customerId: string) => {

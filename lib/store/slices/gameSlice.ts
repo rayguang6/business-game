@@ -161,19 +161,33 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     monthlyTimeSpentDetails: [],
   
   startGame: () => {
-    const { resetEvents, resetMonthlyTracking, resetFlags, resetEventSequence } = get();
+    const { 
+      resetEvents, 
+      resetMonthlyTracking, 
+      resetFlags, 
+      resetEventSequence,
+      resetUpgrades,
+      resetStaff,
+      resetMarketing,
+    } = get();
+
+    // Clear all active effects before resetting state (prevents stale effects from previous game)
+    effectManager.clearAll();
 
     // Reset to initial state but keep industry selection and start the game
     const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
     const baseMonthlyExpenses = getMonthlyBaseExpenses(industryId);
-    set({
-      ...getInitialGameState(industryId, true), // keepIndustry = true
-      isGameStarted: true, // Override to start the game
-      monthlyExpenses: baseMonthlyExpenses,
-      monthlyExpenseAdjustments: 0,
-    });
-
-    // Reset state for a fresh game
+    
+    // Reset all slices for a fresh game
+    if (resetUpgrades) {
+      resetUpgrades();
+    }
+    if (resetStaff) {
+      resetStaff();
+    }
+    if (resetMarketing) {
+      resetMarketing();
+    }
     if (resetEvents) {
       resetEvents();
     }
@@ -187,40 +201,12 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       resetEventSequence();
     }
 
-    // Restore effects for purchased upgrades and hired staff
-    const currentState = get();
-    const upgrades = currentState.upgrades;
-    const hiredStaff = currentState.hiredStaff;
-
-    // Re-register upgrade effects
-    const availableUpgrades = getUpgradesForIndustry(industryId);
-    const upgradeMap = new Map(availableUpgrades.map((upgrade) => [upgrade.id, upgrade]));
-    Object.entries(upgrades).forEach(([upgradeId, level]) => {
-      if (level > 0) {
-        const upgrade = upgradeMap.get(upgradeId);
-        if (upgrade) {
-          addUpgradeEffects(upgrade, level, {
-            applyCashChange: currentState.applyCashChange,
-            applyTimeChange: currentState.applyTimeChange,
-            applyExpChange: currentState.applyExpChange,
-            applyFreedomScoreChange: currentState.applyFreedomScoreChange,
-            recordEventRevenue: currentState.recordEventRevenue,
-            recordEventExpense: currentState.recordEventExpense,
-          });
-        }
-      }
-    });
-
-    // Re-register staff effects
-    hiredStaff.forEach((staff) => {
-      addStaffEffects(staff, {
-        applyCashChange: currentState.applyCashChange,
-        applyTimeChange: currentState.applyTimeChange,
-        applyExpChange: currentState.applyExpChange,
-        applyFreedomScoreChange: currentState.applyFreedomScoreChange,
-        recordEventRevenue: currentState.recordEventRevenue,
-        recordEventExpense: currentState.recordEventExpense,
-      });
+    // Set initial game state (this should be done after resetting slices to ensure clean state)
+    set({
+      ...getInitialGameState(industryId, true), // keepIndustry = true
+      isGameStarted: true, // Override to start the game
+      monthlyExpenses: baseMonthlyExpenses,
+      monthlyExpenseAdjustments: 0,
     });
   },
   
@@ -347,7 +333,13 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       if (updated.monthlyTimeSpentDetails !== undefined) {
         customerUpdates.monthlyTimeSpentDetails = updated.monthlyTimeSpentDetails;
       }
-      return { ...state, ...updated, ...customerUpdates };
+      // Explicitly merge metrics to ensure totalCustomersGenerated and other metric updates are applied
+      return { 
+        ...state, 
+        ...updated, 
+        metrics: updated.metrics, // Ensure metrics are properly updated
+        ...customerUpdates 
+      };
     });
     
     // Check if a new month just started (month transition happened)
