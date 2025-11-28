@@ -272,15 +272,15 @@ export default function GamePage() {
       {/* Mobile: Bottom Section - Navigation & Tabs (flexible height) */}
       {/* Desktop: Right Section - Navigation & Tabs (50% width) */}
       <div className="relative z-20 bg-gray-900 border-t-2 md:border-t-0 md:border-l-2 border-gray-700 flex-1 md:h-full md:w-1/2 flex flex-col overflow-hidden">
-        {/* Tab Content Area - with bottom padding to account for sticky bottom bar */}
-        <div className="flex-1 overflow-y-auto px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 pb-20 sm:pb-24 md:pb-28">
+        {/* Tab Content Area - with bottom padding to account for fixed bottom bar on mobile */}
+        <div className="flex-1 overflow-y-auto px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 pb-20 sm:pb-24 md:pb-6">
           {activeTab === 'home' && <HomeTab />}
           {activeTab === 'upgrades' && <UpgradesTab />}
           {activeTab === 'marketing' && <MarketingTab />}
         </div>
 
-        {/* Bottom Navigation - SurvivorIO style full-width sections - Now sticky */}
-        <div className="sticky bottom-0 z-30 bg-black/90 border-t border-gray-800 flex-shrink-0">
+        {/* Bottom Navigation - SurvivorIO style full-width sections - Fixed on mobile, sticky on desktop */}
+        <div className="fixed md:sticky bottom-0 left-0 right-0 z-30 bg-black/90 border-t border-gray-800 flex-shrink-0">
           <div className="flex h-full">
             {TAB_CONFIGS.map((tab) => {
               const isActive = activeTab === tab.id;
