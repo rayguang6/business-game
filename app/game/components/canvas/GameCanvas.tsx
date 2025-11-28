@@ -50,6 +50,8 @@ export function GameCanvas() {
   const [scaleFactor, setScaleFactor] = useState(1);
   // Hide by default - toggle with 'D' key for debugging
   const [showModifiers, setShowModifiers] = useState(false);
+  // Hide grid by default - toggle with 'G' key for debugging
+  const [showGrid, setShowGrid] = useState(false);
 
   // Calculate responsive canvas size
   useEffect(() => {
@@ -85,6 +87,28 @@ export function GameCanvas() {
         const target = e.target as HTMLElement;
         if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
           setShowModifiers((prev) => !prev);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
+  // Keyboard shortcut to toggle grid overlay (development mode only)
+  useEffect(() => {
+    // Only enable in development mode
+    if (process.env.NODE_ENV !== 'development') {
+      return;
+    }
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Press 'G' key to toggle grid overlay
+      if (e.key === 'g' || e.key === 'G') {
+        // Only toggle if not typing in an input/textarea
+        const target = e.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          setShowGrid((prev) => !prev);
         }
       }
     };
@@ -422,7 +446,7 @@ export function GameCanvas() {
         }}
       >
         {/* Grid Overlay - For testing tile positioning */}
-        <GridOverlay scaleFactor={scaleFactor} showGrid={true} />
+        <GridOverlay scaleFactor={scaleFactor} showGrid={showGrid} />
 
         {/* 2D Animation Layer */}
         <div 
