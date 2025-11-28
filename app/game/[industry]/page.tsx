@@ -271,7 +271,13 @@ export default function GamePage() {
 
       {/* Mobile: Bottom Section - Navigation & Tabs (flexible height) */}
       {/* Desktop: Right Section - Navigation & Tabs (50% width) */}
-      <div className="relative z-20 bg-gray-900 border-t-2 md:border-t-0 md:border-l-2 border-gray-700 flex-1 md:h-full md:w-1/2 flex flex-col overflow-hidden">
+      <div 
+        className="relative z-20 border-t-2 md:border-t-0 md:border-l-2 flex-1 md:h-full md:w-1/2 flex flex-col overflow-hidden"
+        style={{
+          background: 'radial-gradient(circle at center, #2D1A69 0%, #1A0F3B 80%)',
+          borderColor: 'rgba(58, 39, 138, 0.3)'
+        }}
+      >
         {/* Tab Content Area - with bottom padding to account for fixed bottom bar on mobile */}
         <div className="flex-1 overflow-y-auto px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 pb-20 sm:pb-24 md:pb-6">
           {activeTab === 'home' && <HomeTab />}
@@ -279,32 +285,30 @@ export default function GamePage() {
           {activeTab === 'marketing' && <MarketingTab />}
         </div>
 
-        {/* Bottom Navigation - SurvivorIO style full-width sections - Fixed on mobile, sticky on desktop */}
-        <div className="fixed md:sticky bottom-0 left-0 right-0 z-30 bg-black/90 border-t border-gray-800 flex-shrink-0">
+        {/* Bottom Navigation - Purple style with rounded active state */}
+        <div 
+          className="fixed md:sticky bottom-0 left-0 right-0 z-30 flex-shrink-0"
+          style={{
+            background: '#4A1A8C', // Deep solid purple
+            borderTop: '1px solid rgba(173, 216, 230, 0.3)' // Subtle light blue/white line at top
+          }}
+        >
           <div className="flex h-full">
             {TAB_CONFIGS.map((tab) => {
               const isActive = activeTab === tab.id;
-              const tabColor = tab.activeColor === 'text-purple-600' ? '#9333ea' : 
-                              tab.activeColor === 'text-yellow-600' ? '#eab308' : 
-                              '#10b981';
               
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as TabType)}
-                  className={`relative flex-1 flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 md:py-3 transition-all duration-200 group
-                    ${isActive ? '' : 'hover:bg-gray-900/50'}`}
-                  style={isActive ? {
-                    backgroundColor: `${tabColor}15`,
-                    borderTop: `2px solid ${tabColor}`
-                  } : {}}
+                  className="relative flex-1 flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 md:py-3 transition-all duration-200"
                 >
-                  {/* Active background glow */}
+                  {/* Active tab background - fills entire tab area */}
                   {isActive && (
                     <div 
-                      className="absolute inset-0 opacity-20"
+                      className="absolute inset-0"
                       style={{
-                        background: `linear-gradient(to top, ${tabColor}40, transparent)`
+                        background: 'linear-gradient(135deg, #6B2FA0 0%, #5A1F8C 100%)', // Lighter purple gradient
                       }}
                     ></div>
                   )}
@@ -316,38 +320,16 @@ export default function GamePage() {
                       alt={tab.label}
                       width={32}
                       height={32}
-                      className={`w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 transition-all duration-200 ${
-                        isActive ? 'brightness-110 drop-shadow-[0_0_8px_currentColor]' : ''
-                      }`}
-                      style={isActive ? {
-                        filter: `drop-shadow(0 0 8px ${tabColor})`
-                      } : {}}
+                      className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 transition-all duration-200"
                     />
                   </div>
                   
-                  {/* Label */}
+                  {/* Label - uppercase white text */}
                   <span 
-                    className={`text-micro sm:text-caption font-bold transition-all duration-200 relative z-10 ${
-                      isActive ? '' : 'text-gray-300'
-                    }`}
-                    style={isActive ? {
-                      color: tabColor,
-                      textShadow: `0 0 8px ${tabColor}60`
-                    } : {}}
+                    className="text-micro sm:text-caption font-bold transition-all duration-200 relative z-10 text-white uppercase"
                   >
                     {tab.label}
                   </span>
-                  
-                  {/* Active indicator bar at bottom */}
-                  {isActive && (
-                    <div 
-                      className="absolute bottom-0 left-0 right-0 h-0.5"
-                      style={{
-                        background: `linear-gradient(to right, transparent, ${tabColor}, transparent)`,
-                        boxShadow: `0 0 8px ${tabColor}`
-                      }}
-                    ></div>
-                  )}
                 </button>
               );
             })}
