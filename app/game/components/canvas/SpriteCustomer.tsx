@@ -189,31 +189,32 @@ export function SpriteCustomer({ customer, scaleFactor }: SpriteCustomerProps) {
       {/* Service Details UI - for customers in service */}
       {customer.status === CustomerStatus.InService && (
         <div
-          className="absolute pointer-events-none bg-black/80 text-white rounded px-1 py-0.5"
+          className="absolute pointer-events-none bg-white/90 border border-gray-300 rounded shadow-sm text-gray-800"
           style={{
             left: `${gridX * 32}px`,
-            top: `${gridY * 32 - 40}px`,
-            minWidth: '60px',
-            transform: 'translateX(-14px)', // Center above sprite
-            fontSize: '7px',
-            lineHeight: '9px',
+            top: `${gridY * 32 - 35}px`,
+            minWidth: '45px',
+            maxWidth: '50px',
+            transform: 'translateX(-12px)', // Center above sprite
+            fontSize: '6px',
+            lineHeight: '8px',
           }}
         >
           {/* Service Name */}
-          <div className="font-bold text-yellow-300 truncate">
+          <div className="font-bold text-amber-600 truncate">
             {customer.service.name}
           </div>
-          
+
           {/* Price */}
-          <div className="text-green-400">
+          <div className="text-green-600">
             ${customer.service.price}
           </div>
-          
+
           {/* Progress Bar */}
           <div
-            className="bg-gray-700 rounded-full overflow-hidden my-0.5"
+            className="bg-gray-200 rounded-full overflow-hidden my-0.5"
             style={{
-              height: '3px',
+              height: '2px',
               width: '100%',
             }}
           >
@@ -225,11 +226,11 @@ export function SpriteCustomer({ customer, scaleFactor }: SpriteCustomerProps) {
               }}
             />
           </div>
-          
+
           {/* Time & Emoji */}
           <div className="flex justify-between items-center">
-            <span className="text-white">{timeDisplay}</span>
-            <span style={{ fontSize: '10px' }}>{emoji}</span>
+            <span className="text-gray-700">{timeDisplay}</span>
+            <span style={{ fontSize: '8px' }}>{emoji}</span>
           </div>
         </div>
       )}
