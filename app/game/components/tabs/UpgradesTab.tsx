@@ -155,35 +155,62 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
 
   return (
     <Card
-      variant={currentLevel > 0 ? "success" : "default"}
-      className="transition-all"
+      variant="default"
+      className=""
     >
       <div className="flex items-start gap-1.5 sm:gap-2 md:gap-3">
         <div className="text-lg sm:text-xl md:text-3xl flex-shrink-0" aria-hidden>{upgrade.icon}</div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-1 sm:gap-1.5 md:gap-2 mb-0.5 sm:mb-1">
-            <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 min-w-0">
-              <h5 className="text-primary font-bold text-heading-sm truncate">{upgrade.name}</h5>
-              <span 
-                className={`text-caption sm:text-label font-semibold transition-all duration-300 flex-shrink-0 ${
-                  levelUpAnimation 
-                    ? 'text-[var(--success)] scale-125 animate-pulse' 
-                    : currentLevel > 0 
-                      ? 'text-[var(--success)]' 
-                      : 'text-tertiary'
-                }`}
-              >
-                Lvl {currentLevel}/{upgrade.maxLevel}
-              </span>
+          <div className="flex items-center justify-between gap-1 sm:gap-1.5 md:gap-2 mb-1 sm:mb-1.5">
+            <h5 className="text-primary font-bold text-heading-sm truncate">{upgrade.name}</h5>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 sm:gap-3 mb-0.5 sm:mb-1">
+            <div className={`flex-shrink-0 transition-all duration-300 ${
+              levelUpAnimation ? 'scale-110 animate-pulse' : ''
+            }`}>
+              <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full border text-micro sm:text-caption font-bold ${
+                currentLevel > 0
+                  ? 'bg-green-100 border-green-300 text-green-800'
+                  : 'bg-gray-100 border-gray-300 text-gray-600'
+              } ${levelUpAnimation ? 'bg-green-200 border-green-400 text-green-900' : ''}`}>
+                <span className="text-xs">⭐</span>
+                <span>{currentLevel}/{upgrade.maxLevel}</span>
+              </div>
             </div>
-            <span className={`text-caption sm:text-label font-semibold flex-shrink-0 ${isMaxed ? '' : ''}`} style={{ color: isMaxed ? 'var(--success)' : 'var(--game-secondary)' }}>
-              {isMaxed ? 'Max' : (() => {
-                const costParts: string[] = [];
-                if (needsCash) costParts.push(`$${upgrade.cost.toLocaleString()}`);
-                if (needsTime) costParts.push(`${upgrade.timeCost}h`);
-                return costParts.join(' + ') || 'Free';
-              })()}
-            </span>
+
+            <div className="flex-shrink-0">
+              {isMaxed ? (
+                <div className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-green-100 border border-green-300 text-green-800 rounded-full text-micro sm:text-caption font-bold">
+                  <span className="text-xs">✅</span>
+                  <span>Max</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-0.5">
+                  {needsCash && (
+                    <div className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-full text-micro sm:text-caption font-semibold">
+                      <span className="text-xs">💰</span>
+                      <span>${upgrade.cost.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {needsCash && needsTime && (
+                    <span className="text-gray-400 text-xs mx-0.5">+</span>
+                  )}
+                  {needsTime && (
+                    <div className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-100 border border-blue-300 text-blue-800 rounded-full text-micro sm:text-caption font-semibold">
+                      <span className="text-xs">⏰</span>
+                      <span>{upgrade.timeCost}h</span>
+                    </div>
+                  )}
+                  {!needsCash && !needsTime && (
+                    <div className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-gray-100 border border-gray-300 text-gray-600 rounded-full text-micro sm:text-caption font-semibold">
+                      <span className="text-xs">🆓</span>
+                      <span>Free</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           <p className="text-secondary text-caption sm:text-label mt-0.5 sm:mt-0.5 md:mt-1 mb-1 sm:mb-2 md:mb-3 line-clamp-2">{upgrade.description}</p>
 
@@ -234,7 +261,7 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
               : canAfford
                 ? currentLevel > 0
                   ? 'Upgrade'
-                  : 'Buy'
+                  : 'Upgrade'
                 : needText}
         </GameButton>
         {requirementDescriptions.length > 0 && !requirementsMet && (
