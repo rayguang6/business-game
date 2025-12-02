@@ -13,7 +13,7 @@ interface ServicesTabProps {
   serviceStatus: string | null;
   selectedServiceId: string;
   isCreatingService: boolean;
-  serviceForm: { id: string; name: string; duration: string; price: string; requirements: Requirement[]; pricingCategory: string; weightage: string };
+  serviceForm: { id: string; name: string; duration: string; price: string; requirements: Requirement[]; pricingCategory: string; weightage: string; requiredStaffRoleIds: string[] };
   serviceSaving: boolean;
   serviceDeleting: boolean;
   flags: GameFlag[];
@@ -173,6 +173,56 @@ export function ServicesTab({
                         placeholder="1.0"
                       />
                       <p className="text-xs text-slate-400 mt-1">Higher weightage = more likely to be selected</p>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-slate-300 mb-2">Required Staff Roles</label>
+                      <div className="space-y-2">
+                        <p className="text-xs text-slate-400 mb-2">
+                          Select which staff roles can perform this service. Leave empty to allow any staff.
+                        </p>
+                        {staffRoles && staffRoles.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {staffRoles.map((role) => {
+                              const isSelected = serviceForm.requiredStaffRoleIds?.includes(role.id) ?? false;
+                              return (
+                                <button
+                                  key={role.id}
+                                  type="button"
+                                  onClick={() => {
+                                    const currentIds = serviceForm.requiredStaffRoleIds || [];
+                                    const newIds = isSelected
+                                      ? currentIds.filter((id) => id !== role.id)
+                                      : [...currentIds, role.id];
+                                    onUpdateForm({ requiredStaffRoleIds: newIds });
+                                  }}
+                                  className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
+                                    isSelected
+                                      ? 'border-indigo-400 bg-indigo-500/20 text-indigo-200'
+                                      : 'border-slate-600 bg-slate-800 hover:bg-slate-700 text-slate-300'
+                                  }`}
+                                >
+                                  {role.name}
+                                  {isSelected && ' ✓'}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-slate-400 py-2">
+                            No staff roles available. Create staff roles first in the Staff tab.
+                          </div>
+                        )}
+                        {serviceForm.requiredStaffRoleIds && serviceForm.requiredStaffRoleIds.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => onUpdateForm({ requiredStaffRoleIds: [] })}
+                            className="text-xs text-slate-400 hover:text-slate-300 underline"
+                          >
+                            Clear selection
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <div className="md:col-span-2">

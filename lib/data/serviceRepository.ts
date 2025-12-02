@@ -10,6 +10,7 @@ interface ServiceRow {
   requirements?: unknown; // JSONB column for requirements array
   pricing_category?: string | null; // low, mid, or high
   weightage?: number | null; // Weight for random selection
+  required_staff_role_ids?: string[] | null; // Array of staff role IDs that can perform this service
 }
 
 export async function fetchServicesForIndustry(
@@ -22,7 +23,7 @@ export async function fetchServicesForIndustry(
 
   const { data, error } = await supabase
     .from('services')
-    .select('id, industry_id, name, duration, price, requirements, pricing_category, weightage')
+    .select('id, industry_id, name, duration, price, requirements, pricing_category, weightage, required_staff_role_ids')
     .eq('industry_id', industryId);
 
   if (error) {
@@ -56,6 +57,9 @@ export async function upsertServiceForIndustry(
     requirements: service.requirements || [],
     pricing_category: service.pricingCategory || null,
     weightage: service.weightage ?? null,
+    required_staff_role_ids: service.requiredStaffRoleIds && service.requiredStaffRoleIds.length > 0 
+      ? service.requiredStaffRoleIds 
+      : null,
   };
 
   const { data, error } = await supabase
@@ -130,6 +134,17 @@ function mapRowToService(row: ServiceRow): IndustryServiceDefinition {
     pricingCategory = row.pricing_category.toLowerCase() as ServicePricingCategory;
   }
 
+  // Parse required staff role IDs
+  let requiredStaffRoleIds: string[] | undefined;
+  if (row.required_staff_role_ids && Array.isArray(row.required_staff_role_ids)) {
+    requiredStaffRoleIds = row.required_staff_role_ids.filter((id): id is string => 
+      typeof id === 'string' && id.length > 0
+    );
+    if (requiredStaffRoleIds.length === 0) {
+      requiredStaffRoleIds = undefined;
+    }
+  }
+
   return {
     id: row.id,
     industryId: row.industry_id,
@@ -139,5 +154,6 @@ function mapRowToService(row: ServiceRow): IndustryServiceDefinition {
     requirements: requirements.length > 0 ? requirements : undefined,
     pricingCategory,
     weightage: row.weightage ?? undefined,
+    requiredStaffRoleIds,
   };
 }

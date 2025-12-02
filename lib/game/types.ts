@@ -159,6 +159,7 @@ export interface IndustryServiceDefinition {
   requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
   pricingCategory?: ServicePricingCategory; // low, mid, or high end pricing
   weightage?: number; // Weight for random selection (higher = more likely to be selected)
+  requiredStaffRoleIds?: string[]; // Array of staff role IDs that can perform this service (if empty/null, any staff can perform)
 }
 
 export interface IndustrySimulationConfig {

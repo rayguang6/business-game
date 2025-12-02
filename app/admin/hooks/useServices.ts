@@ -11,6 +11,7 @@ interface ServiceForm {
   requirements: Requirement[];
   pricingCategory: string;
   weightage: string;
+  requiredStaffRoleIds: string[]; // Array of staff role IDs
 }
 
 export function useServices(industryId: string) {
@@ -27,6 +28,7 @@ export function useServices(industryId: string) {
     requirements: [],
     pricingCategory: '',
     weightage: '1',
+    requiredStaffRoleIds: [],
   });
 
   const load = useCallback(async () => {
@@ -55,6 +57,7 @@ export function useServices(industryId: string) {
       requirements: service.requirements || [],
       pricingCategory: service.pricingCategory || '',
       weightage: service.weightage?.toString() || '1',
+      requiredStaffRoleIds: service.requiredStaffRoleIds || [],
     });
     if (resetMsg) setStatus(null);
   }, []);
@@ -74,6 +77,7 @@ export function useServices(industryId: string) {
       requirements: [],
       pricingCategory: '',
       weightage: '1',
+      requiredStaffRoleIds: [],
     });
     setStatus(null);
   }, [industryId]);
@@ -110,6 +114,7 @@ export function useServices(industryId: string) {
       requirements: form.requirements,
       pricingCategory: (form.pricingCategory as ServicePricingCategory) || undefined,
       weightage,
+      requiredStaffRoleIds: form.requiredStaffRoleIds.length > 0 ? form.requiredStaffRoleIds : undefined,
     };
     const result = await upsertServiceForIndustry(payload);
     setOperation('idle');
@@ -152,6 +157,7 @@ export function useServices(industryId: string) {
         requirements: [],
         pricingCategory: '',
         weightage: '1',
+        requiredStaffRoleIds: [],
       });
       setIsCreating(false);
     }
@@ -171,6 +177,7 @@ export function useServices(industryId: string) {
         requirements: [],
         pricingCategory: '',
         weightage: '1',
+        requiredStaffRoleIds: [],
       });
       setIsCreating(false);
       setSelectedId('');

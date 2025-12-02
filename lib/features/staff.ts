@@ -13,6 +13,17 @@ export interface Staff {
   spriteImage?: string; // Optional sprite image path (from role, falls back to default if not set)
   setsFlag?: string; // Optional flag to set when this staff member is hired
   requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
+  
+  // Movement/positioning state (MEMORY ONLY - not stored in database)
+  x?: number; // Current X position (grid coordinates)
+  y?: number; // Current Y position (grid coordinates)
+  targetX?: number; // Target X position for movement
+  targetY?: number; // Target Y position for movement
+  path?: import('@/lib/game/types').GridPosition[]; // Current path waypoints
+  status?: 'idle' | 'walking_to_room' | 'serving' | 'walking_to_idle'; // Current animation state
+  assignedRoomId?: number; // Which room they're currently assigned to (if serving)
+  assignedCustomerId?: string; // Which customer they're serving (if serving)
+  facingDirection?: 'down' | 'left' | 'up' | 'right'; // Current facing direction
 }
 
 /**
