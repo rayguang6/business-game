@@ -1,11 +1,11 @@
 /**
  * Layout positions repository
  * Fetches staff positions and service room positions from database
- * Now reads from industry_simulation_config.layout_config
+ * Reads from industry_simulation_config separate columns (entry_position, waiting_positions, service_rooms, staff_positions)
  */
 
 import { supabase } from '@/lib/supabase/client';
-import { GridPosition, IndustryId, AnchorPoint } from '@/lib/game/types';
+import { GridPosition, IndustryId, AnchorPoint, ServiceRoomConfig } from '@/lib/game/types';
 import type { SimulationLayoutConfig } from '@/lib/game/types';
 
 /**
@@ -64,9 +64,42 @@ export function parsePositions(data: unknown): GridPosition[] | null {
 }
 
 /**
+ * Validate and parse service rooms from JSONB
+ */
+export function parseServiceRooms(data: unknown): ServiceRoomConfig[] | null {
+  if (!Array.isArray(data)) {
+    return null;
+  }
+  
+  const rooms: ServiceRoomConfig[] = [];
+  for (const item of data) {
+    if (
+      typeof item === 'object' &&
+      item !== null &&
+      'roomId' in item &&
+      'customerPosition' in item &&
+      'staffPosition' in item &&
+      typeof (item as any).roomId === 'number'
+    ) {
+      const customerPos = parsePositions([(item as any).customerPosition]);
+      const staffPos = parsePositions([(item as any).staffPosition]);
+      
+      if (customerPos && customerPos.length > 0 && staffPos && staffPos.length > 0) {
+        rooms.push({
+          roomId: (item as any).roomId,
+          customerPosition: customerPos[0],
+          staffPosition: staffPos[0],
+        });
+      }
+    }
+  }
+  
+  return rooms.length > 0 ? rooms : null;
+}
+
+/**
  * Fetch layout config from industry_simulation_config
- * Now reads from separate columns (entry_position, waiting_positions, etc.)
- * Falls back to layout_config column for backward compatibility
+ * Reads from separate columns (entry_position, waiting_positions, service_rooms, staff_positions)
  */
 async function fetchLayoutConfigFromDatabase(
   industryId: IndustryId,
@@ -75,73 +108,45 @@ async function fetchLayoutConfigFromDatabase(
     return null;
   }
 
-  // Try industry_simulation_config first - use separate columns (preferred)
+  // Try industry_simulation_config first - use separate columns
   const { data: industryData, error: industryError } = await supabase
     .from('industry_simulation_config')
-    .select('entry_position, waiting_positions, service_room_positions, staff_positions, layout_config')
+    .select('entry_position, waiting_positions, service_rooms, staff_positions')
     .eq('industry_id', industryId)
     .maybeSingle();
 
   if (!industryError && industryData) {
-    // Prefer separate columns if they exist
-    if (industryData.entry_position || industryData.waiting_positions || industryData.service_room_positions || industryData.staff_positions) {
+    if (industryData.entry_position || industryData.waiting_positions || industryData.service_rooms || industryData.staff_positions) {
+      const serviceRooms = parseServiceRooms(industryData.service_rooms) || [];
       const layout: SimulationLayoutConfig = {
         entryPosition: (industryData.entry_position as unknown as { x: number; y: number }) || { x: 0, y: 0 },
         waitingPositions: parsePositions(industryData.waiting_positions) || [],
-        serviceRoomPositions: parsePositions(industryData.service_room_positions) || [],
+        serviceRooms,
         staffPositions: parsePositions(industryData.staff_positions) || [],
       };
+      
       return layout;
-    }
-    
-    // Fallback to layout_config column for backward compatibility
-    if (industryData.layout_config) {
-      const layout = industryData.layout_config as unknown as SimulationLayoutConfig;
-      if (
-        layout.entryPosition &&
-        typeof layout.entryPosition.x === 'number' &&
-        typeof layout.entryPosition.y === 'number' &&
-        Array.isArray(layout.waitingPositions) &&
-        Array.isArray(layout.serviceRoomPositions) &&
-        Array.isArray(layout.staffPositions)
-      ) {
-        return layout;
-      }
     }
   }
 
   // Fallback to global config
   const { data: globalData, error: globalError } = await supabase
     .from('global_simulation_config')
-    .select('entry_position, waiting_positions, service_room_positions, staff_positions, layout_config')
+    .select('entry_position, waiting_positions, service_rooms, staff_positions')
     .limit(1)
     .maybeSingle();
 
   if (!globalError && globalData) {
-    // Prefer separate columns if they exist
-    if (globalData.entry_position || globalData.waiting_positions || globalData.service_room_positions || globalData.staff_positions) {
+    if (globalData.entry_position || globalData.waiting_positions || globalData.service_rooms || globalData.staff_positions) {
+      const serviceRooms = parseServiceRooms(globalData.service_rooms) || [];
       const layout: SimulationLayoutConfig = {
         entryPosition: (globalData.entry_position as unknown as { x: number; y: number }) || { x: 0, y: 0 },
         waitingPositions: parsePositions(globalData.waiting_positions) || [],
-        serviceRoomPositions: parsePositions(globalData.service_room_positions) || [],
+        serviceRooms,
         staffPositions: parsePositions(globalData.staff_positions) || [],
       };
+      
       return layout;
-    }
-    
-    // Fallback to layout_config column for backward compatibility
-    if (globalData.layout_config) {
-      const layout = globalData.layout_config as unknown as SimulationLayoutConfig;
-      if (
-        layout.entryPosition &&
-        typeof layout.entryPosition.x === 'number' &&
-        typeof layout.entryPosition.y === 'number' &&
-        Array.isArray(layout.waitingPositions) &&
-        Array.isArray(layout.serviceRoomPositions) &&
-        Array.isArray(layout.staffPositions)
-      ) {
-        return layout;
-      }
     }
   }
 
@@ -150,7 +155,7 @@ async function fetchLayoutConfigFromDatabase(
 
 /**
  * Fetch staff positions for an industry from database
- * Now reads from industry_simulation_config.layout_config.staffPositions
+ * Reads from industry_simulation_config.staff_positions column
  * Returns null if not found or error
  */
 export async function fetchStaffPositionsFromDatabase(
@@ -165,16 +170,17 @@ export async function fetchStaffPositionsFromDatabase(
 
 /**
  * Fetch service room positions for an industry from database
- * Now reads from industry_simulation_config.layout_config.serviceRoomPositions
+ * Reads from industry_simulation_config.service_rooms column
  * Returns null if not found or error
  */
 export async function fetchServiceRoomPositionsFromDatabase(
   industryId: IndustryId,
 ): Promise<GridPosition[] | null> {
   const layout = await fetchLayoutConfigFromDatabase(industryId);
-  if (layout?.serviceRoomPositions) {
-    return layout.serviceRoomPositions;
+  if (!layout || !layout.serviceRooms || layout.serviceRooms.length === 0) {
+    return null;
   }
-  return null;
+  
+  return layout.serviceRooms.map(room => room.customerPosition);
 }
 

@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
-import type { IndustryId, GridPosition } from '@/lib/game/types';
+import type { IndustryId, GridPosition, ServiceRoomConfig } from '@/lib/game/types';
 import type {
   BusinessMetrics,
   BusinessStats,
@@ -8,7 +8,7 @@ import type {
   SimulationLayoutConfig,
 } from '@/lib/game/types';
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
-import { parsePositions } from './layoutRepository';
+import { parsePositions, parseServiceRooms } from './layoutRepository';
 
 export interface IndustrySimulationConfigResult {
   businessMetrics?: BusinessMetrics;
@@ -75,30 +75,6 @@ const mapMovementConfig = (raw: unknown): MovementConfig | undefined => {
   return undefined;
 };
 
-const mapMapConfig = (raw: unknown): MapConfig | undefined => {
-  if (!isObject(raw)) return undefined;
-  const c = raw as unknown as MapConfig;
-  if (typeof c.width === 'number' && typeof c.height === 'number' && Array.isArray(c.walls)) {
-    return c;
-  }
-  return undefined;
-};
-
-const mapLayoutConfig = (raw: unknown): SimulationLayoutConfig | undefined => {
-  if (!isObject(raw)) return undefined;
-  const c = raw as unknown as SimulationLayoutConfig;
-  if (
-    c.entryPosition &&
-    typeof c.entryPosition.x === 'number' &&
-    typeof c.entryPosition.y === 'number' &&
-    Array.isArray(c.waitingPositions) &&
-    Array.isArray(c.serviceRoomPositions) &&
-    Array.isArray(c.staffPositions)
-  ) {
-    return c;
-  }
-  return undefined;
-};
 
 const mapWinCondition = (raw: unknown): WinCondition | undefined => {
   if (!isObject(raw)) return undefined;
@@ -144,7 +120,7 @@ export async function fetchIndustrySimulationConfig(
 
   const { data, error } = await supabase
     .from('industry_simulation_config')
-    .select('business_metrics, business_stats, map_width, map_height, map_walls, map_config, entry_position, waiting_positions, service_room_positions, staff_positions, layout_config, capacity_image, win_condition, lose_condition, event_selection_mode, event_sequence')
+    .select('business_metrics, business_stats, map_width, map_height, map_walls, entry_position, waiting_positions, service_rooms, staff_positions, capacity_image, win_condition, lose_condition, event_selection_mode, event_sequence')
     .eq('industry_id', industryId)
     .maybeSingle();
 
@@ -169,8 +145,7 @@ export async function fetchIndustrySimulationConfig(
     if (stats) result.businessStats = stats;
   }
   
-  // Build map config from separate columns (preferred) or fallback to map_config JSONB
-  // Check if we have any map data: width, height, or walls
+  // Build map config from separate columns
   const hasMapWidth = data.map_width !== null && data.map_width !== undefined;
   const hasMapHeight = data.map_height !== null && data.map_height !== undefined;
   const hasMapWalls = data.map_walls !== null && data.map_walls !== undefined && Array.isArray(data.map_walls) && (data.map_walls as Array<unknown>).length > 0;
@@ -182,30 +157,23 @@ export async function fetchIndustrySimulationConfig(
       walls: (data.map_walls as unknown as Array<{ x: number; y: number }>) || [],
     };
     result.mapConfig = mapConfig;
-  } else if (data.map_config) {
-    // Fallback to old map_config column for backward compatibility
-    const mapConfig = mapMapConfig(data.map_config);
-    if (mapConfig) result.mapConfig = mapConfig;
   }
   
-  // Build layout config from separate columns (or fallback to layout_config for backward compatibility)
-  if (data.entry_position || data.waiting_positions || data.service_room_positions || data.staff_positions) {
+  // Build layout config from separate columns
+  if (data && (data.entry_position || data.waiting_positions || data.service_rooms || data.staff_positions)) {
     // Use parsePositions to properly parse facingDirection if present
     const waitingPositions = parsePositions(data.waiting_positions) || [];
-    const serviceRoomPositions = parsePositions(data.service_room_positions) || [];
+    const serviceRooms = parseServiceRooms(data.service_rooms) || [];
     const staffPositions = parsePositions(data.staff_positions) || [];
     
     const layoutConfig: SimulationLayoutConfig = {
       entryPosition: (data.entry_position as unknown as GridPosition) || { x: 0, y: 0 },
       waitingPositions,
-      serviceRoomPositions,
+      serviceRooms,
       staffPositions,
     };
+    
     result.layoutConfig = layoutConfig;
-  } else if (data.layout_config) {
-    // Fallback to old layout_config column for backward compatibility
-    const layoutConfig = mapLayoutConfig(data.layout_config);
-    if (layoutConfig) result.layoutConfig = layoutConfig;
   }
   
   if (data.capacity_image) {
@@ -251,7 +219,7 @@ export async function upsertIndustrySimulationConfig(
     layoutConfig?: SimulationLayoutConfig;
     entryPosition?: GridPosition | null;
     waitingPositions?: GridPosition[] | null;
-    serviceRoomPositions?: GridPosition[] | null;
+    serviceRooms?: ServiceRoomConfig[] | null;
     staffPositions?: GridPosition[] | null;
     capacityImage?: string | null;
     winCondition?: WinCondition;
@@ -274,6 +242,17 @@ export async function upsertIndustrySimulationConfig(
 
   const idToUse = existing?.id ?? `config-${industryId}`;
 
+  // Extract separate fields from mapConfig/layoutConfig if provided (for backward compatibility)
+  // But prefer explicit separate fields if provided
+  const mapWidth = config.mapWidth ?? config.mapConfig?.width ?? undefined;
+  const mapHeight = config.mapHeight ?? config.mapConfig?.height ?? undefined;
+  const mapWalls = config.mapWalls ?? config.mapConfig?.walls ?? undefined;
+  
+  const entryPosition = config.entryPosition ?? config.layoutConfig?.entryPosition ?? undefined;
+  const waitingPositions = config.waitingPositions ?? config.layoutConfig?.waitingPositions ?? undefined;
+  const serviceRooms = config.serviceRooms ?? config.layoutConfig?.serviceRooms ?? undefined;
+  const staffPositions = config.staffPositions ?? config.layoutConfig?.staffPositions ?? undefined;
+
   const payload: any = {
     id: idToUse,
     industry_id: industryId,
@@ -282,18 +261,16 @@ export async function upsertIndustrySimulationConfig(
   if (config.businessMetrics !== undefined) payload.business_metrics = config.businessMetrics;
   if (config.businessStats !== undefined) payload.business_stats = config.businessStats;
   
-  // Save map config to separate columns (preferred) or fallback to map_config JSONB
-  if (config.mapWidth !== undefined) payload.map_width = config.mapWidth;
-  if (config.mapHeight !== undefined) payload.map_height = config.mapHeight;
-  if (config.mapWalls !== undefined) payload.map_walls = config.mapWalls;
-  if (config.mapConfig !== undefined) payload.map_config = config.mapConfig; // Fallback for old code
+  // Save map config to separate columns
+  if (mapWidth !== undefined) payload.map_width = mapWidth;
+  if (mapHeight !== undefined) payload.map_height = mapHeight;
+  if (mapWalls !== undefined) payload.map_walls = mapWalls;
   
-  // Save layout to separate columns (preferred) or fallback to layoutConfig JSONB
-  if (config.entryPosition !== undefined) payload.entry_position = config.entryPosition;
-  if (config.waitingPositions !== undefined) payload.waiting_positions = config.waitingPositions;
-  if (config.serviceRoomPositions !== undefined) payload.service_room_positions = config.serviceRoomPositions;
-  if (config.staffPositions !== undefined) payload.staff_positions = config.staffPositions;
-  if (config.layoutConfig !== undefined) payload.layout_config = config.layoutConfig; // Fallback for old code
+  // Save layout to separate columns
+  if (entryPosition !== undefined) payload.entry_position = entryPosition;
+  if (waitingPositions !== undefined) payload.waiting_positions = waitingPositions;
+  if (serviceRooms !== undefined) payload.service_rooms = serviceRooms;
+  if (staffPositions !== undefined) payload.staff_positions = staffPositions;
   
   if (config.capacityImage !== undefined) payload.capacity_image = config.capacityImage;
   if (config.winCondition !== undefined) payload.win_condition = config.winCondition;

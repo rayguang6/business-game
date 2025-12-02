@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { BusinessMetrics, BusinessStats, GridPosition, AnchorPoint } from '@/lib/game/types';
+import type { BusinessMetrics, BusinessStats, GridPosition, AnchorPoint, ServiceRoomConfig } from '@/lib/game/types';
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
 
 interface IndustrySimulationConfigTabProps {
@@ -20,7 +20,7 @@ interface IndustrySimulationConfigTabProps {
   mapWalls: GridPosition[];
   entryPosition: GridPosition | null;
   waitingPositions: GridPosition[];
-  serviceRoomPositions: GridPosition[];
+  serviceRooms: ServiceRoomConfig[];
   staffPositions: GridPosition[];
   capacityImage: string;
   winCondition: WinCondition | null;
@@ -38,7 +38,7 @@ interface IndustrySimulationConfigTabProps {
   setMapWalls: (value: GridPosition[]) => void;
   setEntryPosition: (value: GridPosition | null) => void;
   setWaitingPositions: (value: GridPosition[]) => void;
-  setServiceRoomPositions: (value: GridPosition[]) => void;
+  setServiceRooms: (value: ServiceRoomConfig[]) => void;
   setStaffPositions: (value: GridPosition[]) => void;
   setCapacityImage: (value: string) => void;
   setWinCondition: (value: WinCondition | null) => void;
@@ -62,7 +62,7 @@ export function IndustrySimulationConfigTab({
   mapWalls,
   entryPosition,
   waitingPositions,
-  serviceRoomPositions,
+  serviceRooms,
   staffPositions,
   capacityImage,
   winCondition,
@@ -77,7 +77,7 @@ export function IndustrySimulationConfigTab({
   setMapWalls,
   setEntryPosition,
   setWaitingPositions,
-  setServiceRoomPositions,
+  setServiceRooms,
   setStaffPositions,
   setCapacityImage,
   setWinCondition,
@@ -205,35 +205,65 @@ export function IndustrySimulationConfigTab({
     setEntryPosition({ ...(entryPosition || { x: 0, y: 0 }), [field]: value });
   };
 
-  const addPosition = (type: 'waiting' | 'serviceRoom' | 'staff', x: number, y: number) => {
+  const addPosition = (type: 'waiting' | 'staff', x: number, y: number) => {
     const pos: GridPosition = { x, y };
     if (type === 'waiting') {
       setWaitingPositions([...waitingPositions, pos]);
-    } else if (type === 'serviceRoom') {
-      setServiceRoomPositions([...serviceRoomPositions, pos]);
     } else {
       setStaffPositions([...staffPositions, pos]);
     }
   };
 
-  const removePosition = (type: 'waiting' | 'serviceRoom' | 'staff', index: number) => {
+  const addServiceRoom = () => {
+    const nextRoomId = serviceRooms.length > 0 
+      ? Math.max(...serviceRooms.map(r => r.roomId)) + 1 
+      : 1;
+    const newRoom: ServiceRoomConfig = {
+      roomId: nextRoomId,
+      customerPosition: { x: 0, y: 0 },
+      staffPosition: { x: 0, y: 0 },
+    };
+    setServiceRooms([...serviceRooms, newRoom]);
+  };
+
+  const removePosition = (type: 'waiting' | 'staff', index: number) => {
     if (type === 'waiting') {
       setWaitingPositions(waitingPositions.filter((_, i) => i !== index));
-    } else if (type === 'serviceRoom') {
-      setServiceRoomPositions(serviceRoomPositions.filter((_, i) => i !== index));
     } else {
       setStaffPositions(staffPositions.filter((_, i) => i !== index));
     }
   };
 
-  const updatePosition = (type: 'waiting' | 'serviceRoom' | 'staff', index: number, field: 'x' | 'y' | 'facingDirection' | 'width' | 'height' | 'anchor', value: number | string | null) => {
+  const removeServiceRoom = (index: number) => {
+    setServiceRooms(serviceRooms.filter((_, i) => i !== index));
+  };
+
+  const updatePosition = (type: 'waiting' | 'staff', index: number, field: 'x' | 'y' | 'facingDirection' | 'width' | 'height' | 'anchor', value: number | string | null) => {
     if (type === 'waiting') {
       setWaitingPositions(waitingPositions.map((pos, i) => i === index ? { ...pos, [field]: value } : pos));
-    } else if (type === 'serviceRoom') {
-      setServiceRoomPositions(serviceRoomPositions.map((pos, i) => i === index ? { ...pos, [field]: value } : pos));
     } else {
       setStaffPositions(staffPositions.map((pos, i) => i === index ? { ...pos, [field]: value } : pos));
     }
+  };
+
+  const updateServiceRoomPosition = (
+    roomIndex: number, 
+    positionType: 'customer' | 'staff', 
+    field: 'x' | 'y' | 'facingDirection' | 'width' | 'height' | 'anchor', 
+    value: number | string | null
+  ) => {
+    setServiceRooms(serviceRooms.map((room, i) => {
+      if (i === roomIndex) {
+        const updatedRoom = { ...room };
+        if (positionType === 'customer') {
+          updatedRoom.customerPosition = { ...room.customerPosition, [field]: value };
+        } else {
+          updatedRoom.staffPosition = { ...room.staffPosition, [field]: value };
+        }
+        return updatedRoom;
+      }
+      return room;
+    }));
   };
 
   // Map wall helpers
@@ -255,7 +285,7 @@ export function IndustrySimulationConfigTab({
       case 'layout': 
         setEntryPosition(null);
         setWaitingPositions([]);
-        setServiceRoomPositions([]);
+        setServiceRooms([]);
         setStaffPositions([]);
         break;
       case 'capacity': setCapacityImage(''); break;
@@ -696,7 +726,7 @@ export function IndustrySimulationConfigTab({
               <h3 className="text-lg font-semibold">Layout Positions</h3>
               <p className="text-xs text-slate-500 mt-1">Configure where entities appear on the map</p>
             </div>
-            {(entryPosition || waitingPositions.length > 0 || serviceRoomPositions.length > 0 || staffPositions.length > 0) && (
+            {(entryPosition || waitingPositions.length > 0 || serviceRooms.length > 0 || staffPositions.length > 0) && (
               <button onClick={() => clearField('layout')} className="text-xs text-rose-400 hover:text-rose-300">
                 Clear (use global)
               </button>
@@ -749,66 +779,152 @@ export function IndustrySimulationConfigTab({
           {/* Service Room Positions */}
           <div className="bg-slate-800 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-slate-300">Service Room Positions</label>
-              <button onClick={() => addPosition('serviceRoom', 0, 0)} className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded">+ Add</button>
+              <label className="block text-sm font-medium text-slate-300">Service Rooms</label>
+              <button onClick={addServiceRoom} className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded">+ Add Room</button>
             </div>
-            <p className="text-xs text-slate-400 mb-2">Configure position, facing direction, and optional multi-tile size</p>
-            <div className="space-y-3">
-              {serviceRoomPositions.map((pos, idx) => (
-                <div key={idx} className="bg-slate-700/50 rounded-lg p-3 space-y-2">
-                  {/* Basic Position */}
-                  <div className="flex gap-2 items-center">
-                    <input type="number" className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="X" value={pos.x} onChange={(e) => updatePosition('serviceRoom', idx, 'x', Number(e.target.value))} />
-                    <input type="number" className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="Y" value={pos.y} onChange={(e) => updatePosition('serviceRoom', idx, 'y', Number(e.target.value))} />
-                    <select 
-                      className="w-24 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
-                      value={pos.facingDirection || 'down'}
-                      onChange={(e) => updatePosition('serviceRoom', idx, 'facingDirection', e.target.value as 'down' | 'left' | 'up' | 'right')}
-                    >
-                      <option value="down">Down ↓</option>
-                      <option value="up">Up ↑</option>
-                      <option value="left">Left ←</option>
-                      <option value="right">Right →</option>
-                    </select>
-                    <button onClick={() => removePosition('serviceRoom', idx)} className="px-2 py-1 bg-rose-600 hover:bg-rose-700 rounded text-sm">Remove</button>
+            <p className="text-xs text-slate-400 mb-2">Configure customer and staff positions for each service room</p>
+            <div className="space-y-4">
+              {serviceRooms.map((room, idx) => (
+                <div key={idx} className="bg-slate-700/50 rounded-lg p-3 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-slate-300">Room {room.roomId}</span>
+                    <button onClick={() => removeServiceRoom(idx)} className="px-2 py-1 bg-rose-600 hover:bg-rose-700 rounded text-sm">Remove</button>
                   </div>
                   
-                  {/* Multi-tile Size (Optional) */}
-                  <div className="flex gap-2 items-center text-xs text-slate-400">
-                    <span className="w-16">Size:</span>
-                    <input 
-                      type="number" 
-                      min="1"
-                      className="w-16 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs" 
-                      placeholder="W" 
-                      value={pos.width ?? ''} 
-                      onChange={(e) => updatePosition('serviceRoom', idx, 'width', e.target.value ? Number(e.target.value) : null)} 
-                    />
-                    <span className="text-slate-500">×</span>
-                    <input 
-                      type="number" 
-                      min="1"
-                      className="w-16 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs" 
-                      placeholder="H" 
-                      value={pos.height ?? ''} 
-                      onChange={(e) => updatePosition('serviceRoom', idx, 'height', e.target.value ? Number(e.target.value) : null)} 
-                    />
-                    <span className="text-slate-500 ml-2">tiles</span>
-                    <select 
-                      className="w-32 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs ml-auto"
-                      value={pos.anchor || 'top-left'}
-                      onChange={(e) => updatePosition('serviceRoom', idx, 'anchor', e.target.value as AnchorPoint)}
-                    >
-                      <option value="top-left">Top-Left</option>
-                      <option value="top-center">Top-Center</option>
-                      <option value="top-right">Top-Right</option>
-                      <option value="center-left">Center-Left</option>
-                      <option value="center">Center</option>
-                      <option value="center-right">Center-Right</option>
-                      <option value="bottom-left">Bottom-Left</option>
-                      <option value="bottom-center">Bottom-Center</option>
-                      <option value="bottom-right">Bottom-Right</option>
-                    </select>
+                  {/* Customer Position */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-slate-400">Customer Position</label>
+                    <div className="flex gap-2 items-center">
+                      <input 
+                        type="number" 
+                        className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" 
+                        placeholder="X" 
+                        value={room.customerPosition.x} 
+                        onChange={(e) => updateServiceRoomPosition(idx, 'customer', 'x', Number(e.target.value))} 
+                      />
+                      <input 
+                        type="number" 
+                        className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" 
+                        placeholder="Y" 
+                        value={room.customerPosition.y} 
+                        onChange={(e) => updateServiceRoomPosition(idx, 'customer', 'y', Number(e.target.value))} 
+                      />
+                      <select 
+                        className="w-24 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                        value={room.customerPosition.facingDirection || 'down'}
+                        onChange={(e) => updateServiceRoomPosition(idx, 'customer', 'facingDirection', e.target.value as 'down' | 'left' | 'up' | 'right')}
+                      >
+                        <option value="down">Down ↓</option>
+                        <option value="up">Up ↑</option>
+                        <option value="left">Left ←</option>
+                        <option value="right">Right →</option>
+                      </select>
+                    </div>
+                    {/* Customer Multi-tile Size (Optional) */}
+                    <div className="flex gap-2 items-center text-xs text-slate-400">
+                      <span className="w-16">Size:</span>
+                      <input 
+                        type="number" 
+                        min="1"
+                        className="w-16 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs" 
+                        placeholder="W" 
+                        value={room.customerPosition.width ?? ''} 
+                        onChange={(e) => updateServiceRoomPosition(idx, 'customer', 'width', e.target.value ? Number(e.target.value) : null)} 
+                      />
+                      <span className="text-slate-500">×</span>
+                      <input 
+                        type="number" 
+                        min="1"
+                        className="w-16 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs" 
+                        placeholder="H" 
+                        value={room.customerPosition.height ?? ''} 
+                        onChange={(e) => updateServiceRoomPosition(idx, 'customer', 'height', e.target.value ? Number(e.target.value) : null)} 
+                      />
+                      <span className="text-slate-500 ml-2">tiles</span>
+                      <select 
+                        className="w-32 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs ml-auto"
+                        value={room.customerPosition.anchor || 'top-left'}
+                        onChange={(e) => updateServiceRoomPosition(idx, 'customer', 'anchor', e.target.value as AnchorPoint)}
+                      >
+                        <option value="top-left">Top-Left</option>
+                        <option value="top-center">Top-Center</option>
+                        <option value="top-right">Top-Right</option>
+                        <option value="center-left">Center-Left</option>
+                        <option value="center">Center</option>
+                        <option value="center-right">Center-Right</option>
+                        <option value="bottom-left">Bottom-Left</option>
+                        <option value="bottom-center">Bottom-Center</option>
+                        <option value="bottom-right">Bottom-Right</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Staff Position */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-slate-400">Staff Position</label>
+                    <div className="flex gap-2 items-center">
+                      <input 
+                        type="number" 
+                        className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" 
+                        placeholder="X" 
+                        value={room.staffPosition.x} 
+                        onChange={(e) => updateServiceRoomPosition(idx, 'staff', 'x', Number(e.target.value))} 
+                      />
+                      <input 
+                        type="number" 
+                        className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" 
+                        placeholder="Y" 
+                        value={room.staffPosition.y} 
+                        onChange={(e) => updateServiceRoomPosition(idx, 'staff', 'y', Number(e.target.value))} 
+                      />
+                      <select 
+                        className="w-24 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                        value={room.staffPosition.facingDirection || 'down'}
+                        onChange={(e) => updateServiceRoomPosition(idx, 'staff', 'facingDirection', e.target.value as 'down' | 'left' | 'up' | 'right')}
+                      >
+                        <option value="down">Down ↓</option>
+                        <option value="up">Up ↑</option>
+                        <option value="left">Left ←</option>
+                        <option value="right">Right →</option>
+                      </select>
+                    </div>
+                    {/* Staff Multi-tile Size (Optional) */}
+                    <div className="flex gap-2 items-center text-xs text-slate-400">
+                      <span className="w-16">Size:</span>
+                      <input 
+                        type="number" 
+                        min="1"
+                        className="w-16 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs" 
+                        placeholder="W" 
+                        value={room.staffPosition.width ?? ''} 
+                        onChange={(e) => updateServiceRoomPosition(idx, 'staff', 'width', e.target.value ? Number(e.target.value) : null)} 
+                      />
+                      <span className="text-slate-500">×</span>
+                      <input 
+                        type="number" 
+                        min="1"
+                        className="w-16 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs" 
+                        placeholder="H" 
+                        value={room.staffPosition.height ?? ''} 
+                        onChange={(e) => updateServiceRoomPosition(idx, 'staff', 'height', e.target.value ? Number(e.target.value) : null)} 
+                      />
+                      <span className="text-slate-500 ml-2">tiles</span>
+                      <select 
+                        className="w-32 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs ml-auto"
+                        value={room.staffPosition.anchor || 'top-left'}
+                        onChange={(e) => updateServiceRoomPosition(idx, 'staff', 'anchor', e.target.value as AnchorPoint)}
+                      >
+                        <option value="top-left">Top-Left</option>
+                        <option value="top-center">Top-Center</option>
+                        <option value="top-right">Top-Right</option>
+                        <option value="center-left">Center-Left</option>
+                        <option value="center">Center</option>
+                        <option value="center-right">Center-Right</option>
+                        <option value="bottom-left">Bottom-Left</option>
+                        <option value="bottom-center">Bottom-Center</option>
+                        <option value="bottom-right">Bottom-Right</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               ))}

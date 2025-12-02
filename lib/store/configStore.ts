@@ -39,7 +39,11 @@ const cloneIndustryConfig = (
     ? {
         entryPosition: { ...config.layout.entryPosition },
         waitingPositions: config.layout.waitingPositions.map((pos) => ({ ...pos })),
-        serviceRoomPositions: config.layout.serviceRoomPositions.map((pos) => ({ ...pos })),
+        serviceRooms: config.layout.serviceRooms.map((room) => ({
+          roomId: room.roomId,
+          customerPosition: { ...room.customerPosition },
+          staffPosition: { ...room.staffPosition },
+        })),
         staffPositions: config.layout.staffPositions.map((pos) => ({ ...pos })),
       }
     : undefined,

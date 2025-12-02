@@ -63,7 +63,11 @@ const cloneEvents = (events: IndustrySimulationConfig['events']) =>
 const cloneLayout = (layout: SimulationLayoutConfig): SimulationLayoutConfig => ({
   entryPosition: { ...layout.entryPosition },
   waitingPositions: layout.waitingPositions.map((pos) => ({ ...pos })),
-  serviceRoomPositions: layout.serviceRoomPositions.map((pos) => ({ ...pos })),
+  serviceRooms: layout.serviceRooms.map((room) => ({
+    roomId: room.roomId,
+    customerPosition: { ...room.customerPosition },
+    staffPosition: { ...room.staffPosition },
+  })),
   staffPositions: layout.staffPositions.map((pos) => ({ ...pos })),
 });
 
@@ -76,10 +80,18 @@ const mergeLayout = (
     override.waitingPositions && override.waitingPositions.length > 0
       ? override.waitingPositions.map((pos) => ({ ...pos }))
       : base.waitingPositions.map((pos) => ({ ...pos })),
-  serviceRoomPositions:
-    override.serviceRoomPositions && override.serviceRoomPositions.length > 0
-      ? override.serviceRoomPositions.map((pos) => ({ ...pos }))
-      : base.serviceRoomPositions.map((pos) => ({ ...pos })),
+  serviceRooms:
+    override.serviceRooms && override.serviceRooms.length > 0
+      ? override.serviceRooms.map((room) => ({
+          roomId: room.roomId,
+          customerPosition: { ...room.customerPosition },
+          staffPosition: { ...room.staffPosition },
+        }))
+      : base.serviceRooms.map((room) => ({
+          roomId: room.roomId,
+          customerPosition: { ...room.customerPosition },
+          staffPosition: { ...room.staffPosition },
+        })),
   staffPositions:
     override.staffPositions && override.staffPositions.length > 0
       ? override.staffPositions.map((pos) => ({ ...pos }))

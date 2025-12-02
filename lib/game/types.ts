@@ -135,10 +135,16 @@ export interface GridPosition {
   anchor?: AnchorPoint; // Anchor point for positioning (default: 'top-left')
 }
 
+export interface ServiceRoomConfig {
+  roomId: number;
+  customerPosition: GridPosition;
+  staffPosition: GridPosition;
+}
+
 export interface SimulationLayoutConfig {
   entryPosition: GridPosition;
   waitingPositions: GridPosition[];
-  serviceRoomPositions: GridPosition[];
+  serviceRooms: ServiceRoomConfig[];
   staffPositions: GridPosition[];
 }
 

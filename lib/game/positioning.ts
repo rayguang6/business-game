@@ -9,14 +9,15 @@
  */
 
 import { DEFAULT_INDUSTRY_ID, getLayoutConfig } from '@/lib/game/config';
-import { GridPosition, IndustryId } from '@/lib/game/types';
+import { GridPosition, IndustryId, ServiceRoomConfig } from '@/lib/game/types';
 
 export function getWaitingPositions(industryId: IndustryId): GridPosition[] {
   return getLayoutConfig(industryId).waitingPositions;
 }
 
 export function getServiceRoomPositions(industryId: IndustryId): GridPosition[] {
-  return getLayoutConfig(industryId).serviceRoomPositions;
+  const layout = getLayoutConfig(industryId);
+  return layout.serviceRooms.map(room => room.customerPosition);
 }
 
 export function getStaffPositions(industryId: IndustryId): GridPosition[] {
@@ -25,6 +26,38 @@ export function getStaffPositions(industryId: IndustryId): GridPosition[] {
 
 export function getEntryPosition(industryId: IndustryId): GridPosition {
   return getLayoutConfig(industryId).entryPosition;
+}
+
+/**
+ * Get all service rooms (structured format)
+ */
+export function getServiceRooms(industryId: IndustryId): ServiceRoomConfig[] {
+  const layout = getLayoutConfig(industryId);
+  return layout.serviceRooms;
+}
+
+/**
+ * Get a specific service room by room ID (1-based)
+ */
+export function getServiceRoom(roomId: number, industryId: IndustryId): ServiceRoomConfig | null {
+  const rooms = getServiceRooms(industryId);
+  return rooms.find(room => room.roomId === roomId) || null;
+}
+
+/**
+ * Get customer position for a specific service room (1-based room ID)
+ */
+export function getServiceCustomerPosition(roomId: number, industryId: IndustryId): GridPosition | null {
+  const room = getServiceRoom(roomId, industryId);
+  return room?.customerPosition || null;
+}
+
+/**
+ * Get staff position for a specific service room (1-based room ID)
+ */
+export function getServiceStaffPosition(roomId: number, industryId: IndustryId): GridPosition | null {
+  const room = getServiceRoom(roomId, industryId);
+  return room?.staffPosition || null;
 }
 
 /**
@@ -49,17 +82,14 @@ export function getAvailableWaitingPosition(
 
 /**
  * Get service room position based on room ID (1-based).
- */
-/**
- * Get service room position based on room ID (1-based).
- * Uses sync version for backward compatibility with synchronous contexts.
+ * Legacy function - now uses structured service rooms internally.
+ * Returns customer position for backward compatibility.
  */
 export function getServiceRoomPosition(
   roomId: number,
   industryId: IndustryId,
 ): GridPosition | null {
-  const positions = getServiceRoomPositions(industryId);
-  return positions[roomId - 1] ?? null;
+  return getServiceCustomerPosition(roomId, industryId);
 }
 
 /**

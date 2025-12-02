@@ -108,12 +108,13 @@ const DEFAULT_LAYOUT: SimulationLayoutConfig = {
     { x: 1, y: 7 },
     { x: 1, y: 8 },
   ],
-  serviceRoomPositions: [
-    { x: 5, y: 2 },
-    { x: 6, y: 2 },
-    { x: 7, y: 2 },
-    { x: 8, y: 2 },
-    { x: 9, y: 2 },
+  // New structured format: service rooms with customer and staff positions
+  serviceRooms: [
+    { roomId: 1, customerPosition: { x: 5, y: 2 }, staffPosition: { x: 5, y: 1 } },
+    { roomId: 2, customerPosition: { x: 6, y: 2 }, staffPosition: { x: 6, y: 1 } },
+    { roomId: 3, customerPosition: { x: 7, y: 2 }, staffPosition: { x: 7, y: 1 } },
+    { roomId: 4, customerPosition: { x: 8, y: 2 }, staffPosition: { x: 8, y: 1 } },
+    { roomId: 5, customerPosition: { x: 9, y: 2 }, staffPosition: { x: 9, y: 1 } },
   ],
   staffPositions: [
     { x: 4, y: 0 },
@@ -149,7 +150,11 @@ function createSharedBase(): Omit<IndustrySimulationConfig, 'id' | 'services' | 
     layout: {
       entryPosition: { ...DEFAULT_LAYOUT.entryPosition },
       waitingPositions: DEFAULT_LAYOUT.waitingPositions.map((pos) => ({ ...pos })),
-      serviceRoomPositions: DEFAULT_LAYOUT.serviceRoomPositions.map((pos) => ({ ...pos })),
+      serviceRooms: DEFAULT_LAYOUT.serviceRooms?.map((room) => ({
+        roomId: room.roomId,
+        customerPosition: { ...room.customerPosition },
+        staffPosition: { ...room.staffPosition },
+      })),
       staffPositions: DEFAULT_LAYOUT.staffPositions.map((pos) => ({ ...pos })),
     },
     customerImages: [...DEFAULT_CUSTOMER_IMAGES],

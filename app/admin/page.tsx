@@ -193,7 +193,7 @@ export default function AdminPage() {
                 mapWalls={industrySimConfig.mapWalls}
                 entryPosition={industrySimConfig.entryPosition}
                 waitingPositions={industrySimConfig.waitingPositions}
-                serviceRoomPositions={industrySimConfig.serviceRoomPositions}
+                serviceRooms={industrySimConfig.serviceRooms}
                 staffPositions={industrySimConfig.staffPositions}
                 capacityImage={industrySimConfig.capacityImage}
                 winCondition={industrySimConfig.winCondition}
@@ -208,7 +208,7 @@ export default function AdminPage() {
                 setMapWalls={industrySimConfig.setMapWalls}
                 setEntryPosition={industrySimConfig.setEntryPosition}
                 setWaitingPositions={industrySimConfig.setWaitingPositions}
-                setServiceRoomPositions={industrySimConfig.setServiceRoomPositions}
+                setServiceRooms={industrySimConfig.setServiceRooms}
                 setStaffPositions={industrySimConfig.setStaffPositions}
                 setCapacityImage={industrySimConfig.setCapacityImage}
                 setWinCondition={industrySimConfig.setWinCondition}

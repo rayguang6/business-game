@@ -191,7 +191,7 @@ export function GameCanvas() {
   if (!selectedIndustry) return null;
   const serviceCapacityLabel = 'Service Capacity';
   // Get service room positions for rendering beds (from database or fallback)
-  const serviceRoomPositions = layout.serviceRoomPositions;
+  const serviceRooms = layout.serviceRooms;
   // Use serviceCapacity from metrics (no cap - handled by upgrades)
   // For display: show undefined to indicate missing config
   // For array operations: use fallback to prevent crashes
@@ -474,7 +474,7 @@ export function GameCanvas() {
           })}
 
           {/* Render beds at service room positions (only for active rooms) */}
-          {serviceRoomPositions.slice(0, serviceCapacity).map((position, index) => {
+          {serviceRooms.slice(0, serviceCapacity).map((room, index) => {
             // Use capacity image from config (industry-specific or global)
             const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
             const bedImagePath = getCapacityImageForIndustry(industryId);
@@ -484,6 +484,8 @@ export function GameCanvas() {
               return null;
             }
             
+            // Use customer position for bed rendering
+            const position = room.customerPosition;
             // Multi-tile support: get dimensions from position or default to 1x1
             const width = position.width ?? 1;
             const height = position.height ?? 1;

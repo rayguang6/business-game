@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { IndustryId, GridPosition } from '@/lib/game/types';
+import type { IndustryId, GridPosition, ServiceRoomConfig } from '@/lib/game/types';
 import type {
   BusinessMetrics,
   BusinessStats,
@@ -25,7 +25,7 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
   // Layout config - separate fields (no more JSON parsing!)
   const [entryPosition, setEntryPosition] = useState<GridPosition | null>(null);
   const [waitingPositions, setWaitingPositions] = useState<GridPosition[]>([]);
-  const [serviceRoomPositions, setServiceRoomPositions] = useState<GridPosition[]>([]);
+  const [serviceRooms, setServiceRooms] = useState<ServiceRoomConfig[]>([]);
   const [staffPositions, setStaffPositions] = useState<GridPosition[]>([]);
   
   const [capacityImage, setCapacityImage] = useState<string>('');
@@ -51,7 +51,7 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
       setMapWalls([]);
       setEntryPosition(null);
       setWaitingPositions([]);
-      setServiceRoomPositions([]);
+      setServiceRooms([]);
       setStaffPositions([]);
       setCapacityImage('');
       setWinCondition(null);
@@ -82,7 +82,7 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
           if (config.layoutConfig) {
             setEntryPosition(config.layoutConfig.entryPosition || null);
             setWaitingPositions(config.layoutConfig.waitingPositions || []);
-            setServiceRoomPositions(config.layoutConfig.serviceRoomPositions || []);
+            setServiceRooms(config.layoutConfig.serviceRooms || []);
             setStaffPositions(config.layoutConfig.staffPositions || []);
           }
           
@@ -143,7 +143,7 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
         mapWalls: mapWalls.length > 0 ? mapWalls : null,
         entryPosition: entryPosition ?? null,
         waitingPositions: waitingPositions.length > 0 ? waitingPositions : null,
-        serviceRoomPositions: serviceRoomPositions.length > 0 ? serviceRoomPositions : null,
+        serviceRooms: serviceRooms.length > 0 ? serviceRooms : null,
         staffPositions: staffPositions.length > 0 ? staffPositions : null,
         capacityImage: capacityImage || null,
         winCondition: winCondition ?? undefined,
@@ -176,7 +176,7 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
     mapWalls,
     entryPosition,
     waitingPositions,
-    serviceRoomPositions,
+    serviceRooms,
     staffPositions,
     capacityImage,
     winCondition,
@@ -246,7 +246,7 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
     mapWalls,
     entryPosition,
     waitingPositions,
-    serviceRoomPositions,
+    serviceRooms,
     staffPositions,
     capacityImage,
     winCondition,
@@ -262,7 +262,7 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
     setMapWalls,
     setEntryPosition,
     setWaitingPositions,
-    setServiceRoomPositions,
+    setServiceRooms,
     setStaffPositions,
     setCapacityImage,
     setWinCondition,

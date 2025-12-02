@@ -1,19 +1,18 @@
 import { supabase } from '@/lib/supabase/client';
-import type { BusinessMetrics, BusinessStats, MovementConfig, MapConfig, SimulationLayoutConfig, GridPosition } from '@/lib/game/types';
+import type { BusinessMetrics, BusinessStats, MovementConfig, MapConfig, SimulationLayoutConfig, GridPosition, ServiceRoomConfig } from '@/lib/game/types';
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
+import { parsePositions, parseServiceRooms } from './layoutRepository';
 
 export interface GlobalSimulationConfigRow {
   business_metrics: BusinessMetrics | null;
   business_stats: BusinessStats | null;
   movement: MovementConfig | null;
-  map_config: MapConfig | null; // Keep for backward compatibility
   map_width?: number | null;
   map_height?: number | null;
   map_walls?: Array<{ x: number; y: number }> | null;
-  layout_config: SimulationLayoutConfig | null; // Keep for backward compatibility
   entry_position?: GridPosition | null;
   waiting_positions?: GridPosition[] | null;
-  service_room_positions?: GridPosition[] | null;
+  service_rooms?: ServiceRoomConfig[] | null;
   staff_positions?: GridPosition[] | null;
   capacity_image: string | null;
   win_condition: WinCondition | null;
@@ -123,30 +122,6 @@ const mapLoseCondition = (raw: unknown): LoseCondition | undefined => {
   return undefined;
 };
 
-const mapMapConfig = (raw: unknown): MapConfig | undefined => {
-  if (!isObject(raw)) return undefined;
-  const c = raw as unknown as MapConfig;
-  if (typeof c.width === 'number' && typeof c.height === 'number' && Array.isArray(c.walls)) {
-    return c;
-  }
-  return undefined;
-};
-
-const mapLayoutConfig = (raw: unknown): SimulationLayoutConfig | undefined => {
-  if (!isObject(raw)) return undefined;
-  const c = raw as unknown as SimulationLayoutConfig;
-  if (
-    c.entryPosition &&
-    typeof c.entryPosition.x === 'number' &&
-    typeof c.entryPosition.y === 'number' &&
-    Array.isArray(c.waitingPositions) &&
-    Array.isArray(c.serviceRoomPositions) &&
-    Array.isArray(c.staffPositions)
-  ) {
-    return c;
-  }
-  return undefined;
-};
 
 export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationConfigResult | null> {
   if (!supabase) {
@@ -156,7 +131,7 @@ export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationCon
 
   const { data, error } = await supabase
     .from('global_simulation_config')
-    .select('business_metrics, business_stats, movement, map_width, map_height, map_walls, map_config, entry_position, waiting_positions, service_room_positions, staff_positions, layout_config, capacity_image, win_condition, lose_condition, customer_images, staff_name_pool')
+    .select('business_metrics, business_stats, movement, map_width, map_height, map_walls, entry_position, waiting_positions, service_rooms, staff_positions, capacity_image, win_condition, lose_condition, customer_images, staff_name_pool')
     .limit(1)
     .maybeSingle();
 
@@ -173,7 +148,7 @@ export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationCon
   const businessStats = mapBusinessStats(data.business_stats);
   const movement = mapMovementConfig(data.movement);
   
-  // Build map config from separate columns (preferred) or fallback to map_config JSONB
+  // Build map config from separate columns
   let mapConfig: MapConfig | undefined;
   if ((data.map_width !== null && data.map_width !== undefined) || (data.map_height !== null && data.map_height !== undefined)) {
     mapConfig = {
@@ -181,21 +156,21 @@ export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationCon
       height: data.map_height ?? 10,
       walls: (data.map_walls as unknown as Array<{ x: number; y: number }>) || [],
     };
-  } else {
-    mapConfig = mapMapConfig(data.map_config);
   }
   
-  // Build layout config from separate columns (preferred) or fallback to layout_config
+  // Build layout config from separate columns
   let layoutConfig: SimulationLayoutConfig | undefined;
-  if (data.entry_position || data.waiting_positions || data.service_room_positions || data.staff_positions) {
+  if (data && (data.entry_position || data.waiting_positions || data.service_rooms || data.staff_positions)) {
+    const waitingPositions = parsePositions(data.waiting_positions) || [];
+    const serviceRooms = parseServiceRooms(data.service_rooms) || [];
+    const staffPositions = parsePositions(data.staff_positions) || [];
+    
     layoutConfig = {
       entryPosition: (data.entry_position as unknown as GridPosition) || { x: 0, y: 0 },
-      waitingPositions: (data.waiting_positions as unknown as GridPosition[]) || [],
-      serviceRoomPositions: (data.service_room_positions as unknown as GridPosition[]) || [],
-      staffPositions: (data.staff_positions as unknown as GridPosition[]) || [],
+      waitingPositions,
+      serviceRooms,
+      staffPositions,
     };
-  } else {
-    layoutConfig = mapLayoutConfig(data.layout_config);
   }
   
   const winCondition = mapWinCondition(data.win_condition);
@@ -231,7 +206,7 @@ export async function upsertGlobalSimulationConfig(config: {
   layoutConfig?: SimulationLayoutConfig;
     entryPosition?: GridPosition | null;
     waitingPositions?: GridPosition[] | null;
-    serviceRoomPositions?: GridPosition[] | null;
+    serviceRooms?: ServiceRoomConfig[] | null;
     staffPositions?: GridPosition[] | null;
   capacityImage?: string | null;
   winCondition?: WinCondition;
@@ -258,20 +233,29 @@ export async function upsertGlobalSimulationConfig(config: {
 
   const idToUse = existing?.id ?? 'global';
 
+  // Extract separate fields from mapConfig/layoutConfig if provided (for backward compatibility)
+  // But prefer explicit separate fields if provided
+  const mapWidth = config.mapWidth ?? config.mapConfig?.width ?? null;
+  const mapHeight = config.mapHeight ?? config.mapConfig?.height ?? null;
+  const mapWalls = config.mapWalls ?? config.mapConfig?.walls ?? null;
+  
+  const entryPosition = config.entryPosition ?? config.layoutConfig?.entryPosition ?? null;
+  const waitingPositions = config.waitingPositions ?? config.layoutConfig?.waitingPositions ?? null;
+  const serviceRooms = config.serviceRooms ?? config.layoutConfig?.serviceRooms ?? null;
+  const staffPositions = config.staffPositions ?? config.layoutConfig?.staffPositions ?? null;
+
   const payload: GlobalSimulationConfigRow & { id: string } = {
     id: idToUse,
     business_metrics: config.businessMetrics ?? null,
     business_stats: config.businessStats ?? null,
     movement: config.movement ?? null,
-    map_config: config.mapConfig ?? null, // Keep for backward compatibility
-    map_width: config.mapWidth ?? null,
-    map_height: config.mapHeight ?? null,
-    map_walls: config.mapWalls ?? null,
-    layout_config: config.layoutConfig ?? null, // Keep for backward compatibility
-    entry_position: config.entryPosition ?? null,
-    waiting_positions: config.waitingPositions ?? null,
-    service_room_positions: config.serviceRoomPositions ?? null,
-    staff_positions: config.staffPositions ?? null,
+    map_width: mapWidth,
+    map_height: mapHeight,
+    map_walls: mapWalls,
+    entry_position: entryPosition,
+    waiting_positions: waitingPositions,
+    service_rooms: serviceRooms,
+    staff_positions: staffPositions,
     capacity_image: config.capacityImage ?? null,
     win_condition: config.winCondition ?? null,
     lose_condition: config.loseCondition ?? null,
