@@ -22,12 +22,12 @@ export interface GlobalSimulationConfigState {
   businessStats?: BusinessStats;
   movement?: MovementConfig;
   mapConfig?: MapConfig;
-  layoutConfig?: SimulationLayoutConfig;
   capacityImage?: string;
   winCondition?: WinCondition;
   loseCondition?: LoseCondition;
   customerImages?: string[];
   staffNamePool?: string[];
+  // Layout config removed - each industry sets its own layout
 }
 
 export interface IndustryContentConfig {

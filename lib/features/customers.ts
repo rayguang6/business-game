@@ -72,8 +72,9 @@ export function spawnCustomer(
   const imageSrc = industryImages[Math.floor(Math.random() * industryImages.length)] || defaultImage;
   const stats = getBusinessStats(industryId);
   const layout = getLayoutConfig(industryId);
+  if (!stats || !layout) throw new Error('Business config not loaded');
   const patience = secondsToTicks(stats.customerPatienceSeconds, industryId);
-  const spawnPosition = stats.customerSpawnPosition ?? layout.entryPosition;
+  const spawnPosition = stats.customerSpawnPosition ?? (layout ? layout.entryPosition : { x: 4, y: 9 });
   
   // Convert the aggregated speed multiplier into a shorter duration (higher speed = shorter time)
   const effectiveDuration = service.duration / Math.max(serviceSpeedMultiplier, 0.1);
@@ -95,7 +96,11 @@ export function spawnCustomer(
 /**
  * Movement speed (tiles per tick)
  */
-const getMovementSpeed = () => Math.max(0.01, getGlobalMovementConfig().customerTilesPerTick);
+const getMovementSpeed = () => {
+  const movement = getGlobalMovementConfig();
+  if (!movement) throw new Error('Movement config not loaded');
+  return Math.max(0.01, movement.customerTilesPerTick);
+};
 
 /**
  * Moves customer towards target position following an optional path.
@@ -302,7 +307,9 @@ export function getAvailableSlots(customers: Customer[], maxRooms?: number, indu
     .map(c => c.roomId!);
   
   // Get the requested room count (no cap - handled by upgrades)
-  const requestedRoomCount = maxRooms || getBusinessStats(industryId).serviceCapacity;
+  const stats = getBusinessStats(industryId);
+  if (!stats) throw new Error('Business stats not loaded');
+  const requestedRoomCount = maxRooms || stats.serviceCapacity;
   const roomCount = Math.max(1, Math.round(requestedRoomCount));
   
   return Array.from({ length: roomCount }, (_, i) => i + 1)

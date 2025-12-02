@@ -19,10 +19,7 @@ export async function fetchIndustriesFromSupabase(): Promise<Industry[] | null> 
     .select('id,name,icon,description,image,map_image,is_available');
 
   if (error) {
-    // Log error in development for debugging, but don't expose to users
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Supabase query error:', error);
-    }
+    console.error('[Industries] Failed to fetch industries from Supabase', error);
     return null;
   }
 

@@ -27,6 +27,8 @@ import {
   loadIndustryContent,
 } from '@/lib/game/simulationConfigService';
 import { useConfigStore } from '@/lib/store/configStore';
+import { ConfigErrorPage } from '@/app/game/components/ui/ConfigErrorPage';
+import { ErrorBoundary } from '@/app/game/components/ui/ErrorBoundary';
 
 export default function GamePage() {
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
@@ -48,7 +50,7 @@ export default function GamePage() {
   const setGlobalConfigState = useConfigStore((state) => state.setGlobalConfig);
   const setIndustryConfigState = useConfigStore((state) => state.setIndustryConfig);
   const setConfigStatus = useConfigStore((state) => state.setConfigStatus);
-  
+  const configError = useConfigStore((state) => state.configError);
 
   // Play game music when component mounts
   useAudio('game', true);
@@ -133,20 +135,24 @@ export default function GamePage() {
         setAvailableConditions(conditions);
         setAvailableFlags(flags);
 
-        if (hasServices && hasUpgrades && hasEvents && hasStaff) {
+        // Validate required content (warn but don't block - let user see what's missing)
+        const missingItems: string[] = [];
+        if (!hasServices) missingItems.push('services');
+        if (!hasUpgrades) missingItems.push('upgrades');
+        if (!hasEvents) missingItems.push('events');
+        if (!hasStaff) missingItems.push('staff');
+
+        if (missingItems.length > 0) {
+          console.warn(
+            `[Game] ⚠️ Industry "${industryId}" is missing required content: ${missingItems.join(', ')}. ` +
+            `Please add at least one item for each in the admin panel.`
+          );
+          // Still allow game to start, but show warning
           setDataLoadState('ready');
           setConfigStatus('ready');
         } else {
-          console.error('Missing industry data', {
-            industry: industryId,
-            hasServices,
-            hasUpgrades,
-            hasEvents,
-            hasStaff,
-            hasConditions,
-          });
-          setDataLoadState('error');
-          setConfigStatus('error', 'Missing required industry data');
+          setDataLoadState('ready');
+          setConfigStatus('ready');
         }
       } catch (err) {
         console.error('Failed to load industry data', err);
@@ -217,19 +223,36 @@ export default function GamePage() {
   }
 
   if (dataLoadState === 'error') {
+    // Determine error type from error message
+    const errorType: 'database' | 'code' | 'unknown' = 
+      configError?.includes('not found') || 
+      configError?.includes('not configured') || 
+      configError?.includes('missing') ||
+      configError?.includes('admin panel')
+        ? 'database'
+        : configError?.includes('Cannot read') || configError?.includes('null')
+        ? 'code'
+        : 'unknown';
+
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gray-900 text-white text-center px-6">
-        <p className="text-2xl font-semibold">Industry data unavailable</p>
-        <p className="text-base max-w-md text-gray-300">
-          We couldn&apos;t load the required data for this industry. Please check your Supabase data and try again.
-        </p>
-        <button
-          onClick={() => router.push('/select-industry')}
-          className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 transition-colors"
-        >
-          Back to industry selection
-        </button>
-      </div>
+      <ConfigErrorPage
+        title="Configuration Error"
+        message={
+          configError ||
+          "We couldn't load the required data for this industry. Please check your database configuration."
+        }
+        errorType={errorType}
+        details={
+          configError
+            ? configError
+            : 'The industry configuration is missing required data. Please configure the industry in the admin panel.'
+        }
+        onRetry={() => {
+          setDataLoadState('idle');
+          // Trigger reload by changing dependency
+          window.location.reload();
+        }}
+      />
     );
   }
 
@@ -238,7 +261,8 @@ export default function GamePage() {
   }
 
   return (
-    <div id="game-shell" className="h-screen relative flex flex-col md:flex-row overflow-hidden">
+    <ErrorBoundary>
+      <div id="game-shell" className="h-screen relative flex flex-col md:flex-row overflow-hidden">
       
       
       {/* Mobile: Top Section - Game Canvas Area (flexible height) */}
@@ -404,5 +428,6 @@ export default function GamePage() {
         </div>
       )}
     </div>
+    </ErrorBoundary>
   );
 }

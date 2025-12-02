@@ -6,7 +6,7 @@ import { SourceType, SourceInfo } from '@/lib/config/sourceTypes';
 import { mapSourceTypeToRevenueCategory, mapSourceTypeToOneTimeCostCategory, ensureValidSourceInfo, SourceHelpers } from '@/lib/utils/financialTracking';
 import { Lead } from '@/lib/features/leads';
 import { getInitialMetrics } from './metricsSlice';
-import { DEFAULT_INDUSTRY_ID, getUpgradesForIndustry, getWinCondition, getLoseCondition, getStartingTime, getBusinessStats } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getUpgradesForIndustry, getWinCondition, getLoseCondition, getStartingTime, getBusinessStats, getBusinessMetrics } from '@/lib/game/config';
 import { GameStore } from '../gameStore';
 import { IndustryId } from '@/lib/game/types';
 import { effectManager } from '@/lib/game/effectManager';
@@ -24,8 +24,12 @@ const getInitialGameState = (
   industryId: IndustryId,
   keepIndustry: boolean = false,
 ) => {
-  const baseMonthlyExpenses = getMonthlyBaseExpenses(industryId);
+  // Get config - use safe defaults if not loaded yet
   const businessStats = getBusinessStats(industryId);
+  const baseMonthlyExpenses = businessStats 
+    ? getMonthlyBaseExpenses(industryId)
+    : 0; // Safe default
+  
   return {
     isGameStarted: false,
     isPaused: false,
@@ -44,7 +48,7 @@ const getInitialGameState = (
     customers: [],
     leads: [],
     leadProgress: 0,
-    conversionRate: businessStats.conversionRate ?? 10, // From business config with fallback
+    conversionRate: businessStats?.conversionRate ?? 10, // From business config with fallback
     customersServed: 0,
     customersLeftImpatient: 0,
     customersServiceFailed: 0,
@@ -176,6 +180,15 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
 
     // Reset to initial state but keep industry selection and start the game
     const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+    
+    // Validate config is loaded before starting game
+    const businessStats = getBusinessStats(industryId);
+    const businessMetrics = getBusinessMetrics(industryId);
+    if (!businessStats || !businessMetrics) {
+      console.error('[Game] Cannot start game - config not loaded for industry:', industryId);
+      return; // Don't start if config not loaded
+    }
+    
     const baseMonthlyExpenses = getMonthlyBaseExpenses(industryId);
     
     // Reset all slices for a fresh game
@@ -649,6 +662,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     const { cash, time } = state.metrics;
     const industryId = (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
     const loseCondition = getLoseCondition(industryId);
+    if (!loseCondition) return; // Can't check lose condition if not loaded
     
     // Check lose conditions: cash or time
     if (cash <= loseCondition.cashThreshold) {
@@ -675,6 +689,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
 
     // Check win condition: cash target reached or month target reached
     const winCondition = getWinCondition(industryId);
+    if (!winCondition) return; // Can't check win condition if not loaded
     if (checkWinCondition(cash, currentMonth, winCondition)) {
       set({ isGameOver: true, gameOverReason: 'victory', isPaused: true });
     }

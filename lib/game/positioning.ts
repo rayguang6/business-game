@@ -12,20 +12,35 @@ import { DEFAULT_INDUSTRY_ID, getLayoutConfig } from '@/lib/game/config';
 import { GridPosition, IndustryId, ServiceRoomConfig } from '@/lib/game/types';
 
 export function getWaitingPositions(industryId: IndustryId): GridPosition[] {
-  return getLayoutConfig(industryId).waitingPositions;
+  const layout = getLayoutConfig(industryId);
+  if (!layout) {
+    throw new Error(`Layout config not loaded for industry "${industryId}". Please configure layout in the admin panel.`);
+  }
+  return layout.waitingPositions;
 }
 
 export function getServiceRoomPositions(industryId: IndustryId): GridPosition[] {
   const layout = getLayoutConfig(industryId);
+  if (!layout) {
+    throw new Error(`Layout config not loaded for industry "${industryId}". Please configure layout in the admin panel.`);
+  }
   return layout.serviceRooms.map(room => room.customerPosition);
 }
 
 export function getStaffPositions(industryId: IndustryId): GridPosition[] {
-  return getLayoutConfig(industryId).staffPositions;
+  const layout = getLayoutConfig(industryId);
+  if (!layout) {
+    throw new Error(`Layout config not loaded for industry "${industryId}". Please configure layout in the admin panel.`);
+  }
+  return layout.staffPositions;
 }
 
 export function getEntryPosition(industryId: IndustryId): GridPosition {
-  return getLayoutConfig(industryId).entryPosition;
+  const layout = getLayoutConfig(industryId);
+  if (!layout) {
+    throw new Error(`Layout config not loaded for industry "${industryId}". Please configure layout in the admin panel.`);
+  }
+  return layout.entryPosition;
 }
 
 /**
@@ -33,6 +48,9 @@ export function getEntryPosition(industryId: IndustryId): GridPosition {
  */
 export function getServiceRooms(industryId: IndustryId): ServiceRoomConfig[] {
   const layout = getLayoutConfig(industryId);
+  if (!layout) {
+    throw new Error(`Layout config not loaded for industry "${industryId}". Please configure layout in the admin panel.`);
+  }
   return layout.serviceRooms;
 }
 
@@ -103,7 +121,24 @@ export function getWaitingPositionByIndex(
   return positions[index] ?? null;
 }
 
-// Backwards-compatible constants for existing callers (use sync versions).
-export const WAITING_POSITIONS = getWaitingPositions(DEFAULT_INDUSTRY_ID);
-export const SERVICE_ROOM_POSITIONS = getServiceRoomPositions(DEFAULT_INDUSTRY_ID);
-export const ENTRY_POSITION = getEntryPosition(DEFAULT_INDUSTRY_ID);
+// Backwards-compatible constants for existing callers (lazy evaluation to avoid module load errors)
+// These will throw errors at runtime if layout is not loaded, which is correct behavior
+export function getWAITING_POSITIONS(): GridPosition[] {
+  return getWaitingPositions(DEFAULT_INDUSTRY_ID);
+}
+
+export function getSERVICE_ROOM_POSITIONS(): GridPosition[] {
+  return getServiceRoomPositions(DEFAULT_INDUSTRY_ID);
+}
+
+export function getENTRY_POSITION(): GridPosition {
+  return getEntryPosition(DEFAULT_INDUSTRY_ID);
+}
+
+// Legacy constants - use getters above instead
+// @deprecated Use getWAITING_POSITIONS() instead
+export const WAITING_POSITIONS: GridPosition[] = [];
+// @deprecated Use getSERVICE_ROOM_POSITIONS() instead  
+export const SERVICE_ROOM_POSITIONS: GridPosition[] = [];
+// @deprecated Use getENTRY_POSITION() instead
+export const ENTRY_POSITION: GridPosition = { x: 0, y: 0 };

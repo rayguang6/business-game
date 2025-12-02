@@ -11,11 +11,12 @@ import { SpriteLead } from './SpriteLead';
 import { SpriteStaff } from './SpriteStaff';
 import { GridOverlay } from './GridOverlay';
 import { LeadProgress } from '../ui/LeadProgress';
-import { DEFAULT_INDUSTRY_ID, getBusinessStats, getLayoutConfig, getCapacityImageForIndustry, getSimulationConfig } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getBusinessStats, getLayoutConfig, getCapacityImageForIndustry } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import { useConfigStore } from '@/lib/store/configStore';
 import { getMonthlyBaseExpenses } from '@/lib/features/economy';
+import { ConfigErrorPage } from '../ui/ConfigErrorPage';
 
 // Canvas scaling configuration
 const CANVAS_CONFIG = {
@@ -122,6 +123,22 @@ export function GameCanvas() {
   const businessStats = useMemo(() => getBusinessStats(industryId), [industryId]);
   const layoutOverride = useConfigStore((state) => state.industryConfigs[industryId]?.layout);
   const layout = useMemo(() => layoutOverride ?? getLayoutConfig(industryId), [layoutOverride, industryId]);
+
+  // Validate required config - show error if missing
+  if (!businessStats || !layout) {
+    return (
+      <ConfigErrorPage
+        title="Configuration Missing"
+        message="Required game configuration is missing. Please configure this industry in the admin panel."
+        errorType="database"
+        details={
+          !businessStats
+            ? 'Business stats are not configured for this industry. Please configure business_stats in the admin panel.'
+            : 'Layout configuration is missing for this industry. Please configure layout positions (entry_position, waiting_positions, service_rooms, staff_positions) in the admin panel.'
+        }
+      />
+    );
+  }
   
   const computeMetrics = useCallback(() => {
     // Mirror exactly what mechanics.ts does (line 580-605)

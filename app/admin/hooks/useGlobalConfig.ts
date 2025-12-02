@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { fetchGlobalSimulationConfig, upsertGlobalSimulationConfig } from '@/lib/data/simulationConfigRepository';
 import { DEFAULT_GLOBAL_SIMULATION_CONFIG } from '@/lib/game/industryConfigs';
 import { DEFAULT_WIN_CONDITION, DEFAULT_LOSE_CONDITION, type WinCondition, type LoseCondition } from '@/lib/game/winConditions';
-import type { BusinessMetrics, BusinessStats, MovementConfig, MapConfig, SimulationLayoutConfig } from '@/lib/game/types';
+import type { BusinessMetrics, BusinessStats, MovementConfig, MapConfig } from '@/lib/game/types';
 import type { Operation } from './types';
 import { useConfigStore } from '@/lib/store/configStore';
 
@@ -15,7 +15,6 @@ export function useGlobalConfig() {
   );
   const [movementJSON, setMovementJSON] = useState<string>(JSON.stringify(initialGlobal.movement, null, 2));
   const [mapConfigJSON, setMapConfigJSON] = useState<string>('');
-  const [layoutConfigJSON, setLayoutConfigJSON] = useState<string>('');
   const [capacityImage, setCapacityImage] = useState<string>('');
   const [customerImages, setCustomerImages] = useState<string[]>([]);
   const [staffNamePool, setStaffNamePool] = useState<string[]>([]);
@@ -42,7 +41,6 @@ export function useGlobalConfig() {
           if (global.mapConfig) {
             setMapConfigJSON(JSON.stringify(global.mapConfig, null, 2));
           }
-          if (global.layoutConfig) setLayoutConfigJSON(JSON.stringify(global.layoutConfig, null, 2));
           if (global.capacityImage) setCapacityImage(global.capacityImage);
           if (global.customerImages) setCustomerImages(global.customerImages);
           if (global.staffNamePool) setStaffNamePool(global.staffNamePool);
@@ -81,9 +79,8 @@ export function useGlobalConfig() {
       return;
     }
 
-    // Parse map and layout configs
+    // Parse map config
     let mapConfig: MapConfig | undefined;
-    let layoutConfig: SimulationLayoutConfig | undefined;
 
     if (mapConfigJSON.trim()) {
       try {
@@ -95,23 +92,12 @@ export function useGlobalConfig() {
       }
     }
 
-    if (layoutConfigJSON.trim()) {
-      try {
-        layoutConfig = JSON.parse(layoutConfigJSON);
-      } catch (e) {
-        setStatus('Invalid JSON in Layout Config.');
-        setOperation('idle');
-        return;
-      }
-    }
-
     setOperation('saving');
     const result = await upsertGlobalSimulationConfig({
       businessMetrics,
       businessStats,
       movement,
       mapConfig,
-      layoutConfig,
       capacityImage: capacityImage || null,
       customerImages: customerImages.length > 0 ? customerImages : null,
       staffNamePool: staffNamePool.length > 0 ? staffNamePool : null,
@@ -131,7 +117,6 @@ export function useGlobalConfig() {
       businessStats,
       movement,
       mapConfig,
-      layoutConfig,
       capacityImage: capacityImage || undefined,
       customerImages: customerImages.length > 0 ? customerImages : undefined,
       staffNamePool: staffNamePool.length > 0 ? staffNamePool : undefined,
@@ -140,7 +125,7 @@ export function useGlobalConfig() {
     });
 
     setStatus('Global config saved.');
-  }, [metrics, stats, eventSecondsInput, movementJSON, mapConfigJSON, layoutConfigJSON, capacityImage, customerImages, staffNamePool, winCondition, loseCondition]);
+  }, [metrics, stats, eventSecondsInput, movementJSON, mapConfigJSON, capacityImage, customerImages, staffNamePool, winCondition, loseCondition]);
 
   const updateMetrics = useCallback((updates: Partial<BusinessMetrics>) => {
     setMetrics(prev => ({ ...prev, ...updates }));
@@ -164,7 +149,6 @@ export function useGlobalConfig() {
     eventSecondsInput,
     movementJSON,
     mapConfigJSON,
-    layoutConfigJSON,
     capacityImage,
     customerImages,
     staffNamePool,
@@ -177,7 +161,6 @@ export function useGlobalConfig() {
     setEventSecondsInput,
     setMovementJSON,
     setMapConfigJSON,
-    setLayoutConfigJSON,
     setCapacityImage,
     setCustomerImages,
     setStaffNamePool,

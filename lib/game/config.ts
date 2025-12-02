@@ -1,4 +1,3 @@
-import { createDefaultSimulationConfig } from './industryConfigs';
 import {
   BusinessMetrics,
   BusinessStats,
@@ -21,7 +20,7 @@ import {
   getUpgradesFromStore,
   getEventsFromStore,
 } from '@/lib/store/configStore';
-import { DEFAULT_WIN_CONDITION, DEFAULT_LOSE_CONDITION, type WinCondition, type LoseCondition } from './winConditions';
+import type { WinCondition, LoseCondition } from './winConditions';
 
 export type {
   BusinessMetrics,
@@ -118,75 +117,65 @@ const getGlobalConfigOverride = () => useConfigStore.getState().globalConfig;
 // exports above and remove the legacy constants.
 // -----------------------------------------------------------------------------
 
-const getFallbackSimulationConfig = (
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
-): IndustrySimulationConfig => createDefaultSimulationConfig(industryId);
+// Removed getFallbackSimulationConfig and getSimulationConfig - no code defaults, data must be in database
 
-export function getSimulationConfig(
-  industryId: IndustryId = DEFAULT_INDUSTRY_ID,
-): IndustrySimulationConfig {
-  return getFallbackSimulationConfig(industryId);
-}
-
-export function getBusinessMetrics(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
-  // Get global config first (as base)
-  const globalConfig = getGlobalConfigOverride();
-  const globalMetrics = globalConfig?.businessMetrics;
-  
-  // Check industry-specific override
+export function getBusinessMetrics(industryId: IndustryId = DEFAULT_INDUSTRY_ID): BusinessMetrics | null {
+  // Check industry-specific override first
   const industryConfig = getIndustryOverride(industryId);
   const industryMetrics = industryConfig?.businessMetrics;
   
-  // Get code defaults as fallback
-  const defaultMetrics = getSimulationConfig(industryId).businessMetrics;
+  // Get global config as base
+  const globalConfig = getGlobalConfigOverride();
+  const globalMetrics = globalConfig?.businessMetrics;
   
-  // Merge: industry-specific overrides global, global overrides defaults
-  // This ensures all fields are present (industry > global > defaults)
+  // Merge: industry-specific overrides global
+  if (industryMetrics && globalMetrics) {
+    return { ...globalMetrics, ...industryMetrics };
+  }
+  
   if (industryMetrics) {
-    return { ...defaultMetrics, ...globalMetrics, ...industryMetrics };
+    return industryMetrics;
   }
   
-  // Use global config merged with defaults if available
   if (globalMetrics) {
-    return { ...defaultMetrics, ...globalMetrics };
+    return globalMetrics;
   }
   
-  // Fallback to code defaults
-  return { ...defaultMetrics };
+  // Data not loaded - return null (should be caught at load time)
+  return null;
 }
 
-export function getBusinessStats(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
-  // Get global config first (as base)
-  const globalConfig = getGlobalConfigOverride();
-  const globalStats = globalConfig?.businessStats;
-  
-  // Check industry-specific override
+export function getBusinessStats(industryId: IndustryId = DEFAULT_INDUSTRY_ID): BusinessStats | null {
+  // Check industry-specific override first
   const industryConfig = getIndustryOverride(industryId);
   const industryStats = industryConfig?.businessStats;
   
-  // Get code defaults as fallback
-  const defaultStats = getSimulationConfig(industryId).businessStats;
+  // Get global config as base
+  const globalConfig = getGlobalConfigOverride();
+  const globalStats = globalConfig?.businessStats;
   
-  // Merge: industry-specific overrides global, global overrides defaults
-  // This ensures all fields are present (industry > global > defaults)
-  if (industryStats) {
-    const merged = { ...defaultStats, ...globalStats, ...industryStats };
+  // Merge: industry-specific overrides global
+  if (industryStats && globalStats) {
+    const merged = { ...globalStats, ...industryStats };
     // If industry config doesn't have eventTriggerSeconds or it's empty, use global
     if (!merged.eventTriggerSeconds || merged.eventTriggerSeconds.length === 0) {
-      if (globalStats?.eventTriggerSeconds && globalStats.eventTriggerSeconds.length > 0) {
+      if (globalStats.eventTriggerSeconds && globalStats.eventTriggerSeconds.length > 0) {
         merged.eventTriggerSeconds = [...globalStats.eventTriggerSeconds];
       }
     }
     return merged;
   }
   
-  // Use global config merged with defaults if available
-  if (globalStats) {
-    return { ...defaultStats, ...globalStats };
+  if (industryStats) {
+    return industryStats;
   }
   
-  // Fallback to code defaults
-  return { ...defaultStats };
+  if (globalStats) {
+    return globalStats;
+  }
+  
+  // Data not loaded - return null (should be caught at load time)
+  return null;
 }
 
 export function getMapConfigForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
@@ -200,10 +189,11 @@ export function getMapConfigForIndustry(industryId: IndustryId = DEFAULT_INDUSTR
     return globalConfig.mapConfig;
   }
   
-  return getSimulationConfig(industryId).map;
+  // No map config found - return undefined (optional config)
+  return undefined;
 }
 
-export function getMovementConfigForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
+export function getMovementConfigForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): MovementConfig | null {
   const industryConfig = getIndustryOverride(industryId);
   if (industryConfig?.movement) {
     return { ...industryConfig.movement };
@@ -214,18 +204,21 @@ export function getMovementConfigForIndustry(industryId: IndustryId = DEFAULT_IN
     return { ...globalConfig.movement };
   }
   
-  return getSimulationConfig(industryId).movement;
+  // Data not loaded - return null (should be caught at load time)
+  return null;
 }
 
-export function getGlobalMovementConfig(): MovementConfig {
+export function getGlobalMovementConfig(): MovementConfig | null {
   const global = getGlobalConfigOverride()?.movement;
   if (global) {
     return { ...global };
   }
-  return { ...getMovementConfigForIndustry(DEFAULT_INDUSTRY_ID) };
+  
+  // Data not loaded - return null (should be caught at load time)
+  return null;
 }
 
-export function getWinCondition(industryId?: IndustryId): WinCondition {
+export function getWinCondition(industryId?: IndustryId): WinCondition | null {
   // If industryId provided, check industry-specific override
   if (industryId) {
     const industryConfig = getIndustryOverride(industryId);
@@ -240,11 +233,11 @@ export function getWinCondition(industryId?: IndustryId): WinCondition {
     return { ...global };
   }
   
-  // Fallback to code defaults
-  return { ...DEFAULT_WIN_CONDITION };
+  // Data not loaded - return null (should be caught at load time)
+  return null;
 }
 
-export function getLoseCondition(industryId?: IndustryId): LoseCondition {
+export function getLoseCondition(industryId?: IndustryId): LoseCondition | null {
   // If industryId provided, check industry-specific override
   if (industryId) {
     const industryConfig = getIndustryOverride(industryId);
@@ -259,55 +252,40 @@ export function getLoseCondition(industryId?: IndustryId): LoseCondition {
     return { ...global };
   }
   
-  // Fallback to code defaults
-  return { ...DEFAULT_LOSE_CONDITION };
+  // Data not loaded - return null (should be caught at load time)
+  return null;
 }
 
-export function getLayoutConfig(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
-  // Check industry-specific override first
+export function getLayoutConfig(industryId: IndustryId = DEFAULT_INDUSTRY_ID): SimulationLayoutConfig | null {
+  // Check industry-specific config only (no global fallback)
+  // The layout is resolved during loadIndustryContent which fetches from DB
   const industryConfig = getIndustryOverride(industryId);
   if (industryConfig?.layout) {
     return cloneLayout(industryConfig.layout);
   }
   
-  // Check global config
-  const globalConfig = getGlobalConfigOverride();
-  if (globalConfig?.layoutConfig) {
-    return cloneLayout(globalConfig.layoutConfig);
-  }
-  
-  // Fallback to code defaults
-  const config = getSimulationConfig(industryId);
-  return cloneLayout(config.layout);
+  // Data not loaded - return null (should be caught at load time)
+  return null;
 }
 
 export function getServicesForIndustry(
   industryId: IndustryId = DEFAULT_INDUSTRY_ID,
 ): IndustryServiceDefinition[] {
   const stored = getServicesFromStore(industryId);
-  if (stored.length > 0) {
-    return stored;
-  }
-  const fallback = getFallbackSimulationConfig(industryId);
-  return cloneServices(fallback.services);
+  // Return empty array if not in store - game will fail if services are missing (correct behavior)
+  return stored;
 }
 
 export function getUpgradesForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
   const stored = getUpgradesFromStore(industryId);
-  if (stored.length > 0) {
-    return stored;
-  }
-  const fallback = getFallbackSimulationConfig(industryId);
-  return cloneUpgrades(fallback.upgrades);
+  // Return empty array if not in store - game will fail if upgrades are missing (correct behavior)
+  return stored;
 }
 
 export function getEventsForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
   const stored = getEventsFromStore(industryId);
-  if (stored.length > 0) {
-    return stored;
-  }
-  const fallback = getFallbackSimulationConfig(industryId);
-  return cloneEvents(fallback.events);
+  // Return empty array if not in store - game will fail if events are missing (correct behavior)
+  return stored;
 }
 
 export function getCustomerImagesForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): string[] {
@@ -323,8 +301,9 @@ export function getCustomerImagesForIndustry(industryId: IndustryId = DEFAULT_IN
     return [...globalConfig.customerImages];
   }
   
-  // Fallback to code defaults
-  return [...getSimulationConfig(industryId).customerImages];
+  // No customer images found - return empty array (will cause issues, but that's correct - data must be in DB)
+  console.warn(`[Config] Customer images not found for industry ${industryId}. Please configure in database.`);
+  return [];
 }
 
 export function getDefaultCustomerImageForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
@@ -345,10 +324,9 @@ export function getStaffNamePoolForIndustry(industryId: IndustryId = DEFAULT_IND
     return [...globalConfig.staffNamePool];
   }
   
-  // Fallback to code defaults (from staffConfig)
-  const fallback = getFallbackSimulationConfig(industryId);
-  // Note: staffNamePool is not in IndustrySimulationConfig, so use DEFAULT_NAME_POOL from staffConfig
-  return ['Ava', 'Noah', 'Mia', 'Ethan', 'Liam', 'Zara', 'Kai', 'Riya', 'Owen', 'Sage', 'Nico', 'Luna', 'Milo', 'Iris', 'Ezra'];
+  // No staff name pool found - return empty array (will cause issues if staff are created, but that's correct)
+  console.warn(`[Config] Staff name pool not found for industry ${industryId}. Please configure in database.`);
+  return [];
 }
 
 export function getCapacityImageForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): string | null {
@@ -372,6 +350,7 @@ export function getCapacityImageForIndustry(industryId: IndustryId = DEFAULT_IND
 
 export function getTickIntervalMsForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): number {
   const stats = getBusinessStats(industryId);
+  if (!stats) throw new Error('Business stats not loaded');
   return Math.round((1 / stats.ticksPerSecond) * 1000);
 }
 
@@ -380,6 +359,7 @@ export function getBaseUpgradeMetricsForIndustry(
 ): BaseUpgradeMetrics {
   const stats = getBusinessStats(industryId);
   const metrics = getBusinessMetrics(industryId);
+  if (!stats || !metrics) throw new Error('Business config not loaded');
   return {
     monthlyExpenses: metrics.monthlyExpenses,
     spawnIntervalSeconds: stats.customerSpawnIntervalSeconds,
@@ -394,30 +374,39 @@ export function getBaseUpgradeMetricsForIndustry(
 }
 
 export function getTicksPerSecondForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): number {
-  return getBusinessStats(industryId).ticksPerSecond;
+  const stats = getBusinessStats(industryId);
+  if (!stats) throw new Error('Business stats not loaded');
+  return stats.ticksPerSecond;
 }
 
 export function getRoundDurationSecondsForIndustry(
   industryId: IndustryId = DEFAULT_INDUSTRY_ID,
 ): number {
-  return getBusinessStats(industryId).monthDurationSeconds;
+  const stats = getBusinessStats(industryId);
+  if (!stats) throw new Error('Business stats not loaded');
+  return stats.monthDurationSeconds;
 }
 
 export function getFounderWorkingHoursBase(industryId: IndustryId = DEFAULT_INDUSTRY_ID): number {
-  return getBusinessMetrics(industryId).startingFreedomScore; // Previously: founderWorkHours
+  const metrics = getBusinessMetrics(industryId);
+  if (!metrics) throw new Error('Business metrics not loaded');
+  return metrics.startingFreedomScore; // Previously: founderWorkHours
 }
 
 /**
  * Get starting time budget for an industry
  */
 export function getStartingTime(industryId: IndustryId = DEFAULT_INDUSTRY_ID): number {
-  return getBusinessMetrics(industryId).startingTime ?? 0;
+  const metrics = getBusinessMetrics(industryId);
+  if (!metrics) throw new Error('Business metrics not loaded');
+  return metrics.startingTime ?? 0;
 }
 
 export function getEventTriggerSecondsForIndustry(
   industryId: IndustryId = DEFAULT_INDUSTRY_ID,
 ): number[] {
   const stats = getBusinessStats(industryId);
+  if (!stats) throw new Error('Business stats not loaded');
   const duration = stats.monthDurationSeconds;
   if (duration <= 0) {
     return [];
@@ -477,6 +466,7 @@ export function calculateMonthlyRevenuePotential(
   realisticTarget: number;
 } {
   const stats = getBusinessStats(industryId);
+  if (!stats) throw new Error('Business stats not loaded');
   const services = getServicesForIndustry(industryId);
 
   const customersPerMonth = Math.floor(stats.monthDurationSeconds / stats.customerSpawnIntervalSeconds);

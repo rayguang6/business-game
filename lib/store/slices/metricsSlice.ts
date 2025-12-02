@@ -4,9 +4,28 @@ import { GameState } from '../types';
 import { DEFAULT_INDUSTRY_ID, getBusinessMetrics } from '@/lib/game/config';
 import type { IndustryId } from '@/lib/game/types';
 
+// Safe default metrics for store initialization (before config loads)
+const SAFE_DEFAULT_METRICS: Metrics = {
+  cash: 0,
+  time: 0,
+  totalRevenue: 0,
+  totalExpenses: 0,
+  exp: 0,
+  freedomScore: 0,
+  totalLeadsSpawned: 0,
+  totalCustomersGenerated: 0,
+  totalTimeSpent: 0,
+};
+
 // Shared initial metrics state - single source of truth
+// Returns safe defaults if config not loaded yet (will be updated when config loads)
 export const getInitialMetrics = (industryId: IndustryId = DEFAULT_INDUSTRY_ID): Metrics => {
   const metrics = getBusinessMetrics(industryId);
+  if (!metrics) {
+    // Config not loaded yet - return safe defaults
+    // Store will be updated when config loads in simulationConfigService
+    return { ...SAFE_DEFAULT_METRICS };
+  }
   return {
     cash: metrics.startingCash,
     time: metrics.startingTime ?? 0, // Monthly time budget, defaults to 0

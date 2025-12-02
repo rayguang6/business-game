@@ -35,12 +35,12 @@ const mapBusinessMetrics = (raw: unknown): BusinessMetrics | undefined => {
     typeof c.startingCash === 'number' &&
     typeof c.monthlyExpenses === 'number' &&
     typeof c.startingExp === 'number' &&
-    (typeof c.startingFreedomScore === 'number' || typeof (c as any).founderWorkHours === 'number') // Support legacy founderWorkHours
+    typeof c.startingFreedomScore === 'number'
   ) {
     return {
       ...c,
       startingTime: typeof c.startingTime === 'number' ? c.startingTime : undefined,
-      startingFreedomScore: c.startingFreedomScore ?? (c as any).founderWorkHours, // Support legacy founderWorkHours
+      startingFreedomScore: c.startingFreedomScore,
     };
   }
   return undefined;

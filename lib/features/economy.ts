@@ -23,7 +23,9 @@ import { SourceType } from '@/lib/config/sourceTypes';
  * Returns the baseline monthly operating expenses
  */
 export function getMonthlyBaseExpenses(industryId: IndustryId): number {
-  return getBusinessMetrics(industryId).monthlyExpenses;
+  const metrics = getBusinessMetrics(industryId);
+  if (!metrics) throw new Error('Business metrics not loaded');
+  return metrics.monthlyExpenses;
 }
 
 function calculateUpgradeExpenseFromDefinition(

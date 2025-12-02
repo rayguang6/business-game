@@ -1,7 +1,6 @@
 import { supabase } from '@/lib/supabase/client';
-import type { BusinessMetrics, BusinessStats, MovementConfig, MapConfig, SimulationLayoutConfig, GridPosition, ServiceRoomConfig } from '@/lib/game/types';
+import type { BusinessMetrics, BusinessStats, MovementConfig, MapConfig } from '@/lib/game/types';
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
-import { parsePositions, parseServiceRooms } from './layoutRepository';
 
 export interface GlobalSimulationConfigRow {
   business_metrics: BusinessMetrics | null;
@@ -10,10 +9,7 @@ export interface GlobalSimulationConfigRow {
   map_width?: number | null;
   map_height?: number | null;
   map_walls?: Array<{ x: number; y: number }> | null;
-  entry_position?: GridPosition | null;
-  waiting_positions?: GridPosition[] | null;
-  service_rooms?: ServiceRoomConfig[] | null;
-  staff_positions?: GridPosition[] | null;
+  // Layout columns removed - layout is now industry-specific only
   capacity_image: string | null;
   win_condition: WinCondition | null;
   lose_condition: LoseCondition | null;
@@ -26,7 +22,7 @@ export interface GlobalSimulationConfigResult {
   businessStats?: BusinessStats;
   movement?: MovementConfig;
   mapConfig?: MapConfig;
-  layoutConfig?: SimulationLayoutConfig;
+  // layoutConfig removed - each industry sets its own layout
   capacityImage?: string;
   winCondition?: WinCondition;
   loseCondition?: LoseCondition;
@@ -131,7 +127,7 @@ export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationCon
 
   const { data, error } = await supabase
     .from('global_simulation_config')
-    .select('business_metrics, business_stats, movement, map_width, map_height, map_walls, entry_position, waiting_positions, service_rooms, staff_positions, capacity_image, win_condition, lose_condition, customer_images, staff_name_pool')
+    .select('business_metrics, business_stats, movement, map_width, map_height, map_walls, capacity_image, win_condition, lose_condition, customer_images, staff_name_pool')
     .limit(1)
     .maybeSingle();
 
@@ -158,25 +154,12 @@ export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationCon
     };
   }
   
-  // Build layout config from separate columns
-  let layoutConfig: SimulationLayoutConfig | undefined;
-  if (data && (data.entry_position || data.waiting_positions || data.service_rooms || data.staff_positions)) {
-    const waitingPositions = parsePositions(data.waiting_positions) || [];
-    const serviceRooms = parseServiceRooms(data.service_rooms) || [];
-    const staffPositions = parsePositions(data.staff_positions) || [];
-    
-    layoutConfig = {
-      entryPosition: (data.entry_position as unknown as GridPosition) || { x: 0, y: 0 },
-      waitingPositions,
-      serviceRooms,
-      staffPositions,
-    };
-  }
+  // Layout config removed - each industry sets its own layout
   
   const winCondition = mapWinCondition(data.win_condition);
   const loseCondition = mapLoseCondition(data.lose_condition);
 
-  if (!businessMetrics && !businessStats && !movement && !mapConfig && !layoutConfig && !winCondition && !loseCondition && !data.capacity_image && !data.customer_images && !data.staff_name_pool) {
+  if (!businessMetrics && !businessStats && !movement && !mapConfig && !winCondition && !loseCondition && !data.capacity_image && !data.customer_images && !data.staff_name_pool) {
     return null;
   }
 
@@ -185,7 +168,6 @@ export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationCon
   if (businessStats) result.businessStats = businessStats;
   if (movement) result.movement = movement;
   if (mapConfig) result.mapConfig = mapConfig;
-  if (layoutConfig) result.layoutConfig = layoutConfig;
   if (data.capacity_image) result.capacityImage = data.capacity_image;
   if (winCondition) result.winCondition = winCondition;
   if (loseCondition) result.loseCondition = loseCondition;
@@ -203,11 +185,7 @@ export async function upsertGlobalSimulationConfig(config: {
   mapWidth?: number | null;
   mapHeight?: number | null;
   mapWalls?: Array<{ x: number; y: number }> | null;
-  layoutConfig?: SimulationLayoutConfig;
-    entryPosition?: GridPosition | null;
-    waitingPositions?: GridPosition[] | null;
-    serviceRooms?: ServiceRoomConfig[] | null;
-    staffPositions?: GridPosition[] | null;
+  // Layout config removed - each industry sets its own layout
   capacityImage?: string | null;
   winCondition?: WinCondition;
   loseCondition?: LoseCondition;
@@ -233,17 +211,16 @@ export async function upsertGlobalSimulationConfig(config: {
 
   const idToUse = existing?.id ?? 'global';
 
-  // Extract separate fields from mapConfig/layoutConfig if provided (for backward compatibility)
+  // Extract separate fields from mapConfig if provided (for backward compatibility)
   // But prefer explicit separate fields if provided
   const mapWidth = config.mapWidth ?? config.mapConfig?.width ?? null;
   const mapHeight = config.mapHeight ?? config.mapConfig?.height ?? null;
   const mapWalls = config.mapWalls ?? config.mapConfig?.walls ?? null;
   
-  const entryPosition = config.entryPosition ?? config.layoutConfig?.entryPosition ?? null;
-  const waitingPositions = config.waitingPositions ?? config.layoutConfig?.waitingPositions ?? null;
-  const serviceRooms = config.serviceRooms ?? config.layoutConfig?.serviceRooms ?? null;
-  const staffPositions = config.staffPositions ?? config.layoutConfig?.staffPositions ?? null;
+  // Layout config removed - each industry sets its own layout
 
+  // Note: Layout columns (entry_position, waiting_positions, service_rooms, staff_positions)
+  // are deprecated and will be removed from the database. They're not included in the payload.
   const payload: GlobalSimulationConfigRow & { id: string } = {
     id: idToUse,
     business_metrics: config.businessMetrics ?? null,
@@ -252,10 +229,6 @@ export async function upsertGlobalSimulationConfig(config: {
     map_width: mapWidth,
     map_height: mapHeight,
     map_walls: mapWalls,
-    entry_position: entryPosition,
-    waiting_positions: waitingPositions,
-    service_rooms: serviceRooms,
-    staff_positions: staffPositions,
     capacity_image: config.capacityImage ?? null,
     win_condition: config.winCondition ?? null,
     lose_condition: config.loseCondition ?? null,

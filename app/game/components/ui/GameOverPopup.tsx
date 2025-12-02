@@ -26,7 +26,7 @@ const GameOverPopup: React.FC = () => {
       const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
       const winCondition = getWinCondition(industryId);
 
-      if (winCondition.customTitle || winCondition.customMessage) {
+      if (winCondition?.customTitle || winCondition?.customMessage) {
         return {
           title: winCondition.customTitle || '🎉 Mission Accomplished!',
           message: winCondition.customMessage || 'Congratulations! You\'ve successfully completed your business challenge!',

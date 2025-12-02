@@ -12,7 +12,27 @@ import { fetchMarketingCampaignsForIndustry } from '@/lib/data/marketingReposito
 import { fetchStaffDataForIndustry } from '@/lib/data/staffRepository';
 import { fetchFlagsForIndustry } from '@/lib/data/flagRepository';
 import { fetchConditionsForIndustry } from '@/lib/data/conditionRepository';
-import { getLayoutConfigWithFallback } from '@/lib/game/configHelpers';
+
+/**
+ * Resolve layout config from industry config only (no global fallback)
+ * Throws error if layout is missing - data must be in database
+ */
+function resolveLayoutConfig(
+  industryId: IndustryId,
+  industrySimConfig: Awaited<ReturnType<typeof fetchIndustrySimulationConfig>>,
+): SimulationLayoutConfig {
+  // Try industry-specific layout only
+  if (industrySimConfig?.layoutConfig) {
+    return industrySimConfig.layoutConfig;
+  }
+
+  // No layout found - validate at load time with clear error
+  throw new Error(
+    `Layout config not found for industry "${industryId}". ` +
+    `Please configure layout (entry_position, waiting_positions, service_rooms, staff_positions) ` +
+    `in industry_simulation_config table via the admin panel.`
+  );
+}
 
 export interface IndustryContentLoadResult extends IndustryContentConfig {
   staffDataAvailable: boolean;
@@ -21,7 +41,32 @@ export interface IndustryContentLoadResult extends IndustryContentConfig {
 export async function loadGlobalSimulationSettings(): Promise<GlobalSimulationConfigState | null> {
   const result = await fetchGlobalSimulationConfig();
   if (!result) {
-    return null;
+    throw new Error(
+      'Failed to load global simulation config from database. ' +
+      'Please ensure global_simulation_config table has data configured.'
+    );
+  }
+
+  // Validate required fields - fail fast at load time
+  if (!result.businessMetrics) {
+    throw new Error(
+      'Global simulation config is missing business_metrics. ' +
+      'Please configure business_metrics in global_simulation_config table.'
+    );
+  }
+
+  if (!result.businessStats) {
+    throw new Error(
+      'Global simulation config is missing business_stats. ' +
+      'Please configure business_stats in global_simulation_config table.'
+    );
+  }
+
+  if (!result.movement) {
+    throw new Error(
+      'Global simulation config is missing movement. ' +
+      'Please configure movement in global_simulation_config table.'
+    );
   }
 
   return {
@@ -29,7 +74,7 @@ export async function loadGlobalSimulationSettings(): Promise<GlobalSimulationCo
     businessStats: result.businessStats,
     movement: result.movement,
     mapConfig: result.mapConfig,
-    layoutConfig: result.layoutConfig,
+    // layoutConfig removed - each industry sets its own layout
     capacityImage: result.capacityImage,
     winCondition: result.winCondition,
     loseCondition: result.loseCondition,
@@ -61,28 +106,53 @@ export async function loadIndustryContent(
     fetchIndustrySimulationConfig(industryId),
   ]);
 
+  // Check for errors (null = error, [] = success with no data)
   if (
-    !servicesResult ||
-    !upgradesResult ||
-    !eventsResult ||
-    !marketingResult ||
+    servicesResult === null ||
+    upgradesResult === null ||
+    eventsResult === null ||
+    marketingResult === null ||
     flagsResult === null ||
     conditionsResult === null
   ) {
     return null;
   }
 
-  const services = servicesResult ?? [];
-  const upgrades = upgradesResult ?? [];
-  const events = eventsResult ?? [];
-  const marketingCampaigns = marketingResult ?? [];
-  const flags = flagsResult ?? [];
-  const conditions = conditionsResult ?? [];
+  // Use results (empty arrays are valid - means no data configured)
+  const services = servicesResult;
+  const upgrades = upgradesResult;
+  const events = eventsResult;
+  const marketingCampaigns = marketingResult;
+  const flags = flagsResult;
+  const conditions = conditionsResult;
 
   const staffDataAvailable = Boolean(staffResult);
 
-  // Load layout config from database (with fallback)
-  const resolvedLayout = await getLayoutConfigWithFallback(industryId);
+
+  // Validate required fields - fail fast at load time
+  if (services.length === 0) {
+    throw new Error(
+      `Industry "${industryId}" has no services configured. ` +
+      `Please add at least one service in the admin panel.`
+    );
+  }
+
+  if (upgrades.length === 0) {
+    throw new Error(
+      `Industry "${industryId}" has no upgrades configured. ` +
+      `Please add at least one upgrade in the admin panel.`
+    );
+  }
+
+  if (events.length === 0) {
+    throw new Error(
+      `Industry "${industryId}" has no events configured. ` +
+      `Please add at least one event in the admin panel.`
+    );
+  }
+
+  // Resolve layout config from industry config only (no global fallback)
+  const resolvedLayout = resolveLayoutConfig(industryId, industrySimConfig);
 
   return {
     industryId,

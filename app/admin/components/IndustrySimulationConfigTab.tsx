@@ -728,7 +728,7 @@ export function IndustrySimulationConfigTab({
             </div>
             {(entryPosition || waitingPositions.length > 0 || serviceRooms.length > 0 || staffPositions.length > 0) && (
               <button onClick={() => clearField('layout')} className="text-xs text-rose-400 hover:text-rose-300">
-                Clear (use global)
+                Clear Layout
               </button>
             )}
           </div>

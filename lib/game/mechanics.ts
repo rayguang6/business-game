@@ -560,6 +560,7 @@ function processCustomersForTick({
       const leavingTicks = (customer.leavingTicks ?? 0) + 1;
       // Get leaving duration from base stats (not modifiable by effects - animation timing only)
       const baseStats = getBusinessStats(industryId);
+      if (!baseStats) continue; // Skip if stats not loaded
       if (leavingTicks >= baseStats.leavingAngryDurationTicks) {
         // Exit animation complete - remove from game
         continue; // Skip to next customer
@@ -735,6 +736,7 @@ export function tickOnce(state: TickInput): TickResult {
 
   // Calculate all metrics using effectManager (includes upgrades, marketing, staff effects)
   const baseStats = getBusinessStats(industryId);
+  if (!baseStats) throw new Error('Business stats not loaded');
   const gameMetrics = {
     spawnIntervalSeconds: effectManager.calculate(GameMetric.SpawnIntervalSeconds, baseStats.customerSpawnIntervalSeconds),
     serviceSpeedMultiplier: effectManager.calculate(GameMetric.ServiceSpeedMultiplier, 1.0),
