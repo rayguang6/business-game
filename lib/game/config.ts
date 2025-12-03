@@ -44,7 +44,10 @@ const cloneServices = (services: IndustryServiceDefinition[]): IndustryServiceDe
 const cloneUpgrades = (upgrades: UpgradeDefinition[]): UpgradeDefinition[] =>
   upgrades.map((upgrade) => ({
     ...upgrade,
-    effects: upgrade.effects.map((effect) => ({ ...effect })),
+    levels: upgrade.levels.map((level) => ({
+      ...level,
+      effects: level.effects.map((effect) => ({ ...effect })),
+    })),
   }));
 
 const cloneEvents = (events: IndustrySimulationConfig['events']) =>

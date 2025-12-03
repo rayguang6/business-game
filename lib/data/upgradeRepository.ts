@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
-import type { IndustryId, UpgradeDefinition, UpgradeEffect } from '@/lib/game/types';
+import type { IndustryId, UpgradeDefinition, UpgradeEffect, UpgradeLevelConfig } from '@/lib/game/types';
 import { validateAndParseUpgradeEffects, isValidGameMetric, isValidEffectType } from '@/lib/utils/effectValidation';
 
 // Helper function to check if a value is a valid number
@@ -7,16 +7,15 @@ function isValidNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value);
 }
 
+// Interface matching the columns we actually select from upgrades table
+// Note: cost, time_cost, and effects have been moved to upgrade_levels table
 interface UpgradeRow {
   id: string;
   industry_id: string;
   name: string;
   description: string;
   icon: string;
-  cost: number | string;
-  time_cost?: number | string | null; // Optional time cost column
   max_level: number;
-  effects: unknown;
   sets_flag: string | null;
   requirements: unknown;
 }
@@ -40,91 +39,137 @@ export async function fetchUpgradesForIndustry(
     return null;
   }
 
-  const { data, error } = await supabase
+  // Fetch base upgrades
+  const { data: upgradesData, error: upgradesError } = await supabase
     .from('upgrades')
-    .select('id, industry_id, name, description, icon, cost, time_cost, max_level, effects, sets_flag, requirements')
+    .select('id, industry_id, name, description, icon, max_level, sets_flag, requirements')
     .eq('industry_id', industryId);
 
-  if (error) {
-    console.error('Failed to fetch upgrades from Supabase', error);
+  if (upgradesError) {
+    console.error('Failed to fetch upgrades from Supabase', upgradesError);
     return null;
   }
 
-  if (!data || data.length === 0) {
+  if (!upgradesData || upgradesData.length === 0) {
     return [];
   }
 
-  return data
-    .filter((row) => Boolean(row.id) && Boolean(row.name))
-    .map((row) => {
-      const parsedEffects = validateAndParseUpgradeEffects(row.effects);
-      if (parsedEffects.length === 0 && Array.isArray(row.effects) && row.effects.length > 0) {
-        console.warn(`Upgrade ${row.id} has ${row.effects.length} effects but all were filtered out during validation`);
-        console.warn('Raw effects data:', JSON.stringify(row.effects, null, 2));
-        // Log each effect to see why it's failing
-        row.effects.forEach((effect: unknown, idx: number) => {
-          const e = effect as Record<string, unknown>;
-          console.warn(`Effect ${idx}:`, {
-            hasMetric: 'metric' in e,
-            metric: e.metric,
-            metricValid: isValidGameMetric(e.metric),
-            hasType: 'type' in e,
-            type: e.type,
-            typeValid: isValidEffectType(e.type),
-            hasValue: 'value' in e,
-            value: e.value,
-            valueValid: isValidNumber(e.value),
-            keys: Object.keys(e),
-            unexpectedKeys: Object.keys(e).filter(k => !['metric', 'type', 'value'].includes(k)),
-          });
-        });
-      }
-      return {
-        id: row.id,
-        name: row.name,
-        description: row.description,
-        icon: row.icon,
-        cost: parseNumber(row.cost),
-        timeCost: row.time_cost !== null && row.time_cost !== undefined ? parseNumber(row.time_cost) : undefined,
-        maxLevel: row.max_level,
+  // Fetch levels for all upgrades (required)
+  // Use a more specific query to avoid any caching issues and ensure we get the latest data
+  const { data: levelsData, error: levelsError } = await supabase
+    .from('upgrade_levels')
+    .select('upgrade_id, level, name, description, icon, cost, time_cost, effects, created_at, updated_at')
+    .eq('industry_id', industryId)
+    .order('upgrade_id', { ascending: true })
+    .order('level', { ascending: true });
+
+  if (levelsError) {
+    console.error('Failed to fetch upgrade levels from Supabase', levelsError);
+    return null;
+  }
+
+  // Group levels by upgrade_id
+  const levelsMap = new Map<string, UpgradeLevelConfig[]>();
+  if (levelsData) {
+    levelsData.forEach((levelRow: any) => {
+      const parsedEffects = validateAndParseUpgradeEffects(levelRow.effects);
+      const levelConfig: UpgradeLevelConfig = {
+        level: levelRow.level,
+        name: levelRow.name,
+        description: levelRow.description || undefined,
+        icon: levelRow.icon || undefined,
+        cost: parseNumber(levelRow.cost),
+        timeCost: levelRow.time_cost !== null && levelRow.time_cost !== undefined ? parseNumber(levelRow.time_cost) : undefined,
         effects: parsedEffects,
-        setsFlag: row.sets_flag || undefined,
-        requirements: Array.isArray(row.requirements) ? row.requirements as any[] : [],
       };
+
+      const existing = levelsMap.get(levelRow.upgrade_id) || [];
+      existing.push(levelConfig);
+      levelsMap.set(levelRow.upgrade_id, existing);
     });
+    
+    // Sort levels by level number to ensure correct order (levels array is 0-indexed, level property is 1-indexed)
+    levelsMap.forEach((levels, upgradeId) => {
+      levels.sort((a, b) => a.level - b.level);
+      
+      // Validate that levels are sequential starting from 1
+      for (let i = 0; i < levels.length; i++) {
+        if (levels[i].level !== i + 1) {
+          console.warn(`[UpgradeRepository] Upgrade ${upgradeId} has non-sequential levels. Expected level ${i + 1} at index ${i}, but found level ${levels[i].level}. This may cause issues.`);
+        }
+      }
+    });
+  }
+
+  const result: UpgradeDefinition[] = [];
+  
+  for (const row of upgradesData) {
+    if (!row.id || !row.name) continue;
+    
+    // Convert nested map to array if we're using the new deduplication logic
+    let levels: UpgradeLevelConfig[] = [];
+    if (levelsMap.has(row.id)) {
+      const upgradeLevelsMap = levelsMap.get(row.id)!;
+      levels = Array.from(upgradeLevelsMap.values()).sort((a, b) => a.level - b.level);
+    } else {
+      // Fallback to old logic if nested map wasn't created
+      levels = [];
+    }
+    
+    if (levels.length === 0) {
+      console.warn(`Upgrade ${row.id} has no levels configured. Skipping.`);
+      continue;
+    }
+    
+    // Validate maxLevel matches number of levels
+    if (row.max_level !== levels.length) {
+      console.warn(`[UpgradeRepository] Upgrade ${row.id} has max_level=${row.max_level} but ${levels.length} levels. Using ${levels.length} as maxLevel.`);
+    }
+
+    result.push({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      icon: row.icon,
+      maxLevel: levels.length, // Use actual number of levels instead of row.max_level
+      setsFlag: row.sets_flag || undefined,
+      requirements: Array.isArray(row.requirements) ? row.requirements as any[] : [],
+      levels: levels,
+    });
+  }
+  
+  return result;
 }
 
 export async function upsertUpgradeForIndustry(
   industryId: IndustryId,
-  upgrade: Omit<UpgradeDefinition, 'effects'> & { effects: UpgradeEffect[] },
+  upgrade: UpgradeDefinition,
 ): Promise<{ success: boolean; message?: string }>
 {
   if (!supabase) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
+  if (!upgrade.levels || upgrade.levels.length === 0) {
+    return { success: false, message: 'Upgrade must have at least one level.' };
+  }
+
+  // Base upgrade payload (no cost/time_cost/effects - those are in levels table)
   const basePayload = {
     id: upgrade.id,
     industry_id: industryId,
     name: upgrade.name,
     description: upgrade.description,
     icon: upgrade.icon,
-    cost: upgrade.cost,
-    time_cost: upgrade.timeCost ?? null,
     max_level: upgrade.maxLevel,
     sets_flag: upgrade.setsFlag || null,
     requirements: upgrade.requirements || [],
-    effects: (upgrade.effects ?? []).map((effect) => ({
-      metric: effect.metric,
-      type: effect.type,
-      value: effect.value,
-    })),
-  } as const;
+  };
 
-  const { data: upsertData, error: upsertError } = await supabase
+  // Upsert base upgrade
+  const { error: upsertError } = await supabase
     .from('upgrades')
-    .upsert(basePayload, { onConflict: 'industry_id,id' })
-    .select();
+    .upsert(basePayload, { onConflict: 'industry_id,id' });
 
   if (upsertError) {
     console.error('[Upgrade Save] Failed to upsert upgrade:', upsertError);
@@ -133,32 +178,82 @@ export async function upsertUpgradeForIndustry(
     return { success: false, message: `Failed to save: ${upsertError.message}` };
   }
 
-  // Verify the data was saved correctly
-  const { data: verifyData, error: verifyError } = await supabase
-    .from('upgrades')
-    .select('*')
+  // CRITICAL: Delete ALL existing levels for this upgrade first to avoid duplicates/caching issues
+  // This ensures a clean slate before inserting new data
+  console.log('[Upgrade Save] Deleting ALL existing levels for upgrade:', upgrade.id);
+  const { data: deletedData, error: deleteError } = await supabase
+    .from('upgrade_levels')
+    .delete()
+    .eq('upgrade_id', upgrade.id)
     .eq('industry_id', industryId)
-    .eq('id', upgrade.id)
-    .single();
+    .select();
 
-  if (verifyError) {
-    console.error('[Upgrade Save] Verification failed:', verifyError);
-    console.error('[Upgrade Save] Verification error details:', JSON.stringify(verifyError, null, 2));
-    // Still return success if upsert succeeded, but log the verification issue
-    return { success: true, message: 'Saved but verification failed. Please refresh to confirm.' };
+  if (deleteError) {
+    console.error('[Upgrade Save] Failed to delete existing levels:', deleteError);
+    console.error('[Upgrade Save] Delete error details:', JSON.stringify(deleteError, null, 2));
+    return { success: false, message: `Failed to delete existing levels: ${deleteError.message}` };
+  }
+  
+  console.log('[Upgrade Save] Deleted', deletedData?.length || 0, 'existing level(s)');
+
+  // Prepare levels data for insert (not upsert - we've already deleted everything)
+  const levelsToInsert = upgrade.levels.map((level) => ({
+    upgrade_id: upgrade.id,
+    industry_id: industryId,
+    level: level.level,
+    name: level.name,
+    description: level.description || null,
+    icon: level.icon || null,
+    cost: level.cost,
+    time_cost: level.timeCost ?? null,
+    effects: level.effects.map((effect) => ({
+      metric: effect.metric,
+      type: effect.type,
+      value: effect.value,
+    })),
+  }));
+
+  console.log('[Upgrade Save] Inserting levels:', JSON.stringify(levelsToInsert, null, 2));
+
+  // Insert new levels (we've already deleted all existing ones, so this is a clean insert)
+  const { error: levelsError, data: insertedData } = await supabase
+    .from('upgrade_levels')
+    .insert(levelsToInsert)
+    .select();
+
+  if (levelsError) {
+    console.error('[Upgrade Save] Failed to insert levels:', levelsError);
+    console.error('[Upgrade Save] Levels error details:', JSON.stringify(levelsError, null, 2));
+    console.error('[Upgrade Save] Levels payload that failed:', JSON.stringify(levelsToInsert, null, 2));
+    return { success: false, message: `Failed to save levels: ${levelsError.message}` };
   }
 
-  if (verifyData) {
-    const parsedEffects = validateAndParseUpgradeEffects(verifyData.effects);
-
-    if (parsedEffects.length !== upgrade.effects.length) {
-      console.warn(`[Upgrade Save] Effect count mismatch: saved ${parsedEffects.length}, expected ${upgrade.effects.length}`);
-      console.warn('[Upgrade Save] Saved effects:', parsedEffects);
-      console.warn('[Upgrade Save] Expected effects:', upgrade.effects);
-      return { 
-        success: true, 
-        message: `Saved, but ${upgrade.effects.length - parsedEffects.length} effects were filtered out during validation.` 
-      };
+  console.log('[Upgrade Save] Successfully inserted levels:', insertedData?.length || 0);
+  
+  // Verify the upsert worked by fetching back what we just saved
+  const { data: verifyData, error: verifyError } = await supabase
+    .from('upgrade_levels')
+    .select('level, name, cost, time_cost, effects')
+    .eq('upgrade_id', upgrade.id)
+    .eq('industry_id', industryId)
+    .order('level', { ascending: true });
+  
+  if (verifyError) {
+    console.error('[Upgrade Save] Failed to verify upserted levels:', verifyError);
+  } else {
+    console.log('[Upgrade Save] Verified levels in database:', verifyData?.length || 0);
+    console.log('[Upgrade Save] Verified levels data:', JSON.stringify(verifyData, null, 2));
+    
+    // Compare what we inserted vs what's in the database
+    if (verifyData && verifyData.length !== levelsToInsert.length) {
+      console.error('[Upgrade Save] MISMATCH: Inserted', levelsToInsert.length, 'but database has', verifyData.length);
+    }
+    
+    // Check for any duplicate levels (shouldn't happen, but let's verify)
+    const levelNumbers = verifyData?.map(v => v.level) || [];
+    const duplicates = levelNumbers.filter((level, index) => levelNumbers.indexOf(level) !== index);
+    if (duplicates.length > 0) {
+      console.error('[Upgrade Save] WARNING: Found duplicate levels in database:', duplicates);
     }
   }
 

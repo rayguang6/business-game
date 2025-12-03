@@ -514,3 +514,7 @@ body {
 .animate-pulse-slow {
   animation: pulse 8s ease-in-out infinite;
 }
+
+.animate-shimmer {
+  animation: shimmer 3s ease-in-out infinite;
+}

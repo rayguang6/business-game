@@ -23,6 +23,16 @@ interface EffectForm {
   value: string;
 }
 
+interface LevelForm {
+  level: number;
+  name: string;
+  description?: string;
+  icon?: string;
+  cost: string;
+  timeCost?: string;
+  effects: EffectForm[];
+}
+
 export function useUpgrades(industryId: string) {
   const [upgrades, setUpgrades] = useState<UpgradeDefinition[]>([]);
   const [operation, setOperation] = useState<Operation>('idle');
@@ -39,7 +49,7 @@ export function useUpgrades(industryId: string) {
     maxLevel: '1',
     requirements: [],
   });
-  const [effectsForm, setEffectsForm] = useState<EffectForm[]>([]);
+  const [levelsForm, setLevelsForm] = useState<LevelForm[]>([]);
 
   const load = useCallback(async () => {
     if (!industryId) return;
@@ -61,22 +71,47 @@ export function useUpgrades(industryId: string) {
   const selectUpgrade = useCallback((upgrade: UpgradeDefinition, resetMsg = true) => {
     setSelectedId(upgrade.id);
     setIsCreating(false);
+    
     setForm({
       id: upgrade.id,
       name: upgrade.name,
       description: upgrade.description,
       icon: upgrade.icon,
-      cost: String(upgrade.cost),
-      timeCost: upgrade.timeCost !== undefined ? String(upgrade.timeCost) : '',
+      cost: String(upgrade.levels?.[0]?.cost ?? 0),
+      timeCost: upgrade.levels?.[0]?.timeCost !== undefined ? String(upgrade.levels[0].timeCost) : '',
       maxLevel: String(upgrade.maxLevel),
       setsFlag: upgrade.setsFlag,
       requirements: upgrade.requirements || [],
     });
-    setEffectsForm(upgrade.effects.map((e) => ({
-      metric: e.metric,
-      type: e.type,
-      value: String(e.value),
-    })));
+    
+    // Always populate levelsForm from upgrade.levels
+    if (upgrade.levels && upgrade.levels.length > 0) {
+      setLevelsForm(upgrade.levels.map((level) => ({
+        level: level.level,
+        name: level.name,
+        description: level.description,
+        icon: level.icon,
+        cost: String(level.cost),
+        timeCost: level.timeCost !== undefined ? String(level.timeCost) : '',
+        effects: level.effects.map((e) => ({
+          metric: e.metric,
+          type: e.type,
+          value: String(e.value),
+        })),
+      })));
+    } else {
+      // Fallback: create a single level if none exist
+      setLevelsForm([{
+        level: 1,
+        name: upgrade.name,
+        description: upgrade.description,
+        icon: upgrade.icon,
+        cost: '0',
+        timeCost: '',
+        effects: [],
+      }]);
+    }
+    
     if (resetMsg) setStatus(null);
   }, []);
 
@@ -97,7 +132,16 @@ export function useUpgrades(industryId: string) {
       maxLevel: '1',
       requirements: [],
     });
-    setEffectsForm([]);
+    // Start with one level
+    setLevelsForm([{
+      level: 1,
+      name: '',
+      description: '',
+      icon: '⚙️',
+      cost: '0',
+      timeCost: '',
+      effects: [],
+    }]);
     setStatus(null);
   }, [industryId]);
 
@@ -110,60 +154,72 @@ export function useUpgrades(industryId: string) {
     const name = form.name.trim();
     const description = form.description.trim();
     const icon = form.icon.trim() || '⚙️';
-    const cost = Number(form.cost);
-    const timeCost = form.timeCost?.trim() ? Number(form.timeCost) : undefined;
-    const maxLevel = Number(form.maxLevel);
+    const setsFlag = form.setsFlag?.trim() || undefined;
+    const requirements = form.requirements;
+    
     if (!id || !name) {
       setStatus('Upgrade id and name are required.');
       return;
     }
-    if (!Number.isFinite(cost) || cost < 0 || !Number.isFinite(maxLevel) || maxLevel < 1) {
-      setStatus('Cost must be >= 0 and Max Level >= 1.');
+
+    if (!levelsForm || levelsForm.length === 0) {
+      setStatus('At least one level is required.');
       return;
     }
-    if (timeCost !== undefined && (!Number.isFinite(timeCost) || timeCost < 0)) {
-      setStatus('Time cost must be >= 0 if specified.');
-      return;
-    }
-    const setsFlag = form.setsFlag?.trim() || undefined;
-    const requirements = form.requirements;
     
-    // Validate and convert effects
-    // Allow empty string, "0", and valid numbers
-    const effects = effectsForm
-      .filter((ef) => {
-        // Filter out effects with invalid values (but allow 0 and empty string)
-        const trimmedValue = ef.value.trim();
-        if (trimmedValue === '') {
-          console.warn(`Skipping effect with empty value`);
-          return false;
+    // Validate and convert levelsForm to UpgradeLevelConfig[]
+    let levels: import('@/lib/game/types').UpgradeLevelConfig[];
+    try {
+      levels = levelsForm.map((levelForm, index) => {
+        const levelNumber = levelForm.level || (index + 1);
+        const cost = Number(levelForm.cost);
+        const timeCost = levelForm.timeCost?.trim() ? Number(levelForm.timeCost) : undefined;
+        
+        if (!Number.isFinite(cost) || cost < 0) {
+          throw new Error(`Level ${levelNumber}: Cost must be >= 0.`);
         }
-        const numValue = Number(trimmedValue);
-        if (!Number.isFinite(numValue)) {
-          console.warn(`Skipping effect with invalid value: "${ef.value}"`);
-          return false;
+        if (timeCost !== undefined && (!Number.isFinite(timeCost) || timeCost < 0)) {
+          throw new Error(`Level ${levelNumber}: Time cost must be >= 0 if specified.`);
         }
-        return true;
-      })
-      .map((ef) => {
-        const numValue = Number(ef.value.trim());
+        if (!levelForm.name.trim()) {
+          throw new Error(`Level ${levelNumber}: Name is required.`);
+        }
+        
+        // Validate and convert effects for this level
+        const effects = levelForm.effects
+          .filter((ef) => {
+            const trimmedValue = ef.value.trim();
+            if (trimmedValue === '') {
+              return false;
+            }
+            const numValue = Number(trimmedValue);
+            return Number.isFinite(numValue);
+          })
+          .map((ef) => {
+            const numValue = Number(ef.value.trim());
+            return {
+              metric: ef.metric,
+              type: ef.type,
+              value: Number.isFinite(numValue) ? numValue : 0,
+            };
+          });
+        
         return {
-          metric: ef.metric,
-          type: ef.type,
-          value: Number.isFinite(numValue) ? numValue : 0,
+          level: levelNumber,
+          name: levelForm.name.trim(),
+          description: levelForm.description?.trim() || undefined,
+          icon: levelForm.icon?.trim() || undefined,
+          cost,
+          timeCost,
+          effects,
         };
       });
-    
-    if (effects.length !== effectsForm.length) {
-      console.warn(`[Admin] Filtered out ${effectsForm.length - effects.length} invalid effects`);
-      const filtered = effectsForm.filter((ef) => {
-        const trimmedValue = ef.value.trim();
-        if (trimmedValue === '') return false;
-        const numValue = Number(trimmedValue);
-        return Number.isFinite(numValue);
-      });
-      console.warn('[Admin] Filtered effects:', filtered);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Invalid level data.');
+      return;
     }
+
+    const maxLevel = levels.length;
 
     setOperation('saving');
     const result = await upsertUpgradeForIndustry(industryId, {
@@ -171,12 +227,10 @@ export function useUpgrades(industryId: string) {
       name,
       description,
       icon,
-      cost,
-      timeCost,
       maxLevel,
-      effects,
       setsFlag,
       requirements,
+      levels,
     });
     setOperation('idle');
     if (!result.success) {
@@ -194,28 +248,17 @@ export function useUpgrades(industryId: string) {
       const savedUpgrade = reloaded.find((u) => u.id === id);
       if (savedUpgrade) {
         selectUpgrade(savedUpgrade, false);
-        if (savedUpgrade.effects.length !== effects.length) {
-          setStatus(`Upgrade saved. Warning: ${effects.length - savedUpgrade.effects.length} effects were filtered out during validation.`);
-        } else {
-          setStatus(`Upgrade saved successfully with ${effects.length} effect(s).`);
-        }
+        setStatus(`Upgrade saved successfully with ${levels.length} level(s).`);
       } else {
         setStatus('Upgrade saved.');
       }
     } else {
-      // Fallback to local update if reload fails
-      setUpgrades((prev) => {
-        const exists = prev.some((u) => u.id === id);
-        const nextItem: UpgradeDefinition = { id, name, description, icon, cost, timeCost, maxLevel, effects, setsFlag, requirements };
-        const next = exists ? prev.map((u) => (u.id === id ? nextItem : u)) : [...prev, nextItem];
-        return next.sort((a, b) => a.name.localeCompare(b.name));
-      });
-      setStatus(`Upgrade saved with ${effects.length} effect(s).`);
+      setStatus('Upgrade saved, but failed to reload. Please refresh.');
     }
     
     setIsCreating(false);
     setSelectedId(id);
-  }, [industryId, form, effectsForm, selectUpgrade]);
+  }, [industryId, form, levelsForm, selectUpgrade]);
 
   const deleteUpgrade = useCallback(async () => {
     if (isCreating || !selectedId) return;
@@ -239,7 +282,7 @@ export function useUpgrades(industryId: string) {
       maxLevel: '1',
       requirements: [],
     });
-    setEffectsForm([]);
+    setLevelsForm([]);
     setStatus('Upgrade deleted.');
   }, [selectedId, isCreating, upgrades]);
 
@@ -259,7 +302,7 @@ export function useUpgrades(industryId: string) {
         maxLevel: '1',
         requirements: [],
       });
-      setEffectsForm([]);
+      setLevelsForm([]);
     }
     setStatus(null);
   }, [selectedId, isCreating, upgrades, selectUpgrade]);
@@ -268,8 +311,53 @@ export function useUpgrades(industryId: string) {
     setForm(prev => ({ ...prev, ...updates }));
   }, []);
 
-  const updateEffects = useCallback((effects: EffectForm[]) => {
-    setEffectsForm(effects);
+  const addLevel = useCallback(() => {
+    const nextLevel = levelsForm.length + 1;
+    setLevelsForm((prev) => [
+      ...prev,
+      {
+        level: nextLevel,
+        name: '',
+        description: '',
+        icon: form.icon || '⚙️',
+        cost: '0',
+        timeCost: '',
+        effects: [],
+      },
+    ]);
+    // Update maxLevel in form
+    setForm((prev) => ({
+      ...prev,
+      maxLevel: String(nextLevel),
+    }));
+  }, [levelsForm.length, form.icon]);
+
+  const removeLevel = useCallback((index: number) => {
+    if (levelsForm.length <= 1) {
+      setStatus('At least one level is required.');
+      return;
+    }
+    setLevelsForm((prev) => {
+      const newLevels = prev.filter((_, i) => i !== index);
+      // Re-number levels to be sequential
+      return newLevels.map((level, i) => ({
+        ...level,
+        level: i + 1,
+      }));
+    });
+    // Update maxLevel in form
+    setForm((prev) => ({
+      ...prev,
+      maxLevel: String(levelsForm.length - 1),
+    }));
+  }, [levelsForm.length]);
+
+  const updateLevel = useCallback((index: number, updates: Partial<LevelForm>) => {
+    setLevelsForm((prev) => {
+      const newLevels = [...prev];
+      newLevels[index] = { ...newLevels[index], ...updates };
+      return newLevels;
+    });
   }, []);
 
   return {
@@ -282,7 +370,7 @@ export function useUpgrades(industryId: string) {
     deleting: operation === 'deleting',
     operation,
     form,
-    effectsForm,
+    levelsForm,
     load,
     selectUpgrade,
     createUpgrade,
@@ -290,7 +378,9 @@ export function useUpgrades(industryId: string) {
     deleteUpgrade,
     reset,
     updateForm,
-    updateEffects,
+    addLevel,
+    removeLevel,
+    updateLevel,
   };
 }
 

@@ -435,7 +435,7 @@ export default function AdminPage() {
                 selectedUpgradeId={upgrades.selectedId}
                 isCreatingUpgrade={upgrades.isCreating}
                 upgradeForm={upgrades.form}
-                effectsForm={upgrades.effectsForm}
+                levelsForm={upgrades.levelsForm}
                 upgradeSaving={upgrades.saving}
                 upgradeDeleting={upgrades.deleting}
                 flags={flags.flags}
@@ -449,7 +449,9 @@ export default function AdminPage() {
                 onDeleteUpgrade={upgrades.deleteUpgrade}
                 onReset={upgrades.reset}
                 onUpdateForm={upgrades.updateForm}
-                onUpdateEffects={upgrades.updateEffects}
+                onAddLevel={upgrades.addLevel}
+                onRemoveLevel={upgrades.removeLevel}
+                onUpdateLevel={upgrades.updateLevel}
               />
             )}
           </>

@@ -11,7 +11,10 @@ const cloneIndustryConfig = (
   services: config.services.map((service) => ({ ...service })),
   upgrades: config.upgrades.map((upgrade) => ({
     ...upgrade,
-    effects: upgrade.effects.map((effect) => ({ ...effect })),
+    levels: upgrade.levels.map((level) => ({
+      ...level,
+      effects: level.effects.map((effect) => ({ ...effect })),
+    })),
   })),
   events: config.events.map((event) => ({
     ...event,
@@ -115,7 +118,10 @@ const cloneService = (service: IndustryServiceDefinition): IndustryServiceDefini
 
 const cloneUpgrade = (upgrade: UpgradeDefinition): UpgradeDefinition => ({
   ...upgrade,
-  effects: upgrade.effects.map((effect) => ({ ...effect })),
+  levels: upgrade.levels.map((level) => ({
+    ...level,
+    effects: level.effects.map((effect) => ({ ...effect })),
+  })),
 });
 
 const cloneEvent = (event: GameEvent): GameEvent => ({

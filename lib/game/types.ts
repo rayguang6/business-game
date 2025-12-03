@@ -78,17 +78,25 @@ export interface Requirement {
   value?: number;      // For numeric types: value to compare against
 }
 
+export interface UpgradeLevelConfig {
+  level: number;
+  name: string;
+  description?: string;
+  icon?: string;
+  cost: number;
+  timeCost?: number;
+  effects: UpgradeEffect[];
+}
+
 export interface UpgradeDefinition {
   id: string;
   name: string;
   description: string;
   icon: string;
-  cost: number; // Cash cost (or time cost if timeCost is specified)
-  timeCost?: number; // Optional time cost (hours) - if specified, uses time instead of cash
   maxLevel: number;
-  effects: UpgradeEffect[];
   setsFlag?: string; // Optional flag to set when this upgrade is purchased
   requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
+  levels: UpgradeLevelConfig[]; // Required - level-specific configs
 }
 
 export type UpgradeId = UpgradeDefinition['id'];

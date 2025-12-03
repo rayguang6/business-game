@@ -33,19 +33,22 @@ function calculateUpgradeExpenseFromDefinition(
   industryId: IndustryId,
 ): number {
   const baseMonthlyExpenses = getMonthlyBaseExpenses(industryId);
-  return upgrade.effects
-    .filter((effect) => effect.metric === GameMetric.MonthlyExpenses)
-    .reduce((total, effect) => {
-      if (effect.type === EffectType.Add) {
-        return total + effect.value;
-      }
+  // Sum expenses from all levels
+  return upgrade.levels.reduce((total, level) => {
+    const levelExpense = level.effects
+      .filter((effect) => effect.metric === GameMetric.MonthlyExpenses)
+      .reduce((levelTotal, effect) => {
+        if (effect.type === EffectType.Add) {
+          return levelTotal + effect.value;
+        }
 
-      if (effect.type === EffectType.Percent) {
-        return total + baseMonthlyExpenses * (effect.value / 100);
-      }
-
-      return total;
-    }, 0);
+        if (effect.type === EffectType.Percent) {
+          return levelTotal + baseMonthlyExpenses * (effect.value / 100);
+        }
+        return levelTotal;
+      }, 0);
+    return total + levelExpense;
+  }, 0);
 }
 
 export function buildMonthlyExpenseBreakdown(

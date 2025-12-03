@@ -8,6 +8,16 @@ import { RequirementsSelector } from './RequirementsSelector';
 import { EffectsList } from './EffectsList';
 import { makeUniqueId, slugify } from './utils';
 
+interface LevelFormData {
+  level: number;
+  name: string;
+  description?: string;
+  icon?: string;
+  cost: string;
+  timeCost?: string;
+  effects: Array<{ metric: GameMetric; type: EffectType; value: string }>;
+}
+
 interface UpgradesTabProps {
   industryId: string;
   upgrades: UpgradeDefinition[];
@@ -26,12 +36,12 @@ interface UpgradesTabProps {
     setsFlag?: string;
     requirements: Requirement[];
   };
-  effectsForm: Array<{ metric: GameMetric; type: EffectType; value: string }>;
+  levelsForm: LevelFormData[];
   upgradeSaving: boolean;
   upgradeDeleting: boolean;
   flags: GameFlag[];
   flagsLoading: boolean;
-  upgrades?: UpgradeDefinition[];
+  allUpgrades?: UpgradeDefinition[];
   staffRoles?: import('@/lib/game/staffConfig').StaffRoleConfig[];
   metricOptions: Array<{ value: GameMetric; label: string }>;
   effectTypeOptions: Array<{ value: EffectType; label: string; hint: string }>;
@@ -41,7 +51,9 @@ interface UpgradesTabProps {
   onDeleteUpgrade: () => Promise<void>;
   onReset: () => void;
   onUpdateForm: (updates: Partial<UpgradesTabProps['upgradeForm']>) => void;
-  onUpdateEffects: (effects: UpgradesTabProps['effectsForm']) => void;
+  onAddLevel: () => void;
+  onRemoveLevel: (index: number) => void;
+  onUpdateLevel: (index: number, updates: Partial<LevelFormData>) => void;
 }
 
 export function UpgradesTab({
@@ -52,12 +64,12 @@ export function UpgradesTab({
   selectedUpgradeId,
   isCreatingUpgrade,
   upgradeForm,
-  effectsForm,
+  levelsForm,
   upgradeSaving,
   upgradeDeleting,
   flags,
   flagsLoading,
-  upgrades: allUpgrades = [],
+  allUpgrades = [],
   staffRoles = [],
   metricOptions,
   effectTypeOptions,
@@ -67,7 +79,9 @@ export function UpgradesTab({
   onDeleteUpgrade,
   onReset,
   onUpdateForm,
-  onUpdateEffects,
+  onAddLevel,
+  onRemoveLevel,
+  onUpdateLevel,
 }: UpgradesTabProps) {
   return (
     <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
@@ -136,7 +150,8 @@ export function UpgradesTab({
                         onBlur={() => {
                           if (!upgradeForm.id && upgradeForm.name.trim()) {
                             const base = slugify(upgradeForm.name.trim());
-                            const unique = makeUniqueId(base, new Set(upgrades.map((u) => u.id)));
+                            const allUpgradesList = allUpgrades || upgrades;
+                            const unique = makeUniqueId(base, new Set(allUpgradesList.map((u) => u.id)));
                             onUpdateForm({ id: unique });
                           }
                         }}
@@ -160,28 +175,106 @@ export function UpgradesTab({
                         className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-300 mb-1">Cost (Cash)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={upgradeForm.cost}
-                        onChange={(e) => onUpdateForm({ cost: e.target.value })}
-                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                      />
-                      <p className="text-xs text-slate-400 mt-1">Cash cost (can be combined with time cost)</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-300 mb-1">Time Cost (Hours, Optional)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={upgradeForm.timeCost || ''}
-                        onChange={(e) => onUpdateForm({ timeCost: e.target.value })}
-                        placeholder="Leave empty for cash-only"
-                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                      />
-                      <p className="text-xs text-slate-400 mt-1">Time cost (can be combined with cash cost)</p>
+                    
+                    {/* Level Management */}
+                    <div className="md:col-span-2">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="block text-sm font-semibold text-slate-300">Levels</label>
+                        <button
+                          type="button"
+                          onClick={onAddLevel}
+                          className="px-3 py-1 text-sm rounded-lg border border-purple-500 text-purple-200 hover:bg-purple-500/10"
+                        >
+                          + Add Level
+                        </button>
+                      </div>
+                      <div className="space-y-4">
+                        {levelsForm.map((level, index) => (
+                          <div key={index} className="border border-slate-700 rounded-lg p-4 bg-slate-800/50">
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="text-sm font-semibold text-slate-200">Level {level.level}</h4>
+                              {levelsForm.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => onRemoveLevel(index)}
+                                  className="px-2 py-1 text-xs rounded border border-rose-500 text-rose-200 hover:bg-rose-500/10"
+                                >
+                                  Remove
+                                </button>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-400 mb-1">Level Name</label>
+                                <input
+                                  value={level.name}
+                                  onChange={(e) => onUpdateLevel(index, { name: e.target.value })}
+                                  placeholder="e.g., Introduction"
+                                  className="w-full rounded-lg bg-slate-900 border border-slate-600 px-2 py-1.5 text-sm text-slate-200"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-400 mb-1">Icon</label>
+                                <input
+                                  value={level.icon || ''}
+                                  onChange={(e) => onUpdateLevel(index, { icon: e.target.value })}
+                                  placeholder="⚙️"
+                                  className="w-full rounded-lg bg-slate-900 border border-slate-600 px-2 py-1.5 text-sm text-slate-200"
+                                />
+                              </div>
+                              <div className="md:col-span-2">
+                                <label className="block text-xs font-semibold text-slate-400 mb-1">Description</label>
+                                <textarea
+                                  rows={2}
+                                  value={level.description || ''}
+                                  onChange={(e) => onUpdateLevel(index, { description: e.target.value })}
+                                  placeholder="Level-specific description"
+                                  className="w-full rounded-lg bg-slate-900 border border-slate-600 px-2 py-1.5 text-sm text-slate-200"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-400 mb-1">Cost (Cash)</label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={level.cost}
+                                  onChange={(e) => onUpdateLevel(index, { cost: e.target.value })}
+                                  className="w-full rounded-lg bg-slate-900 border border-slate-600 px-2 py-1.5 text-sm text-slate-200"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-400 mb-1">Time Cost (Optional)</label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={level.timeCost || ''}
+                                  onChange={(e) => onUpdateLevel(index, { timeCost: e.target.value })}
+                                  placeholder="Leave empty"
+                                  className="w-full rounded-lg bg-slate-900 border border-slate-600 px-2 py-1.5 text-sm text-slate-200"
+                                />
+                              </div>
+                              <div className="md:col-span-2">
+                                <EffectsList
+                                  effects={level.effects}
+                                  metricOptions={metricOptions}
+                                  effectTypeOptions={effectTypeOptions}
+                                  showDuration={false}
+                                  title={`Level ${level.level} Effects`}
+                                  description="Effects for this specific level"
+                                  defaultEffect={{
+                                    metric: GameMetric.ServiceCapacity,
+                                    type: EffectType.Add,
+                                    value: '1',
+                                  }}
+                                  onEffectsChange={(newEffects) => {
+                                    onUpdateLevel(index, { effects: newEffects });
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-slate-300 mb-1">Max Level</label>
@@ -190,8 +283,10 @@ export function UpgradesTab({
                         min="1"
                         value={upgradeForm.maxLevel}
                         onChange={(e) => onUpdateForm({ maxLevel: e.target.value })}
-                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                        disabled
+                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200 cursor-not-allowed opacity-50"
                       />
+                      <p className="text-xs text-slate-400 mt-1">Auto-set based on number of levels</p>
                     </div>
 
                     <div>
@@ -216,7 +311,7 @@ export function UpgradesTab({
                       <label className="block text-sm font-semibold text-slate-300 mb-2">Requirements</label>
                       <RequirementsSelector
                         flags={flags}
-                        upgrades={allUpgrades}
+                        upgrades={allUpgrades ?? upgrades}
                         staffRoles={staffRoles}
                         flagsLoading={flagsLoading}
                         requirements={upgradeForm.requirements || []}
@@ -224,22 +319,6 @@ export function UpgradesTab({
                       />
                     </div>
 
-                    <EffectsList
-                      effects={effectsForm}
-                      metricOptions={metricOptions}
-                      effectTypeOptions={effectTypeOptions}
-                      showDuration={false}
-                      title="Effects"
-                      description="Choose a metric and how to apply it. Add = flat amount, Percent = +/-%, Multiply = × factor, Set = exact value. Note: Value must be a number (0 is valid)."
-                      defaultEffect={{
-                        metric: GameMetric.ServiceCapacity,
-                        type: EffectType.Add,
-                        value: '1', // Changed from '0' to '1' so users see a non-zero default
-                      }}
-                      onEffectsChange={(newEffects) => {
-                        onUpdateEffects(newEffects);
-                      }}
-                    />
 
                     <div className="md:col-span-2 flex flex-wrap gap-3">
                       <button
