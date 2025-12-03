@@ -687,8 +687,8 @@ function processCustomersForTick({
       const newCash = oldCash + serviceRevenue;
 
       // Customers always leave satisfied, so apply the exp gain
-      // Use calculated value from effectManager (can be modified by upgrades/staff/events)
-      const expGain = gameMetrics.expGainPerHappyCustomer;
+      // Use service-specific EXP gain value
+      const expGain = updatedCustomer.service.expGained || 0;
       const oldExp = metricsAccumulator.exp;
       const newExp = oldExp + expGain;
 

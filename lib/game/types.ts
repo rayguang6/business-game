@@ -160,12 +160,16 @@ export interface SimulationLayoutConfig {
 
 export type ServicePricingCategory = 'low' | 'mid' | 'high';
 
+export type ServiceTier = 'small' | 'medium' | 'big';
+
 export interface IndustryServiceDefinition {
   id: string;
   industryId: IndustryId;
   name: string;
   duration: number;
   price: number;
+  tier?: ServiceTier; // Progression tier (basic/professional/enterprise)
+  expGained?: number; // Experience points awarded on successful completion
   requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
   pricingCategory?: ServicePricingCategory; // low, mid, or high end pricing
   weightage?: number; // Weight for random selection (higher = more likely to be selected)

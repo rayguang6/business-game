@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
-import type { IndustryId, IndustryServiceDefinition, Requirement, ServicePricingCategory } from '@/lib/game/types';
+import type { IndustryId, IndustryServiceDefinition, Requirement, ServicePricingCategory, ServiceTier } from '@/lib/game/types';
 
 interface ServiceRow {
   id: string;
@@ -7,6 +7,8 @@ interface ServiceRow {
   name: string;
   duration: number | null;
   price: number | null;
+  tier?: string | null; // basic, professional, enterprise
+  exp_gained?: number | null; // Experience points awarded
   requirements?: unknown; // JSONB column for requirements array
   pricing_category?: string | null; // low, mid, or high
   weightage?: number | null; // Weight for random selection
@@ -24,7 +26,7 @@ export async function fetchServicesForIndustry(
 
   const { data, error } = await supabase
     .from('services')
-    .select('id, industry_id, name, duration, price, requirements, pricing_category, weightage, required_staff_role_ids, time_cost')
+    .select('id, industry_id, name, duration, price, tier, exp_gained, requirements, pricing_category, weightage, required_staff_role_ids, time_cost')
     .eq('industry_id', industryId);
 
   if (error) {
@@ -55,6 +57,8 @@ export async function upsertServiceForIndustry(
     name: service.name,
     duration: service.duration,
     price: service.price,
+    tier: service.tier || null,
+    exp_gained: service.expGained ?? null,
     requirements: service.requirements || [],
     pricing_category: service.pricingCategory || null,
     weightage: service.weightage ?? null,
@@ -130,6 +134,12 @@ function mapRowToService(row: ServiceRow): IndustryServiceDefinition {
     }
   }
 
+  // Parse tier - validate it's one of the allowed values
+  let tier: ServiceTier | undefined;
+  if (row.tier && ['small', 'medium', 'big'].includes(row.tier.toLowerCase())) {
+    tier = row.tier.toLowerCase() as ServiceTier;
+  }
+
   // Parse pricing category - validate it's one of the allowed values
   let pricingCategory: ServicePricingCategory | undefined;
   if (row.pricing_category && ['low', 'mid', 'high'].includes(row.pricing_category.toLowerCase())) {
@@ -153,6 +163,8 @@ function mapRowToService(row: ServiceRow): IndustryServiceDefinition {
     name: row.name,
     duration: row.duration ?? 0,
     price: row.price ?? 0,
+    tier,
+    expGained: row.exp_gained ?? undefined,
     requirements: requirements.length > 0 ? requirements : undefined,
     pricingCategory,
     weightage: row.weightage ?? undefined,

@@ -132,7 +132,7 @@ export function GlobalConfigTab({
               <div>
                 <label className="block text-xs text-slate-400 mb-1">
                   Ticks Per Second
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-green-500/20 text-green-300 rounded">Never Override</span>
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-yellow-500/20 text-yellow-300 rounded">Commonly Override</span>
                 </label>
                 <input
                   type="number"
@@ -145,7 +145,7 @@ export function GlobalConfigTab({
               <div>
                 <label className="block text-xs text-slate-400 mb-1">
                   Month Duration (sec)
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-green-500/20 text-green-300 rounded">Never Override</span>
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-yellow-500/20 text-yellow-300 rounded">Commonly Override</span>
                 </label>
                 <input
                   type="number"
@@ -158,7 +158,7 @@ export function GlobalConfigTab({
               <div>
                 <label className="block text-xs text-slate-400 mb-1">
                   Customer Spawn Interval (sec)
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded">Commonly Overridden</span>
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-yellow-500/20 text-yellow-300 rounded">Commonly Override</span>
                 </label>
                 <input
                   type="number"

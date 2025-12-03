@@ -1,6 +1,6 @@
 'use client';
 
-import type { IndustryServiceDefinition, Requirement, UpgradeDefinition } from '@/lib/game/types';
+import type { IndustryServiceDefinition, Requirement, UpgradeDefinition, ServiceTier } from '@/lib/game/types';
 import type { GameFlag } from '@/lib/data/flagRepository';
 import type { StaffRoleConfig } from '@/lib/game/staffConfig';
 import { RequirementsSelector } from './RequirementsSelector';
@@ -13,7 +13,7 @@ interface ServicesTabProps {
   serviceStatus: string | null;
   selectedServiceId: string;
   isCreatingService: boolean;
-  serviceForm: { id: string; name: string; duration: string; price: string; requirements: Requirement[]; pricingCategory: string; weightage: string; requiredStaffRoleIds: string[]; timeCost: string };
+  serviceForm: { id: string; name: string; duration: string; price: string; tier: string; expGained: string; requirements: Requirement[]; pricingCategory: string; weightage: string; requiredStaffRoleIds: string[]; timeCost: string };
   serviceSaving: boolean;
   serviceDeleting: boolean;
   flags: GameFlag[];
@@ -126,6 +126,21 @@ export function ServicesTab({
                     </div>
 
                     <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Tier</label>
+                      <select
+                        value={serviceForm.tier}
+                        onChange={(e) => onUpdateForm({ tier: e.target.value })}
+                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      >
+                        <option value="">Select tier...</option>
+                        <option value="small">Small (Basic - Always available)</option>
+                        <option value="medium">Medium (Level 4+ required)</option>
+                        <option value="big">Big (Level 7+ required)</option>
+                      </select>
+                      <p className="text-xs text-slate-500 mt-1">Controls service availability based on player level</p>
+                    </div>
+
+                    <div>
                       <label className="block text-sm font-semibold text-slate-300 mb-1">Duration (seconds)</label>
                       <input
                         type="number"
@@ -145,6 +160,18 @@ export function ServicesTab({
                         onChange={(e) => onUpdateForm({ price: e.target.value })}
                         className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">EXP Gained</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={serviceForm.expGained}
+                        onChange={(e) => onUpdateForm({ expGained: e.target.value })}
+                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">Experience points awarded on successful completion</p>
                     </div>
 
                     <div>

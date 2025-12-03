@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { fetchServicesForIndustry, upsertServiceForIndustry, deleteServiceById } from '@/lib/data/serviceRepository';
-import type { IndustryServiceDefinition, Requirement, ServicePricingCategory } from '@/lib/game/types';
+import type { IndustryServiceDefinition, Requirement, ServicePricingCategory, ServiceTier } from '@/lib/game/types';
 import type { Operation } from './types';
 
 interface ServiceForm {
@@ -8,6 +8,8 @@ interface ServiceForm {
   name: string;
   duration: string;
   price: string;
+  tier: string;
+  expGained: string;
   requirements: Requirement[];
   pricingCategory: string;
   weightage: string;
@@ -26,6 +28,8 @@ export function useServices(industryId: string) {
     name: '',
     duration: '0',
     price: '0',
+    tier: '',
+    expGained: '0',
     requirements: [],
     pricingCategory: '',
     weightage: '1',
@@ -56,6 +60,8 @@ export function useServices(industryId: string) {
       name: service.name,
       duration: service.duration.toString(),
       price: service.price.toString(),
+      tier: service.tier || '',
+      expGained: service.expGained?.toString() || '0',
       requirements: service.requirements || [],
       pricingCategory: service.pricingCategory || '',
       weightage: service.weightage?.toString() || '1',
@@ -77,6 +83,8 @@ export function useServices(industryId: string) {
       name: '',
       duration: '0',
       price: '0',
+      tier: '',
+      expGained: '0',
       requirements: [],
       pricingCategory: '',
       weightage: '1',
@@ -95,6 +103,7 @@ export function useServices(industryId: string) {
     const name = form.name.trim();
     const duration = Number(form.duration);
     const price = Number(form.price);
+    const expGained = Number(form.expGained);
     const weightage = Number(form.weightage);
     const timeCost = Number(form.timeCost);
     if (!id || !name) {
@@ -103,6 +112,10 @@ export function useServices(industryId: string) {
     }
     if (!Number.isFinite(duration) || duration < 0 || !Number.isFinite(price) || price < 0) {
       setStatus('Duration and price must be non-negative numbers.');
+      return;
+    }
+    if (!Number.isFinite(expGained) || expGained < 0) {
+      setStatus('EXP gained must be a non-negative number.');
       return;
     }
     if (!Number.isFinite(weightage) || weightage <= 0) {
@@ -120,6 +133,8 @@ export function useServices(industryId: string) {
       name,
       duration,
       price,
+      tier: (form.tier as ServiceTier) || undefined,
+      expGained: expGained > 0 ? expGained : undefined,
       requirements: form.requirements,
       pricingCategory: (form.pricingCategory as ServicePricingCategory) || undefined,
       weightage,
@@ -164,10 +179,13 @@ export function useServices(industryId: string) {
         name: '',
         duration: '0',
         price: '0',
+        tier: '',
+        expGained: '0',
         requirements: [],
         pricingCategory: '',
         weightage: '1',
         requiredStaffRoleIds: [],
+        timeCost: '0',
       });
       setIsCreating(false);
     }
@@ -184,10 +202,13 @@ export function useServices(industryId: string) {
         name: '',
         duration: '0',
         price: '0',
+        tier: '',
+        expGained: '0',
         requirements: [],
         pricingCategory: '',
         weightage: '1',
         requiredStaffRoleIds: [],
+        timeCost: '0',
       });
       setIsCreating(false);
       setSelectedId('');

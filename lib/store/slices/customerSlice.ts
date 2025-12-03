@@ -44,8 +44,17 @@ export const createCustomerSlice: StateCreator<GameState, [], [], CustomerSlice>
     // If no services available, fall back to all services (shouldn't happen, but safety check)
     const servicesToUse = availableServices.length > 0 ? availableServices : allServices;
 
-    // Pick a weighted random service from available ones
-    const selectedService = getWeightedRandomService(servicesToUse);
+    // Find the highest available tier among accessible services
+    const tierPriority = { 'small': 1, 'medium': 2, 'big': 3 };
+    const highestTier = Math.max(...servicesToUse.map(s => tierPriority[s.tier || 'small']));
+
+    // Only use services from the highest available tier
+    const highestTierServices = servicesToUse.filter(s =>
+      tierPriority[s.tier || 'small'] === highestTier
+    );
+
+    // Pick a weighted random service from the highest tier
+    const selectedService = getWeightedRandomService(highestTierServices.length > 0 ? highestTierServices : servicesToUse);
     
     // Create customer with a manually constructed customer object to use our filtered service
     const customer = createCustomer(1, industryId);
