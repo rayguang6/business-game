@@ -51,7 +51,7 @@ const EXTENDED_ONE_TIME_COST_CONFIG: Record<string, CategoryConfig> = {
 export const EXPENSE_BREAKDOWN_CATEGORY_CONFIG: Record<ExpenseBreakdownCategory, CategoryConfig> = {
   base: {
     icon: '🏢',
-    label: 'Base Operations',
+    label: 'Rental',
   },
   upgrade: {
     icon: '⚙️',

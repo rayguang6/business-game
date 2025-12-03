@@ -1,5 +1,5 @@
 import { effectManager, GameMetric, EffectType } from '@/lib/game/effectManager';
-import type { UpgradeEffect, Requirement } from '@/lib/game/types';
+import type { UpgradeEffect, Requirement, GridPosition } from '@/lib/game/types';
 import type { SourceInfo } from '@/lib/config/sourceTypes';
 import { SourceHelpers } from '@/lib/utils/financialTracking';
 
@@ -119,4 +119,96 @@ export function addStaffEffects(staff: Staff, store?: {
  */
 export function removeStaffEffects(staffId: string): void {
   effectManager.removeBySource('staff', staffId);
+}
+
+/**
+ * Staff state management functions for service assignment
+ */
+
+/**
+ * Assign staff to a service (room and customer)
+ */
+export function assignStaffToService(
+  staff: Staff,
+  roomId: number,
+  customerId: string,
+  staffPosition: GridPosition,
+): Staff {
+  return {
+    ...staff,
+    assignedRoomId: roomId,
+    assignedCustomerId: customerId,
+    status: 'walking_to_room',
+    targetX: staffPosition.x,
+    targetY: staffPosition.y,
+    facingDirection: staffPosition.facingDirection || staff.facingDirection || 'down',
+  };
+}
+
+/**
+ * Free staff from service (return to idle)
+ */
+export function freeStaffFromService(staff: Staff): Staff {
+  return {
+    ...staff,
+    assignedRoomId: undefined,
+    assignedCustomerId: undefined,
+    status: 'walking_to_idle',
+    // Note: targetX, targetY, and path should be set separately when calculating return path
+  };
+}
+
+/**
+ * Update staff position
+ */
+export function updateStaffPosition(staff: Staff, position: GridPosition): Staff {
+  return {
+    ...staff,
+    x: position.x,
+    y: position.y,
+    facingDirection: position.facingDirection || staff.facingDirection || 'down',
+  };
+}
+
+/**
+ * Update staff status
+ */
+export function updateStaffStatus(
+  staff: Staff,
+  status: Staff['status'],
+): Staff {
+  return {
+    ...staff,
+    status,
+  };
+}
+
+/**
+ * Initialize staff positions from staff positions array
+ * Assigns each staff member to a position from the array (by index)
+ */
+export function initializeStaffPositions(
+  staff: Staff[],
+  staffPositions: GridPosition[],
+): Staff[] {
+  return staff.map((member, index) => {
+    const position = staffPositions[index];
+    if (!position) {
+      // If no position available, keep existing position or default to (0, 0)
+      return {
+        ...member,
+        x: member.x ?? 0,
+        y: member.y ?? 0,
+        status: member.status || 'idle',
+        facingDirection: member.facingDirection || 'down',
+      };
+    }
+    return {
+      ...member,
+      x: position.x,
+      y: position.y,
+      status: member.status || 'idle',
+      facingDirection: position.facingDirection || member.facingDirection || 'down',
+    };
+  });
 }

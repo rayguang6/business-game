@@ -32,6 +32,7 @@ export function getStaffPositions(industryId: IndustryId): GridPosition[] {
   if (!layout) {
     throw new Error(`Layout config not loaded for industry "${industryId}". Please configure layout in the admin panel.`);
   }
+  
   return layout.staffPositions;
 }
 
@@ -51,6 +52,7 @@ export function getServiceRooms(industryId: IndustryId): ServiceRoomConfig[] {
   if (!layout) {
     throw new Error(`Layout config not loaded for industry "${industryId}". Please configure layout in the admin panel.`);
   }
+  
   return layout.serviceRooms;
 }
 

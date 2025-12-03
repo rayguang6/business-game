@@ -153,7 +153,7 @@ export async function fetchIndustrySimulationConfig(
     data.service_rooms || 
     data.staff_positions || 
     data.main_character_position || 
-    data.main_character_sprite_image !== null && data.main_character_sprite_image !== undefined
+    (typeof data.main_character_sprite_image === 'string' && data.main_character_sprite_image.trim())
   );
   
   if (hasAnyLayoutData) {
@@ -177,7 +177,7 @@ export async function fetchIndustrySimulationConfig(
     };
     
     result.layoutConfig = layoutConfig;
-  } else if (data.main_character_sprite_image !== null && data.main_character_sprite_image !== undefined) {
+  } else if (typeof data.main_character_sprite_image === 'string' && data.main_character_sprite_image.trim()) {
     // Edge case: if only main_character_sprite_image exists, still create layoutConfig for it
     const mainCharacterSpriteImage = typeof data.main_character_sprite_image === 'string' && data.main_character_sprite_image.trim()
       ? data.main_character_sprite_image.trim()

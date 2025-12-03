@@ -121,7 +121,7 @@ export function GlobalConfigTab({
                   placeholder="0 (leave empty to disable)"
                 />
                 <p className="text-xs text-slate-500 mt-1">
-                  Monthly time budget (refreshes each month). Set to enable time currency.
+                  Monthly available time (refreshes each month). Set to enable time currency.
                 </p>
               </div>
             </div>

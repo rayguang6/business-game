@@ -62,7 +62,8 @@ export function findAvailableStaffForService(
   const idleProviders = capableProviders.filter(provider => {
     const status = provider.status || 'idle';
     const assignedRoomId = provider.assignedRoomId;
-    return status === 'idle' || !assignedRoomId;
+    // Staff is available only if idle AND not assigned to a room
+    return status === 'idle' && !assignedRoomId;
   });
   
   // Return first available, or null

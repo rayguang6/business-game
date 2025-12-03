@@ -10,7 +10,7 @@ import { SourceType } from '@/lib/config/sourceTypes';
 
 export interface Metrics {
   cash: number;
-  time: number; // Monthly time budget (refreshes monthly)
+  time: number; // Monthly available time (refreshes monthly)
   totalRevenue: number;
   totalExpenses: number;
   exp: number; // Previously: skillLevel (reputation)

@@ -404,7 +404,7 @@ export function getFounderWorkingHoursBase(industryId: IndustryId = DEFAULT_INDU
 }
 
 /**
- * Get starting time budget for an industry
+ * Get starting available time for an industry
  */
 export function getStartingTime(industryId: IndustryId = DEFAULT_INDUSTRY_ID): number {
   const metrics = getBusinessMetrics(industryId);

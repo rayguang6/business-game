@@ -777,7 +777,7 @@ export function UpgradesTab() {
           <div className="text-center">
             <h4 className="text-base sm:text-lg md:text-xl font-bold text-primary mb-1 sm:mb-2">Our Staff</h4>
             <p className="text-xs sm:text-sm md:text-base text-secondary">
-              Meet the team running your clinic every day.
+              Meet the team running your business every day.
             </p>
           </div>
           <div className="max-w-6xl mx-auto flex flex-wrap justify-center items-stretch gap-2 sm:gap-3 md:gap-4 px-2 sm:px-3 md:px-4">

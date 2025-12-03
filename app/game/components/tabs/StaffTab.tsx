@@ -282,7 +282,7 @@ export function StaffTab() {
         <div className="text-center">
           <SectionHeading>Our Staff</SectionHeading>
           <p className="text-sm sm:text-base text-secondary">
-            Meet the team running your clinic every day.
+            Meet the team running your business every day.
           </p>
         </div>
         <div className="max-w-6xl mx-auto flex flex-wrap justify-center items-stretch gap-4 px-3 sm:px-4">
@@ -398,7 +398,7 @@ export function StaffTab() {
         <div className="text-center">
           <SectionHeading>Available Staff</SectionHeading>
           <p className="text-sm sm:text-base text-secondary">
-            Choose who joins your clinic next. Hiring is instant and only adds their salary.
+            Choose who joins your business next. Hiring is instant and only adds their salary.
           </p>
         </div>
         <div className="max-w-6xl mx-auto flex flex-wrap justify-center items-stretch gap-4 px-3 sm:px-4">

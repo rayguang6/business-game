@@ -6,7 +6,7 @@ export const DEFAULT_INDUSTRY_ID: IndustryId = 'dental';
 
 export interface BusinessMetrics {
   startingCash: number;
-  startingTime?: number; // Optional monthly time budget (hours)
+  startingTime?: number; // Optional monthly available time (hours)
   monthlyExpenses: number;
   startingExp: number; // Previously: startingSkillLevel
   startingFreedomScore: number; // Previously: founderWorkHours - Base freedom score (monthly requirement)

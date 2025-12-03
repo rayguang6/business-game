@@ -93,7 +93,7 @@ export function FinanceTab() {
                     <li key={`${entry.label}-${index}`} className="flex justify-between">
                       <span>
                         {entry.category === 'base'
-                          ? 'Base operations'
+                          ? 'Rental'
                           : entry.category === 'upgrade'
                           ? entry.label
                           : entry.label}
@@ -223,7 +223,6 @@ export function FinanceTab() {
                               <div key={costIndex} className="flex justify-between">
                                 <span>
                                   {cost.category === 'upgrade' && '🔧 '}
-                                  {cost.category === 'repair' && '🔨 '}
                                   {cost.category === 'event' && '📋 '}
                                   {cost.label}
                                 </span>

@@ -111,7 +111,7 @@ export function KeyMetrics() {
       icon: '⏱️',
       image: '/images/icons/upgrades.png',
       value: `${metrics.time}/${getStartingTime(industryId) + effectManager.calculate(GameMetric.MonthlyTimeCapacity, 0)}h`,
-      label: 'Time Budget',
+      label: 'Available Time',
       color: 'text-cyan-400',
       feedback: feedbackByMetric.time,
     }] : []),

@@ -4,11 +4,11 @@ import React, { useState } from 'react';
 import { Staff } from '@/lib/features/staff';
 import { MainCharacter, isMainCharacter } from '@/lib/features/mainCharacter';
 import { GridPosition } from '@/lib/game/types';
-import { Character2D } from './Character2D';
+import { Character2D, Character2DProps } from './Character2D';
 
 interface SpriteStaffProps {
   staff: Staff | MainCharacter;
-  position: GridPosition;
+  position: GridPosition; // Fallback position for staff without dynamic positions
   scaleFactor: number;
 }
 
@@ -20,8 +20,9 @@ interface SpriteStaffProps {
  * ============================================================================
  * - Staff are displayed as animated sprites (16-frame sprite sheets)
  * - Sprite selection: database spriteImage → default staff1.png fallback
- * - Staff have random idle animations (walking, celebrating)
- * - Staff appear at fixed positions defined in layout config (staffPositions)
+ * - Staff use dynamic positions (staff.x, staff.y) when available
+ * - Staff animations based on status: idle, walking_to_room, serving, walking_to_idle
+ * - Random idle animations only when staff.status is 'idle'
  *
  * ============================================================================
  * SPRITE SYSTEM:
@@ -36,30 +37,11 @@ interface SpriteStaffProps {
  *   * Frames 12-15: celebrating
  *
  * ============================================================================
- * FUTURE ENHANCEMENTS (TODO):
- * ============================================================================
- *
- * 1. STAFF MOVEMENT/ANIMATION:
- *    - Add staff movement states (idle, walking to station, working, etc.)
- *    - Track staff position dynamically (like customers)
- *    - Add pathfinding for staff to walk to service rooms
- *    - Implement work animations at service stations
- *
- * 2. STAFF STATES:
- *    - Add StaffStatus enum (similar to CustomerStatus)
- *    - States: Idle, Walking, Working, OnBreak, etc.
- *    - Different animations based on state
- *
- * 3. VISUAL FEEDBACK:
- *    - Show staff name/role on hover
- *    - Indicate which staff member is working on which customer
- *    - Show staff efficiency/productivity indicators
- *
- * ============================================================================
  * INTEGRATION NOTES:
  * ============================================================================
  * - Staff data comes from: useGameStore().hiredStaff
- * - Positions come from: layout config via useConfigStore/getLayoutConfig
+ * - Dynamic positions: staff.x, staff.y (when staff is moving/assigned)
+ * - Fallback positions: layout config staffPositions (for idle staff)
  * - Sprite paths configured in Supabase admin (staff_roles.sprite_image)
  * - Default sprite: /images/staff/staff1.png
  *
@@ -67,11 +49,10 @@ interface SpriteStaffProps {
  */
 
 // ============================================================================
-// STAFF ANIMATION CONFIG
+// STAFF ANIMATION CONFIG (for idle animations only)
 // ============================================================================
-// Simple config for staff animations - easy to tweak
 const STAFF_ANIMATION_CONFIG = {
-  // Celebrate animation happens randomly every X to Y seconds
+  // Celebrate animation happens randomly every X to Y seconds (only when idle)
   celebrateIntervalMin: 5000, // 5 seconds
   celebrateIntervalMax: 15000, // 15 seconds
   celebrateDuration: 2000, // Celebrate for 2 seconds
@@ -92,10 +73,10 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
   const [isWalking, setIsWalking] = useState(false);
   const [direction, setDirection] = useState<'down' | 'left' | 'up' | 'right'>('down');
   
-  // Convert grid position to pixel coordinates
-  // Grid coordinates (0-9) are multiplied by TILE_SIZE (32px) to get pixel positions
-  const pixelX = position.x * TILE_SIZE;
-  const pixelY = position.y * TILE_SIZE;
+  // Use dynamic position if available, otherwise use fallback position
+  const hasDynamicPosition = staff.x !== undefined && staff.y !== undefined;
+  const renderX = hasDynamicPosition ? (staff.x ?? 0) : position.x;
+  const renderY = hasDynamicPosition ? (staff.y ?? 0) : position.y;
 
   // ============================================================================
   // SPRITE SELECTION LOGIC
@@ -116,11 +97,45 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
   }
 
   // ============================================================================
-  // STAFF ANIMATION STATE MANAGEMENT
+  // ANIMATION STATE BASED ON STAFF STATUS
+  // ============================================================================
+  // Determine animation state from staff status and facing direction
+  const getAnimationState = (): { isWalking: boolean; isCelebrating: boolean; direction: Character2DProps['direction'] } => {
+    const staffStatus = staff.status || 'idle';
+    const facingDirection: Character2DProps['direction'] = staff.facingDirection || 'down';
+    
+    // If staff has a status that indicates movement, use that
+    switch (staffStatus) {
+      case 'walking_to_room':
+      case 'walking_to_idle':
+        return { isWalking: true, isCelebrating: false, direction: facingDirection };
+      
+      case 'serving':
+        return { isWalking: false, isCelebrating: false, direction: facingDirection };
+      
+      case 'idle':
+      default:
+        // For idle staff, we'll use random animations (handled by useEffect below)
+        return { isWalking: false, isCelebrating: false, direction: facingDirection };
+    }
+  };
+
+  // Get base animation state from status
+  const baseAnimationState = getAnimationState();
+  const isIdle = (staff.status || 'idle') === 'idle';
+  
+  // ============================================================================
+  // RANDOM IDLE ANIMATIONS (only when staff is idle)
   // ============================================================================
   // Random animations: celebrate occasionally, sometimes walk in place
-  // Each staff member has independent timing based on their ID for variety
+  // Only active when staff.status === 'idle'
   React.useEffect(() => {
+    // Only run random animations when staff is idle
+    if (!isIdle) {
+      setIsCelebrating(false);
+      setIsWalking(false);
+      return;
+    }
     
     // Use staff ID to create unique seed for consistent but varied timing
     const staffSeed = parseInt(staff.id, 36) || 0;
@@ -133,19 +148,22 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
                     randomOffset;
       
       const timer = setTimeout(() => {
-        setIsCelebrating(true);
-        
-        // Change direction when celebrating (facing different way)
-        const randomDir = STAFF_ANIMATION_CONFIG.directions[
-          Math.floor(Math.random() * STAFF_ANIMATION_CONFIG.directions.length)
-        ];
-        setDirection(randomDir);
-        
-        // Stop celebrating after duration
-        setTimeout(() => {
-          setIsCelebrating(false);
-          scheduleCelebrate(); // Schedule next celebration
-        }, STAFF_ANIMATION_CONFIG.celebrateDuration);
+        // Only celebrate if still idle
+        if ((staff.status || 'idle') === 'idle') {
+          setIsCelebrating(true);
+          
+          // Change direction when celebrating (facing different way)
+          const randomDir = STAFF_ANIMATION_CONFIG.directions[
+            Math.floor(Math.random() * STAFF_ANIMATION_CONFIG.directions.length)
+          ];
+          setDirection(randomDir);
+          
+          // Stop celebrating after duration
+          setTimeout(() => {
+            setIsCelebrating(false);
+            scheduleCelebrate(); // Schedule next celebration
+          }, STAFF_ANIMATION_CONFIG.celebrateDuration);
+        }
       }, delay);
       
       return timer;
@@ -153,6 +171,11 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
     
     // Idle walk animation - happens randomly when not celebrating
     const scheduleIdleWalk = () => {
+      // Check if still idle
+      if ((staff.status || 'idle') !== 'idle') {
+        return;
+      }
+      
       if (isCelebrating) {
         // Don't walk while celebrating
         return setTimeout(scheduleIdleWalk, 1000);
@@ -163,20 +186,23 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
                       (Math.random() * (STAFF_ANIMATION_CONFIG.idleWalkIntervalMax - STAFF_ANIMATION_CONFIG.idleWalkIntervalMin));
         
         const timer = setTimeout(() => {
-          setIsWalking(true);
-          
-          // Random direction for idle walk
-          const randomDir = STAFF_ANIMATION_CONFIG.directions[
-            Math.floor(Math.random() * STAFF_ANIMATION_CONFIG.directions.length)
-          ];
-          setDirection(randomDir);
-          
-          // Stop walking after duration
-          setTimeout(() => {
-            setIsWalking(false);
-            setDirection('down'); // Return to default direction
-            scheduleIdleWalk(); // Schedule next idle walk
-          }, STAFF_ANIMATION_CONFIG.idleWalkDuration);
+          // Only walk if still idle
+          if ((staff.status || 'idle') === 'idle') {
+            setIsWalking(true);
+            
+            // Random direction for idle walk
+            const randomDir = STAFF_ANIMATION_CONFIG.directions[
+              Math.floor(Math.random() * STAFF_ANIMATION_CONFIG.directions.length)
+            ];
+            setDirection(randomDir);
+            
+            // Stop walking after duration
+            setTimeout(() => {
+              setIsWalking(false);
+              setDirection('down'); // Return to default direction
+              scheduleIdleWalk(); // Schedule next idle walk
+            }, STAFF_ANIMATION_CONFIG.idleWalkDuration);
+          }
         }, delay);
         
         return timer;
@@ -194,23 +220,25 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
       clearTimeout(celebrateTimer);
       clearTimeout(walkTimer);
     };
-  }, [staff.id, isCelebrating]);
+  }, [staff.id, staff.status, isCelebrating, isIdle]);
+  
+  // Update direction when staff.facingDirection changes (for non-idle states)
+  React.useEffect(() => {
+    if (!isIdle && staff.facingDirection) {
+      setDirection(staff.facingDirection);
+    }
+  }, [staff.facingDirection, isIdle]);
+  
+  // Determine final animation state
+  const finalIsWalking = isIdle ? isWalking : baseAnimationState.isWalking;
+  const finalIsCelebrating = isIdle ? isCelebrating : false;
+  const finalDirection = isIdle ? direction : baseAnimationState.direction;
 
   // Check if this is the main character
   const isMainChar = isMainCharacter(staff);
 
   return (
-    <div
-      className="absolute pointer-events-none"
-      style={{
-        left: `${pixelX}px`,
-        top: `${pixelY}px`,
-        width: `${TILE_SIZE}px`,
-        height: `${TILE_SIZE}px`,
-        zIndex: 8, // Above beds (5) but below customers (10)
-      }}
-      title={`${staff.name} - ${staff.role}`}
-    >
+    <div className="relative">
       {/* ====================================================================
           MAIN CHARACTER USERNAME DISPLAY
           ====================================================================
@@ -220,8 +248,8 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
         <div
           className="absolute pointer-events-none"
           style={{
-            left: '50%',
-            top: '-15px',
+            left: `${renderX * TILE_SIZE + TILE_SIZE / 2}px`,
+            top: `${renderY * TILE_SIZE - 15}px`,
             transform: 'translateX(-50%)',
             whiteSpace: 'nowrap',
             zIndex: 12, // Above everything
@@ -244,16 +272,18 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
           STAFF SPRITE RENDERING
           ====================================================================
           Uses Character2D component for animated sprites with database-driven sprites
-          and default fallback. No emoji fallback - all staff are sprites now!
+          and default fallback. Staff positions are dynamic when moving/serving.
+          Character2D handles its own positioning (like SpriteCustomer), so we don't
+          wrap it in a positioned container.
           */}
       <Character2D
-        x={0} // Staff stay in place (at their assigned position)
-        y={0} // Staff stay in place
+        x={renderX}
+        y={renderY}
         spriteSheet={spriteSheetPath}
-        direction={direction}
+        direction={finalDirection}
         scaleFactor={scaleFactor}
-        isWalking={isWalking}
-        isCelebrating={isCelebrating}
+        isWalking={finalIsWalking}
+        isCelebrating={finalIsCelebrating}
       />
     </div>
   );

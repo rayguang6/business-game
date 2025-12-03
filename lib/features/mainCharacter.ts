@@ -114,3 +114,53 @@ export function isMainCharacter(value: Staff | MainCharacter): value is MainChar
   return value.id === 'main-character' && value.roleId === 'main-character';
 }
 
+/**
+ * Main Character state management functions for service assignment
+ */
+
+/**
+ * Assign main character to a service (room and customer)
+ */
+export function assignMainCharacterToService(
+  mainCharacter: MainCharacter,
+  roomId: number,
+  customerId: string,
+  staffPosition: GridPosition,
+): MainCharacter {
+  return {
+    ...mainCharacter,
+    assignedRoomId: roomId,
+    assignedCustomerId: customerId,
+    status: 'walking_to_room',
+    targetX: staffPosition.x,
+    targetY: staffPosition.y,
+    facingDirection: staffPosition.facingDirection || mainCharacter.facingDirection || 'down',
+  };
+}
+
+/**
+ * Free main character from service (return to idle)
+ */
+export function freeMainCharacterFromService(mainCharacter: MainCharacter): MainCharacter {
+  return {
+    ...mainCharacter,
+    assignedRoomId: undefined,
+    assignedCustomerId: undefined,
+    status: 'walking_to_idle',
+    // Note: targetX, targetY, and path should be set separately when calculating return path
+  };
+}
+
+/**
+ * Update main character status
+ */
+export function updateMainCharacterStatus(
+  mainCharacter: MainCharacter,
+  status: MainCharacter['status'],
+): MainCharacter {
+  return {
+    ...mainCharacter,
+    status,
+  };
+}
+

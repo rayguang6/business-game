@@ -10,7 +10,7 @@ import { DEFAULT_INDUSTRY_ID, getUpgradesForIndustry, getWinCondition, getLoseCo
 import { GameStore } from '../gameStore';
 import { IndustryId } from '@/lib/game/types';
 import { effectManager } from '@/lib/game/effectManager';
-import { addStaffEffects } from '@/lib/features/staff';
+import { addStaffEffects, initializeStaffPositions } from '@/lib/features/staff';
 import { addUpgradeEffects } from './upgradesSlice';
 import { checkWinCondition } from '@/lib/game/winConditions';
 import { checkRequirements } from '@/lib/game/requirementChecker';
@@ -20,6 +20,7 @@ import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import { DynamicValueEvaluator } from '@/lib/game/dynamicValueEvaluator';
 import { createMainCharacter, updateMainCharacterName, type MainCharacter } from '@/lib/features/mainCharacter';
 import { getLayoutConfig } from '@/lib/game/config';
+import { getStaffPositions } from '@/lib/game/positioning';
 
 /**
  * Load username from localStorage (if available)
@@ -157,6 +158,9 @@ export interface GameSlice {
   // Event sequence methods
   advanceEventSequence: () => void;
   resetEventSequence: () => void;
+  
+  // Main character management
+  updateMainCharacter: (updates: Partial<MainCharacter>) => void;
 }
 
 export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set, get) => {
@@ -249,7 +253,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     const initialState = getInitialGameState(industryId, true); // keepIndustry = true
     const username = get().username || 'Founder'; // Always have a username (fallback to 'Founder')
     
-    // Get main character configuration from layout config
+    // Get layout configuration
     const layoutConfig = getLayoutConfig(industryId);
     const mainCharacterPosition = layoutConfig?.mainCharacterPosition 
       ?? (layoutConfig?.staffPositions?.[0] ?? { x: 4, y: 0 }); // Fallback to first staff position or default
@@ -261,6 +265,30 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       position: mainCharacterPosition,
     });
     
+    // Initialize staff positions from layout config
+    const staffPositions = getStaffPositions(industryId);
+    const currentStaff = get().hiredStaff;
+    
+    // Debug logging
+    console.log('[startGame] Initializing staff positions', {
+      industryId,
+      staffPositionsCount: staffPositions.length,
+      staffPositions: staffPositions.slice(0, 5),
+      currentStaffCount: currentStaff.length,
+    });
+    
+    const staffWithPositions = initializeStaffPositions(currentStaff, staffPositions);
+    
+    // Debug logging after initialization
+    console.log('[startGame] Staff positions initialized', {
+      staffWithPositions: staffWithPositions.slice(0, 3).map(s => ({
+        id: s.id,
+        name: s.name,
+        x: s.x,
+        y: s.y,
+      })),
+    });
+    
     set({
       ...initialState,
       isGameStarted: true, // Override to start the game
@@ -268,6 +296,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       monthlyExpenseAdjustments: 0,
       mainCharacter,
       username, // Ensure username is set (even if it's 'Founder')
+      hiredStaff: staffWithPositions, // Update staff with initialized positions
     });
   },
   
@@ -371,6 +400,8 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
         monthlyCustomersServiceFailed: state.monthlyCustomersServiceFailed || 0,
         monthlyTimeSpent: state.monthlyTimeSpent || 0,
         monthlyTimeSpentDetails: state.monthlyTimeSpentDetails || [],
+        hiredStaff: state.hiredStaff || [],
+        mainCharacter: state.mainCharacter,
       });
       // Update customer tracking counters (lifetime only - monthly is tracked in mechanics.ts)
       const customerUpdates: Partial<GameState> = {};
@@ -822,6 +853,25 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
 
   resetEventSequence: () => {
     set({ eventSequenceIndex: 0 });
+  },
+  
+  updateMainCharacter: (updates: Partial<MainCharacter>) => {
+    set((state) => {
+      if (!state.mainCharacter) {
+        // If main character doesn't exist, create it (shouldn't happen, but safety check)
+        const username = state.username || 'Founder';
+        const industryId = (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+        const layoutConfig = getLayoutConfig(industryId);
+        const mainCharacterPosition = layoutConfig?.mainCharacterPosition 
+          ?? (layoutConfig?.staffPositions?.[0] ?? { x: 4, y: 0 });
+        const newMainCharacter = createMainCharacter(username, {
+          layoutSpriteImage: layoutConfig?.mainCharacterSpriteImage,
+          position: mainCharacterPosition,
+        });
+        return { mainCharacter: { ...newMainCharacter, ...updates } };
+      }
+      return { mainCharacter: { ...state.mainCharacter, ...updates } };
+    });
   },
 });
 };

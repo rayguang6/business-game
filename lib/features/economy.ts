@@ -58,11 +58,11 @@ export function buildMonthlyExpenseBreakdown(
   const upgradeMap = new Map(availableUpgrades.map((upgrade) => [upgrade.id, upgrade]));
   const breakdown: ExpenseBreakdownItem[] = [
     {
-      label: 'Base operations',
+      label: 'Rental',
       amount: getMonthlyBaseExpenses(industryId),
       category: 'base',
       sourceType: SourceType.Base, // SourceType.Base as string
-      sourceName: 'Base operations',
+      sourceName: 'Rental',
     },
   ];
 

@@ -268,7 +268,7 @@ export const SourceHelpers = {
     createSourceInfoSafe(SourceType.Customer, customerId, customerName),
   
   fromBase: (): SourceInfo =>
-    createSourceInfoSafe(SourceType.Base, 'base', 'Base operations'),
+    createSourceInfoSafe(SourceType.Base, 'base', 'Rental'),
   
   other: (id: string, name: string): SourceInfo =>
     createSourceInfoSafe(SourceType.Other, id, name),

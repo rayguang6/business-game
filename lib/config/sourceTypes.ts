@@ -24,7 +24,7 @@ export enum SourceType {
   Upgrade = 'upgrade',        // Upgrade purchases/effects (can be revenue or expense, one-time or monthly)
   Staff = 'staff',            // Staff-related (can be revenue or expense, one-time or monthly)
   Marketing = 'marketing',    // Marketing campaigns (can be revenue or expense, one-time or monthly)
-  Base = 'base',              // Base operations (always monthly expense)
+  Base = 'base',              // Rental (always monthly expense)
   
   // Fallback
   Other = 'other',            // Unknown/unregistered sources

@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand';
 import { GameStore } from '../gameStore';
-import { Staff, addStaffEffects, removeStaffEffects, calculateSeveranceCost } from '@/lib/features/staff';
+import { Staff, addStaffEffects, removeStaffEffects, calculateSeveranceCost, initializeStaffPositions } from '@/lib/features/staff';
 import {
   createInitialAvailableStaff,
   createRandomStaffForIndustry,
@@ -11,6 +11,7 @@ import { effectManager } from '@/lib/game/effectManager';
 import { checkRequirements } from '@/lib/game/requirementChecker';
 import { OneTimeCostCategory } from '../types';
 import { SourceHelpers } from '@/lib/utils/financialTracking';
+import { getStaffPositions } from '@/lib/game/positioning';
 
 export interface StaffSlice {
   hiredStaff: Staff[];
@@ -19,6 +20,8 @@ export interface StaffSlice {
   fireStaff: (staffId: string) => { success: boolean; message: string } | void;
   resetStaff: () => void;
   initializeStaffForIndustry: (industryId: IndustryId) => void;
+  updateStaff: (staffId: string, updates: Partial<Staff>) => void;
+  updateAllStaff: (updates: Staff[]) => void;
 }
 
 export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (set, get) => {
@@ -151,8 +154,12 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
         recordEventExpense: currentStore.recordEventExpense,
       }));
 
+      // Initialize staff positions from layout config
+      const staffPositions = getStaffPositions(industryId);
+      const staffWithPositions = initializeStaffPositions(resetHired, staffPositions);
+
       set({
-        hiredStaff: resetHired,
+        hiredStaff: staffWithPositions,
         availableStaff: createInitialAvailableStaff(industryId),
       });
     },
@@ -174,10 +181,24 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
         recordEventExpense: currentStore.recordEventExpense,
       }));
 
+      // Initialize staff positions from layout config
+      const staffPositions = getStaffPositions(industryId);
+      const staffWithPositions = initializeStaffPositions(initialHired, staffPositions);
+
       set({
-        hiredStaff: initialHired,
+        hiredStaff: staffWithPositions,
         availableStaff: createInitialAvailableStaff(industryId),
       });
+    },
+    updateStaff: (staffId: string, updates: Partial<Staff>) => {
+      set((state) => ({
+        hiredStaff: state.hiredStaff.map((staff) =>
+          staff.id === staffId ? { ...staff, ...updates } : staff
+        ),
+      }));
+    },
+    updateAllStaff: (updates: Staff[]) => {
+      set({ hiredStaff: updates });
     },
   };
 };

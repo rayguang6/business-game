@@ -532,16 +532,16 @@ export function GameCanvas() {
             />
           )}
 
-          {/* Render staff at staff positions (one per staff member) */}
-          {hiredStaff.slice(0, staffPositions.length).map((staff, index) => {
-            const position = staffPositions[index];
-            if (!position) return null;
+          {/* Render all hired staff - use dynamic positions when available, fallback to staffPositions */}
+          {hiredStaff.map((staff, index) => {
+            // Use fallback position from staffPositions array (for idle staff without dynamic positions)
+            const fallbackPosition = staffPositions[index] || staffPositions[0] || { x: 4, y: 0 };
             
             return (
               <SpriteStaff
                 key={staff.id}
                 staff={staff}
-                position={position}
+                position={fallbackPosition}
                 scaleFactor={scaleFactor}
               />
             );

@@ -28,7 +28,7 @@ export const getInitialMetrics = (industryId: IndustryId = DEFAULT_INDUSTRY_ID):
   }
   return {
     cash: metrics.startingCash,
-    time: metrics.startingTime ?? 0, // Monthly time budget, defaults to 0
+    time: metrics.startingTime ?? 0, // Monthly available time, defaults to 0
     totalRevenue: 0,
     totalExpenses: 0,
     exp: metrics.startingExp ?? 0, // Previously: startingSkillLevel - defaults to 0
