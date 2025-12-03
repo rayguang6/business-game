@@ -48,8 +48,8 @@ export default function SelectIndustryPage() {
   }, []);
 
   const handleIndustrySelect = (industry: Industry) => {
-    setSelectedIndustry(industry);
-    router.push(`/game/${industry.id}`);
+    // Navigate to industry page (with username input) instead of directly to game
+    router.push(`/industry/${industry.id}`);
   };
 
   if (isLoading) {

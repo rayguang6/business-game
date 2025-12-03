@@ -64,6 +64,7 @@ const getInitialGameState = (
     flags: {},
     monthlyExpenseAdjustments: 0,
     eventSequenceIndex: 0,
+    username: null,
     ...(keepIndustry ? {} : { selectedIndustry: null }),
   };
 };
@@ -76,6 +77,9 @@ export interface GameSlice {
   currentMonth: number;
   isGameOver: boolean;
   gameOverReason: 'cash' | 'time' | 'victory' | null;
+
+  // Username (for future leaderboard)
+  username: string | null;
 
   // Leads
   leads: Lead[];
@@ -123,6 +127,9 @@ export interface GameSlice {
   checkGameOver: () => void;
   checkWinConditionAtMonthEnd: () => void;
   
+  // Username management
+  setUsername: (username: string | null) => void;
+
   // Flag management methods
   setFlag: (flagId: string, value: boolean) => void;
   hasFlag: (flagId: string) => boolean;
@@ -142,6 +149,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     currentMonth: 1,
     isGameOver: false,
     gameOverReason: null,
+    username: null,
     flags: {},
     eventSequenceIndex: 0,
 
@@ -272,6 +280,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       ...getInitialGameState(DEFAULT_INDUSTRY_ID, false), // keepIndustry = false
       monthlyExpenses: getMonthlyBaseExpenses(DEFAULT_INDUSTRY_ID),
       monthlyExpenseAdjustments: 0,
+      username: null, // Clear username on full reset
     });
   },
   
@@ -693,6 +702,11 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     if (checkWinCondition(cash, currentMonth, winCondition)) {
       set({ isGameOver: true, gameOverReason: 'victory', isPaused: true });
     }
+  },
+
+  // Username management
+  setUsername: (username) => {
+    set({ username });
   },
 
   // Flag management methods - use clean IDs directly (no prefix handling)
