@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import { getMonthlyBaseExpenses } from '@/lib/features/economy';
+import { getMonthlyBaseExpenses, calculateUpgradeMonthlyExpenses } from '@/lib/features/economy';
 import { tickOnce } from '@/lib/game/mechanics';
 import { GameState, RevenueCategory, OneTimeCostCategory } from '../types';
 import { SourceType, SourceInfo } from '@/lib/config/sourceTypes';
@@ -780,7 +780,32 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     // Check win condition: cash target reached or month target reached
     const winCondition = getWinCondition(industryId);
     if (!winCondition) return; // Can't check win condition if not loaded
-    if (checkWinCondition(cash, currentMonth, winCondition)) {
+
+    // For time-based wins, deduct the current month's expenses before ending the game
+    if (winCondition.monthTarget && currentMonth >= winCondition.monthTarget) {
+      // Calculate TOTAL current month's expenses (base + staff + upgrades + events)
+      // This mirrors exactly what happens in normal month transitions
+      const currentMonthExpenses = effectManager.calculate(
+        GameMetric.MonthlyExpenses,
+        getMonthlyBaseExpenses(industryId)
+      );
+
+      // Deduct current month's expenses and update total expenses
+      const finalCash = Math.max(0, cash - currentMonthExpenses);
+      const updatedTotalExpenses = state.metrics.totalExpenses + currentMonthExpenses;
+
+      set({
+        metrics: {
+          ...state.metrics,
+          cash: finalCash,
+          totalExpenses: updatedTotalExpenses,
+        },
+        isGameOver: true,
+        gameOverReason: 'victory',
+        isPaused: true
+      });
+    } else if (cash >= winCondition.cashTarget) {
+      // Cash-based win - no additional expense deduction needed
       set({ isGameOver: true, gameOverReason: 'victory', isPaused: true });
     }
   },
