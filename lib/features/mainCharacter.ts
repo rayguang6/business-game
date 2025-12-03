@@ -1,0 +1,116 @@
+import type { Staff } from './staff';
+import type { GridPosition } from '@/lib/game/types';
+
+/**
+ * Main Character (Founder) Interface
+ * 
+ * The main character is always present in the game and uses the player's username.
+ * It follows the same structure as Staff for compatibility with staff logic,
+ * but is a separate entity that cannot be hired/fired.
+ */
+export interface MainCharacter extends Omit<Staff, 'salary' | 'effects' | 'setsFlag' | 'requirements'> {
+  id: 'main-character'; // Fixed ID
+  roleId: 'main-character'; // Fixed role ID
+  role: 'Founder'; // Fixed role name
+  // No salary, effects, setsFlag, or requirements - main character is always present
+}
+
+/**
+ * Default sprite image for main character
+ */
+export const DEFAULT_MAIN_CHARACTER_SPRITE = '/images/staff/staff1.png';
+
+/**
+ * Get sprite image with proper fallback chain:
+ * 1. Provided spriteImage
+ * 2. Layout config spriteImage
+ * 3. Default sprite
+ */
+export function getMainCharacterSprite(
+  spriteImage?: string,
+  layoutSpriteImage?: string,
+): string {
+  return spriteImage || layoutSpriteImage || DEFAULT_MAIN_CHARACTER_SPRITE;
+}
+
+/**
+ * Create a main character from username
+ * @param username - Player's username (will use 'Founder' as fallback)
+ * @param options - Optional configuration
+ * @param options.spriteImage - Sprite image path (takes precedence)
+ * @param options.layoutSpriteImage - Sprite image from layout config (fallback)
+ * @param options.position - Initial grid position (x, y, facingDirection)
+ */
+export function createMainCharacter(
+  username: string,
+  options?: {
+    spriteImage?: string;
+    layoutSpriteImage?: string;
+    position?: GridPosition;
+  },
+): MainCharacter {
+  const spriteImage = getMainCharacterSprite(
+    options?.spriteImage,
+    options?.layoutSpriteImage,
+  );
+
+  const mainCharacter: MainCharacter = {
+    id: 'main-character',
+    name: username || 'Founder',
+    roleId: 'main-character',
+    role: 'Founder',
+    spriteImage,
+    status: 'idle',
+  };
+
+  // Initialize position from provided position or default to (0, 0)
+  if (options?.position) {
+    mainCharacter.x = options.position.x;
+    mainCharacter.y = options.position.y;
+    mainCharacter.facingDirection = options.position.facingDirection || 'down';
+  } else {
+    // Default position if none provided
+    mainCharacter.x = 0;
+    mainCharacter.y = 0;
+    mainCharacter.facingDirection = 'down';
+  }
+
+  return mainCharacter;
+}
+
+/**
+ * Update main character name when username changes
+ * Preserves all other properties including position
+ */
+export function updateMainCharacterName(
+  mainCharacter: MainCharacter,
+  username: string,
+): MainCharacter {
+  return {
+    ...mainCharacter,
+    name: username || 'Founder',
+  };
+}
+
+/**
+ * Update main character position
+ */
+export function updateMainCharacterPosition(
+  mainCharacter: MainCharacter,
+  position: GridPosition,
+): MainCharacter {
+  return {
+    ...mainCharacter,
+    x: position.x,
+    y: position.y,
+    facingDirection: position.facingDirection || mainCharacter.facingDirection || 'down',
+  };
+}
+
+/**
+ * Check if a value is a MainCharacter
+ */
+export function isMainCharacter(value: Staff | MainCharacter): value is MainCharacter {
+  return value.id === 'main-character' && value.roleId === 'main-character';
+}
+

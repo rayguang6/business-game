@@ -68,6 +68,10 @@ const cloneLayout = (layout: SimulationLayoutConfig): SimulationLayoutConfig => 
     staffPosition: { ...room.staffPosition },
   })),
   staffPositions: layout.staffPositions.map((pos) => ({ ...pos })),
+  mainCharacterPosition: layout.mainCharacterPosition
+    ? { ...layout.mainCharacterPosition }
+    : undefined,
+  mainCharacterSpriteImage: layout.mainCharacterSpriteImage,
 });
 
 const mergeLayout = (
@@ -95,6 +99,12 @@ const mergeLayout = (
     override.staffPositions && override.staffPositions.length > 0
       ? override.staffPositions.map((pos) => ({ ...pos }))
       : base.staffPositions.map((pos) => ({ ...pos })),
+  mainCharacterPosition: override.mainCharacterPosition
+    ? { ...override.mainCharacterPosition }
+    : base.mainCharacterPosition
+      ? { ...base.mainCharacterPosition }
+      : undefined,
+  mainCharacterSpriteImage: override.mainCharacterSpriteImage ?? base.mainCharacterSpriteImage,
 });
 
 const getIndustryOverride = (industryId: IndustryId) =>

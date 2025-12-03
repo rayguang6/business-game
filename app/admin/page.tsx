@@ -195,6 +195,8 @@ export default function AdminPage() {
                 waitingPositions={industrySimConfig.waitingPositions}
                 serviceRooms={industrySimConfig.serviceRooms}
                 staffPositions={industrySimConfig.staffPositions}
+                mainCharacterPosition={industrySimConfig.mainCharacterPosition}
+                mainCharacterSpriteImage={industrySimConfig.mainCharacterSpriteImage}
                 capacityImage={industrySimConfig.capacityImage}
                 winCondition={industrySimConfig.winCondition}
                 loseCondition={industrySimConfig.loseCondition}
@@ -210,6 +212,8 @@ export default function AdminPage() {
                 setWaitingPositions={industrySimConfig.setWaitingPositions}
                 setServiceRooms={industrySimConfig.setServiceRooms}
                 setStaffPositions={industrySimConfig.setStaffPositions}
+                setMainCharacterPosition={industrySimConfig.setMainCharacterPosition}
+                setMainCharacterSpriteImage={industrySimConfig.setMainCharacterSpriteImage}
                 setCapacityImage={industrySimConfig.setCapacityImage}
                 setWinCondition={industrySimConfig.setWinCondition}
                 setLoseCondition={industrySimConfig.setLoseCondition}

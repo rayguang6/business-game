@@ -146,6 +146,8 @@ export interface SimulationLayoutConfig {
   waitingPositions: GridPosition[];
   serviceRooms: ServiceRoomConfig[];
   staffPositions: GridPosition[];
+  mainCharacterPosition?: GridPosition; // Optional position for main character (founder)
+  mainCharacterSpriteImage?: string; // Optional sprite image path for main character
 }
 
 export type ServicePricingCategory = 'low' | 'mid' | 'high';

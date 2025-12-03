@@ -181,6 +181,35 @@ export function ServicesTab({
                         <p className="text-xs text-slate-400 mb-2">
                           Select which staff roles can perform this service. Leave empty to allow any staff.
                         </p>
+                        {/* Main Character (Founder) - always available */}
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {(() => {
+                            const mainCharacterRole = { id: 'main-character', name: 'Founder' };
+                            const isSelected = serviceForm.requiredStaffRoleIds?.includes('main-character') ?? false;
+                            return (
+                              <button
+                                key="main-character"
+                                type="button"
+                                onClick={() => {
+                                  const currentIds = serviceForm.requiredStaffRoleIds || [];
+                                  const newIds = isSelected
+                                    ? currentIds.filter((id) => id !== 'main-character')
+                                    : [...currentIds, 'main-character'];
+                                  onUpdateForm({ requiredStaffRoleIds: newIds });
+                                }}
+                                className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
+                                  isSelected
+                                    ? 'border-indigo-400 bg-indigo-500/20 text-indigo-200'
+                                    : 'border-slate-600 bg-slate-800 hover:bg-slate-700 text-slate-300'
+                                }`}
+                              >
+                                {mainCharacterRole.name}
+                                {isSelected && ' ✓'}
+                              </button>
+                            );
+                          })()}
+                        </div>
+                        {/* Regular Staff Roles */}
                         {staffRoles && staffRoles.length > 0 ? (
                           <div className="flex flex-wrap gap-2">
                             {staffRoles.map((role) => {

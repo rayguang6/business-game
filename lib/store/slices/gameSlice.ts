@@ -18,6 +18,21 @@ import type { ResolvedDelayedOutcome, ResolvedEffect } from './eventSlice';
 import { EventEffectType } from '@/lib/types/gameEvents';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import { DynamicValueEvaluator } from '@/lib/game/dynamicValueEvaluator';
+import { createMainCharacter, updateMainCharacterName, type MainCharacter } from '@/lib/features/mainCharacter';
+import { getLayoutConfig } from '@/lib/game/config';
+
+/**
+ * Load username from localStorage (if available)
+ */
+function loadUsernameFromStorage(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem('game_username');
+  } catch (error) {
+    console.warn('[Game] Failed to load username from localStorage:', error);
+    return null;
+  }
+}
 
 // Shared initial game state - DRY principle
 const getInitialGameState = (
@@ -65,6 +80,7 @@ const getInitialGameState = (
     monthlyExpenseAdjustments: 0,
     eventSequenceIndex: 0,
     username: null,
+    mainCharacter: null, // Will be created from username when game starts
     ...(keepIndustry ? {} : { selectedIndustry: null }),
   };
 };
@@ -80,6 +96,9 @@ export interface GameSlice {
 
   // Username (for future leaderboard)
   username: string | null;
+
+  // Main Character (Founder) - always present
+  mainCharacter: MainCharacter | null;
 
   // Leads
   leads: Lead[];
@@ -141,6 +160,9 @@ export interface GameSlice {
 }
 
 export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set, get) => {
+  // Load username from localStorage on initialization
+  const savedUsername = loadUsernameFromStorage();
+  
   return ({
     isGameStarted: false,
     isPaused: false,
@@ -149,7 +171,8 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     currentMonth: 1,
     isGameOver: false,
     gameOverReason: null,
-    username: null,
+    username: savedUsername, // Initialize from localStorage if available
+    mainCharacter: null, // Will be created when game starts or username is set
     flags: {},
     eventSequenceIndex: 0,
 
@@ -223,11 +246,28 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     }
 
     // Set initial game state (this should be done after resetting slices to ensure clean state)
+    const initialState = getInitialGameState(industryId, true); // keepIndustry = true
+    const username = get().username || 'Founder'; // Always have a username (fallback to 'Founder')
+    
+    // Get main character configuration from layout config
+    const layoutConfig = getLayoutConfig(industryId);
+    const mainCharacterPosition = layoutConfig?.mainCharacterPosition 
+      ?? (layoutConfig?.staffPositions?.[0] ?? { x: 4, y: 0 }); // Fallback to first staff position or default
+    
+    // Create main character with username, sprite, and position
+    // Main character is ALWAYS created (never null) - uses 'Founder' as fallback name
+    const mainCharacter = createMainCharacter(username, {
+      layoutSpriteImage: layoutConfig?.mainCharacterSpriteImage,
+      position: mainCharacterPosition,
+    });
+    
     set({
-      ...getInitialGameState(industryId, true), // keepIndustry = true
+      ...initialState,
       isGameStarted: true, // Override to start the game
       monthlyExpenses: baseMonthlyExpenses,
       monthlyExpenseAdjustments: 0,
+      mainCharacter,
+      username, // Ensure username is set (even if it's 'Founder')
     });
   },
   
@@ -275,12 +315,22 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       resetEventSequence();
     }
 
+    // Clear username from localStorage on full reset
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('game_username');
+      } catch (error) {
+        console.warn('[Game] Failed to clear username from localStorage:', error);
+      }
+    }
+    
     // Reset everything to initial state including industry selection
     set({
       ...getInitialGameState(DEFAULT_INDUSTRY_ID, false), // keepIndustry = false
       monthlyExpenses: getMonthlyBaseExpenses(DEFAULT_INDUSTRY_ID),
       monthlyExpenseAdjustments: 0,
       username: null, // Clear username on full reset
+      mainCharacter: null, // Clear main character on full reset
     });
   },
   
@@ -706,7 +756,46 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
 
   // Username management
   setUsername: (username) => {
-    set({ username });
+    set((state) => {
+      const finalUsername = username || 'Founder'; // Always have a username
+      
+      // If main character doesn't exist, create it
+      // Otherwise, update the existing one
+      let updatedMainCharacter: MainCharacter;
+      if (!state.mainCharacter) {
+        // Create new main character with current industry's layout config
+        const industryId = (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+        const layoutConfig = getLayoutConfig(industryId);
+        const mainCharacterPosition = layoutConfig?.mainCharacterPosition 
+          ?? (layoutConfig?.staffPositions?.[0] ?? { x: 4, y: 0 });
+        
+        updatedMainCharacter = createMainCharacter(finalUsername, {
+          layoutSpriteImage: layoutConfig?.mainCharacterSpriteImage,
+          position: mainCharacterPosition,
+        });
+      } else {
+        // Update existing main character name
+        updatedMainCharacter = updateMainCharacterName(state.mainCharacter, finalUsername);
+      }
+      
+      // Persist username to localStorage
+      if (typeof window !== 'undefined') {
+        try {
+          if (finalUsername === 'Founder') {
+            localStorage.removeItem('game_username'); // Remove if using default
+          } else {
+            localStorage.setItem('game_username', finalUsername);
+          }
+        } catch (error) {
+          console.warn('[Game] Failed to persist username to localStorage:', error);
+        }
+      }
+      
+      return {
+        username: finalUsername,
+        mainCharacter: updatedMainCharacter,
+      };
+    });
   },
 
   // Flag management methods - use clean IDs directly (no prefix handling)

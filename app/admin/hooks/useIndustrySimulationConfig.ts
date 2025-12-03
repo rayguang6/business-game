@@ -27,6 +27,8 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
   const [waitingPositions, setWaitingPositions] = useState<GridPosition[]>([]);
   const [serviceRooms, setServiceRooms] = useState<ServiceRoomConfig[]>([]);
   const [staffPositions, setStaffPositions] = useState<GridPosition[]>([]);
+  const [mainCharacterPosition, setMainCharacterPosition] = useState<GridPosition | null>(null);
+  const [mainCharacterSpriteImage, setMainCharacterSpriteImage] = useState<string>('');
   
   const [capacityImage, setCapacityImage] = useState<string>('');
   const [winCondition, setWinCondition] = useState<WinCondition | null>(null);
@@ -53,6 +55,8 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
       setWaitingPositions([]);
       setServiceRooms([]);
       setStaffPositions([]);
+      setMainCharacterPosition(null);
+      setMainCharacterSpriteImage('');
       setCapacityImage('');
       setWinCondition(null);
       setLoseCondition(null);
@@ -84,6 +88,18 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
             setWaitingPositions(config.layoutConfig.waitingPositions || []);
             setServiceRooms(config.layoutConfig.serviceRooms || []);
             setStaffPositions(config.layoutConfig.staffPositions || []);
+            setMainCharacterPosition(config.layoutConfig.mainCharacterPosition || null);
+            // Handle sprite image: explicitly check for string value, use empty string if undefined/null
+            // This ensures the input field always has a value (empty string or the actual value)
+            const spriteImage = config.layoutConfig.mainCharacterSpriteImage;
+            if (typeof spriteImage === 'string') {
+              setMainCharacterSpriteImage(spriteImage);
+            } else {
+              setMainCharacterSpriteImage('');
+            }
+          } else {
+            // If layoutConfig doesn't exist, set to empty string
+            setMainCharacterSpriteImage('');
           }
           
           // Handle capacityImage: set to empty string if null/undefined, otherwise use the value
@@ -145,6 +161,8 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
         waitingPositions: waitingPositions.length > 0 ? waitingPositions : null,
         serviceRooms: serviceRooms.length > 0 ? serviceRooms : null,
         staffPositions: staffPositions.length > 0 ? staffPositions : null,
+        mainCharacterPosition: mainCharacterPosition || null,
+        mainCharacterSpriteImage: mainCharacterSpriteImage || null,
         capacityImage: capacityImage || null,
         winCondition: winCondition ?? undefined,
         loseCondition: loseCondition ?? undefined,
@@ -178,6 +196,8 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
     waitingPositions,
     serviceRooms,
     staffPositions,
+    mainCharacterPosition,
+    mainCharacterSpriteImage,
     capacityImage,
     winCondition,
     loseCondition,
@@ -248,6 +268,8 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
     waitingPositions,
     serviceRooms,
     staffPositions,
+    mainCharacterPosition,
+    mainCharacterSpriteImage,
     capacityImage,
     winCondition,
     loseCondition,
@@ -264,6 +286,8 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
     setWaitingPositions,
     setServiceRooms,
     setStaffPositions,
+    setMainCharacterPosition,
+    setMainCharacterSpriteImage,
     setCapacityImage,
     setWinCondition,
     setLoseCondition,

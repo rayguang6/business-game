@@ -45,6 +45,10 @@ const cloneIndustryConfig = (
           staffPosition: { ...room.staffPosition },
         })),
         staffPositions: config.layout.staffPositions.map((pos) => ({ ...pos })),
+        mainCharacterPosition: config.layout.mainCharacterPosition
+          ? { ...config.layout.mainCharacterPosition }
+          : undefined,
+        mainCharacterSpriteImage: config.layout.mainCharacterSpriteImage,
       }
     : undefined,
   // Industry-specific simulation config overrides

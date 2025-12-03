@@ -3,6 +3,7 @@
 import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
 import { CustomerStatus } from '@/lib/features/customers';
+import type { Staff } from '@/lib/features/staff';
 import { WaitingArea } from './WaitingArea';
 import { TreatmentRoom } from './TreatmentRoom';
 import { Character2D } from './Character2D';
@@ -45,6 +46,7 @@ export function GameCanvas() {
     conversionRate,
     gameTime,
     hiredStaff,
+    mainCharacter,
   } = useGameStore();
   const canvasRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState(350);
@@ -146,6 +148,37 @@ export function GameCanvas() {
     const baseStats = getBusinessStats(industryId);
     const baseMonthlyExpenses = getMonthlyBaseExpenses(industryId);
     
+    // Early return if baseStats is null (shouldn't happen due to validation above, but TypeScript needs this)
+    if (!baseStats) {
+      return {
+        spawnIntervalSeconds: 3,
+        serviceSpeedMultiplier: 1.0,
+        serviceCapacity: 1,
+        serviceRevenueMultiplier: 1,
+        serviceRevenueFlatBonus: 0,
+        serviceRevenueScale: 1,
+        conversionRate: 10,
+        failureRate: 0,
+        monthlyExpenses: baseMonthlyExpenses,
+        monthlyTimeCapacity: 0,
+        expGainPerHappyCustomer: 1,
+        expLossPerAngryCustomer: 1,
+        highTierRevenueMultiplier: 1,
+        midTierRevenueMultiplier: 1,
+        lowTierRevenueMultiplier: 1,
+        highTierWeightageMultiplier: 1,
+        midTierWeightageMultiplier: 1,
+        lowTierWeightageMultiplier: 1,
+        baseServiceRevenueMultiplier: undefined,
+        baseServiceRevenueScale: undefined,
+        baseConversionRate: undefined,
+        baseFailureRate: undefined,
+        baseServiceCapacity: undefined,
+        baseExpGainPerHappy: undefined,
+        baseExpLossPerAngry: undefined,
+      };
+    }
+    
     // Calculate metrics exactly like mechanics.ts does
     // Note: Game uses fallbacks (?? 1, ?? 10, ?? 0) for calculations to work
     // But we also track base values (without fallbacks) to show N/A when missing
@@ -218,6 +251,17 @@ export function GameCanvas() {
   const serviceCapacity = serviceCapacityDisplay ?? 1; // Fallback for array operations
   const mapBackground = selectedIndustry.mapImage ?? '/images/maps/dental-map.png';
   const staffPositions = layout.staffPositions;
+  // Get main character position from main character state if available, otherwise from layout config
+  const mainCharacterPosition = mainCharacter && mainCharacter.x !== undefined && mainCharacter.y !== undefined
+    ? {
+        x: mainCharacter.x,
+        y: mainCharacter.y,
+        facingDirection: mainCharacter.facingDirection,
+      }
+    : (layout.mainCharacterPosition 
+        ?? (staffPositions.length > 0 ? staffPositions[0] : { x: 4, y: 0 }));
+  // Get main character sprite image from main character state (already initialized with proper fallback)
+  const mainCharacterSpriteImage = mainCharacter?.spriteImage || '/images/staff/staff1.png';
   const TILE_SIZE = 32;
 
   // Use calculated values (with effects) - these match what the game uses
@@ -475,6 +519,19 @@ export function GameCanvas() {
             transformOrigin: 'top left'
           }}
         >
+          {/* Render main character at configured position */}
+          {mainCharacter && (
+            <SpriteStaff
+              key={mainCharacter.id}
+              staff={{
+                ...mainCharacter,
+                spriteImage: mainCharacterSpriteImage, // Use sprite from layout config (overrides main character's sprite)
+              } as Staff}
+              position={mainCharacterPosition}
+              scaleFactor={scaleFactor}
+            />
+          )}
+
           {/* Render staff at staff positions (one per staff member) */}
           {hiredStaff.slice(0, staffPositions.length).map((staff, index) => {
             const position = staffPositions[index];

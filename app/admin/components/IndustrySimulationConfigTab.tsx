@@ -22,6 +22,8 @@ interface IndustrySimulationConfigTabProps {
   waitingPositions: GridPosition[];
   serviceRooms: ServiceRoomConfig[];
   staffPositions: GridPosition[];
+  mainCharacterPosition: GridPosition | null;
+  mainCharacterSpriteImage: string;
   capacityImage: string;
   winCondition: WinCondition | null;
   loseCondition: LoseCondition | null;
@@ -40,6 +42,8 @@ interface IndustrySimulationConfigTabProps {
   setWaitingPositions: (value: GridPosition[]) => void;
   setServiceRooms: (value: ServiceRoomConfig[]) => void;
   setStaffPositions: (value: GridPosition[]) => void;
+  setMainCharacterPosition: (value: GridPosition | null) => void;
+  setMainCharacterSpriteImage: (value: string) => void;
   setCapacityImage: (value: string) => void;
   setWinCondition: (value: WinCondition | null) => void;
   setLoseCondition: (value: LoseCondition | null) => void;
@@ -64,6 +68,8 @@ export function IndustrySimulationConfigTab({
   waitingPositions,
   serviceRooms,
   staffPositions,
+  mainCharacterPosition,
+  mainCharacterSpriteImage,
   capacityImage,
   winCondition,
   loseCondition,
@@ -79,6 +85,8 @@ export function IndustrySimulationConfigTab({
   setWaitingPositions,
   setServiceRooms,
   setStaffPositions,
+  setMainCharacterPosition,
+  setMainCharacterSpriteImage,
   setCapacityImage,
   setWinCondition,
   setLoseCondition,
@@ -287,6 +295,8 @@ export function IndustrySimulationConfigTab({
         setWaitingPositions([]);
         setServiceRooms([]);
         setStaffPositions([]);
+        setMainCharacterPosition(null);
+        setMainCharacterSpriteImage('');
         break;
       case 'capacity': setCapacityImage(''); break;
       case 'win': setWinCondition(null); break;
@@ -946,6 +956,53 @@ export function IndustrySimulationConfigTab({
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Main Character Position */}
+          <div className="bg-slate-800 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-slate-300">Main Character Position (Founder)</label>
+              {mainCharacterPosition ? (
+                <button onClick={() => setMainCharacterPosition(null)} className="text-xs px-2 py-1 bg-rose-600 hover:bg-rose-700 rounded">Clear</button>
+              ) : (
+                <button onClick={() => setMainCharacterPosition({ x: 4, y: 0 })} className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded">+ Add</button>
+              )}
+            </div>
+            <p className="text-xs text-slate-400 mb-2">Optional: Position for the main character (founder). If not set, defaults to first staff position.</p>
+            {mainCharacterPosition ? (
+              <div className="flex gap-2">
+                <input 
+                  type="number" 
+                  className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" 
+                  placeholder="X" 
+                  value={mainCharacterPosition.x} 
+                  onChange={(e) => setMainCharacterPosition({ ...mainCharacterPosition, x: Number(e.target.value) })} 
+                />
+                <input 
+                  type="number" 
+                  className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" 
+                  placeholder="Y" 
+                  value={mainCharacterPosition.y} 
+                  onChange={(e) => setMainCharacterPosition({ ...mainCharacterPosition, y: Number(e.target.value) })} 
+                />
+              </div>
+            ) : (
+              <div className="text-sm text-slate-400 py-2">Not configured (will use default)</div>
+            )}
+          </div>
+
+          {/* Main Character Sprite Image */}
+          <div className="bg-slate-800 rounded-lg p-4">
+            <label className="block text-sm font-medium text-slate-300 mb-2">Main Character Sprite Image</label>
+            <p className="text-xs text-slate-400 mb-2">Optional: Custom sprite image path for the main character (founder). Leave empty to use default sprite.</p>
+            <input
+              type="text"
+              className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200 text-sm"
+              placeholder="/images/staff/staff1.png"
+              value={mainCharacterSpriteImage}
+              onChange={(e) => setMainCharacterSpriteImage(e.target.value)}
+            />
+            <p className="text-xs text-slate-400 mt-1">Example: /images/staff/staff1.png or /images/staff/custom-sprite.png</p>
           </div>
         </div>
 

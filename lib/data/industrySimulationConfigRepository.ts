@@ -7,7 +7,7 @@ import type {
   SimulationLayoutConfig,
 } from '@/lib/game/types';
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
-import { parsePositions, parseServiceRooms } from './layoutRepository';
+import { parsePositions, parseServiceRooms, parsePosition } from './layoutRepository';
 
 export interface IndustrySimulationConfigResult {
   businessMetrics?: BusinessMetrics;
@@ -105,7 +105,7 @@ export async function fetchIndustrySimulationConfig(
 
   const { data, error } = await supabase
     .from('industry_simulation_config')
-    .select('business_metrics, business_stats, map_width, map_height, map_walls, entry_position, waiting_positions, service_rooms, staff_positions, capacity_image, win_condition, lose_condition, event_selection_mode, event_sequence')
+    .select('business_metrics, business_stats, map_width, map_height, map_walls, entry_position, waiting_positions, service_rooms, staff_positions, main_character_position, main_character_sprite_image, capacity_image, win_condition, lose_condition, event_selection_mode, event_sequence')
     .eq('industry_id', industryId)
     .maybeSingle();
 
@@ -145,20 +145,52 @@ export async function fetchIndustrySimulationConfig(
   }
   
   // Build layout config from separate columns
-  if (data && (data.entry_position || data.waiting_positions || data.service_rooms || data.staff_positions)) {
+  // Always process main_character_sprite_image even if other layout fields are null
+  // This ensures the sprite image value is always available in the result
+  const hasAnyLayoutData = data && (
+    data.entry_position || 
+    data.waiting_positions || 
+    data.service_rooms || 
+    data.staff_positions || 
+    data.main_character_position || 
+    data.main_character_sprite_image !== null && data.main_character_sprite_image !== undefined
+  );
+  
+  if (hasAnyLayoutData) {
     // Use parsePositions to properly parse facingDirection if present
     const waitingPositions = parsePositions(data.waiting_positions) || [];
     const serviceRooms = parseServiceRooms(data.service_rooms) || [];
     const staffPositions = parsePositions(data.staff_positions) || [];
+    const mainCharacterPosition = parsePosition(data.main_character_position) || undefined;
+    // Always include mainCharacterSpriteImage, even if it's null/empty (will be undefined if empty)
+    const mainCharacterSpriteImage = typeof data.main_character_sprite_image === 'string' && data.main_character_sprite_image.trim()
+      ? data.main_character_sprite_image.trim()
+      : (data.main_character_sprite_image === null || data.main_character_sprite_image === '' ? undefined : data.main_character_sprite_image);
     
     const layoutConfig: SimulationLayoutConfig = {
       entryPosition: (data.entry_position as unknown as GridPosition) || { x: 0, y: 0 },
       waitingPositions,
       serviceRooms,
       staffPositions,
+      mainCharacterPosition,
+      mainCharacterSpriteImage,
     };
     
     result.layoutConfig = layoutConfig;
+  } else if (data.main_character_sprite_image !== null && data.main_character_sprite_image !== undefined) {
+    // Edge case: if only main_character_sprite_image exists, still create layoutConfig for it
+    const mainCharacterSpriteImage = typeof data.main_character_sprite_image === 'string' && data.main_character_sprite_image.trim()
+      ? data.main_character_sprite_image.trim()
+      : undefined;
+    
+    result.layoutConfig = {
+      entryPosition: { x: 0, y: 0 },
+      waitingPositions: [],
+      serviceRooms: [],
+      staffPositions: [],
+      mainCharacterPosition: undefined,
+      mainCharacterSpriteImage,
+    };
   }
   
   if (data.capacity_image) {
@@ -206,6 +238,8 @@ export async function upsertIndustrySimulationConfig(
     waitingPositions?: GridPosition[] | null;
     serviceRooms?: ServiceRoomConfig[] | null;
     staffPositions?: GridPosition[] | null;
+    mainCharacterPosition?: GridPosition | null;
+    mainCharacterSpriteImage?: string | null;
     capacityImage?: string | null;
     winCondition?: WinCondition;
     loseCondition?: LoseCondition;
@@ -237,6 +271,8 @@ export async function upsertIndustrySimulationConfig(
   const waitingPositions = config.waitingPositions ?? config.layoutConfig?.waitingPositions ?? undefined;
   const serviceRooms = config.serviceRooms ?? config.layoutConfig?.serviceRooms ?? undefined;
   const staffPositions = config.staffPositions ?? config.layoutConfig?.staffPositions ?? undefined;
+  const mainCharacterPosition = config.mainCharacterPosition ?? config.layoutConfig?.mainCharacterPosition ?? undefined;
+  const mainCharacterSpriteImage = config.mainCharacterSpriteImage ?? config.layoutConfig?.mainCharacterSpriteImage ?? undefined;
 
   const payload: any = {
     id: idToUse,
@@ -256,6 +292,13 @@ export async function upsertIndustrySimulationConfig(
   if (waitingPositions !== undefined) payload.waiting_positions = waitingPositions;
   if (serviceRooms !== undefined) payload.service_rooms = serviceRooms;
   if (staffPositions !== undefined) payload.staff_positions = staffPositions;
+  if (mainCharacterPosition !== undefined) payload.main_character_position = mainCharacterPosition;
+  // Handle sprite image: save as null if empty string, otherwise save the value
+  if (mainCharacterSpriteImage !== undefined) {
+    payload.main_character_sprite_image = mainCharacterSpriteImage && mainCharacterSpriteImage.trim() 
+      ? mainCharacterSpriteImage.trim() 
+      : null;
+  }
   
   if (config.capacityImage !== undefined) payload.capacity_image = config.capacityImage;
   if (config.winCondition !== undefined) payload.win_condition = config.winCondition;

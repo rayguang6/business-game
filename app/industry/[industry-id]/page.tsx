@@ -16,9 +16,10 @@ export default function IndustryPage() {
   
   const setSelectedIndustry = useGameStore((state) => state.setSelectedIndustry);
   const setUsername = useGameStore((state) => state.setUsername);
+  const savedUsername = useGameStore((state) => state.username); // Get saved username from store
   
   const [industry, setIndustry] = useState<Industry | null>(null);
-  const [username, setUsernameInput] = useState('');
+  const [username, setUsernameInput] = useState(savedUsername || ''); // Pre-fill with saved username
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   

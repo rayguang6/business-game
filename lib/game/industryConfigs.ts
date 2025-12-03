@@ -126,6 +126,7 @@ const DEFAULT_LAYOUT: SimulationLayoutConfig = {
     { x: 4, y: 1 },
     { x: 5, y: 1 },
   ],
+  mainCharacterPosition: { x: 4, y: 0 }, // Default main character position (first staff position)
 } as const;
 
 const DEFAULT_CUSTOMER_IMAGES = [
@@ -156,6 +157,9 @@ function createSharedBase(): Omit<IndustrySimulationConfig, 'id' | 'services' | 
         staffPosition: { ...room.staffPosition },
       })),
       staffPositions: DEFAULT_LAYOUT.staffPositions.map((pos) => ({ ...pos })),
+      mainCharacterPosition: DEFAULT_LAYOUT.mainCharacterPosition
+        ? { ...DEFAULT_LAYOUT.mainCharacterPosition }
+        : undefined,
     },
     customerImages: [...DEFAULT_CUSTOMER_IMAGES],
     defaultCustomerImage: DEFAULT_CUSTOMER_IMAGES[0],

@@ -2,11 +2,12 @@
 
 import React, { useState } from 'react';
 import { Staff } from '@/lib/features/staff';
+import { MainCharacter, isMainCharacter } from '@/lib/features/mainCharacter';
 import { GridPosition } from '@/lib/game/types';
 import { Character2D } from './Character2D';
 
 interface SpriteStaffProps {
-  staff: Staff;
+  staff: Staff | MainCharacter;
   position: GridPosition;
   scaleFactor: number;
 }
@@ -195,6 +196,9 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
     };
   }, [staff.id, isCelebrating]);
 
+  // Check if this is the main character
+  const isMainChar = isMainCharacter(staff);
+
   return (
     <div
       className="absolute pointer-events-none"
@@ -207,6 +211,35 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
       }}
       title={`${staff.name} - ${staff.role}`}
     >
+      {/* ====================================================================
+          MAIN CHARACTER USERNAME DISPLAY
+          ====================================================================
+          Show username above main character sprite to identify it
+          */}
+      {isMainChar && (
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            left: '50%',
+            top: '-15px',
+            transform: 'translateX(-50%)',
+            whiteSpace: 'nowrap',
+            zIndex: 12, // Above everything
+          }}
+        >
+          <div
+            className="text-black-500 rounded px-2 py-0.5 text-xs font-semibold"
+            style={{
+              fontSize: '6px',
+              lineHeight: '12px',
+              textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+            }}
+          >
+            {staff.name}
+          </div>
+        </div>
+      )}
+
       {/* ====================================================================
           STAFF SPRITE RENDERING
           ====================================================================
