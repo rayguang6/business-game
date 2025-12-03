@@ -107,7 +107,11 @@ const servicesCache = new WeakMap<IndustryContentConfig, IndustryServiceDefiniti
 const upgradesCache = new WeakMap<IndustryContentConfig, UpgradeDefinition[]>();
 const eventsCache = new WeakMap<IndustryContentConfig, GameEvent[]>();
 
-const cloneService = (service: IndustryServiceDefinition): IndustryServiceDefinition => ({ ...service });
+const cloneService = (service: IndustryServiceDefinition): IndustryServiceDefinition => ({
+  ...service,
+  requirements: service.requirements ? service.requirements.map((req) => ({ ...req })) : undefined,
+  requiredStaffRoleIds: service.requiredStaffRoleIds ? [...service.requiredStaffRoleIds] : undefined,
+});
 
 const cloneUpgrade = (upgrade: UpgradeDefinition): UpgradeDefinition => ({
   ...upgrade,

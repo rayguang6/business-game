@@ -162,6 +162,7 @@ export interface IndustryServiceDefinition {
   pricingCategory?: ServicePricingCategory; // low, mid, or high end pricing
   weightage?: number; // Weight for random selection (higher = more likely to be selected)
   requiredStaffRoleIds?: string[]; // Array of staff role IDs that can perform this service (if empty/null, any staff can perform)
+  timeCost?: number; // Amount of time this service costs (0 = no time cost)
 }
 
 export interface IndustrySimulationConfig {

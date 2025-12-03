@@ -8,6 +8,7 @@ import { checkRequirements } from '@/lib/game/requirementChecker';
 import { getWeightedRandomService } from '@/lib/features/services';
 import { getServicesFromStore } from '@/lib/store/configStore';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
+import { SourceType } from '@/lib/config/sourceTypes';
 
 export interface CustomerSlice {
   customers: Customer[];
@@ -84,13 +85,55 @@ export const createCustomerSlice: StateCreator<GameState, [], [], CustomerSlice>
     set((state) => {
       const industryId = (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
       const serviceSpeedMultiplier = effectManager.calculate(GameMetric.ServiceSpeedMultiplier, 1.0);
-      
+
+      // Find the customer to start service for
+      const customer = state.customers.find(c => c.id === customerId);
+      if (!customer) return state; // Customer not found
+
+      // Check if there's enough time available for this service
+      const serviceTimeCost = customer.service.timeCost || 0;
+      if (serviceTimeCost > 0 && state.metrics.time < serviceTimeCost) {
+        // Not enough time available - don't start service
+        console.warn(`Not enough time available for service ${customer.service.name}. Required: ${serviceTimeCost}, Available: ${state.metrics.time}`);
+        return state;
+      }
+
+      // Start the service
+      const updatedCustomer = startService(customer, 1, serviceSpeedMultiplier, industryId);
+
+      // Update state with new customer and time deduction
+      const updatedCustomers = state.customers.map(c =>
+        c.id === customerId ? updatedCustomer : c
+      );
+
+      if (serviceTimeCost > 0) {
+        // Deduct time cost
+        const newTime = Math.max(0, state.metrics.time - serviceTimeCost);
+        return {
+          ...state,
+          customers: updatedCustomers,
+          metrics: {
+            ...state.metrics,
+            time: newTime,
+            totalTimeSpent: state.metrics.totalTimeSpent + serviceTimeCost,
+          },
+          monthlyTimeSpent: state.monthlyTimeSpent + serviceTimeCost,
+          monthlyTimeSpentDetails: [
+            ...state.monthlyTimeSpentDetails,
+            {
+              amount: serviceTimeCost,
+              label: `Service: ${customer.service.name}`,
+              sourceId: customer.service.id,
+              sourceType: SourceType.Other,
+              sourceName: customer.service.name,
+            },
+          ],
+        };
+      }
+
       return {
-        customers: state.customers.map(customer => 
-          customer.id === customerId 
-            ? startService(customer, 1, serviceSpeedMultiplier, industryId) // Default to room 1 for now
-            : customer
-        )
+        ...state,
+        customers: updatedCustomers,
       };
     });
   },

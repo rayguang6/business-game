@@ -801,7 +801,7 @@ export function UpgradesTab() {
           <div className="text-center">
             <h4 className="text-base sm:text-lg md:text-xl font-bold text-primary mb-1 sm:mb-2">Available Staff</h4>
             <p className="text-xs sm:text-sm md:text-base text-secondary">
-              Choose who joins your clinic next. Hiring is instant and only adds their salary.
+              Choose who joins your business next. Hiring is instant and only adds their salary.
             </p>
           </div>
           <div className="max-w-6xl mx-auto flex flex-wrap justify-center items-stretch gap-2 sm:gap-3 md:gap-4 px-2 sm:px-3 md:px-4">

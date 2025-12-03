@@ -13,7 +13,7 @@ interface ServicesTabProps {
   serviceStatus: string | null;
   selectedServiceId: string;
   isCreatingService: boolean;
-  serviceForm: { id: string; name: string; duration: string; price: string; requirements: Requirement[]; pricingCategory: string; weightage: string; requiredStaffRoleIds: string[] };
+  serviceForm: { id: string; name: string; duration: string; price: string; requirements: Requirement[]; pricingCategory: string; weightage: string; requiredStaffRoleIds: string[]; timeCost: string };
   serviceSaving: boolean;
   serviceDeleting: boolean;
   flags: GameFlag[];
@@ -173,6 +173,20 @@ export function ServicesTab({
                         placeholder="1.0"
                       />
                       <p className="text-xs text-slate-400 mt-1">Higher weightage = more likely to be selected</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Time Cost</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={serviceForm.timeCost}
+                        onChange={(e) => onUpdateForm({ timeCost: e.target.value })}
+                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                        placeholder="0"
+                      />
+                      <p className="text-xs text-slate-400 mt-1">Amount of time this service costs (0 = no time cost)</p>
                     </div>
 
                     <div className="md:col-span-2">

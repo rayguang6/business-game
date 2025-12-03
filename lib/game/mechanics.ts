@@ -10,6 +10,7 @@ import {
   RevenueCategory,
   getLevel,
 } from '@/lib/store/types';
+import { SourceType } from '@/lib/config/sourceTypes';
 import {
   getBusinessStats,
   getTicksPerSecondForIndustry,
@@ -200,6 +201,8 @@ interface ProcessCustomersResult {
   customersServed: number; // Customers who completed service successfully this tick
   customersLeftImpatient: number; // Customers who left due to impatience this tick
   customersServiceFailed: number; // Customers whose service failed this tick
+  timeSpentThisTick: number; // Time spent on services this tick
+  timeSpentDetailsThisTick: TimeSpentEntry[]; // Details of time spent this tick
   staffUpdates?: Staff[]; // Updated staff (if any were assigned/freed)
   mainCharacterUpdate?: MainCharacter | null; // Updated main character (if assigned/freed)
 }
@@ -402,6 +405,8 @@ function processCustomersForTick({
   let customersServedCount = 0;
   let customersLeftImpatientCount = 0;
   let customersServiceFailedCount = 0;
+  let timeSpentThisTick = 0;
+  const timeSpentDetailsThisTick: TimeSpentEntry[] = [];
   
   // Track staff and main character updates
   const staffUpdatesMap = new Map<string, Staff>();
@@ -501,7 +506,14 @@ function processCustomersForTick({
         );
         
         if (availableProvider) {
-          // Found a room with valid positions and available staff - assign it
+          // Check if there's enough time available for this service
+          const serviceTimeCost = updatedCustomer.service.timeCost || 0;
+          if (serviceTimeCost > 0 && metrics.time < serviceTimeCost) {
+            // Not enough time available for this service - skip to next room
+            continue;
+          }
+
+          // Found a room with valid positions, available staff, and sufficient time - assign it
           // Remove the room from available rooms (safe to remove when iterating backwards)
           roomsRemaining.splice(roomIndex, 1);
           
@@ -598,7 +610,28 @@ function processCustomersForTick({
               path: staffPath.length > 0 ? staffPath : undefined,
             });
           }
-          
+
+          // Deduct time cost when service starts (upfront payment)
+          if (serviceTimeCost > 0) {
+            // Deduct time from available time
+            const oldTime = metricsAccumulator.time;
+            const newTime = Math.max(0, oldTime - serviceTimeCost);
+            metricsAccumulator = {
+              ...metricsAccumulator,
+              time: newTime,
+            };
+
+            // Track time spent
+            timeSpentThisTick += serviceTimeCost;
+            timeSpentDetailsThisTick.push({
+              amount: serviceTimeCost,
+              label: `Service: ${updatedCustomer.service.name}`,
+              sourceId: updatedCustomer.service.id,
+              sourceType: SourceType.Other,
+              sourceName: updatedCustomer.service.name,
+            });
+          }
+
           updatedCustomers.push(customerWithService);
           assigned = true;
           break; // Successfully assigned, exit the room loop
@@ -642,6 +675,8 @@ function processCustomersForTick({
 
       // Service succeeded - customer leaves happy with revenue and exp
       customersServedCount++;
+
+
       const servicePrice = updatedCustomer.service.price;
       const tierMultiplier = getTierRevenueMultiplier(updatedCustomer.service.pricingCategory);
       const baseServiceValue = (servicePrice * tierMultiplier) + serviceRevenueFlatBonus;
@@ -768,6 +803,8 @@ function processCustomersForTick({
     customersServed: customersServedCount,
     customersLeftImpatient: customersLeftImpatientCount,
     customersServiceFailed: customersServiceFailedCount,
+    timeSpentThisTick,
+    timeSpentDetailsThisTick,
     staffUpdates: staffUpdatesMap.size > 0 ? staffUpdates : undefined,
     mainCharacterUpdate: mainCharacterUpdate !== mainCharacter ? mainCharacterUpdate : undefined,
   };
@@ -1308,6 +1345,10 @@ export function tickOnce(state: TickInput): TickResult {
   monthlyCustomersServed += processedCustomersForTick.customersServed;
   monthlyCustomersLeftImpatient += processedCustomersForTick.customersLeftImpatient;
   monthlyCustomersServiceFailed += processedCustomersForTick.customersServiceFailed;
+
+  // Accumulate time spent on services this tick
+  monthlyTimeSpent += processedCustomersForTick.timeSpentThisTick;
+  monthlyTimeSpentDetails.push(...processedCustomersForTick.timeSpentDetailsThisTick);
 
   // FreedomScore is now direct state (like Cash/Time/SkillLevel)
   // It's modified directly via applyFreedomScoreChange(), not calculated here

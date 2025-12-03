@@ -11,6 +11,7 @@ interface ServiceRow {
   pricing_category?: string | null; // low, mid, or high
   weightage?: number | null; // Weight for random selection
   required_staff_role_ids?: string[] | null; // Array of staff role IDs that can perform this service
+  time_cost?: number | null; // Amount of time this service costs
 }
 
 export async function fetchServicesForIndustry(
@@ -23,7 +24,7 @@ export async function fetchServicesForIndustry(
 
   const { data, error } = await supabase
     .from('services')
-    .select('id, industry_id, name, duration, price, requirements, pricing_category, weightage, required_staff_role_ids')
+    .select('id, industry_id, name, duration, price, requirements, pricing_category, weightage, required_staff_role_ids, time_cost')
     .eq('industry_id', industryId);
 
   if (error) {
@@ -57,9 +58,10 @@ export async function upsertServiceForIndustry(
     requirements: service.requirements || [],
     pricing_category: service.pricingCategory || null,
     weightage: service.weightage ?? null,
-    required_staff_role_ids: service.requiredStaffRoleIds && service.requiredStaffRoleIds.length > 0 
-      ? service.requiredStaffRoleIds 
+    required_staff_role_ids: service.requiredStaffRoleIds && service.requiredStaffRoleIds.length > 0
+      ? service.requiredStaffRoleIds
       : null,
+    time_cost: service.timeCost ?? null,
   };
 
   const { data, error } = await supabase
@@ -155,5 +157,6 @@ function mapRowToService(row: ServiceRow): IndustryServiceDefinition {
     pricingCategory,
     weightage: row.weightage ?? undefined,
     requiredStaffRoleIds,
+    timeCost: row.time_cost ?? undefined,
   };
 }

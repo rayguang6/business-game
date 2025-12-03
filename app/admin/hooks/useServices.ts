@@ -12,6 +12,7 @@ interface ServiceForm {
   pricingCategory: string;
   weightage: string;
   requiredStaffRoleIds: string[]; // Array of staff role IDs
+  timeCost: string;
 }
 
 export function useServices(industryId: string) {
@@ -29,6 +30,7 @@ export function useServices(industryId: string) {
     pricingCategory: '',
     weightage: '1',
     requiredStaffRoleIds: [],
+    timeCost: '0',
   });
 
   const load = useCallback(async () => {
@@ -58,6 +60,7 @@ export function useServices(industryId: string) {
       pricingCategory: service.pricingCategory || '',
       weightage: service.weightage?.toString() || '1',
       requiredStaffRoleIds: service.requiredStaffRoleIds || [],
+      timeCost: service.timeCost?.toString() || '0',
     });
     if (resetMsg) setStatus(null);
   }, []);
@@ -78,6 +81,7 @@ export function useServices(industryId: string) {
       pricingCategory: '',
       weightage: '1',
       requiredStaffRoleIds: [],
+      timeCost: '0',
     });
     setStatus(null);
   }, [industryId]);
@@ -92,6 +96,7 @@ export function useServices(industryId: string) {
     const duration = Number(form.duration);
     const price = Number(form.price);
     const weightage = Number(form.weightage);
+    const timeCost = Number(form.timeCost);
     if (!id || !name) {
       setStatus('Service id and name are required.');
       return;
@@ -102,6 +107,10 @@ export function useServices(industryId: string) {
     }
     if (!Number.isFinite(weightage) || weightage <= 0) {
       setStatus('Weightage must be a positive number.');
+      return;
+    }
+    if (!Number.isFinite(timeCost) || timeCost < 0) {
+      setStatus('Time cost must be a non-negative number.');
       return;
     }
     setOperation('saving');
@@ -115,6 +124,7 @@ export function useServices(industryId: string) {
       pricingCategory: (form.pricingCategory as ServicePricingCategory) || undefined,
       weightage,
       requiredStaffRoleIds: form.requiredStaffRoleIds.length > 0 ? form.requiredStaffRoleIds : undefined,
+      timeCost: timeCost > 0 ? timeCost : undefined,
     };
     const result = await upsertServiceForIndustry(payload);
     setOperation('idle');
