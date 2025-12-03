@@ -60,6 +60,7 @@ const cloneIndustryConfig = (
   winCondition: config.winCondition ? { ...config.winCondition } : undefined,
   loseCondition: config.loseCondition ? { ...config.loseCondition } : undefined,
   customerImages: config.customerImages ? [...config.customerImages] : undefined,
+  leadDialogues: config.leadDialogues ? [...config.leadDialogues] : undefined,
 });
 
 const cloneGlobalConfig = (config: GlobalSimulationConfigState | null) =>

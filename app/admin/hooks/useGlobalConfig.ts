@@ -20,6 +20,7 @@ export function useGlobalConfig() {
   const [capacityImage, setCapacityImage] = useState<string>('');
   const [customerImages, setCustomerImages] = useState<string[]>([]);
   const [staffNamePool, setStaffNamePool] = useState<string[]>([]);
+  const [leadDialogues, setLeadDialogues] = useState<string[]>([]);
   const [winCondition, setWinCondition] = useState<WinCondition>({ ...DEFAULT_WIN_CONDITION });
   const [loseCondition, setLoseCondition] = useState<LoseCondition>({ ...DEFAULT_LOSE_CONDITION });
   const [status, setStatus] = useState<string | null>(null);
@@ -46,6 +47,7 @@ export function useGlobalConfig() {
           if (global.capacityImage) setCapacityImage(global.capacityImage);
           if (global.customerImages) setCustomerImages(global.customerImages);
           if (global.staffNamePool) setStaffNamePool(global.staffNamePool);
+          if (global.leadDialogues) setLeadDialogues(global.leadDialogues);
           if (global.winCondition) setWinCondition(global.winCondition);
           if (global.loseCondition) setLoseCondition(global.loseCondition);
         }
@@ -103,6 +105,7 @@ export function useGlobalConfig() {
       capacityImage: capacityImage || null,
       customerImages: customerImages.length > 0 ? customerImages : null,
       staffNamePool: staffNamePool.length > 0 ? staffNamePool : null,
+      leadDialogues: leadDialogues.length > 0 ? leadDialogues.filter(d => d.trim() !== '') : null,
       winCondition,
       loseCondition,
     });
@@ -122,12 +125,13 @@ export function useGlobalConfig() {
       capacityImage: capacityImage || undefined,
       customerImages: customerImages.length > 0 ? customerImages : undefined,
       staffNamePool: staffNamePool.length > 0 ? staffNamePool : undefined,
+      leadDialogues: leadDialogues.length > 0 ? leadDialogues : undefined,
       winCondition,
       loseCondition,
     });
 
     setStatus('Global config saved.');
-  }, [metrics, stats, eventSecondsInput, movementJSON, mapConfigJSON, capacityImage, customerImages, staffNamePool, winCondition, loseCondition]);
+  }, [metrics, stats, eventSecondsInput, movementJSON, mapConfigJSON, capacityImage, customerImages, staffNamePool, leadDialogues, winCondition, loseCondition]);
 
   const updateMetrics = useCallback((updates: Partial<BusinessMetrics>) => {
     setMetrics(prev => ({ ...prev, ...updates }));
@@ -154,6 +158,7 @@ export function useGlobalConfig() {
     capacityImage,
     customerImages,
     staffNamePool,
+    leadDialogues,
     winCondition,
     loseCondition,
     status,
@@ -166,6 +171,7 @@ export function useGlobalConfig() {
     setCapacityImage,
     setCustomerImages,
     setStaffNamePool,
+    setLeadDialogues,
     updateMetrics,
     updateStats,
     updateWinCondition,

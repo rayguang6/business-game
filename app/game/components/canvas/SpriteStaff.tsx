@@ -22,7 +22,7 @@ interface SpriteStaffProps {
  * - Sprite selection: database spriteImage → default staff1.png fallback
  * - Staff use dynamic positions (staff.x, staff.y) when available
  * - Staff animations based on status: idle, walking_to_room, serving, walking_to_idle
- * - Random idle animations only when staff.status is 'idle'
+ * - Simple idle animations: occasional direction changes with brief walk animations
  *
  * ============================================================================
  * SPRITE SYSTEM:
@@ -52,25 +52,21 @@ interface SpriteStaffProps {
 // STAFF ANIMATION CONFIG (for idle animations only)
 // ============================================================================
 const STAFF_ANIMATION_CONFIG = {
-  // Celebrate animation happens randomly every X to Y seconds (only when idle)
-  celebrateIntervalMin: 5000, // 5 seconds
-  celebrateIntervalMax: 15000, // 15 seconds
-  celebrateDuration: 2000, // Celebrate for 2 seconds
+  // Continuous idle animation - always animating
+  walkDuration: 800, // Walk for 0.8 seconds
+  celebrateDuration: 1200, // Celebrate for 1.2 seconds
   
-  // Idle walking happens randomly (staff fidgets in place)
-  idleWalkChance: 0.3, // 30% chance when not celebrating
-  idleWalkIntervalMin: 3000, // 3 seconds
-  idleWalkIntervalMax: 8000, // 8 seconds
-  idleWalkDuration: 1500, // Walk in place for 1.5 seconds
+  // Walk directions (can walk left/right, but when stopped face down)
+  walkDirections: ['down', 'left', 'right'] as const,
   
-  // Directions staff can face
-  directions: ['down', 'left', 'right', 'up'] as const,
+  // Chance to celebrate vs walk
+  celebrateChance: 0.25, // 25% chance to celebrate, 75% to walk
 } as const;
 
 export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) {
   const TILE_SIZE = 32;
-  const [isCelebrating, setIsCelebrating] = useState(false);
   const [isWalking, setIsWalking] = useState(false);
+  const [isCelebrating, setIsCelebrating] = useState(false);
   const [direction, setDirection] = useState<'down' | 'left' | 'up' | 'right'>('down');
   
   // Use dynamic position if available, otherwise use fallback position
@@ -100,7 +96,7 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
   // ANIMATION STATE BASED ON STAFF STATUS
   // ============================================================================
   // Determine animation state from staff status and facing direction
-  const getAnimationState = (): { isWalking: boolean; isCelebrating: boolean; direction: Character2DProps['direction'] } => {
+  const getAnimationState = (): { isWalking: boolean; direction: Character2DProps['direction'] } => {
     const staffStatus = staff.status || 'idle';
     const facingDirection: Character2DProps['direction'] = staff.facingDirection || 'down';
     
@@ -108,15 +104,15 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
     switch (staffStatus) {
       case 'walking_to_room':
       case 'walking_to_idle':
-        return { isWalking: true, isCelebrating: false, direction: facingDirection };
+        return { isWalking: true, direction: facingDirection };
       
       case 'serving':
-        return { isWalking: false, isCelebrating: false, direction: facingDirection };
+        return { isWalking: false, direction: facingDirection };
       
       case 'idle':
       default:
-        // For idle staff, we'll use random animations (handled by useEffect below)
-        return { isWalking: false, isCelebrating: false, direction: facingDirection };
+        // For idle staff, we'll use simple random animations (handled by useEffect below)
+        return { isWalking: false, direction: facingDirection };
     }
   };
 
@@ -125,102 +121,88 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
   const isIdle = (staff.status || 'idle') === 'idle';
   
   // ============================================================================
-  // RANDOM IDLE ANIMATIONS (only when staff is idle)
+  // CONTINUOUS IDLE ANIMATIONS (only when staff is idle)
   // ============================================================================
-  // Random animations: celebrate occasionally, sometimes walk in place
-  // Only active when staff.status === 'idle'
+  // Continuous animation - always walking or celebrating to avoid static appearance
+  // Staff can walk down, left, right, or celebrate
+  // When stopped (between animations), always face down (not left/right)
   React.useEffect(() => {
-    // Only run random animations when staff is idle
+    // Only run animations when staff is idle
     if (!isIdle) {
-      setIsCelebrating(false);
       setIsWalking(false);
+      setIsCelebrating(false);
       return;
     }
     
-    // Use staff ID to create unique seed for consistent but varied timing
-    const staffSeed = parseInt(staff.id, 36) || 0;
-    const randomOffset = (staffSeed % 5000); // Offset 0-5 seconds per staff
+    let animationTimeoutId: NodeJS.Timeout | null = null;
+    let isCancelled = false;
     
-    // Celebrate animation - happens randomly
-    const scheduleCelebrate = () => {
-      const delay = STAFF_ANIMATION_CONFIG.celebrateIntervalMin + 
-                    (Math.random() * (STAFF_ANIMATION_CONFIG.celebrateIntervalMax - STAFF_ANIMATION_CONFIG.celebrateIntervalMin)) +
-                    randomOffset;
+    const startNextAnimation = () => {
+      // Clear any existing timeout
+      if (animationTimeoutId) {
+        clearTimeout(animationTimeoutId);
+        animationTimeoutId = null;
+      }
       
-      const timer = setTimeout(() => {
-        // Only celebrate if still idle
-        if ((staff.status || 'idle') === 'idle') {
-          setIsCelebrating(true);
-          
-          // Change direction when celebrating (facing different way)
-          const randomDir = STAFF_ANIMATION_CONFIG.directions[
-            Math.floor(Math.random() * STAFF_ANIMATION_CONFIG.directions.length)
-          ];
-          setDirection(randomDir);
-          
-          // Stop celebrating after duration
-          setTimeout(() => {
-            setIsCelebrating(false);
-            scheduleCelebrate(); // Schedule next celebration
-          }, STAFF_ANIMATION_CONFIG.celebrateDuration);
-        }
-      }, delay);
+      // Don't animate if cancelled
+      if (isCancelled) {
+        return;
+      }
       
-      return timer;
-    };
-    
-    // Idle walk animation - happens randomly when not celebrating
-    const scheduleIdleWalk = () => {
       // Check if still idle
       if ((staff.status || 'idle') !== 'idle') {
         return;
       }
       
-      if (isCelebrating) {
-        // Don't walk while celebrating
-        return setTimeout(scheduleIdleWalk, 1000);
-      }
+      // Decide: celebrate or walk
+      const shouldCelebrate = Math.random() < STAFF_ANIMATION_CONFIG.celebrateChance;
       
-      if (Math.random() < STAFF_ANIMATION_CONFIG.idleWalkChance) {
-        const delay = STAFF_ANIMATION_CONFIG.idleWalkIntervalMin + 
-                      (Math.random() * (STAFF_ANIMATION_CONFIG.idleWalkIntervalMax - STAFF_ANIMATION_CONFIG.idleWalkIntervalMin));
+      if (shouldCelebrate) {
+        // Celebrate animation
+        setIsCelebrating(true);
+        setIsWalking(false);
+        // Keep current direction for celebrate (or set to down if needed)
+        setDirection('down');
         
-        const timer = setTimeout(() => {
-          // Only walk if still idle
-          if ((staff.status || 'idle') === 'idle') {
-            setIsWalking(true);
-            
-            // Random direction for idle walk
-            const randomDir = STAFF_ANIMATION_CONFIG.directions[
-              Math.floor(Math.random() * STAFF_ANIMATION_CONFIG.directions.length)
-            ];
-            setDirection(randomDir);
-            
-            // Stop walking after duration
-            setTimeout(() => {
-              setIsWalking(false);
-              setDirection('down'); // Return to default direction
-              scheduleIdleWalk(); // Schedule next idle walk
-            }, STAFF_ANIMATION_CONFIG.idleWalkDuration);
+        // After celebrate duration, start next animation immediately
+        animationTimeoutId = setTimeout(() => {
+          if (!isCancelled) {
+            setIsCelebrating(false);
+            startNextAnimation(); // Immediately start next animation
           }
-        }, delay);
-        
-        return timer;
+        }, STAFF_ANIMATION_CONFIG.celebrateDuration);
       } else {
-        // No walk this time, try again soon
-        return setTimeout(scheduleIdleWalk, 2000);
+        // Walk animation - choose a random walk direction
+        const walkDir = STAFF_ANIMATION_CONFIG.walkDirections[
+          Math.floor(Math.random() * STAFF_ANIMATION_CONFIG.walkDirections.length)
+        ];
+        setDirection(walkDir);
+        setIsWalking(true);
+        setIsCelebrating(false);
+        
+        // After walk duration, face down and immediately start next animation
+        animationTimeoutId = setTimeout(() => {
+          if (!isCancelled) {
+            setIsWalking(false);
+            setDirection('down'); // Face down when stopped
+            // Immediately start next animation (no delay)
+            startNextAnimation();
+          }
+        }, STAFF_ANIMATION_CONFIG.walkDuration);
       }
     };
     
-    // Start both animation cycles
-    const celebrateTimer = scheduleCelebrate();
-    const walkTimer = setTimeout(scheduleIdleWalk, 2000 + randomOffset);
+    // Start the continuous animation cycle immediately
+    startNextAnimation();
     
+    // Cleanup function
     return () => {
-      clearTimeout(celebrateTimer);
-      clearTimeout(walkTimer);
+      isCancelled = true;
+      if (animationTimeoutId) {
+        clearTimeout(animationTimeoutId);
+      }
     };
-  }, [staff.id, staff.status, isCelebrating, isIdle]);
+  }, [staff.id, staff.status, isIdle]);
   
   // Update direction when staff.facingDirection changes (for non-idle states)
   React.useEffect(() => {

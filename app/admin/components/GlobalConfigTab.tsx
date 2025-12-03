@@ -11,12 +11,14 @@ interface GlobalConfigTabProps {
   stats: BusinessStats;
   eventSecondsInput: string;
   movementJSON: string;
+  leadDialogues: string[];
   winCondition: WinCondition;
   loseCondition: LoseCondition;
   onUpdateMetrics: (updates: Partial<BusinessMetrics>) => void;
   onUpdateStats: (updates: Partial<BusinessStats>) => void;
   onUpdateEventSeconds: (value: string) => void;
   onUpdateMovementJSON: (value: string) => void;
+  onUpdateLeadDialogues: (dialogues: string[]) => void;
   onUpdateWinCondition: (updates: Partial<WinCondition>) => void;
   onUpdateLoseCondition: (updates: Partial<LoseCondition>) => void;
   onSave: () => Promise<void>;
@@ -30,12 +32,14 @@ export function GlobalConfigTab({
   stats,
   eventSecondsInput,
   movementJSON,
+  leadDialogues,
   winCondition,
   loseCondition,
   onUpdateMetrics,
   onUpdateStats,
   onUpdateEventSeconds,
   onUpdateMovementJSON,
+  onUpdateLeadDialogues,
   onUpdateWinCondition,
   onUpdateLoseCondition,
   onSave,
@@ -330,6 +334,74 @@ export function GlobalConfigTab({
               onChange={(e) => onUpdateMovementJSON(e.target.value)}
             />
           </div>
+        </div>
+
+        <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
+          <div className="flex items-center justify-between mb-4">
+            <label className="block text-sm font-semibold text-slate-300">Lead Dialogues</label>
+            <button
+              onClick={() => onUpdateLeadDialogues([...leadDialogues, ''])}
+              className="px-3 py-1 bg-green-600 hover:bg-green-500 text-white text-xs rounded transition-colors flex items-center gap-1"
+            >
+              <span>+</span>
+              <span>Add Dialogue</span>
+            </button>
+          </div>
+          <p className="text-xs text-slate-400 mb-3">
+            These dialogues will be randomly selected when leads stop to think. Each input field represents one dialogue that leads can say. Industries can override with their own dialogues.
+          </p>
+
+          <div className="space-y-2">
+            {leadDialogues.length === 0 ? (
+              <div className="text-center py-8 text-slate-500 text-sm">
+                No dialogues configured yet. Click "Add Dialogue" to get started.
+              </div>
+            ) : (
+              leadDialogues.map((dialogue, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400 w-6 text-center font-mono">
+                    {index + 1}
+                  </span>
+                  <input
+                    type="text"
+                    value={dialogue}
+                    onChange={(e) => {
+                      const newDialogues = [...leadDialogues];
+                      newDialogues[index] = e.target.value;
+                      onUpdateLeadDialogues(newDialogues);
+                    }}
+                    onBlur={() => {
+                      // Clean up empty dialogues when user finishes editing
+                      const filteredDialogues = leadDialogues.filter(d => d.trim() !== '');
+                      if (filteredDialogues.length !== leadDialogues.length) {
+                        onUpdateLeadDialogues(filteredDialogues.length > 0 ? filteredDialogues : []);
+                      }
+                    }}
+                    className="flex-1 rounded bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    placeholder={`Enter dialogue ${index + 1}...`}
+                  />
+                  <button
+                    onClick={() => {
+                      const newDialogues = leadDialogues.filter((_, i) => i !== index);
+                      onUpdateLeadDialogues(newDialogues);
+                    }}
+                    className="p-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded transition-colors"
+                    title="Remove this dialogue"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+
+          {leadDialogues.length > 0 && (
+            <p className="text-xs text-slate-500 mt-3">
+              {leadDialogues.length} dialogue{leadDialogues.length !== 1 ? 's' : ''} configured
+            </p>
+          )}
         </div>
 
         <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">

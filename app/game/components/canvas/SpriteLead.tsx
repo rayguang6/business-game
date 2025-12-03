@@ -81,22 +81,44 @@ export function SpriteLead({ lead, scaleFactor }: SpriteLeadProps) {
       {/* Dialogue UI - positioned above the sprite */}
       {lead.dialogue && lead.dialogueTicks !== undefined && lead.dialogueTicks > 0 && (
         <div
-          className="absolute pointer-events-none bg-black/80 text-white rounded px-1 py-0.5 max-w-[100px]"
+          className="absolute pointer-events-none"
           style={{
-            left: `${gridX * 32}px`,
-            top: `${gridY * 32 - 20}px`,
-            transform: 'translateX(-12px)', // Center above sprite
-            fontSize: '6px',
-            lineHeight: '8px',
+            left: `${gridX * 32 + 16}px`, // Center horizontally on sprite
+            top: `${gridY * 32 - 20}px`, // Position closer above sprite
+            transform: 'translateX(-50%)', // Center the dialogue box
             zIndex: 11, // Above everything
-            textAlign: 'center',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
             opacity: blinkOpacity, // Blink dialogue too
           }}
         >
-          {lead.dialogue}
+          {/* Smaller, cleaner speech bubble */}
+          <div
+            className="bg-white rounded-lg shadow-md border border-gray-300 px-1.5 py-0.5 max-w-[90px]"
+            style={{
+              fontSize: '7px',
+              lineHeight: '9px',
+              textAlign: 'center',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              color: '#2d3748',
+              fontWeight: '400',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.1)',
+            }}
+          >
+            {lead.dialogue}
+          </div>
+          {/* Smaller speech bubble tail/pointer */}
+          <div
+            className="absolute left-1/2 top-full -translate-x-1/2"
+            style={{
+              width: 0,
+              height: 0,
+              borderLeft: '4px solid transparent',
+              borderRight: '4px solid transparent',
+              borderTop: '4px solid #ffffff',
+              filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.1))',
+            }}
+          />
         </div>
       )}
     </div>

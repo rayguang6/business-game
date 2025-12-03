@@ -33,6 +33,7 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
   const [capacityImage, setCapacityImage] = useState<string>('');
   const [winCondition, setWinCondition] = useState<WinCondition | null>(null);
   const [loseCondition, setLoseCondition] = useState<LoseCondition | null>(null);
+  const [leadDialogues, setLeadDialogues] = useState<string[] | null>(null);
 
   // Event sequencing
   const [eventSelectionMode, setEventSelectionMode] = useState<'random' | 'sequence'>('random');
@@ -60,6 +61,7 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
       setCapacityImage('');
       setWinCondition(null);
       setLoseCondition(null);
+      setLeadDialogues(null);
       setEventSelectionMode('random');
       setEventSequence([]);
       setEvents([]);
@@ -106,6 +108,8 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
           setCapacityImage(config.capacityImage ?? '');
           if (config.winCondition) setWinCondition(config.winCondition);
           if (config.loseCondition) setLoseCondition(config.loseCondition);
+          if (config.leadDialogues) setLeadDialogues(config.leadDialogues);
+          else setLeadDialogues(null);
 
           // Load event sequencing from simulation config
           setEventSelectionMode(config.eventSelectionMode ?? 'random');
@@ -166,6 +170,7 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
         capacityImage: capacityImage || null,
         winCondition: winCondition ?? undefined,
         loseCondition: loseCondition ?? undefined,
+        leadDialogues: leadDialogues && leadDialogues.length > 0 ? leadDialogues.filter(d => d.trim() !== '') : null,
         // Event sequencing
         eventSelectionMode: eventSelectionMode,
         eventSequence: eventSequence,
@@ -201,6 +206,7 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
     capacityImage,
     winCondition,
     loseCondition,
+    leadDialogues,
     eventSelectionMode,
     eventSequence,
   ]);
@@ -273,6 +279,7 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
     capacityImage,
     winCondition,
     loseCondition,
+    leadDialogues,
     eventSelectionMode,
     eventSequence,
     events,
@@ -291,6 +298,7 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
     setCapacityImage,
     setWinCondition,
     setLoseCondition,
+    setLeadDialogues,
     setEventSelectionMode,
     setEventSequence,
     // Update helpers

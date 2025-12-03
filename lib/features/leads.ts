@@ -9,6 +9,7 @@ import {
   getLayoutConfig,
   getGlobalMovementConfig,
   secondsToTicks,
+  getLeadDialoguesForIndustry,
 } from '@/lib/game/config';
 import { IndustryId, GridPosition } from '@/lib/game/types';
 
@@ -37,22 +38,13 @@ export interface Lead {
   fadeTicks?: number; // Ticks for fadeout effect when leaving
 }
 
-// Lead dialogue options
-export const LEAD_DIALOGUES = [
-  "It's too expensive",
-  "I need to think about it",
-  "I found a better one",
-  "Maybe next time",
-  "Not sure if I can afford it",
-  "Let me check my budget",
-  "Interesting, but...",
-  "I'll come back later"
-];
-
 /**
  * Movement speed (tiles per tick) - slower than customers for more natural browsing
  */
-const getMovementSpeed = () => Math.max(0.01, getGlobalMovementConfig().customerTilesPerTick * 0.6);
+const getMovementSpeed = () => {
+  const globalConfig = getGlobalMovementConfig();
+  return globalConfig ? Math.max(0.01, globalConfig.customerTilesPerTick * 0.6) : 0.04;
+};
 
 /**
  * Creates a new lead at the entry position
@@ -61,6 +53,9 @@ export function spawnLead(
   industryId: IndustryId = DEFAULT_INDUSTRY_ID,
 ): Lead {
   const layout = getLayoutConfig(industryId);
+  if (!layout) {
+    throw new Error(`Layout config not loaded for industry "${industryId}". Please configure layout in the admin panel.`);
+  }
   const spawnPosition = layout.entryPosition;
 
   // Default lifetime: 5 seconds
@@ -80,7 +75,7 @@ export function spawnLead(
 
 /**
  * Moves lead towards target position following an optional path.
- * Movement is restricted to horizontal/vertical steps (same as customers).
+ * Movement is smoother and more natural, avoiding zigzag patterns.
  */
 function moveTowardsTarget(lead: Lead): Lead {
   const movementSpeed = getMovementSpeed();
@@ -115,21 +110,39 @@ function moveTowardsTarget(lead: Lead): Lead {
     };
   }
 
-  // Move horizontally or vertically only (not diagonal) - same as customers
+  // Calculate movement direction more naturally
   let newX = lead.x;
   let newY = lead.y;
   let facingDirection = lead.facingDirection;
 
-  const prioritizeHorizontal = Math.abs(dx) >= Math.abs(dy);
+  // Use a more balanced approach to avoid zigzagging
+  const absDx = Math.abs(dx);
+  const absDy = Math.abs(dy);
 
-  if (prioritizeHorizontal && Math.abs(dx) > 0) {
-    const step = Math.sign(dx) * Math.min(movementSpeed, Math.abs(dx));
-    newX = lead.x + step;
-    facingDirection = step > 0 ? 'right' : 'left';
-  } else if (Math.abs(dy) > 0) {
-    const step = Math.sign(dy) * Math.min(movementSpeed, Math.abs(dy));
+  // If we're very close to target in one dimension, prioritize the other
+  if (absDx <= movementSpeed * 2 && absDy > movementSpeed) {
+    // Close horizontally, move vertically
+    const step = Math.sign(dy) * Math.min(movementSpeed, absDy);
     newY = lead.y + step;
     facingDirection = step > 0 ? 'down' : 'up';
+  } else if (absDy <= movementSpeed * 2 && absDx > movementSpeed) {
+    // Close vertically, move horizontally
+    const step = Math.sign(dx) * Math.min(movementSpeed, absDx);
+    newX = lead.x + step;
+    facingDirection = step > 0 ? 'right' : 'left';
+  } else {
+    // Both dimensions need movement - choose based on which is larger but with some randomness to avoid predictable patterns
+    const shouldPrioritizeHorizontal = absDx >= absDy ? Math.random() > 0.3 : Math.random() > 0.7;
+
+    if (shouldPrioritizeHorizontal && absDx > 0) {
+      const step = Math.sign(dx) * Math.min(movementSpeed, absDx);
+      newX = lead.x + step;
+      facingDirection = step > 0 ? 'right' : 'left';
+    } else if (absDy > 0) {
+      const step = Math.sign(dy) * Math.min(movementSpeed, absDy);
+      newY = lead.y + step;
+      facingDirection = step > 0 ? 'down' : 'up';
+    }
   }
 
   return {
@@ -159,16 +172,17 @@ function getRandomLeadPosition(): { x: number; y: number } {
 }
 
 /**
- * Get random dialogue text
+ * Get random dialogue text for a specific industry
  */
-function getRandomDialogue(): string {
-  return LEAD_DIALOGUES[Math.floor(Math.random() * LEAD_DIALOGUES.length)];
+function getRandomDialogue(industryId: IndustryId = DEFAULT_INDUSTRY_ID): string {
+  const dialogues = getLeadDialoguesForIndustry(industryId);
+  return dialogues[Math.floor(Math.random() * dialogues.length)];
 }
 
 /**
  * Updates a lead's state for one tick
  */
-export function tickLead(lead: Lead): Lead {
+export function tickLead(lead: Lead, industryId: IndustryId = DEFAULT_INDUSTRY_ID): Lead {
   switch (lead.status) {
     case LeadStatus.Spawning:
       // After brief spawn animation, move to walking
@@ -188,8 +202,8 @@ export function tickLead(lead: Lead): Lead {
 
           if (shouldGoIdle) {
             // Set random dialogue when stopping
-            const randomDialogue = getRandomDialogue();
-            const dialogueDuration = 120 + Math.random() * 120; // 4-8 seconds (longer)
+            const randomDialogue = getRandomDialogue(industryId);
+            const dialogueDuration = 180 + Math.random() * 180; // 6-12 seconds (much longer)
 
           return {
             ...moved,

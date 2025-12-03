@@ -25,6 +25,7 @@ interface IndustrySimulationConfigTabProps {
   mainCharacterPosition: GridPosition | null;
   mainCharacterSpriteImage: string;
   capacityImage: string;
+  leadDialogues: string[] | null;
   winCondition: WinCondition | null;
   loseCondition: LoseCondition | null;
   // Event sequencing
@@ -45,6 +46,7 @@ interface IndustrySimulationConfigTabProps {
   setMainCharacterPosition: (value: GridPosition | null) => void;
   setMainCharacterSpriteImage: (value: string) => void;
   setCapacityImage: (value: string) => void;
+  setLeadDialogues: (value: string[] | null) => void;
   setWinCondition: (value: WinCondition | null) => void;
   setLoseCondition: (value: LoseCondition | null) => void;
   setEventSelectionMode: (mode: 'random' | 'sequence') => void;
@@ -71,6 +73,7 @@ export function IndustrySimulationConfigTab({
   mainCharacterPosition,
   mainCharacterSpriteImage,
   capacityImage,
+  leadDialogues,
   winCondition,
   loseCondition,
   eventSelectionMode,
@@ -88,6 +91,7 @@ export function IndustrySimulationConfigTab({
   setMainCharacterPosition,
   setMainCharacterSpriteImage,
   setCapacityImage,
+  setLeadDialogues,
   setWinCondition,
   setLoseCondition,
   setEventSelectionMode,
@@ -687,6 +691,96 @@ export function IndustrySimulationConfigTab({
             )}
           </div>
           <input type="text" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={capacityImage} onChange={(e) => setCapacityImage(e.target.value)} placeholder="/images/beds/bed.png" />
+        </div>
+
+        {/* Lead Dialogues - Industry Override */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Lead Dialogues</h3>
+            <div className="flex items-center gap-2">
+              {leadDialogues !== null && leadDialogues.length > 0 && (
+                <button onClick={() => setLeadDialogues(null)} className="text-xs text-rose-400 hover:text-rose-300">
+                  Clear (use global)
+                </button>
+              )}
+              {leadDialogues !== null && (
+                <button
+                  onClick={() => setLeadDialogues([...leadDialogues, ''])}
+                  className="px-3 py-1 bg-green-600 hover:bg-green-500 text-white text-xs rounded transition-colors flex items-center gap-1"
+                >
+                  <span>+</span>
+                  <span>Add Dialogue</span>
+                </button>
+              )}
+            </div>
+          </div>
+          <p className="text-xs text-slate-400">
+            Override global lead dialogues for this industry. Each input field represents one dialogue that leads can say. Leave empty to use global dialogues.
+          </p>
+
+          {leadDialogues === null ? (
+            <div className="text-center py-6 text-slate-500 text-sm bg-slate-800/50 rounded-lg border border-dashed border-slate-600">
+              Using global dialogues.{' '}
+              <button
+                onClick={() => setLeadDialogues([''])}
+                className="text-blue-400 hover:text-blue-300 underline"
+              >
+                Configure industry-specific dialogues
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {leadDialogues.length === 0 ? (
+                <div className="text-center py-8 text-slate-500 text-sm">
+                  No dialogues configured yet. Click "Add Dialogue" to get started.
+                </div>
+              ) : (
+                leadDialogues.map((dialogue, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400 w-6 text-center font-mono">
+                      {index + 1}
+                    </span>
+                    <input
+                      type="text"
+                      value={dialogue}
+                      onChange={(e) => {
+                        const newDialogues = [...leadDialogues];
+                        newDialogues[index] = e.target.value;
+                        setLeadDialogues(newDialogues);
+                      }}
+                      onBlur={() => {
+                        // Clean up empty dialogues when user finishes editing
+                        const filteredDialogues = leadDialogues.filter(d => d.trim() !== '');
+                        if (filteredDialogues.length !== leadDialogues.length) {
+                          setLeadDialogues(filteredDialogues.length > 0 ? filteredDialogues : null);
+                        }
+                      }}
+                      className="flex-1 rounded bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      placeholder={`Enter dialogue ${index + 1}...`}
+                    />
+                    <button
+                      onClick={() => {
+                        const newDialogues = leadDialogues.filter((_, i) => i !== index);
+                        setLeadDialogues(newDialogues.length > 0 ? newDialogues : null);
+                      }}
+                      className="p-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded transition-colors"
+                      title="Remove this dialogue"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {leadDialogues !== null && leadDialogues.length > 0 && (
+            <p className="text-xs text-slate-500 mt-3">
+              {leadDialogues.length} dialogue{leadDialogues.length !== 1 ? 's' : ''} configured for this industry
+            </p>
+          )}
         </div>
 
         {/* Map Config - Broken Down */}

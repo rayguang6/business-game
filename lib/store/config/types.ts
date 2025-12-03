@@ -27,6 +27,7 @@ export interface GlobalSimulationConfigState {
   loseCondition?: LoseCondition;
   customerImages?: string[];
   staffNamePool?: string[];
+  leadDialogues?: string[];
   // Layout config removed - each industry sets its own layout
 }
 
@@ -51,6 +52,7 @@ export interface IndustryContentConfig {
   winCondition?: WinCondition;
   loseCondition?: LoseCondition;
   customerImages?: string[];
+  leadDialogues?: string[];
 }
 
 export interface ConfigStoreState {

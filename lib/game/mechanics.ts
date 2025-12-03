@@ -1264,7 +1264,7 @@ export function tickOnce(state: TickInput): TickResult {
   }
 
   // Process leads for the tick
-  leads = leads.map(lead => tickLead(lead));
+  leads = leads.map(lead => tickLead(lead, industryId));
   
   // Remove leads that have expired (lifetime <= 0) or are leaving and off-screen
   leads = leads.filter(lead => {

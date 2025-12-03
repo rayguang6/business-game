@@ -15,6 +15,7 @@ export interface GlobalSimulationConfigRow {
   lose_condition: LoseCondition | null;
   customer_images: string[] | null;
   staff_name_pool: string[] | null;
+  lead_dialogues: string[] | null;
 }
 
 export interface GlobalSimulationConfigResult {
@@ -28,6 +29,7 @@ export interface GlobalSimulationConfigResult {
   loseCondition?: LoseCondition;
   customerImages?: string[];
   staffNamePool?: string[];
+  leadDialogues?: string[];
 }
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -127,7 +129,7 @@ export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationCon
 
   const { data, error } = await supabase
     .from('global_simulation_config')
-    .select('business_metrics, business_stats, movement, map_width, map_height, map_walls, capacity_image, win_condition, lose_condition, customer_images, staff_name_pool')
+    .select('business_metrics, business_stats, movement, map_width, map_height, map_walls, capacity_image, win_condition, lose_condition, customer_images, staff_name_pool, lead_dialogues')
     .limit(1)
     .maybeSingle();
 
@@ -159,7 +161,7 @@ export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationCon
   const winCondition = mapWinCondition(data.win_condition);
   const loseCondition = mapLoseCondition(data.lose_condition);
 
-  if (!businessMetrics && !businessStats && !movement && !mapConfig && !winCondition && !loseCondition && !data.capacity_image && !data.customer_images && !data.staff_name_pool) {
+  if (!businessMetrics && !businessStats && !movement && !mapConfig && !winCondition && !loseCondition && !data.capacity_image && !data.customer_images && !data.staff_name_pool && !data.lead_dialogues) {
     return null;
   }
 
@@ -173,6 +175,7 @@ export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationCon
   if (loseCondition) result.loseCondition = loseCondition;
   if (data.customer_images && Array.isArray(data.customer_images)) result.customerImages = data.customer_images;
   if (data.staff_name_pool && Array.isArray(data.staff_name_pool)) result.staffNamePool = data.staff_name_pool;
+  if (data.lead_dialogues && Array.isArray(data.lead_dialogues)) result.leadDialogues = data.lead_dialogues;
 
   return result;
 }
@@ -191,6 +194,7 @@ export async function upsertGlobalSimulationConfig(config: {
   loseCondition?: LoseCondition;
   customerImages?: string[] | null;
   staffNamePool?: string[] | null;
+  leadDialogues?: string[] | null;
 }): Promise<{ success: boolean; message?: string }>
 {
   if (!supabase) {
@@ -234,6 +238,7 @@ export async function upsertGlobalSimulationConfig(config: {
     lose_condition: config.loseCondition ?? null,
     customer_images: config.customerImages ?? null,
     staff_name_pool: config.staffNamePool ?? null,
+    lead_dialogues: config.leadDialogues ?? null,
   };
 
   const { error: upsertError } = await supabase

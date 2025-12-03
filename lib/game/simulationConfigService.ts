@@ -80,6 +80,7 @@ export async function loadGlobalSimulationSettings(): Promise<GlobalSimulationCo
     loseCondition: result.loseCondition,
     customerImages: result.customerImages,
     staffNamePool: result.staffNamePool,
+    leadDialogues: result.leadDialogues,
   };
 }
 
@@ -174,6 +175,7 @@ export async function loadIndustryContent(
     capacityImage: industrySimConfig?.capacityImage,
     winCondition: industrySimConfig?.winCondition,
     loseCondition: industrySimConfig?.loseCondition,
+    leadDialogues: industrySimConfig?.leadDialogues,
     // customerImages is now global-only and handled separately
     staffDataAvailable,
   };

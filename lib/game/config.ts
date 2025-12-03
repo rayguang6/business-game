@@ -358,6 +358,35 @@ export function getCapacityImageForIndustry(industryId: IndustryId = DEFAULT_IND
   return null;
 }
 
+// Default lead dialogues (fallback if not configured)
+const DEFAULT_LEAD_DIALOGUES = [
+  "It's too expensive",
+  "I need to think about it",
+  "I found a better one",
+  "Maybe next time",
+  "Not sure if I can afford it",
+  "Let me check my budget",
+  "Interesting, but...",
+  "I'll come back later"
+];
+
+export function getLeadDialoguesForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): string[] {
+  // Check industry-specific override first
+  const industryConfig = getIndustryOverride(industryId);
+  if (industryConfig?.leadDialogues && industryConfig.leadDialogues.length > 0) {
+    return [...industryConfig.leadDialogues];
+  }
+  
+  // Check global config
+  const globalConfig = getGlobalConfigOverride();
+  if (globalConfig?.leadDialogues && globalConfig.leadDialogues.length > 0) {
+    return [...globalConfig.leadDialogues];
+  }
+  
+  // Fallback to defaults
+  return [...DEFAULT_LEAD_DIALOGUES];
+}
+
 export function getTickIntervalMsForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): number {
   const stats = getBusinessStats(industryId);
   if (!stats) throw new Error('Business stats not loaded');

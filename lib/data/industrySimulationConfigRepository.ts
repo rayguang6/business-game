@@ -21,6 +21,7 @@ export interface IndustrySimulationConfigResult {
   // Event sequencing
   eventSelectionMode?: 'random' | 'sequence';
   eventSequence?: string[];
+  leadDialogues?: string[];
   // customerImages and staffNamePool removed - they're global only (same across all industries)
 }
 
@@ -105,7 +106,7 @@ export async function fetchIndustrySimulationConfig(
 
   const { data, error } = await supabase
     .from('industry_simulation_config')
-    .select('business_metrics, business_stats, map_width, map_height, map_walls, entry_position, waiting_positions, service_rooms, staff_positions, main_character_position, main_character_sprite_image, capacity_image, win_condition, lose_condition, event_selection_mode, event_sequence')
+    .select('business_metrics, business_stats, map_width, map_height, map_walls, entry_position, waiting_positions, service_rooms, staff_positions, main_character_position, main_character_sprite_image, capacity_image, win_condition, lose_condition, event_selection_mode, event_sequence, lead_dialogues')
     .eq('industry_id', industryId)
     .maybeSingle();
 
@@ -215,6 +216,11 @@ export async function fetchIndustrySimulationConfig(
     result.eventSequence = data.event_sequence as string[];
   }
 
+  // Lead dialogues (industry-specific override)
+  if (data.lead_dialogues && Array.isArray(data.lead_dialogues)) {
+    result.leadDialogues = data.lead_dialogues;
+  }
+
   // customerImages and staffNamePool removed - they're global only
 
   return result;
@@ -246,6 +252,7 @@ export async function upsertIndustrySimulationConfig(
     // Event sequencing
     eventSelectionMode?: 'random' | 'sequence';
     eventSequence?: string[];
+    leadDialogues?: string[] | null;
     // customerImages and staffNamePool removed - they're global only
   },
 ): Promise<{ success: boolean; message?: string }> {
@@ -307,6 +314,9 @@ export async function upsertIndustrySimulationConfig(
   // Event sequencing
   if (config.eventSelectionMode !== undefined) payload.event_selection_mode = config.eventSelectionMode;
   if (config.eventSequence !== undefined) payload.event_sequence = config.eventSequence;
+
+  // Lead dialogues (industry-specific override)
+  if (config.leadDialogues !== undefined) payload.lead_dialogues = config.leadDialogues;
 
   // customerImages and staffNamePool removed - they're global only
 

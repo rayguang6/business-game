@@ -198,6 +198,7 @@ export default function AdminPage() {
                 mainCharacterPosition={industrySimConfig.mainCharacterPosition}
                 mainCharacterSpriteImage={industrySimConfig.mainCharacterSpriteImage}
                 capacityImage={industrySimConfig.capacityImage}
+                leadDialogues={industrySimConfig.leadDialogues}
                 winCondition={industrySimConfig.winCondition}
                 loseCondition={industrySimConfig.loseCondition}
                 eventSelectionMode={industrySimConfig.eventSelectionMode}
@@ -215,6 +216,7 @@ export default function AdminPage() {
                 setMainCharacterPosition={industrySimConfig.setMainCharacterPosition}
                 setMainCharacterSpriteImage={industrySimConfig.setMainCharacterSpriteImage}
                 setCapacityImage={industrySimConfig.setCapacityImage}
+                setLeadDialogues={industrySimConfig.setLeadDialogues}
                 setWinCondition={industrySimConfig.setWinCondition}
                 setLoseCondition={industrySimConfig.setLoseCondition}
                 setEventSelectionMode={industrySimConfig.setEventSelectionMode}
@@ -235,12 +237,14 @@ export default function AdminPage() {
             stats={globalConfig.stats}
             eventSecondsInput={globalConfig.eventSecondsInput}
             movementJSON={globalConfig.movementJSON}
+            leadDialogues={globalConfig.leadDialogues}
             winCondition={globalConfig.winCondition}
             loseCondition={globalConfig.loseCondition}
             onUpdateMetrics={globalConfig.updateMetrics}
             onUpdateStats={globalConfig.updateStats}
             onUpdateEventSeconds={globalConfig.setEventSecondsInput}
             onUpdateMovementJSON={globalConfig.setMovementJSON}
+            onUpdateLeadDialogues={globalConfig.setLeadDialogues}
             onUpdateWinCondition={globalConfig.updateWinCondition}
             onUpdateLoseCondition={globalConfig.updateLoseCondition}
             onSave={globalConfig.save}
