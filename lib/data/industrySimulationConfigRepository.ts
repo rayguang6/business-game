@@ -3,7 +3,6 @@ import type { IndustryId, GridPosition, ServiceRoomConfig } from '@/lib/game/typ
 import type {
   BusinessMetrics,
   BusinessStats,
-  MovementConfig,
   MapConfig,
   SimulationLayoutConfig,
 } from '@/lib/game/types';
@@ -61,20 +60,6 @@ const mapBusinessStats = (raw: unknown): BusinessStats | undefined => {
   }
   return undefined;
 };
-
-const mapMovementConfig = (raw: unknown): MovementConfig | undefined => {
-  if (!isObject(raw)) return undefined;
-  const c = raw as unknown as MovementConfig;
-  if (
-    typeof c.customerTilesPerTick === 'number' &&
-    typeof c.animationReferenceTilesPerTick === 'number' &&
-    typeof c.walkFrameDurationMs === 'number'
-  ) {
-    return c;
-  }
-  return undefined;
-};
-
 
 const mapWinCondition = (raw: unknown): WinCondition | undefined => {
   if (!isObject(raw)) return undefined;

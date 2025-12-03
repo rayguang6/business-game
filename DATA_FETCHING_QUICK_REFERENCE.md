@@ -59,10 +59,9 @@ const services = getServicesForIndustry(industryId);
 const metrics = getBusinessMetrics(industryId);
 ```
 
-**Fallback Chain:**
-1. Industry-specific config (from store)
-2. Global config (from store)  
-3. Code defaults (hardcoded)
+**Fallback Chain (config.ts):**
+1. Industry-specific config (from store, loaded from DB)
+2. Global config (from store, loaded from DB)
 
 ---
 

@@ -72,10 +72,9 @@ getServicesForIndustry(industryId)  // → Reads from useConfigStore
 getBusinessMetrics(industryId)     // → Reads from useConfigStore + fallback chain
 ```
 
-**Fallback Chain:**
-1. Industry-specific config (from store)
-2. Global config (from store)
-3. Code defaults (hardcoded in `config.ts`)
+**Fallback Chain (current):**
+1. Industry-specific config (from store, loaded from DB)
+2. Global config (from store, loaded from DB)
 
 ---
 
@@ -124,25 +123,14 @@ export async function fetch{Entity}ForIndustry(industryId: IndustryId): Promise<
 
 ## 3. Inconsistencies & Issues Found
 
-### 3.1 ❌ **DUPLICATE FALLBACK LOGIC**
+### 3.1 ✅ **DUPLICATE FALLBACK LOGIC REMOVED**
 
-**Problem:** Two different fallback systems exist:
+**Previous problem:** Two different fallback systems existed (`configHelpers.ts` async helpers vs `config.ts` sync helpers).
 
-1. **`lib/game/configHelpers.ts`** - Async functions with DB fallback
-   ```typescript
-   getBusinessMetricsWithFallback(industryId)  // → DB → Code defaults
-   ```
-
-2. **`lib/game/config.ts`** - Sync functions with store fallback
-   ```typescript
-   getBusinessMetrics(industryId)  // → Store → Code defaults
-   ```
-
-**Impact:** Confusion about which to use. Most code uses `config.ts` (sync), but `configHelpers.ts` exists and is rarely used.
-
-**Recommendation:** 
-- ✅ **KEEP:** `config.ts` (sync, store-based) - Used by game runtime
-- ❌ **DELETE:** `configHelpers.ts` - Only used in `simulationConfigService.ts` for initial load
+**Current state:**
+- `lib/game/configHelpers.ts` has been deleted.
+- All loading is routed through `lib/game/simulationConfigService.ts`.
+- Runtime access is **only** through `lib/game/config.ts`, which reads from the store.
 
 ### 3.2 ❌ **INCONSISTENT NULL HANDLING**
 
@@ -165,32 +153,13 @@ fetchFlagsForIndustry() → null | GameFlag[]  // null = error, [] = no flags
 - `null` = Error (DB failure, Supabase not configured)
 - `[]` = Success but no data found
 
-### 3.3 ❌ **LEGACY FALLBACK CODE IN CONFIG.TS**
+### 3.3 ✅ **LEGACY FALLBACK CODE REMOVED FROM CONFIG.TS**
 
-**Problem:** `lib/game/config.ts` has fallback to hardcoded defaults:
+**Previous problem:** `lib/game/config.ts` used hardcoded defaults (`createDefaultSimulationConfig`) as a final fallback.
 
-```typescript
-const getFallbackSimulationConfig = (industryId) => 
-  createDefaultSimulationConfig(industryId);  // Hardcoded defaults
-
-// Used as final fallback
-getServicesForIndustry(industryId) {
-  const stored = getServicesFromStore(industryId);
-  if (stored.length > 0) return stored;
-  const fallback = getFallbackSimulationConfig(industryId);  // ← Legacy
-  return cloneServices(fallback.services);
-}
-```
-
-**Impact:** 
-- Code defaults exist but are rarely used (data always loaded from DB)
-- Creates confusion about data source
-- TODO comment says "remove legacy constants" (line 117-118)
-
-**Recommendation:**
-- ✅ **KEEP** for now (safety net if DB fails)
-- ⚠️ **CONSIDER REMOVING** once confident DB always works
-- Add logging when fallback is used
+**Current state:**
+- `config.ts` no longer calls `createDefaultSimulationConfig` or any other code-level defaults.
+- If required data (global config or per-industry config) is missing, the loaders throw and the game shows a configuration error page.
 
 ### 3.4 ❌ **LEGACY FIELD SUPPORT**
 
@@ -207,18 +176,11 @@ startingFreedomScore: c.startingFreedomScore ?? (c as any).founderWorkHours  // 
 - ✅ **KEEP** if database still has old data
 - ❌ **REMOVE** after database migration completes
 
-### 3.5 ❌ **DUPLICATE LAYOUT FETCHING**
+### 3.5 ✅ **DUPLICATE LAYOUT FETCHING REMOVED**
 
-**Problem:** Layout config is fetched twice:
-
-1. In `loadIndustryContent()` → `getLayoutConfigWithFallback()` → `fetchLayoutConfigFromDatabase()`
-2. In `fetchIndustrySimulationConfig()` → Also fetches layout columns
-
-**Impact:** Redundant database queries.
-
-**Recommendation:**
-- Consolidate layout fetching into `fetchIndustrySimulationConfig()`
-- Remove `getLayoutConfigWithFallback()` from `simulationConfigService.ts`
+**Current behavior:**
+- Layout config is resolved only via `fetchIndustrySimulationConfig()` inside `simulationConfigService.ts`.
+- There is no separate `layoutRepository`-driven fallback during game load.
 
 ### 3.6 ❌ **INCONSISTENT ERROR HANDLING**
 
@@ -318,10 +280,8 @@ getServicesForIndustry(industryId)  // Reads from store
 
 ### 5.1 ✅ **IMMEDIATE ACTIONS (High Priority)**
 
-#### **1. Remove `configHelpers.ts`**
-- **Why:** Duplicate fallback logic, rarely used
-- **Action:** Move `getLayoutConfigWithFallback()` logic into `simulationConfigService.ts`
-- **Risk:** Low (only used in one place)
+#### **1. Remove `configHelpers.ts`** ✅ Done
+- Logic is now centralized in `lib/game/simulationConfigService.ts`.
 
 #### **2. Standardize Repository Return Types**
 - **Why:** Inconsistent null/empty array handling
@@ -330,10 +290,8 @@ getServicesForIndustry(industryId)  // Reads from store
   - `[]` = Success, no data
 - **Risk:** Medium (requires updating callers)
 
-#### **3. Consolidate Layout Fetching**
-- **Why:** Redundant DB queries
-- **Action:** Fetch layout as part of `fetchIndustrySimulationConfig()`
-- **Risk:** Low (internal refactor)
+#### **3. Consolidate Layout Fetching** ✅ Done
+- Layout is only fetched via `fetchIndustrySimulationConfig()` and parsed through `layoutRepository` helpers.
 
 ### 5.2 ⚠️ **MEDIUM PRIORITY (Technical Debt)**
 
@@ -384,24 +342,21 @@ getServicesForIndustry(industryId)  // Reads from store
 | File | Purpose | Keep? |
 |------|---------|-------|
 | `lib/game/config.ts` | Runtime config access (store-based) | ✅ **KEEP** |
-| `lib/game/configHelpers.ts` | Async fallback helpers | ❌ **DELETE** |
-| `lib/game/industryConfigs.ts` | Hardcoded defaults | ⚠️ **KEEP** (for now) |
+| `lib/game/simulationConfigService.ts` | Load global + industry config from DB into store | ✅ **KEEP** |
+| `lib/game/industryConfigs.ts` | Hardcoded defaults (legacy) | ❌ **DELETED** |
 
-### 6.2 Recommendation
+### 6.2 Recommendation (Updated)
 
 **✅ KEEP `config.ts`** - Core runtime config system
 - Used throughout game code
-- Provides fallback chain (industry → global → defaults)
+- Provides fallback chain (industry → global) using **store-backed DB data only**
 - Well-structured and performant
 
-**❌ DELETE `configHelpers.ts`** - Duplicate/unused
-- Only used in one place (`simulationConfigService.ts`)
-- Can be inlined
-- Reduces confusion
+**✅ KEEP `simulationConfigService.ts`** - Single entry point for loading config
+- Handles validation and “fail fast” behavior if required data is missing.
 
-**⚠️ KEEP `industryConfigs.ts`** - Safety net
-- Provides fallback if DB fails
-- Consider removing after monitoring fallback usage
+**❌ DELETE `industryConfigs.ts`** - Legacy hardcoded defaults are no longer part of the runtime.
+- Use SQL seeds (e.g. `sql/freelance_complete.sql`) or admin tooling for initial data instead.
 
 ---
 

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { fetchGlobalSimulationConfig, upsertGlobalSimulationConfig } from '@/lib/data/simulationConfigRepository';
+// Note: Using defaults only for admin UI form initialization, not runtime game behavior
 import { DEFAULT_GLOBAL_SIMULATION_CONFIG } from '@/lib/game/industryConfigs';
 import { DEFAULT_WIN_CONDITION, DEFAULT_LOSE_CONDITION, type WinCondition, type LoseCondition } from '@/lib/game/winConditions';
 import type { BusinessMetrics, BusinessStats, MovementConfig, MapConfig } from '@/lib/game/types';
@@ -7,6 +8,7 @@ import type { Operation } from './types';
 import { useConfigStore } from '@/lib/store/configStore';
 
 export function useGlobalConfig() {
+  // UI defaults only - actual data loads from DB and overwrites these
   const initialGlobal = DEFAULT_GLOBAL_SIMULATION_CONFIG;
   const [metrics, setMetrics] = useState<BusinessMetrics>({ ...initialGlobal.businessMetrics });
   const [stats, setStats] = useState<BusinessStats>({ ...initialGlobal.businessStats });

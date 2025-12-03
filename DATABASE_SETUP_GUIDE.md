@@ -93,14 +93,21 @@ WHERE industry_id = 'dental';
 **Staff:**
 - Admin → Staff tab → Select industry → Add role/preset
 
-## Validation & Warnings
+## Validation & Errors
 
-The system will warn (not error) if:
-- ✅ Missing services, upgrades, or events (warns but allows game to start)
-- ✅ Missing layout config for industry (uses safe default, but should be configured)
-- ✅ Missing staff (warns but allows game to start)
+The game now **fails fast** when required configuration is missing:
+- ❌ Missing `business_metrics`, `business_stats`, or `movement` in `global_simulation_config` → game cannot start
+- ❌ Missing layout config for an industry (`entry_position`, `waiting_positions`, `service_rooms`, `staff_positions`) → game cannot start
+- ❌ Missing all services, upgrades, or events for an industry → game cannot start
 
-**All warnings are logged to browser console** - check console for details.
+In these cases the game shows a **Configuration Error** screen and logs details to the browser console.
+
+Non-critical data still produces **warnings only**:
+- ⚠️ Missing staff roles/presets
+- ⚠️ Missing flags or conditions
+- ⚠️ Missing marketing campaigns
+
+**All warnings and errors are logged to the browser console** – check the console for details.
 
 ## Troubleshooting
 
