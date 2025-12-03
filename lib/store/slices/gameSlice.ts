@@ -594,9 +594,13 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       }
     }
     
-    // For positive amounts (time gained) or if recordTimeSpent is not available, just update time
+    // For positive amounts (time gained) or if recordTimeSpent is not available,
+    // update time but never allow it to go below 0 (safety clamp)
     set((state) => ({
-      metrics: { ...state.metrics, time: state.metrics.time + amount },
+      metrics: {
+        ...state.metrics,
+        time: Math.max(0, state.metrics.time + amount),
+      },
     }));
     const { checkGameOver } = get();
     if (checkGameOver) {
@@ -723,7 +727,8 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     set((state) => ({
       metrics: {
         ...state.metrics,
-        time: state.metrics.time + amount, // Deduct time
+        // Deduct time but clamp at 0 so it never goes negative
+        time: Math.max(0, state.metrics.time + amount),
         totalTimeSpent: state.metrics.totalTimeSpent + timeSpent,
       },
       monthlyTimeSpent: state.monthlyTimeSpent + timeSpent,
@@ -754,17 +759,10 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     const loseCondition = getLoseCondition(industryId);
     if (!loseCondition) return; // Can't check lose condition if not loaded
     
-    // Check lose conditions: cash or time
+    // Check lose conditions: **cash only**
+    // Time can run out, but it no longer causes game over.
     if (cash <= loseCondition.cashThreshold) {
       set({ isGameOver: true, gameOverReason: 'cash', isPaused: true });
-      return;
-    }
-    
-    // Check time condition: only if time system is enabled (startingTime > 0)
-    // If time <= 0 and time system is enabled, game over
-    const startingTime = getStartingTime(industryId);
-    if (startingTime > 0 && time <= loseCondition.timeThreshold) {
-      set({ isGameOver: true, gameOverReason: 'time', isPaused: true });
       return;
     }
   },
