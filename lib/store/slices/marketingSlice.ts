@@ -8,6 +8,7 @@ import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import { useConfigStore } from '@/lib/store/configStore';
 import type { Customer } from '@/lib/features/customers';
 import type { Lead } from '@/lib/features/leads';
+import { generateLeads } from '@/lib/features/leads';
 import { SourceType, SourceInfo } from '@/lib/config/sourceTypes';
 import { SourceHelpers } from '@/lib/utils/financialTracking';
 
@@ -89,58 +90,15 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
       } else if (effect.metric === GameMetric.FreedomScore && store.applyFreedomScoreChange) {
         store.applyFreedomScoreChange(effect.value);
       } else if (effect.metric === GameMetric.GenerateLeads && store.spawnLead && store.updateLeads && store.getState && store.updateLeadProgress) {
-        // Generate leads with staggered animation - value is the number of leads to generate
-        const count = Math.max(0, Math.floor(effect.value));
-
-        if (count > 0) {
-          // Get current conversion rate
-          const currentState = store.getState();
-          const conversionRate = currentState.conversionRate || 10;
-
-          // Stagger lead generation with a slight delay for better visual effect
-          const spawnDelayMs = 150; // 150ms delay between each lead generation
-
-          for (let i = 0; i < count; i++) {
-            setTimeout(() => {
-              if (!store.spawnLead || !store.updateLeads || !store.getState || !store.updateLeadProgress) return;
-
-              const lead = store.spawnLead();
-              if (lead) {
-                // Add the new lead to existing leads
-                const currentLeads = store.getState().leads || [];
-                store.updateLeads([...currentLeads, lead]);
-
-                // Update conversion progress
-                const currentProgress = store.getState().leadProgress || 0;
-                const newProgress = currentProgress + conversionRate;
-
-                // If progress reaches 100% or more, convert immediately
-                if (newProgress >= 100 && store.spawnCustomer && store.addCustomers) {
-                  // Calculate how many customers to spawn
-                  const customersToSpawn = Math.floor(newProgress / 100);
-
-                  // Spawn customers immediately
-                  for (let c = 0; c < customersToSpawn; c++) {
-                    const customer = store.spawnCustomer();
-                    if (customer) {
-                      store.addCustomers([customer]);
-
-                      // Note: Revenue and EXP are awarded when customer completes service and leaves happy (handled in mechanics.ts)
-                      // Do NOT record revenue here - it will be recorded when the service is completed
-                    }
-                  }
-
-                  // Reset progress (keep remainder for next conversion)
-                  const remainderProgress = newProgress % 100;
-                  store.updateLeadProgress(remainderProgress);
-                } else {
-                  // Progress hasn't reached 100% yet, just update it
-                  store.updateLeadProgress(newProgress);
-                }
-              }
-            }, i * spawnDelayMs);
-          }
-        }
+        // Use shared lead generation utility (single source of truth)
+        generateLeads(effect.value, {
+          spawnLead: store.spawnLead,
+          updateLeads: store.updateLeads,
+          spawnCustomer: store.spawnCustomer,
+          addCustomers: store.addCustomers,
+          getState: store.getState,
+          updateLeadProgress: store.updateLeadProgress,
+        });
       }
       // Direct state metrics are always permanent (one-time add/subtract)
       // Duration is ignored for these metrics - content should not use temporary effects

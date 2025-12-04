@@ -308,3 +308,85 @@ export function tickLead(lead: Lead, industryId: IndustryId = DEFAULT_INDUSTRY_I
   }
 }
 
+/**
+ * Shared utility for generating leads from any source (marketing, events, etc.)
+ * 
+ * This is the single source of truth for lead generation logic.
+ * Handles staggered animation, conversion progress tracking, and automatic customer conversion.
+ * 
+ * @param count - Number of leads to generate
+ * @param options - Store methods and state accessors needed for lead generation
+ */
+export interface GenerateLeadsOptions {
+  spawnLead: () => Lead;
+  updateLeads: (leads: Lead[]) => void;
+  spawnCustomer?: () => import('@/lib/features/customers').Customer;
+  addCustomers?: (customers: import('@/lib/features/customers').Customer[]) => void;
+  getState: () => {
+    leads: Lead[];
+    leadProgress: number;
+    conversionRate: number;
+  };
+  updateLeadProgress: (progress: number) => void;
+}
+
+const DEFAULT_SPAWN_DELAY_MS = 150; // 150ms delay between each lead generation
+
+export function generateLeads(
+  count: number,
+  options: GenerateLeadsOptions,
+  spawnDelayMs: number = DEFAULT_SPAWN_DELAY_MS,
+): void {
+  const actualCount = Math.max(0, Math.floor(count));
+
+  if (actualCount === 0) {
+    return;
+  }
+
+  const { spawnLead, updateLeads, spawnCustomer, addCustomers, getState, updateLeadProgress } = options;
+
+  // Stagger lead generation with a slight delay for better visual effect
+  for (let i = 0; i < actualCount; i++) {
+    setTimeout(() => {
+      const currentState = getState();
+      if (!spawnLead || !updateLeads) return;
+
+      const lead = spawnLead();
+      if (lead) {
+        // Add the new lead to existing leads
+        const currentLeads = currentState.leads || [];
+        updateLeads([...currentLeads, lead]);
+
+        // Update conversion progress
+        const conversionRate = currentState.conversionRate || 10;
+        const currentProgress = currentState.leadProgress || 0;
+        const newProgress = currentProgress + conversionRate;
+
+        // If progress reaches 100% or more, convert immediately
+        if (newProgress >= 100 && spawnCustomer && addCustomers) {
+          // Calculate how many customers to spawn
+          const customersToSpawn = Math.floor(newProgress / 100);
+
+          // Spawn customers immediately
+          for (let c = 0; c < customersToSpawn; c++) {
+            const customer = spawnCustomer();
+            if (customer) {
+              addCustomers([customer]);
+
+              // Note: Revenue and EXP are awarded when customer completes service and leaves happy (handled in mechanics.ts)
+              // Do NOT record revenue here - it will be recorded when the service is completed
+            }
+          }
+
+          // Reset progress (keep remainder for next conversion)
+          const remainderProgress = newProgress % 100;
+          updateLeadProgress(remainderProgress);
+        } else {
+          // Progress hasn't reached 100% yet, just update it
+          updateLeadProgress(newProgress);
+        }
+      }
+    }, i * spawnDelayMs);
+  }
+}
+

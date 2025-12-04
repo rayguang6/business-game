@@ -160,6 +160,7 @@ import { DynamicValueEvaluator } from '@/lib/game/dynamicValueEvaluator';
 import { checkRequirements } from '@/lib/game/requirementChecker';
 import { SourceType } from '@/lib/config/sourceTypes';
 import { SourceHelpers } from '@/lib/utils/financialTracking';
+import { generateLeads } from '@/lib/features/leads';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // 🎯 RESOLVED EFFECT TYPES - Update this when adding new effects (STEP 2)
@@ -292,10 +293,11 @@ const applyEventEffect = (
       return; // Don't use effectManager for skill level (handled directly)
     }
     case EventEffectType.Metric: {
-      // For direct state metrics (Cash, Time, SkillLevel, FreedomScore) with Add effects, apply directly
+      // For direct state metrics (Cash, Time, SkillLevel, FreedomScore, GenerateLeads) with Add effects, apply directly
       // These are one-time permanent effects (no duration tracking)
       if ((effect.metric === GameMetric.Cash || effect.metric === GameMetric.Time || 
-           effect.metric === GameMetric.Exp || effect.metric === GameMetric.FreedomScore) 
+           effect.metric === GameMetric.Exp || effect.metric === GameMetric.FreedomScore ||
+           effect.metric === GameMetric.GenerateLeads) 
           && effect.effectType === EffectType.Add) {
         if (effect.metric === GameMetric.Cash) {
           const { recordEventRevenue, recordEventExpense } = store;
@@ -329,6 +331,25 @@ const applyEventEffect = (
           store.applyExpChange(effect.value);
         } else if (effect.metric === GameMetric.FreedomScore) {
           store.applyFreedomScoreChange(effect.value);
+        } else if (effect.metric === GameMetric.GenerateLeads) {
+          // NOTE: This is a legacy function that is not currently used.
+          // All GenerateLeads effects should go through the two-phase system (resolveEventChoice -> clearLastEventOutcome),
+          // which uses the shared generateLeads() utility from @/lib/features/leads.
+          // If this function is ever needed, it should be updated to use generateLeads() with proper state access.
+          // For now, this is a simplified fallback that doesn't track conversion progress.
+          const count = Math.max(0, Math.floor(effect.value));
+
+          if (count > 0 && store.spawnLead && store.updateLeads) {
+            for (let i = 0; i < count; i++) {
+              setTimeout(() => {
+                const lead = store.spawnLead();
+                if (lead) {
+                  const currentLeads = store.leads || [];
+                  store.updateLeads([...currentLeads, lead]);
+                }
+              }, i * 150);
+            }
+          }
         }
         // Direct state metrics are always permanent (one-time add/subtract)
         // Duration is ignored for these metrics - content should not use temporary effects
@@ -577,6 +598,7 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
   },
   clearLastEventOutcome: () => {
     const store = get();
+    const setState = set;
 
     // ════════════════════════════════════════════════════════════════════════════════
     // 🎯 EFFECT APPLICATION PHASE - Add new effect types here (STEP 4)
@@ -630,6 +652,20 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
             store.applyExpChange(resolvedEffect.value);
           } else if (resolvedEffect.metric === GameMetric.FreedomScore && resolvedEffect.effectType === EffectType.Add) {
             store.applyFreedomScoreChange(resolvedEffect.value);
+          } else if (resolvedEffect.metric === GameMetric.GenerateLeads && resolvedEffect.effectType === EffectType.Add) {
+            // Use shared lead generation utility (single source of truth)
+            generateLeads(resolvedEffect.value, {
+              spawnLead: store.spawnLead,
+              updateLeads: store.updateLeads,
+              spawnCustomer: store.spawnCustomer,
+              addCustomers: store.addCustomers,
+              getState: () => get(),
+              updateLeadProgress: (progress: number) => {
+                setState((state) => ({
+                  leadProgress: progress,
+                }));
+              },
+            });
           } else {
             // For other metrics or effect types, use effect manager
             effectManager.add({
@@ -691,6 +727,7 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
   },
   clearLastDelayedOutcome: () => {
     const store = get();
+    const setState = set;
 
     // Apply pre-calculated effect values
     const outcome = store.lastDelayedOutcome;
@@ -736,6 +773,20 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
             store.applyExpChange(resolvedEffect.value);
           } else if (resolvedEffect.metric === GameMetric.FreedomScore && resolvedEffect.effectType === EffectType.Add) {
             store.applyFreedomScoreChange(resolvedEffect.value);
+          } else if (resolvedEffect.metric === GameMetric.GenerateLeads && resolvedEffect.effectType === EffectType.Add) {
+            // Use shared lead generation utility (single source of truth)
+            generateLeads(resolvedEffect.value, {
+              spawnLead: store.spawnLead,
+              updateLeads: store.updateLeads,
+              spawnCustomer: store.spawnCustomer,
+              addCustomers: store.addCustomers,
+              getState: () => get(),
+              updateLeadProgress: (progress: number) => {
+                setState((state) => ({
+                  leadProgress: progress,
+                }));
+              },
+            });
           } else {
             effectManager.add({
               id: `delayed_${outcome.eventId}_${outcome.choiceId}_${Date.now()}`,
