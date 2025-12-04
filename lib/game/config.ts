@@ -525,6 +525,12 @@ export function calculateMonthlyRevenuePotential(
   };
 }
 
+export function getExpPerLevel(industryId: IndustryId = DEFAULT_INDUSTRY_ID): number {
+  const stats = getBusinessStats(industryId);
+  if (!stats) throw new Error('Business stats not loaded');
+  return stats.expPerLevel ?? 200; // Default fallback
+}
+
 export const getUiConfig = () => {
   const globalConfig = getGlobalConfigOverride();
   return {

@@ -8,7 +8,8 @@ import { useGameStore } from '@/lib/store/gameStore';
 import { DEFAULT_INDUSTRY_ID, getStartingTime } from '@/lib/game/config';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import type { IndustryId } from '@/lib/game/types';
-import { getLevel, getLevelProgress, EXP_PER_LEVEL } from '@/lib/store/types';
+import { getLevel, getLevelProgress } from '@/lib/store/types';
+import { getExpPerLevel } from '@/lib/game/config';
 import Image from 'next/image';
 
 export function KeyMetrics() {
@@ -19,6 +20,7 @@ export function KeyMetrics() {
   // Show time metric if startingTime is configured or if time > 0
   const startingTime = getStartingTime(industryId);
   const showTime = startingTime > 0 || metrics.time > 0;
+  const expPerLevel = getExpPerLevel(industryId);
   
   const [feedbackByMetric, setFeedbackByMetric] = useState<Record<string, FeedbackItem[]>>({
     cash: [],
@@ -100,7 +102,7 @@ export function KeyMetrics() {
       key: 'exp',
       icon: '💎',
       image: '/images/icons/marketing.png',
-      value: `Level ${getLevel(metrics.exp)} (${getLevelProgress(metrics.exp)}/${EXP_PER_LEVEL} EXP)`,
+      value: `Level ${getLevel(metrics.exp, expPerLevel)} (${getLevelProgress(metrics.exp, expPerLevel)}/${expPerLevel} EXP)`,
       label: selectedIndustry?.id === 'freelance' ? 'Skill Level' : 'Level',
       color: 'text-yellow-400',
       feedback: feedbackByMetric.exp,

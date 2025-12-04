@@ -2,7 +2,7 @@ import { GameEvent } from '@/lib/types/gameEvents';
 
 export type IndustryId = string;
 
-export const DEFAULT_INDUSTRY_ID: IndustryId = 'dental';
+export const DEFAULT_INDUSTRY_ID: IndustryId = 'freelance';
 
 export interface BusinessMetrics {
   startingCash: number;
@@ -25,6 +25,7 @@ export interface BusinessStats {
   serviceCapacity: number;
   expGainPerHappyCustomer: number; // Previously: skillLevelGainPerHappyCustomer
   expLossPerAngryCustomer: number; // Previously: skillLevelLossPerAngryCustomer
+  expPerLevel: number; // Experience points required per level
   // baseHappyProbability removed - customers are happy/angry based on patience, not probability
   eventTriggerSeconds?: number[];
   serviceRevenueMultiplier: number;

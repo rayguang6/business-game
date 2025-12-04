@@ -48,6 +48,7 @@ const DEFAULT_BUSINESS_STATS: BusinessStats = {
   // Default balance values (GLOBAL - override only if needed for balance)
   expGainPerHappyCustomer: 2, // Default EXP gain - industries can override if needed
   expLossPerAngryCustomer: 1, // Default EXP loss - industries can override if needed
+  expPerLevel: 200, // Default EXP per level - industries can override if needed
   conversionRate: 10, // Default conversion rate - industries can override (freelance: 15, luxury: 5)
   
   // Reasonable defaults (GLOBAL - industries commonly override)

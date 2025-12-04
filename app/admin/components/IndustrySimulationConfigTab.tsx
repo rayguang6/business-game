@@ -153,6 +153,7 @@ export function IndustrySimulationConfigTab({
     serviceCapacity: 2,
     expGainPerHappyCustomer: 1,
     expLossPerAngryCustomer: 1,
+    expPerLevel: 200,
     eventTriggerSeconds: [],
     serviceRevenueMultiplier: 1,
     serviceRevenueScale: 10,
@@ -620,13 +621,29 @@ export function IndustrySimulationConfigTab({
                   <span className="ml-2 text-[10px] text-slate-500">(global: {globalStats.expLossPerAngryCustomer})</span>
                 )}
               </label>
-              <input 
-                type="number" 
-                min="0" 
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getStats().expLossPerAngryCustomer ?? ''} 
-                onChange={(e) => updateStats({ expLossPerAngryCustomer: e.target.value === '' ? undefined : Number(e.target.value) })} 
+              <input
+                type="number"
+                min="0"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getStats().expLossPerAngryCustomer ?? ''}
+                onChange={(e) => updateStats({ expLossPerAngryCustomer: e.target.value === '' ? undefined : Number(e.target.value) })}
                 placeholder={globalStats?.expLossPerAngryCustomer?.toString() || "1"}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">
+                EXP Required Per Level
+                {globalStats?.expPerLevel !== undefined && !businessStats?.expPerLevel && (
+                  <span className="ml-2 text-[10px] text-slate-500">(global: {globalStats.expPerLevel})</span>
+                )}
+              </label>
+              <input
+                type="number"
+                min="1"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getStats().expPerLevel ?? ''}
+                onChange={(e) => updateStats({ expPerLevel: e.target.value === '' ? undefined : Number(e.target.value) })}
+                placeholder={globalStats?.expPerLevel?.toString() || "100"}
               />
             </div>
           </div>

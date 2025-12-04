@@ -157,20 +157,17 @@ export interface GameState {
   monthlyCustomersServiceFailed: number; // Customers service failed in current month
 }
 
-// EXP per level configuration
-export const EXP_PER_LEVEL = 100;
-
 // Helper functions for EXP/level system
-export function getLevel(exp: number, expPerLevel: number = EXP_PER_LEVEL): number {
+export function getLevel(exp: number, expPerLevel: number = 200): number {
   if (!Number.isFinite(exp) || exp < 0) return 0;
   return Math.floor(exp / expPerLevel);
 }
 
-export function getLevelProgress(exp: number, expPerLevel: number = EXP_PER_LEVEL): number {
+export function getLevelProgress(exp: number, expPerLevel: number = 200): number {
   if (!Number.isFinite(exp) || exp < 0) return 0;
   return exp % expPerLevel;
 }
 
-export function getExpToNextLevel(exp: number, expPerLevel: number = EXP_PER_LEVEL): number {
+export function getExpToNextLevel(exp: number, expPerLevel: number = 200): number {
   return expPerLevel - getLevelProgress(exp, expPerLevel);
 }

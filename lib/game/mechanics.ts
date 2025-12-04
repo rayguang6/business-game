@@ -13,6 +13,7 @@ import {
 import { SourceType } from '@/lib/config/sourceTypes';
 import {
   getBusinessStats,
+  getExpPerLevel,
   getTicksPerSecondForIndustry,
   isNewMonth,
   UpgradeEffect,
@@ -326,7 +327,8 @@ function processMonthTransition({
 
   const previousExp = monthlyHistory.length > 0 ? monthlyHistory[monthlyHistory.length - 1].exp : 0;
   const previousLevel = monthlyHistory.length > 0 ? monthlyHistory[monthlyHistory.length - 1].level : 0;
-  const currentLevel = getLevel(updatedMetrics.exp);
+  const expPerLevel = getExpPerLevel(industryId);
+  const currentLevel = getLevel(updatedMetrics.exp, expPerLevel);
 
   // Calculate profit that matches the expenses stored in history
   // History expenses = expensesActuallyDeducted (recurring + unpaid one-time costs)

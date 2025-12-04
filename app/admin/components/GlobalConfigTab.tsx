@@ -273,6 +273,24 @@ export function GlobalConfigTab({
                 />
               </div>
               <div>
+                <label className="block text-xs text-slate-400 mb-1">
+                  EXP Required Per Level
+                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-blue-500/20 text-blue-300 rounded">Global Default</span>
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                  value={stats.expPerLevel ?? ''}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? undefined : Number(e.target.value);
+                    if (value !== undefined && !isNaN(value)) {
+                      onUpdateStats({ expPerLevel: value });
+                    }
+                  }}
+                />
+              </div>
+              <div>
                 {/* baseHappyProbability removed - not used in game mechanics */}
               </div>
               <div className="sm:col-span-2">

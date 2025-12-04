@@ -2,6 +2,8 @@ import type { GameStore } from '@/lib/store/gameStore';
 import type { Requirement } from './types';
 import { getUpgradeLevel } from '@/lib/features/upgrades';
 import { getLevel } from '@/lib/store/types';
+import { getExpPerLevel } from './config';
+import { DEFAULT_INDUSTRY_ID } from './types';
 
 /**
  * Compares two numeric values using the specified operator
@@ -22,11 +24,13 @@ function compareNumericValues(actual: number, operator: string, expected: number
  */
 function getMetricValueById(metricId: string, store: GameStore): number {
   const { metrics, gameTime } = store;
-  
+  const industryId = store.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
+  const expPerLevel = getExpPerLevel(industryId);
+
   switch (metricId) {
     case 'cash': return metrics.cash;
     case 'exp': return metrics.exp;
-    case 'level': return getLevel(metrics.exp);
+    case 'level': return getLevel(metrics.exp, expPerLevel);
     case 'expenses': return metrics.totalExpenses;
     case 'gameTime': return gameTime;
     case 'freedomScore': return metrics.freedomScore;

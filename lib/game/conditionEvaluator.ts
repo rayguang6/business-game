@@ -1,6 +1,8 @@
 import { GameCondition, ConditionMetric } from '@/lib/types/conditions';
 import { GameStore } from '@/lib/store/gameStore';
 import { getLevel } from '@/lib/store/types';
+import { getExpPerLevel } from './config';
+import { DEFAULT_INDUSTRY_ID } from './types';
 
 /**
  * Evaluates a single metric condition against the current game state
@@ -41,6 +43,8 @@ export function evaluateAnyCondition(conditions: GameCondition[], store: GameSto
 
 function getMetricValue(metric: ConditionMetric, store: GameStore): number {
   const { metrics, gameTime } = store;
+  const industryId = store.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
+  const expPerLevel = getExpPerLevel(industryId);
 
   switch (metric) {
     case ConditionMetric.Cash:
@@ -48,7 +52,7 @@ function getMetricValue(metric: ConditionMetric, store: GameStore): number {
     case ConditionMetric.Exp:
       return metrics.exp;
     case ConditionMetric.Level:
-      return getLevel(metrics.exp);
+      return getLevel(metrics.exp, expPerLevel);
     case ConditionMetric.Expenses:
       return metrics.totalExpenses;
     case ConditionMetric.GameTime:
