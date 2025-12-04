@@ -591,11 +591,11 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     }
     
     // For positive amounts (time gained) or if recordTimeSpent is not available,
-    // update time but never allow it to go below 0 (safety clamp)
+    // update time
     set((state) => ({
       metrics: {
         ...state.metrics,
-        time: Math.max(0, state.metrics.time + amount),
+        time: state.metrics.time + amount,
       },
     }));
     const { checkGameOver } = get();
@@ -723,8 +723,8 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     set((state) => ({
       metrics: {
         ...state.metrics,
-        // Deduct time but clamp at 0 so it never goes negative
-        time: Math.max(0, state.metrics.time + amount),
+        // Deduct time (allow it to go negative if insufficient)
+        time: state.metrics.time + amount,
         totalTimeSpent: state.metrics.totalTimeSpent + timeSpent,
       },
       monthlyTimeSpent: state.monthlyTimeSpent + timeSpent,

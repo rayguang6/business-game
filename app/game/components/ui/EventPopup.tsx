@@ -94,6 +94,7 @@ const EventPopup: React.FC = () => {
   const clearLastEventOutcome = useGameStore((state) => state.clearLastEventOutcome);
   const lastDelayedOutcome = useGameStore((state) => state.lastDelayedOutcome);
   const clearLastDelayedOutcome = useGameStore((state) => state.clearLastDelayedOutcome);
+  const metrics = useGameStore((state) => state.metrics);
 
   // Get reactive UI config from store
   const globalConfig = useConfigStore((state) => state.globalConfig);
@@ -454,6 +455,7 @@ const EventPopup: React.FC = () => {
               const isDefault = choice.id === defaultChoiceId;
               const hasCost = choice.cost !== undefined && choice.cost > 0;
               const hasTimeCost = choice.timeCost !== undefined && choice.timeCost > 0;
+              const canAffordTime = !hasTimeCost || (choice.timeCost !== undefined && choice.timeCost <= metrics.time);
               
               // Choice button colors based on category
               const choiceBg = isOpportunity
@@ -473,8 +475,9 @@ const EventPopup: React.FC = () => {
               return (
                 <button
                   key={choice.id}
-                  onClick={() => handleUserChoice(choice)}
-                  className={`w-full text-left p-1.5 md:p-3 rounded transition-all duration-200 border ${choiceBg} ${choiceBorder} ${choiceText} text-[10px] md:text-sm flex flex-col items-start relative overflow-hidden group`}
+                  onClick={() => canAffordTime ? handleUserChoice(choice) : undefined}
+                  disabled={!canAffordTime}
+                  className={`w-full text-left p-1.5 md:p-3 rounded transition-all duration-200 border ${choiceBg} ${choiceBorder} ${choiceText} text-[10px] md:text-sm flex flex-col items-start relative overflow-hidden group ${!canAffordTime ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}`}
                 >
                   {/* Subtle gloss effect */}
                   <div className="absolute top-0 left-0 w-full h-1/2 bg-white/5 rounded-t-md opacity-0 group-hover:opacity-100 transition-opacity duration-200" />

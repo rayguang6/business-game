@@ -117,7 +117,7 @@ export const createCustomerSlice: StateCreator<GameState, [], [], CustomerSlice>
 
       if (serviceTimeCost > 0) {
         // Deduct time cost
-        const newTime = Math.max(0, state.metrics.time - serviceTimeCost);
+        const newTime = state.metrics.time - serviceTimeCost;
         return {
           ...state,
           customers: updatedCustomers,
