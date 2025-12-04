@@ -23,10 +23,12 @@ export function useGlobalConfig() {
   const [leadDialogues, setLeadDialogues] = useState<string[]>([]);
   const [winCondition, setWinCondition] = useState<WinCondition>({ ...DEFAULT_WIN_CONDITION });
   const [loseCondition, setLoseCondition] = useState<LoseCondition>({ ...DEFAULT_LOSE_CONDITION });
-  const [uiConfig, setUiConfig] = useState<{
+  type UiConfig = {
     eventAutoSelectDurationSeconds?: number;
     outcomePopupDurationSeconds?: number;
-  }>({
+  };
+
+  const [uiConfig, setUiConfig] = useState<UiConfig>({
     eventAutoSelectDurationSeconds: 10,
     outcomePopupDurationSeconds: 5,
   });
@@ -57,7 +59,7 @@ export function useGlobalConfig() {
           if (global.leadDialogues) setLeadDialogues(global.leadDialogues);
           if (global.winCondition) setWinCondition(global.winCondition);
           if (global.loseCondition) setLoseCondition(global.loseCondition);
-          if (global.uiConfig) setUiConfig(prev => ({ ...prev, ...global.uiConfig }));
+          if (global.uiConfig) setUiConfig((prev: UiConfig) => ({ ...prev, ...global.uiConfig }));
         }
       } catch (err) {
         console.error('Failed to load global config', err);
@@ -144,23 +146,23 @@ export function useGlobalConfig() {
   }, [metrics, stats, eventSecondsInput, movementJSON, mapConfigJSON, capacityImage, customerImages, staffNamePool, leadDialogues, winCondition, loseCondition, uiConfig]);
 
   const updateMetrics = useCallback((updates: Partial<BusinessMetrics>) => {
-    setMetrics(prev => ({ ...prev, ...updates }));
+    setMetrics((prev: BusinessMetrics) => ({ ...prev, ...updates }));
   }, []);
 
   const updateStats = useCallback((updates: Partial<BusinessStats>) => {
-    setStats(prev => ({ ...prev, ...updates }));
+    setStats((prev: BusinessStats) => ({ ...prev, ...updates }));
   }, []);
 
   const updateWinCondition = useCallback((updates: Partial<WinCondition>) => {
-    setWinCondition(prev => ({ ...prev, ...updates }));
+    setWinCondition((prev: WinCondition) => ({ ...prev, ...updates }));
   }, []);
 
   const updateLoseCondition = useCallback((updates: Partial<LoseCondition>) => {
-    setLoseCondition(prev => ({ ...prev, ...updates }));
+    setLoseCondition((prev: LoseCondition) => ({ ...prev, ...updates }));
   }, []);
 
-  const updateUiConfig = useCallback((updates: Partial<typeof uiConfig>) => {
-    setUiConfig(prev => ({ ...prev, ...updates }));
+  const updateUiConfig = useCallback((updates: Partial<UiConfig>) => {
+    setUiConfig((prev: UiConfig) => ({ ...prev, ...updates }));
   }, []);
 
   return {
