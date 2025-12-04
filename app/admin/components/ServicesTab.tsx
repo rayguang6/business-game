@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import type { IndustryServiceDefinition, Requirement, UpgradeDefinition, ServiceTier } from '@/lib/game/types';
 import type { GameFlag } from '@/lib/data/flagRepository';
 import type { StaffRoleConfig } from '@/lib/game/staffConfig';
@@ -49,6 +50,21 @@ export function ServicesTab({
   onReset,
   onUpdateForm,
 }: ServicesTabProps) {
+  // Keyboard shortcut for save
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault();
+        if ((selectedServiceId || isCreatingService) && !serviceSaving && !serviceDeleting) {
+          onSaveService();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [selectedServiceId, isCreatingService, serviceSaving, serviceDeleting, onSaveService]);
+
   return (
     <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
       <div className="p-6 border-b border-slate-800">
@@ -345,6 +361,26 @@ export function ServicesTab({
                         </button>
                       )}
                     </div>
+
+                {/* Floating Save Button */}
+                {(selectedServiceId || isCreatingService) && (
+                  <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+                    <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-xl px-6 py-3 shadow-2xl">
+                      <button
+                        type="button"
+                        onClick={onSaveService}
+                        disabled={serviceSaving || serviceDeleting}
+                        className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
+                          serviceSaving
+                            ? 'bg-emerald-900 text-emerald-200 cursor-wait'
+                            : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                        }`}
+                      >
+                        {serviceSaving ? '💾 Saving…' : '💾 Save Service (⌘↵)'}
+                      </button>
+                    </div>
+                  </div>
+                )}
                   </form>
                 )}
               </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import type { UpgradeDefinition, Requirement } from '@/lib/game/types';
 import type { GameFlag } from '@/lib/data/flagRepository';
@@ -83,6 +84,21 @@ export function UpgradesTab({
   onRemoveLevel,
   onUpdateLevel,
 }: UpgradesTabProps) {
+  // Keyboard shortcut for save
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault();
+        if ((selectedUpgradeId || isCreatingUpgrade) && !upgradeSaving && !upgradeDeleting) {
+          onSaveUpgrade();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [selectedUpgradeId, isCreatingUpgrade, upgradeSaving, upgradeDeleting, onSaveUpgrade]);
+
   return (
     <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
       <div className="p-6 border-b border-slate-800">
@@ -320,42 +336,62 @@ export function UpgradesTab({
                     </div>
 
 
-                    <div className="md:col-span-2 flex flex-wrap gap-3">
-                      <button
-                        type="button"
-                        onClick={onSaveUpgrade}
-                        disabled={upgradeSaving || upgradeDeleting}
-                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                          upgradeSaving
-                            ? 'bg-purple-900 text-purple-200 cursor-wait'
-                            : 'bg-purple-600 hover:bg-purple-500 text-white'
-                        }`}
-                      >
-                        {upgradeSaving ? 'Saving…' : 'Save Upgrade'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={onReset}
-                        disabled={upgradeSaving || upgradeDeleting}
-                        className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800"
-                      >
-                        {isCreatingUpgrade ? 'Cancel' : 'Reset'}
-                      </button>
-                      {!isCreatingUpgrade && selectedUpgradeId && (
+                      <div className="md:col-span-2 flex flex-wrap gap-3">
                         <button
                           type="button"
-                          onClick={onDeleteUpgrade}
-                          disabled={upgradeDeleting || upgradeSaving}
+                          onClick={onSaveUpgrade}
+                          disabled={upgradeSaving || upgradeDeleting}
                           className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                            upgradeDeleting
-                              ? 'bg-rose-900 text-rose-200 cursor-wait'
-                              : 'bg-rose-600 hover:bg-rose-500 text-white'
+                            upgradeSaving
+                              ? 'bg-purple-900 text-purple-200 cursor-wait'
+                              : 'bg-purple-600 hover:bg-purple-500 text-white'
                           }`}
                         >
-                          {upgradeDeleting ? 'Deleting…' : 'Delete'}
+                          {upgradeSaving ? 'Saving…' : 'Save Upgrade'}
                         </button>
+                        <button
+                          type="button"
+                          onClick={onReset}
+                          disabled={upgradeSaving || upgradeDeleting}
+                          className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800"
+                        >
+                          {isCreatingUpgrade ? 'Cancel' : 'Reset'}
+                        </button>
+                        {!isCreatingUpgrade && selectedUpgradeId && (
+                          <button
+                            type="button"
+                            onClick={onDeleteUpgrade}
+                            disabled={upgradeDeleting || upgradeSaving}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                              upgradeDeleting
+                                ? 'bg-rose-900 text-rose-200 cursor-wait'
+                                : 'bg-rose-600 hover:bg-rose-500 text-white'
+                            }`}
+                          >
+                            {upgradeDeleting ? 'Deleting…' : 'Delete'}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Floating Save Button */}
+                      {(selectedUpgradeId || isCreatingUpgrade) && (
+                        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+                          <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-xl px-6 py-3 shadow-2xl">
+                            <button
+                              type="button"
+                              onClick={onSaveUpgrade}
+                              disabled={upgradeSaving || upgradeDeleting}
+                              className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
+                                upgradeSaving
+                                  ? 'bg-purple-900 text-purple-200 cursor-wait'
+                                  : 'bg-purple-600 hover:bg-purple-500 text-white'
+                              }`}
+                            >
+                              {upgradeSaving ? '💾 Saving…' : '💾 Save Upgrade (⌘↵)'}
+                            </button>
+                          </div>
+                        </div>
                       )}
-                    </div>
                   </form>
                 )}
               </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { BusinessMetrics, BusinessStats, GridPosition, AnchorPoint, ServiceRoomConfig } from '@/lib/game/types';
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
 
@@ -94,6 +94,20 @@ export function IndustrySimulationConfigTab({
   setEventSequence,
   onSave,
 }: IndustrySimulationConfigTabProps) {
+  // Keyboard shortcut for save
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault();
+        if (!saving && !loading) {
+          onSave();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [saving, loading, onSave]);
 
   // Helper functions for event sequencing
   const moveEventUp = (index: number) => {
@@ -1173,6 +1187,16 @@ export function IndustrySimulationConfigTab({
             {saving ? 'Saving…' : 'Save Industry Config'}
           </button>
         </div>
+
+        {/* Floating Save Button */}
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+          <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-xl px-6 py-3 shadow-2xl">
+            <button onClick={onSave} disabled={saving || loading} className={`px-6 py-2 rounded-lg font-medium transition ${saving || loading ? 'bg-slate-700 text-slate-400 cursor-wait' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}>
+              {saving ? '💾 Saving…' : '💾 Save Industry Config (⌘↵)'}
+            </button>
+          </div>
+        </div>
+
       </div>
     </section>
   );

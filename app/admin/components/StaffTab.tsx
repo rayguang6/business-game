@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import type { StaffRoleConfig, StaffPreset } from '@/lib/game/staffConfig';
 import type { GameFlag } from '@/lib/data/flagRepository';
@@ -91,6 +92,28 @@ export function StaffTab({
   onResetPreset,
   onUpdatePresetForm,
 }: StaffTabProps) {
+  // Keyboard shortcut for save
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault();
+
+        // Prioritize role save if both are active, otherwise save whichever is active
+        if ((selectedRoleId || isCreatingRole) && !roleSaving && !roleDeleting) {
+          onSaveRole();
+        } else if ((selectedPresetId || isCreatingPreset) && !presetSaving && !presetDeleting) {
+          onSavePreset();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [
+    selectedRoleId, isCreatingRole, roleSaving, roleDeleting, onSaveRole,
+    selectedPresetId, isCreatingPreset, presetSaving, presetDeleting, onSavePreset
+  ]);
+
   return (
     <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
       <div className="p-6 border-b border-slate-800">
@@ -268,6 +291,26 @@ export function StaffTab({
                           </button>
                         )}
                       </div>
+
+                      {/* Floating Save Button for Roles */}
+                      {(selectedRoleId || isCreatingRole) && (
+                        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+                          <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-xl px-6 py-3 shadow-2xl">
+                            <button
+                              type="button"
+                              onClick={onSaveRole}
+                              disabled={roleSaving || roleDeleting}
+                              className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
+                                roleSaving
+                                  ? 'bg-indigo-900 text-indigo-200 cursor-wait'
+                                  : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                              }`}
+                            >
+                              {roleSaving ? '💾 Saving…' : '💾 Save Role (⌘↵)'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </form>
                   )}
                 </div>
@@ -399,6 +442,26 @@ export function StaffTab({
                           </button>
                         )}
                       </div>
+
+                      {/* Floating Save Button for Presets */}
+                      {(selectedPresetId || isCreatingPreset) && (
+                        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+                          <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-xl px-6 py-3 shadow-2xl">
+                            <button
+                              type="button"
+                              onClick={onSavePreset}
+                              disabled={presetSaving || presetDeleting}
+                              className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
+                                presetSaving
+                                  ? 'bg-emerald-900 text-emerald-200 cursor-wait'
+                                  : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                              }`}
+                            >
+                              {presetSaving ? '💾 Saving…' : '💾 Save Preset (⌘↵)'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </form>
                   )}
                 </div>

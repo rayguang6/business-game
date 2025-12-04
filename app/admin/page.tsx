@@ -372,8 +372,6 @@ export default function AdminPage() {
                 onUpdateEventChoices={events.updateChoices}
                 onPersistEventWithChoices={events.persistEventWithChoices}
                 onUpdateStatus={events.updateStatus}
-                onJsonImport={events.jsonImport}
-                onJsonExport={events.jsonExport}
               />
             )}
           </>

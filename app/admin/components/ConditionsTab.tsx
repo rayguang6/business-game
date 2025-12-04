@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import type { GameCondition, ConditionOperator } from '@/lib/types/conditions';
 import { ConditionMetric } from '@/lib/types/conditions';
 import { makeUniqueId, slugify } from './utils';
@@ -53,6 +54,21 @@ export function ConditionsTab({
   onReset,
   onUpdateForm,
 }: ConditionsTabProps) {
+  // Keyboard shortcut for save
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault();
+        if ((selectedConditionId || isCreatingCondition) && !conditionSaving && !conditionDeleting) {
+          onSaveCondition();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [selectedConditionId, isCreatingCondition, conditionSaving, conditionDeleting, onSaveCondition]);
+
   return (
     <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
       <div className="p-6 border-b border-slate-800">
@@ -212,6 +228,22 @@ export function ConditionsTab({
                         {isCreatingCondition ? 'Cancel' : 'Reset'}
                       </button>
                     </div>
+
+                    {/* Floating Save Button */}
+                    {(selectedConditionId || isCreatingCondition) && (
+                      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+                        <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-xl px-6 py-3 shadow-2xl">
+                          <button
+                            type="button"
+                            onClick={onSaveCondition}
+                            disabled={conditionSaving || conditionDeleting}
+                            className="px-6 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {conditionSaving ? '💾 Saving…' : '💾 Save Condition (⌘↵)'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </form>
                 )}
               </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import type { BusinessMetrics, BusinessStats, MovementConfig } from '@/lib/game/types';
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
 
@@ -53,6 +54,21 @@ export function GlobalConfigTab({
   onUpdateLeadDialogues,
   onSave,
 }: GlobalConfigTabProps) {
+  // Keyboard shortcut for save
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault();
+        if (!globalSaving) {
+          onSave();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [globalSaving, onSave]);
+
   return (
     <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
       <div className="p-6 border-b border-slate-800">
@@ -471,6 +487,25 @@ export function GlobalConfigTab({
             {globalSaving ? 'Saving…' : 'Save Global Config'}
           </button>
         </div>
+
+        {/* Floating Save Button */}
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+          <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-xl px-6 py-3 shadow-2xl">
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={globalSaving}
+              className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
+                globalSaving
+                  ? 'bg-amber-900 text-amber-200 cursor-wait'
+                  : 'bg-amber-600 hover:bg-amber-500 text-white'
+              }`}
+            >
+              {globalSaving ? '💾 Saving…' : '💾 Save Global Config (⌘↵)'}
+            </button>
+          </div>
+        </div>
+
       </div>
     </section>
   );

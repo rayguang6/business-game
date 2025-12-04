@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import type { GameFlag } from '@/lib/data/flagRepository';
 import { makeUniqueId, slugify } from './utils';
 
@@ -38,6 +39,21 @@ export function FlagsTab({
   onReset,
   onUpdateForm,
 }: FlagsTabProps) {
+  // Keyboard shortcut for save
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault();
+        if ((selectedFlagId || isCreatingFlag) && !flagSaving && !flagDeleting) {
+          onSaveFlag();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [selectedFlagId, isCreatingFlag, flagSaving, flagDeleting, onSaveFlag]);
+
   return (
     <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
       <div className="p-6 border-b border-slate-800">
@@ -164,6 +180,26 @@ export function FlagsTab({
                           </button>
                         )}
                       </div>
+
+                      {/* Floating Save Button */}
+                      {(selectedFlagId || isCreatingFlag) && (
+                        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+                          <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-xl px-6 py-3 shadow-2xl">
+                            <button
+                              type="button"
+                              onClick={onSaveFlag}
+                              disabled={flagSaving || flagDeleting}
+                              className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
+                                flagSaving
+                                  ? 'bg-purple-900 text-purple-300 cursor-wait'
+                                  : 'bg-purple-600 hover:bg-purple-500 text-white'
+                              }`}
+                            >
+                              {flagSaving ? '💾 Saving…' : '💾 Save Flag (⌘↵)'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

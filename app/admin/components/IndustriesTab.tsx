@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import type { Industry } from '@/lib/features/industries';
 import { makeUniqueId, slugify } from './utils';
 
@@ -44,6 +45,21 @@ export function IndustriesTab({
   onReset,
   onUpdateForm,
 }: IndustriesTabProps) {
+  // Keyboard shortcut for save
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault();
+        if ((form.id || isCreating) && !isSaving && !isDeleting) {
+          onSave();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [form.id, isCreating, isSaving, isDeleting, onSave]);
+
   return (
     <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
       <div className="p-6 border-b border-slate-800">
@@ -208,6 +224,26 @@ export function IndustriesTab({
                     )}
                   </div>
                 </div>
+
+                {/* Floating Save Button */}
+                {(form.id || isCreating) && (
+                  <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+                    <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-xl px-6 py-3 shadow-2xl">
+                      <button
+                        type="button"
+                        onClick={onSave}
+                        disabled={isSaving || isDeleting}
+                        className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
+                          isSaving
+                            ? 'bg-sky-900 text-sky-300 cursor-wait'
+                            : 'bg-sky-600 hover:bg-sky-500 text-white'
+                        }`}
+                      >
+                        {isSaving ? '💾 Saving…' : '💾 Save Changes (⌘↵)'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </form>
             ) : (
               <div className="text-sm text-slate-400">Select an industry above to view its current details.</div>

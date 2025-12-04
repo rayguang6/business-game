@@ -179,32 +179,6 @@ export function useEvents(industryId: string) {
     setStatus(newStatus);
   }, []);
 
-  const jsonImport = useCallback(async (eventsToImport: GameEvent[]) => {
-    let successCount = 0;
-    for (const event of eventsToImport) {
-      const result = await upsertEventForIndustry(industryId, event);
-      if (result.success) {
-        successCount++;
-        setEvents((prev) => {
-          const exists = prev.some((e) => e.id === event.id);
-          const next = exists ? prev.map((e) => (e.id === event.id ? event : e)) : [...prev, event];
-          return next.sort((a, b) => a.title.localeCompare(b.title));
-        });
-      }
-    }
-    if (successCount > 0) {
-      setStatus(`Successfully imported ${successCount} event(s).`);
-    }
-  }, [industryId]);
-
-  const jsonExport = useCallback(() => {
-    const exportData = JSON.stringify(events, null, 2);
-    navigator.clipboard.writeText(exportData).then(() => {
-      setStatus('Events JSON copied to clipboard!');
-    }).catch(() => {
-      setStatus('Events JSON shown below. Copy manually.');
-    });
-  }, [events]);
 
   return {
     events,
@@ -227,8 +201,6 @@ export function useEvents(industryId: string) {
     updateChoices,
     updateStatus,
     persistEventWithChoices,
-    jsonImport,
-    jsonExport,
   };
 }
 
