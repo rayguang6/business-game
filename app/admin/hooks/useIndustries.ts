@@ -42,9 +42,7 @@ export function useIndustries() {
         if (!isMounted) return;
         if (data) {
           setIndustries(data);
-          if (data.length > 0) {
-            selectIndustry(data[0]);
-          }
+          // Don't auto-select first industry - let URL state management handle this
         }
       } catch (err) {
         console.error('Failed to load industries', err);

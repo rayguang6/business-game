@@ -1,60 +1,14 @@
-# Current State & Next Steps
+# Admin Stabilization & Cleanup Guide
 
-## ✅ What We've Completed
+This document is the implementation checklist for hardening the admin tooling, validating industry layouts, and cleaning up the database schema. Work through each section sequentially; capture progress in your task tracker so we can pick up where we left off in later conversations.
 
-### 1. Layout Configuration Refactoring
-- **Removed global layout config** - Layout is now industry-specific only
-- Each industry must configure its own layout in `industry_simulation_config` table
-- Global layout columns in `global_simulation_config` are deprecated (unused but kept for compatibility)
+---
 
-### 2. Fixed Store Initialization Bug
-- `getBusinessMetrics()`, `getBusinessStats()`, and `getMovementConfigForIndustry()` now return safe defaults instead of throwing errors
-- Store can initialize before config loads from database
-- Config loads asynchronously and updates store when ready
+## 1. Baseline Verification
 
-### 3. Code Updates
-- Removed layout fetching/saving from global config repository
-- Updated layout resolution to only check industry config
-- Fixed admin panel hooks and components
-- Updated all documentation
-
-## 📊 Current Database State
-
-### `global_simulation_config` Table
-
-**Active Columns:**
-- ✅ `business_metrics` (JSONB) - Required defaults
-- ✅ `business_stats` (JSONB) - Required defaults  
-- ✅ `movement` (JSONB) - Required (global only)
-- ✅ `map_width`, `map_height`, `map_walls` - Optional
-- ✅ `capacity_image`, `win_condition`, `lose_condition` - Optional
-- ✅ `customer_images`, `staff_name_pool` - Optional
-
-**Unused Columns (Can Be Removed):**
-- ⚠️ `entry_position` - Deprecated, not used
-- ⚠️ `waiting_positions` - Deprecated, not used
-- ⚠️ `service_rooms` - Deprecated, not used
-- ⚠️ `staff_positions` - Deprecated, not used
-
-### `industry_simulation_config` Table
-
-**Required for Each Industry:**
-- ✅ `entry_position` - Where customers enter
-- ✅ `waiting_positions` - Where customers wait
-- ✅ `service_rooms` - Service room positions
-- ✅ `staff_positions` - Staff positions
-
-**Optional Overrides:**
-- `business_metrics` - Override global defaults
-- `business_stats` - Override global defaults
-- `map_config` - Override global map
-- `capacity_image`, `win_condition`, `lose_condition` - Override global
-
-## 🔧 How to Remove Unused Columns
-
-### Step 1: Verify All Industries Have Layout
-
-Run this query in your Supabase SQL editor to check:
+### 1.1 Inventory Industry Layout Coverage
+1. Run the verification SQL in Supabase (below) and paste the results into the tracker.
+2. Mark every industry with `❌ Missing layout` and list the fields that are null/malformed if known.
 
 ```sql
 SELECT 
@@ -70,143 +24,46 @@ WHERE i.is_available = true
 ORDER BY i.id;
 ```
 
-**Important:** Only proceed if ALL industries show "✅ Has layout"
+### 1.2 Admin Panel Smoke Test
+For each industry (especially the ❌ ones):
+- Navigate to `/admin`.
+- Walk through **Global Config**, **Industry Config**, **Services**, **Staff** tabs.
+- Confirm data loads without errors and saving works (see checklist in §4).
+- Log any issues (UI error, validation gap, Supabase failure) with repro steps.
 
-### Step 2: Remove Unused Columns
+Deliverable: a short QA note that lists industries tested, failures encountered, and screenshots/logs if possible.
 
-Once verified, run this migration in Supabase SQL editor:
+---
 
-```sql
--- Remove unused layout columns from global_simulation_config
-ALTER TABLE global_simulation_config
-  DROP COLUMN IF EXISTS entry_position,
-  DROP COLUMN IF EXISTS waiting_positions,
-  DROP COLUMN IF EXISTS service_rooms,
-  DROP COLUMN IF EXISTS staff_positions;
-```
+## 2. Fill Missing Layouts
 
-### Step 3: Verify Removal
+### 2.1 Using the Admin Panel (preferred)
+For every industry flagged in §1:
+1. `/admin` → Industry Config tab → select industry.
+2. In “Layout Positions”:
+   - Set `entry_position`.
+   - Add waiting positions, service rooms, staff positions via the UI.
+3. Provide optional overrides (metrics/stats/map) if the designer needs deviations.
+4. Save and refresh the page to confirm persistence.
 
-Check that columns are gone:
-
-```sql
-SELECT column_name 
-FROM information_schema.columns 
-WHERE table_name = 'global_simulation_config'
-ORDER BY column_name;
-```
-
-You should NOT see: `entry_position`, `waiting_positions`, `service_rooms`, `staff_positions`
-
-## 📋 Next Steps
-
-### Immediate (Before Removing Columns)
-
-1. **Check Database State**
-   - Run the verification query above
-   - Identify which industries are missing layout
-
-2. **Test Admin Panel**
-   - Go to `/admin` → Industry Config tab
-   - Select each industry
-   - Verify you can edit and save layout positions
-   - Test that layout saves correctly
-
-3. **Add Missing Layouts**
-   - For each industry missing layout, use Admin Panel to add it
-   - Or use SQL to insert layout data directly
-
-### After Admin Panel Testing
-
-4. **Remove Unused Columns**
-   - Once all industries have layouts configured
-   - Run the migration script to remove deprecated columns
-
-5. **Update TypeScript Types (Optional)**
-   - After removing columns, you can also remove them from `GlobalSimulationConfigRow` interface
-   - File: `lib/data/simulationConfigRepository.ts`
-
-## 🧪 Testing Admin Panel
-
-### Test Checklist
-
-- [ ] **Global Config Tab**
-  - Can load existing global config
-  - Can edit and save business metrics
-  - Can edit and save business stats
-  - Can edit and save movement config
-  - Can edit and save win/lose conditions
-
-- [ ] **Industry Config Tab**
-  - Can select an industry
-  - Can view existing industry config
-  - Can edit and save layout positions:
-    - Entry position
-    - Waiting positions (add/remove/edit)
-    - Service rooms (add/remove/edit)
-    - Staff positions (add/remove/edit)
-  - Can edit and save business metrics override
-  - Can edit and save business stats override
-  - Can clear layout (sets to null)
-
-- [ ] **Data Persistence**
-  - After saving, refresh page - data should persist
-  - Game should use saved layout when started
-
-### Common Issues to Check
-
-1. **Layout Not Saving**
-   - Check browser console for errors
-   - Verify Supabase connection
-   - Check network tab for failed requests
-
-2. **Layout Not Loading**
-   - Check that `industry_simulation_config` row exists for industry
-   - Verify layout columns have data
-   - Check browser console for warnings
-
-3. **Admin Panel Errors**
-   - Check browser console
-   - Verify all required fields are filled
-   - Check that industry is selected before editing
-
-## 📝 Adding Missing Layout Data
-
-### Via Admin Panel (Recommended)
-
-1. Go to `/admin` → Industry Config tab
-2. Select the industry missing layout
-3. Scroll to "Layout Positions" section
-4. Fill in:
-   - Entry Position (X, Y)
-   - Add Waiting Positions (click "+ Add" for each)
-   - Add Service Rooms (click "+ Add" for each)
-   - Add Staff Positions (click "+ Add" for each)
-5. Click "Save Industry Config"
-
-### Via SQL (Alternative)
+### 2.2 SQL Backfill (only if UI is blocked)
+Use the template below, replacing IDs/coordinates:
 
 ```sql
--- Example: Add layout for 'dental' industry
 INSERT INTO industry_simulation_config (id, industry_id, entry_position, waiting_positions, service_rooms, staff_positions)
 VALUES (
-  'config-dental',
-  'dental',
+  'config-<industry>',
+  '<industry>',
   '{"x": 4, "y": 9}'::jsonb,
   '[
     {"x": 1, "y": 1},
-    {"x": 1, "y": 2},
-    {"x": 1, "y": 3},
-    {"x": 1, "y": 4}
+    {"x": 1, "y": 2}
   ]'::jsonb,
   '[
-    {"roomId": 1, "customerPosition": {"x": 5, "y": 2}, "staffPosition": {"x": 5, "y": 1}},
-    {"roomId": 2, "customerPosition": {"x": 6, "y": 2}, "staffPosition": {"x": 6, "y": 1}}
+    {"roomId": 1, "customerPosition": {"x": 5, "y": 2}, "staffPosition": {"x": 5, "y": 1}}
   ]'::jsonb,
   '[
-    {"x": 4, "y": 0},
-    {"x": 5, "y": 0},
-    {"x": 6, "y": 0}
+    {"x": 4, "y": 0}
   ]'::jsonb
 )
 ON CONFLICT (industry_id) DO UPDATE SET
@@ -216,22 +73,107 @@ ON CONFLICT (industry_id) DO UPDATE SET
   staff_positions = EXCLUDED.staff_positions;
 ```
 
-## 🎯 Summary
+Re-run the verification query after every batch and keep iterating until all industries show ✅.
 
-**Current State:**
-- ✅ Code refactored - layout is industry-specific
-- ✅ Store initialization fixed - no more crashes
-- ✅ Documentation updated
-- ⚠️ Unused columns still in database (safe to keep or remove)
+---
 
-**What's Next:**
-1. Test admin panel to ensure it works correctly
-2. Add missing layout data for any industries that need it
-3. Remove unused columns from `global_simulation_config` (optional cleanup)
-4. Verify game runs correctly with all industry layouts
+## 3. Schema Cleanup & Type Alignment
 
-**Files to Review:**
-- `sql/remove_global_layout_columns.sql` - Migration script for removing columns
-- `DATABASE_SETUP_GUIDE.md` - Updated database setup instructions
-- Admin panel at `/admin` - Test layout editing functionality
+### 3.1 Preconditions
+- All industries confirmed ✅.
+- Admin smoke test passes without blockers.
 
+### 3.2 Remove Deprecated Columns
+Execute in Supabase:
+
+```sql
+ALTER TABLE global_simulation_config
+  DROP COLUMN IF EXISTS entry_position,
+  DROP COLUMN IF EXISTS waiting_positions,
+  DROP COLUMN IF EXISTS service_rooms,
+  DROP COLUMN IF EXISTS staff_positions;
+```
+
+Verify removal:
+
+```sql
+SELECT column_name 
+FROM information_schema.columns 
+WHERE table_name = 'global_simulation_config'
+ORDER BY column_name;
+```
+
+### 3.3 Update TypeScript & Repository Logic
+- `lib/data/simulationConfigRepository.ts`: remove the dropped fields from `GlobalSimulationConfigRow` and related parsing logic.
+- Ensure calling code no longer references global layout fields.
+- Run `npm run lint` / `npm run test` after edits.
+
+---
+
+## 4. Admin Panel Regression Checklist
+
+- [ ] **Global Config Tab**: load/save metrics, stats, movement, win/lose, UI config.
+- [ ] **Industry Config Tab**: select industry, edit/save entry + waiting + service rooms + staff positions, overrides, lead dialogues, events.
+- [ ] **Services Tab**: CRUD services; flags/upgrades dropdowns populate; save persists.
+- [ ] **Staff Tab**: CRUD roles & presets; metric/effect options available.
+- [ ] **Upgrades / Marketing / Events Tabs**: CRUD works, effect builders save correctly.
+- [ ] **Flags / Conditions Tabs**: selection, creation, deletion, resets all work.
+- [ ] **URL State**: refresh retains selected tab/industry via query params.
+- [ ] **Data Persistence**: after save + page refresh, data remains intact; gameplay uses new layouts.
+
+Capture pass/fail for each tab plus any GQL/Supabase errors seen in the console.
+
+---
+
+## 5. Data Validation Hardening
+
+### 5.1 Client-Side Guardrails
+1. Add a `validateIndustryConfig(config)` helper (shared across hooks/components) to assert:
+   - All positions have numeric `x/y`.
+   - Service room `customerPosition` and `staffPosition` exist.
+   - No negative coordinates.
+2. Surface validation errors inline near Save buttons.
+
+### 5.2 Server/DB Constraints
+- Add Supabase `CHECK` constraints for key JSON paths (e.g., `jsonb_typeof(entry_position->'x') = 'number'`).
+- Optionally write a trigger that calls a PL/pgSQL validation function mirroring the client checks.
+- Document constraints in `DATABASE_SETUP_GUIDE.md`.
+
+Deliverable: merged PR with client validation + SQL migration, plus updated docs.
+
+---
+
+## 6. Automated Confidence
+
+### 6.1 Hook/Repository Tests
+- Add unit tests for `useIndustrySimulationConfig` and related repositories (mock Supabase client).
+- Cover load success/failure, save success/failure, and validation error paths.
+
+### 6.2 Playwright Smoke Test
+- Scenario: Start dev server → `/admin` → select fixture industry → edit Global Config field → save → switch to Industry Config → tweak layout coordinate → save → confirm toast/status → reload page → values persist.
+- Integrate into CI; document how to run locally.
+
+---
+
+## 7. Telemetry & Backups (Post-Cleanup)
+
+### 7.1 Configuration Backups
+- Nightly job (GitHub Action or Supabase cron) exports `global_simulation_config` + `industry_simulation_config` JSON to Supabase Storage or repo.
+- Provide a restore script + doc.
+
+### 7.2 Runtime Instrumentation
+- Emit structured events (`layout_loaded`, `event_triggered`, etc.) from the sim runtime with industry IDs.
+- Ship to Supabase Logflare or a custom analytics table.
+- Define dashboards/queries to monitor balancing metrics.
+
+---
+
+## 8. Summary Timeline
+1. Baseline verification & admin QA.
+2. Fill missing layouts.
+3. Schema cleanup + TS alignment.
+4. Regression pass + validation hardening.
+5. Automated tests & Playwright.
+6. Backups + telemetry improvements.
+
+Track progress across these phases to ensure each is complete before moving to the next. Use this doc as the master reference when scheduling tasks or spawning follow-up conversations.

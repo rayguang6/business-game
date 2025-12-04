@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import { FlagsTab } from './components/FlagsTab';
 import { ConditionsTab } from './components/ConditionsTab';
@@ -24,10 +24,11 @@ import { useServices } from './hooks/useServices';
 import { useStaff } from './hooks/useStaff';
 import { useGlobalConfig } from './hooks/useGlobalConfig';
 import { useIndustrySimulationConfig } from './hooks/useIndustrySimulationConfig';
+import { useUrlState } from './hooks/useUrlState';
 
 export default function AdminPage() {
-  // Tab state
-  const [activeTab, setActiveTab] = useState<string>('industries');
+  // URL state management
+  const { activeTab, setActiveTab, selectedIndustryId, setSelectedIndustryId } = useUrlState();
 
   // Hooks
   const industries = useIndustries();
@@ -40,6 +41,36 @@ export default function AdminPage() {
   const upgrades = useUpgrades(industries.form.id);
   const services = useServices(industries.form.id);
   const staff = useStaff(industries.form.id);
+
+  // Wrapper function for industry selection that updates both state and URL
+  const handleSelectIndustry = useCallback((industry: any) => {
+    industries.selectIndustry(industry);
+    setSelectedIndustryId(industry.id);
+  }, [industries, setSelectedIndustryId]);
+
+  // Handle initial industry selection
+  useEffect(() => {
+    if (industries.industries.length > 0 && !industries.form.id) {
+      // On first load, select industry based on URL or default to first
+      if (selectedIndustryId) {
+        const industry = industries.industries.find(i => i.id === selectedIndustryId);
+        if (industry) {
+          industries.selectIndustry(industry);
+        } else {
+          // URL industry not found, select first available
+          industries.selectIndustry(industries.industries[0]);
+        }
+      } else {
+        // No URL state, select first industry
+        industries.selectIndustry(industries.industries[0]);
+      }
+    }
+  }, [industries.industries.length, industries.form.id]); // Only run when industries load
+
+  // Wrapper for capacity image setter to match interface
+  const handleUpdateCapacityImage = useCallback((capacityImage: string | null) => {
+    globalConfig.setCapacityImage(capacityImage || '');
+  }, [globalConfig]);
 
   // Load industry-specific data when industry changes
   // Note: We only depend on industries.form.id. The load functions from hooks are stable
@@ -131,7 +162,7 @@ export default function AdminPage() {
             selectedIndustryId={industries.form.id}
             loading={industries.loading}
             error={industries.error}
-            onSelectIndustry={industries.selectIndustry}
+            onSelectIndustry={handleSelectIndustry}
           />
         )}
 
@@ -249,7 +280,7 @@ export default function AdminPage() {
             onUpdateMovementJSON={globalConfig.setMovementJSON}
             onUpdateLeadDialogues={globalConfig.setLeadDialogues}
             onUpdateCustomerImages={globalConfig.setCustomerImages}
-            onUpdateCapacityImage={globalConfig.setCapacityImage}
+            onUpdateCapacityImage={handleUpdateCapacityImage}
             onUpdateWinCondition={globalConfig.updateWinCondition}
             onUpdateLoseCondition={globalConfig.updateLoseCondition}
             onUpdateUiConfig={globalConfig.updateUiConfig}
@@ -270,7 +301,7 @@ export default function AdminPage() {
             isCreating={industries.isCreating}
             onSelectIndustry={(industryId) => {
               const industry = industries.industries.find(i => i.id === industryId);
-              if (industry) industries.selectIndustry(industry);
+              if (industry) handleSelectIndustry(industry);
             }}
             onCreateNew={industries.createNew}
             onSave={industries.save}
