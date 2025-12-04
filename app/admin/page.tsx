@@ -238,6 +238,8 @@ export default function AdminPage() {
             eventSecondsInput={globalConfig.eventSecondsInput}
             movementJSON={globalConfig.movementJSON}
             leadDialogues={globalConfig.leadDialogues}
+            customerImages={globalConfig.customerImages}
+            capacityImage={globalConfig.capacityImage}
             winCondition={globalConfig.winCondition}
             loseCondition={globalConfig.loseCondition}
             uiConfig={globalConfig.uiConfig}
@@ -246,6 +248,8 @@ export default function AdminPage() {
             onUpdateEventSeconds={globalConfig.setEventSecondsInput}
             onUpdateMovementJSON={globalConfig.setMovementJSON}
             onUpdateLeadDialogues={globalConfig.setLeadDialogues}
+            onUpdateCustomerImages={globalConfig.setCustomerImages}
+            onUpdateCapacityImage={globalConfig.setCapacityImage}
             onUpdateWinCondition={globalConfig.updateWinCondition}
             onUpdateLoseCondition={globalConfig.updateLoseCondition}
             onUpdateUiConfig={globalConfig.updateUiConfig}

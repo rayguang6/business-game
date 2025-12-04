@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { BusinessMetrics, BusinessStats, MovementConfig } from '@/lib/game/types';
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
 
@@ -21,6 +21,8 @@ interface GlobalConfigTabProps {
   loseCondition: LoseCondition;
   uiConfig: UiConfig;
   leadDialogues: string[];
+  customerImages: string[];
+  capacityImage: string | null;
   onUpdateMetrics: (updates: Partial<BusinessMetrics>) => void;
   onUpdateStats: (updates: Partial<BusinessStats>) => void;
   onUpdateEventSeconds: (value: string) => void;
@@ -29,6 +31,8 @@ interface GlobalConfigTabProps {
   onUpdateLoseCondition: (updates: Partial<LoseCondition>) => void;
   onUpdateUiConfig: (updates: Partial<UiConfig>) => void;
   onUpdateLeadDialogues: (leadDialogues: string[]) => void;
+  onUpdateCustomerImages: (customerImages: string[]) => void;
+  onUpdateCapacityImage: (capacityImage: string | null) => void;
   onSave: () => Promise<void>;
 }
 
@@ -44,6 +48,8 @@ export function GlobalConfigTab({
   loseCondition,
   uiConfig,
   leadDialogues,
+  customerImages,
+  capacityImage,
   onUpdateMetrics,
   onUpdateStats,
   onUpdateEventSeconds,
@@ -52,6 +58,8 @@ export function GlobalConfigTab({
   onUpdateLoseCondition,
   onUpdateUiConfig,
   onUpdateLeadDialogues,
+  onUpdateCustomerImages,
+  onUpdateCapacityImage,
   onSave,
 }: GlobalConfigTabProps) {
   // Keyboard shortcut for save
@@ -463,6 +471,85 @@ export function GlobalConfigTab({
           </div>
           <div className="mt-3 p-2 bg-slate-700/50 rounded text-xs text-slate-400">
             💡 Leads are potential customers who walk around browsing your business. Custom dialogues help create unique personalities for different industries.
+          </div>
+        </div>
+
+        <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
+          <div className="flex items-center justify-between mb-4">
+            <label className="block text-sm font-semibold text-slate-300">Customer Images</label>
+            {customerImages && customerImages.length > 0 && (
+              <button onClick={() => onUpdateCustomerImages([])} className="text-xs text-rose-400 hover:text-rose-300">
+                Clear (use defaults)
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-slate-400 mb-3">Image paths for customer sprites. Leave empty to use default customer images.</p>
+          <div className="space-y-2">
+            {(customerImages || []).map((image, index) => (
+              <div key={index} className="flex gap-2">
+                <input
+                  type="text"
+                  value={image}
+                  onChange={(e) => {
+                    const newImages = [...(customerImages || [])];
+                    newImages[index] = e.target.value;
+                    onUpdateCustomerImages(newImages);
+                  }}
+                  placeholder="e.g. /images/customer/customer1.png"
+                  className="flex-1 rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200 text-sm"
+                />
+                <button
+                  onClick={() => {
+                    const newImages = (customerImages || []).filter((_, i) => i !== index);
+                    onUpdateCustomerImages(newImages.length > 0 ? newImages : []);
+                  }}
+                  className="px-2 py-2 text-rose-400 hover:text-rose-300 rounded"
+                  title="Remove image"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                const newImages = [...(customerImages || []), ''];
+                onUpdateCustomerImages(newImages);
+              }}
+              className="w-full px-3 py-2 text-sm text-blue-400 hover:text-blue-300 border border-slate-600 hover:border-blue-400 rounded-lg transition-colors"
+            >
+              + Add Image Path
+            </button>
+          </div>
+          <div className="mt-3 p-2 bg-slate-700/50 rounded text-xs text-slate-400">
+            💡 Available images: /images/customer/customer1.png through customer10.png
+          </div>
+        </div>
+
+        <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
+          <label className="block text-sm font-semibold text-slate-300 mb-4">Capacity Image</label>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">
+                Image Path
+                <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-blue-500/20 text-blue-300 rounded">Optional</span>
+              </label>
+              <input
+                type="text"
+                className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
+                value={capacityImage || ''}
+                onChange={(e) => onUpdateCapacityImage(e.target.value || null)}
+                placeholder="e.g. /images/capacity-indicator.png"
+              />
+              <p className="text-xs text-slate-500 mt-1">Image used to indicate capacity levels in the game UI</p>
+            </div>
+            {capacityImage && (
+              <button
+                onClick={() => onUpdateCapacityImage(null)}
+                className="text-xs text-rose-400 hover:text-rose-300"
+              >
+                Clear (use default)
+              </button>
+            )}
           </div>
         </div>
 

@@ -5,6 +5,7 @@ import {
   createInitialAvailableStaff,
   createRandomStaffForIndustry,
   getInitialStaffForIndustry,
+  resetUsedStaffNames,
 } from '@/lib/game/staffConfig';
 import { DEFAULT_INDUSTRY_ID, type IndustryId } from '@/lib/game/types';
 import { effectManager } from '@/lib/game/effectManager';
@@ -143,6 +144,9 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
         effectManager.removeBySource('staff', staff.id);
       });
 
+      // Reset used staff names when resetting staff
+      resetUsedStaffNames(industryId);
+
       const resetHired = getInitialStaffForIndustry(industryId);
       const currentStore = get();
       resetHired.forEach((staff) => addStaffEffects(staff, {
@@ -169,6 +173,9 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
       store.hiredStaff.forEach((staff) => {
         effectManager.removeBySource('staff', staff.id);
       });
+
+      // Reset used staff names when switching industries
+      resetUsedStaffNames(industryId);
 
       const initialHired = getInitialStaffForIndustry(industryId);
       const currentStore = get();

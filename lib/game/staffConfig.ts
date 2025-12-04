@@ -3,6 +3,7 @@ import type { IndustryId, Requirement, UpgradeEffect } from '@/lib/game/types';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import { useConfigStore } from '@/lib/store/configStore';
+import { getStaffNamePoolForIndustry as getStaffNamePoolFromConfig } from '@/lib/game/config';
 
 export interface StaffRoleConfig {
   id: string;
@@ -56,6 +57,9 @@ const clonePreset = (preset: StaffPreset): StaffPreset => ({ ...preset });
 const getIndustryStaffConfig = (industryId: IndustryId) =>
   useConfigStore.getState().industryConfigs[industryId];
 
+// Track used names per industry to ensure uniqueness
+const usedNamesByIndustry = new Map<IndustryId, Set<string>>();
+
 const getRolesSource = (industryId: IndustryId): StaffRoleConfig[] => {
   const config = getIndustryStaffConfig(industryId);
   // Only use industry-specific roles, no fallback to defaults
@@ -64,12 +68,10 @@ const getRolesSource = (industryId: IndustryId): StaffRoleConfig[] => {
 };
 
 const getNamePoolSource = (industryId: IndustryId): string[] => {
-  const config = getIndustryStaffConfig(industryId);
-  const pool =
-    config?.staffNamePool && config.staffNamePool.length > 0
-      ? config.staffNamePool
-      : DEFAULT_NAME_POOL;
-  return pool.slice();
+  // Use the config system's staff name pool function which checks both industry and global configs
+  const pool = getStaffNamePoolFromConfig(industryId);
+  // If no names configured in database, fall back to default hardcoded names
+  return pool.length > 0 ? pool : DEFAULT_NAME_POOL.slice();
 };
 
 const getPresetSource = (industryId: IndustryId): StaffPreset[] => {
@@ -106,8 +108,40 @@ function pickRandomName(industryId: IndustryId): string {
   if (pool.length === 0) {
     return 'Staff';
   }
-  const randomIndex = Math.floor(Math.random() * pool.length);
-  return pool[randomIndex];
+
+  // Get or create the set of used names for this industry
+  let usedNames = usedNamesByIndustry.get(industryId);
+  if (!usedNames) {
+    usedNames = new Set<string>();
+    usedNamesByIndustry.set(industryId, usedNames);
+  }
+
+  // Find available names (not already used)
+  const availableNames = pool.filter(name => !usedNames.has(name));
+
+  // If all names are used, reset and start over (allow duplicates after exhausting pool)
+  if (availableNames.length === 0) {
+    usedNames.clear();
+    const randomIndex = Math.floor(Math.random() * pool.length);
+    const selectedName = pool[randomIndex];
+    usedNames.add(selectedName);
+    return selectedName;
+  }
+
+  // Pick a random available name
+  const randomIndex = Math.floor(Math.random() * availableNames.length);
+  const selectedName = availableNames[randomIndex];
+  usedNames.add(selectedName);
+  return selectedName;
+}
+
+// Function to reset used names (useful for testing or when switching industries)
+export function resetUsedStaffNames(industryId?: IndustryId): void {
+  if (industryId) {
+    usedNamesByIndustry.delete(industryId);
+  } else {
+    usedNamesByIndustry.clear();
+  }
 }
 
 function buildStaffFromRole(
