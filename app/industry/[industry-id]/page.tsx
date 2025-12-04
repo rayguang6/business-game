@@ -189,6 +189,7 @@ export default function IndustryPage() {
                 src={industry.image}
                 alt={industry.name}
                 fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 448px"
                 className="object-cover"
                 priority
               />

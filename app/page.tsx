@@ -9,8 +9,6 @@ const WELCOME_CONFIG = {
   backgroundImage: "/images/start-screen-bg.png",
   titleImage: "/images/business-empire-title.png",
   titleAlt: "Business Empire",
-  titleWidth: 300,
-  titleHeight: 200,
   startGameHref: "/select-industry"
 } as const;
 
@@ -40,15 +38,17 @@ export default function WelcomePage() {
       <div className="relative z-10 text-center w-full max-w-2xl">
         {/* Game Title Image */}
         <div className="mb-10 sm:mb-12 md:mb-16 flex justify-center">
-          <div className="relative">
-            <Image
-              src={WELCOME_CONFIG.titleImage}
-              alt={WELCOME_CONFIG.titleAlt}
-              width={WELCOME_CONFIG.titleWidth}
-              height={WELCOME_CONFIG.titleHeight}
-              className="max-w-[280px] sm:max-w-sm md:max-w-md lg:max-w-lg h-auto drop-shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
-              priority
-            />
+          <div className="relative w-[280px] sm:w-96 md:w-[448px] lg:w-[512px]">
+            <div className="relative pb-[66.67%]">
+              <Image
+                src={WELCOME_CONFIG.titleImage}
+                alt={WELCOME_CONFIG.titleAlt}
+                fill
+                sizes="(max-width: 640px) 280px, (max-width: 768px) 384px, (max-width: 1024px) 448px, 512px"
+                className="object-contain drop-shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+                priority
+              />
+            </div>
           </div>
         </div>
         
