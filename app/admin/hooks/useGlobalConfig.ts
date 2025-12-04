@@ -23,6 +23,13 @@ export function useGlobalConfig() {
   const [leadDialogues, setLeadDialogues] = useState<string[]>([]);
   const [winCondition, setWinCondition] = useState<WinCondition>({ ...DEFAULT_WIN_CONDITION });
   const [loseCondition, setLoseCondition] = useState<LoseCondition>({ ...DEFAULT_LOSE_CONDITION });
+  const [uiConfig, setUiConfig] = useState<{
+    eventAutoSelectDurationSeconds?: number;
+    outcomePopupDurationSeconds?: number;
+  }>({
+    eventAutoSelectDurationSeconds: 10,
+    outcomePopupDurationSeconds: 5,
+  });
   const [status, setStatus] = useState<string | null>(null);
   const [operation, setOperation] = useState<Operation>('idle');
 
@@ -50,6 +57,7 @@ export function useGlobalConfig() {
           if (global.leadDialogues) setLeadDialogues(global.leadDialogues);
           if (global.winCondition) setWinCondition(global.winCondition);
           if (global.loseCondition) setLoseCondition(global.loseCondition);
+          if (global.uiConfig) setUiConfig(prev => ({ ...prev, ...global.uiConfig }));
         }
       } catch (err) {
         console.error('Failed to load global config', err);
@@ -108,6 +116,7 @@ export function useGlobalConfig() {
       leadDialogues: leadDialogues.length > 0 ? leadDialogues.filter(d => d.trim() !== '') : null,
       winCondition,
       loseCondition,
+      uiConfig,
     });
     setOperation('idle');
 
@@ -128,10 +137,11 @@ export function useGlobalConfig() {
       leadDialogues: leadDialogues.length > 0 ? leadDialogues : undefined,
       winCondition,
       loseCondition,
+      uiConfig,
     });
 
     setStatus('Global config saved.');
-  }, [metrics, stats, eventSecondsInput, movementJSON, mapConfigJSON, capacityImage, customerImages, staffNamePool, leadDialogues, winCondition, loseCondition]);
+  }, [metrics, stats, eventSecondsInput, movementJSON, mapConfigJSON, capacityImage, customerImages, staffNamePool, leadDialogues, winCondition, loseCondition, uiConfig]);
 
   const updateMetrics = useCallback((updates: Partial<BusinessMetrics>) => {
     setMetrics(prev => ({ ...prev, ...updates }));
@@ -149,6 +159,10 @@ export function useGlobalConfig() {
     setLoseCondition(prev => ({ ...prev, ...updates }));
   }, []);
 
+  const updateUiConfig = useCallback((updates: Partial<typeof uiConfig>) => {
+    setUiConfig(prev => ({ ...prev, ...updates }));
+  }, []);
+
   return {
     metrics,
     stats,
@@ -161,6 +175,7 @@ export function useGlobalConfig() {
     leadDialogues,
     winCondition,
     loseCondition,
+    uiConfig,
     status,
     loading: operation === 'loading',
     saving: operation === 'saving',
@@ -176,6 +191,7 @@ export function useGlobalConfig() {
     updateStats,
     updateWinCondition,
     updateLoseCondition,
+    updateUiConfig,
     save,
   };
 }

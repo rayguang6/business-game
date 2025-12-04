@@ -548,18 +548,14 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
           };
 
           // Update state atomically
-          const wasPaused = currentStore.isPaused;
           set((state) => ({
             pendingDelayedConsequences: state.pendingDelayedConsequences.filter(
               (p) => p.id !== pending.id
             ),
             lastDelayedOutcome: resolvedOutcome,
-            wasPausedBeforeDelayedOutcome: wasPaused,
+            // Clear any existing regular outcome to prevent conflicts
+            lastEventOutcome: null,
           }));
-          
-          if (!wasPaused) {
-            get().pauseGame();
-          }
         });
       }
     }

@@ -3,6 +3,11 @@
 import type { BusinessMetrics, BusinessStats, MovementConfig } from '@/lib/game/types';
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
 
+type UiConfig = {
+  eventAutoSelectDurationSeconds?: number;
+  outcomePopupDurationSeconds?: number;
+};
+
 interface GlobalConfigTabProps {
   globalLoading: boolean;
   globalStatus: string | null;
@@ -13,12 +18,16 @@ interface GlobalConfigTabProps {
   movementJSON: string;
   winCondition: WinCondition;
   loseCondition: LoseCondition;
+  uiConfig: UiConfig;
+  leadDialogues: string[];
   onUpdateMetrics: (updates: Partial<BusinessMetrics>) => void;
   onUpdateStats: (updates: Partial<BusinessStats>) => void;
   onUpdateEventSeconds: (value: string) => void;
   onUpdateMovementJSON: (value: string) => void;
   onUpdateWinCondition: (updates: Partial<WinCondition>) => void;
   onUpdateLoseCondition: (updates: Partial<LoseCondition>) => void;
+  onUpdateUiConfig: (updates: Partial<UiConfig>) => void;
+  onUpdateLeadDialogues: (leadDialogues: string[]) => void;
   onSave: () => Promise<void>;
 }
 
@@ -32,12 +41,16 @@ export function GlobalConfigTab({
   movementJSON,
   winCondition,
   loseCondition,
+  uiConfig,
+  leadDialogues,
   onUpdateMetrics,
   onUpdateStats,
   onUpdateEventSeconds,
   onUpdateMovementJSON,
   onUpdateWinCondition,
   onUpdateLoseCondition,
+  onUpdateUiConfig,
+  onUpdateLeadDialogues,
   onSave,
 }: GlobalConfigTabProps) {
   return (
@@ -329,6 +342,42 @@ export function GlobalConfigTab({
               value={movementJSON}
               onChange={(e) => onUpdateMovementJSON(e.target.value)}
             />
+          </div>
+        </div>
+
+        <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
+          <label className="block text-sm font-semibold text-slate-300 mb-4">UI Configuration</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">
+                Event Auto-Select Duration (seconds)
+                <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-blue-500/20 text-blue-300 rounded">UI Setting</span>
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="60"
+                className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
+                value={uiConfig.eventAutoSelectDurationSeconds ?? 10}
+                onChange={(e) => onUpdateUiConfig({ eventAutoSelectDurationSeconds: Number(e.target.value) })}
+              />
+              <p className="text-xs text-slate-500 mt-1">How long to wait before auto-selecting the default event choice</p>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">
+                Outcome Popup Duration (seconds)
+                <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-blue-500/20 text-blue-300 rounded">UI Setting</span>
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="30"
+                className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
+                value={uiConfig.outcomePopupDurationSeconds ?? 5}
+                onChange={(e) => onUpdateUiConfig({ outcomePopupDurationSeconds: Number(e.target.value) })}
+              />
+              <p className="text-xs text-slate-500 mt-1">How long outcome popups stay visible before auto-dismissing</p>
+            </div>
           </div>
         </div>
 

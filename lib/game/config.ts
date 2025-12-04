@@ -524,3 +524,11 @@ export function calculateMonthlyRevenuePotential(
     realisticTarget,
   };
 }
+
+export const getUiConfig = () => {
+  const globalConfig = getGlobalConfigOverride();
+  return {
+    eventAutoSelectDurationSeconds: globalConfig?.uiConfig?.eventAutoSelectDurationSeconds ?? 10,
+    outcomePopupDurationSeconds: globalConfig?.uiConfig?.outcomePopupDurationSeconds ?? 5,
+  };
+};

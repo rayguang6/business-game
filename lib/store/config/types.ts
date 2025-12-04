@@ -28,6 +28,11 @@ export interface GlobalSimulationConfigState {
   customerImages?: string[];
   staffNamePool?: string[];
   leadDialogues?: string[];
+  // UI Configuration
+  uiConfig?: {
+    eventAutoSelectDurationSeconds?: number;
+    outcomePopupDurationSeconds?: number;
+  };
   // Layout config removed - each industry sets its own layout
 }
 

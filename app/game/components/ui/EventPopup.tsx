@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useGameStore } from '../../../../lib/store/gameStore';
 import { GameEvent, GameEventChoice, GameEventEffect, EventEffectType } from '../../../../lib/types/gameEvents';
 import { EffectType, GameMetric } from '@/lib/game/effectManager';
 import type { ResolvedEventOutcome, ResolvedDelayedOutcome } from '@/lib/store/slices/eventSlice';
 import GameButton from '@/app/components/ui/GameButton';
+import { useConfigStore } from '@/lib/store/configStore';
 
 const getEffectIcon = (type: GameEventEffect['type']) => {
   switch (type) {
@@ -93,6 +94,14 @@ const EventPopup: React.FC = () => {
   const clearLastEventOutcome = useGameStore((state) => state.clearLastEventOutcome);
   const lastDelayedOutcome = useGameStore((state) => state.lastDelayedOutcome);
   const clearLastDelayedOutcome = useGameStore((state) => state.clearLastDelayedOutcome);
+
+  // Get reactive UI config from store
+  const globalConfig = useConfigStore((state) => state.globalConfig);
+  const uiConfig = useMemo(() => ({
+    eventAutoSelectDurationSeconds: globalConfig?.uiConfig?.eventAutoSelectDurationSeconds ?? 10,
+    outcomePopupDurationSeconds: globalConfig?.uiConfig?.outcomePopupDurationSeconds ?? 5,
+  }), [globalConfig?.uiConfig]);
+
   const [countdown, setCountdown] = useState<number | null>(null);
   const [outcomeCountdown, setOutcomeCountdown] = useState<number | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -122,13 +131,14 @@ const EventPopup: React.FC = () => {
       return;
     }
 
-    // Auto-select timer - automatically selects the default choice after 10 seconds
-    setCountdown(10);
+    // Auto-select timer - automatically selects the default choice after configured duration
+    const autoSelectDuration = uiConfig.eventAutoSelectDurationSeconds;
+    setCountdown(autoSelectDuration);
 
     // Schedule auto-selection using the captured choice id
     timeoutRef.current = setTimeout(() => {
       resolveEventChoice(defaultChoice.id);
-    }, 10_000);
+    }, autoSelectDuration * 1000);
 
     intervalRef.current = setInterval(() => {
       setCountdown((prev) => {
@@ -163,11 +173,12 @@ const EventPopup: React.FC = () => {
 
     // Auto-dismiss delayed outcome
     if (lastDelayedOutcome && !currentEvent) {
-      setOutcomeCountdown(5);
+      const outcomeDuration = uiConfig.outcomePopupDurationSeconds;
+      setOutcomeCountdown(outcomeDuration);
       outcomeTimeoutRef.current = setTimeout(() => {
         clearLastDelayedOutcome();
         setOutcomeCountdown(null);
-      }, 5_000);
+      }, outcomeDuration * 1000);
 
       outcomeIntervalRef.current = setInterval(() => {
         setOutcomeCountdown((prev) => {
@@ -178,11 +189,12 @@ const EventPopup: React.FC = () => {
     }
     // Auto-dismiss regular outcome
     else if (lastEventOutcome && !currentEvent) {
-      setOutcomeCountdown(5);
+      const outcomeDuration = uiConfig.outcomePopupDurationSeconds;
+      setOutcomeCountdown(outcomeDuration);
       outcomeTimeoutRef.current = setTimeout(() => {
         clearLastEventOutcome();
         setOutcomeCountdown(null);
-      }, 5_000);
+      }, outcomeDuration * 1000);
 
       outcomeIntervalRef.current = setInterval(() => {
         setOutcomeCountdown((prev) => {
@@ -221,7 +233,7 @@ const EventPopup: React.FC = () => {
               <h3 className="text-xs md:text-lg font-semibold text-[var(--text-primary)] leading-tight flex-1" style={{
                 textShadow: '0 1px 2px rgba(0,0,0,0.8)'
               }}>
-                {lastDelayedOutcome.label || 'Delayed Event Result'}
+                {lastDelayedOutcome.label || 'Additional Event Outcome'}
               </h3>
             </div>
             <p className="text-[10px] md:text-sm text-[var(--text-secondary)] mb-1.5 md:mb-3 leading-snug">

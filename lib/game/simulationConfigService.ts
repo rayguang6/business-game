@@ -81,6 +81,7 @@ export async function loadGlobalSimulationSettings(): Promise<GlobalSimulationCo
     customerImages: result.customerImages,
     staffNamePool: result.staffNamePool,
     leadDialogues: result.leadDialogues,
+    uiConfig: result.uiConfig,
   };
 }
 

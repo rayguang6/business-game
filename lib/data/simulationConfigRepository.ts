@@ -16,6 +16,11 @@ export interface GlobalSimulationConfigRow {
   customer_images: string[] | null;
   staff_name_pool: string[] | null;
   lead_dialogues: string[] | null;
+  // UI Configuration
+  ui_config: {
+    event_auto_select_duration_seconds?: number;
+    outcome_popup_duration_seconds?: number;
+  } | null;
 }
 
 export interface GlobalSimulationConfigResult {
@@ -30,6 +35,10 @@ export interface GlobalSimulationConfigResult {
   customerImages?: string[];
   staffNamePool?: string[];
   leadDialogues?: string[];
+  uiConfig?: {
+    eventAutoSelectDurationSeconds?: number;
+    outcomePopupDurationSeconds?: number;
+  };
 }
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -120,6 +129,23 @@ const mapLoseCondition = (raw: unknown): LoseCondition | undefined => {
   return undefined;
 };
 
+const mapUiConfig = (raw: unknown): { eventAutoSelectDurationSeconds?: number; outcomePopupDurationSeconds?: number } | undefined => {
+  if (!isObject(raw)) {
+    return undefined;
+  }
+  const candidate = raw as unknown as { event_auto_select_duration_seconds?: number; outcome_popup_duration_seconds?: number };
+  const result: { eventAutoSelectDurationSeconds?: number; outcomePopupDurationSeconds?: number } = {};
+
+  if (typeof candidate.event_auto_select_duration_seconds === 'number') {
+    result.eventAutoSelectDurationSeconds = candidate.event_auto_select_duration_seconds;
+  }
+  if (typeof candidate.outcome_popup_duration_seconds === 'number') {
+    result.outcomePopupDurationSeconds = candidate.outcome_popup_duration_seconds;
+  }
+
+  return Object.keys(result).length > 0 ? result : undefined;
+};
+
 
 export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationConfigResult | null> {
   if (!supabase) {
@@ -129,7 +155,7 @@ export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationCon
 
   const { data, error } = await supabase
     .from('global_simulation_config')
-    .select('business_metrics, business_stats, movement, map_width, map_height, map_walls, capacity_image, win_condition, lose_condition, customer_images, staff_name_pool, lead_dialogues')
+    .select('business_metrics, business_stats, movement, map_width, map_height, map_walls, capacity_image, win_condition, lose_condition, customer_images, staff_name_pool, lead_dialogues, ui_config')
     .limit(1)
     .maybeSingle();
 
@@ -160,8 +186,9 @@ export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationCon
   
   const winCondition = mapWinCondition(data.win_condition);
   const loseCondition = mapLoseCondition(data.lose_condition);
+  const uiConfig = mapUiConfig(data.ui_config);
 
-  if (!businessMetrics && !businessStats && !movement && !mapConfig && !winCondition && !loseCondition && !data.capacity_image && !data.customer_images && !data.staff_name_pool && !data.lead_dialogues) {
+  if (!businessMetrics && !businessStats && !movement && !mapConfig && !winCondition && !loseCondition && !data.capacity_image && !data.customer_images && !data.staff_name_pool && !data.lead_dialogues && !uiConfig) {
     return null;
   }
 
@@ -176,6 +203,7 @@ export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationCon
   if (data.customer_images && Array.isArray(data.customer_images)) result.customerImages = data.customer_images;
   if (data.staff_name_pool && Array.isArray(data.staff_name_pool)) result.staffNamePool = data.staff_name_pool;
   if (data.lead_dialogues && Array.isArray(data.lead_dialogues)) result.leadDialogues = data.lead_dialogues;
+  if (uiConfig) result.uiConfig = uiConfig;
 
   return result;
 }
@@ -195,6 +223,10 @@ export async function upsertGlobalSimulationConfig(config: {
   customerImages?: string[] | null;
   staffNamePool?: string[] | null;
   leadDialogues?: string[] | null;
+  uiConfig?: {
+    eventAutoSelectDurationSeconds?: number;
+    outcomePopupDurationSeconds?: number;
+  };
 }): Promise<{ success: boolean; message?: string }>
 {
   if (!supabase) {
@@ -225,6 +257,11 @@ export async function upsertGlobalSimulationConfig(config: {
 
   // Note: Layout columns (entry_position, waiting_positions, service_rooms, staff_positions)
   // are deprecated and will be removed from the database. They're not included in the payload.
+  const uiConfigPayload = config.uiConfig ? {
+    event_auto_select_duration_seconds: config.uiConfig.eventAutoSelectDurationSeconds,
+    outcome_popup_duration_seconds: config.uiConfig.outcomePopupDurationSeconds,
+  } : null;
+
   const payload: GlobalSimulationConfigRow & { id: string } = {
     id: idToUse,
     business_metrics: config.businessMetrics ?? null,
@@ -239,6 +276,7 @@ export async function upsertGlobalSimulationConfig(config: {
     customer_images: config.customerImages ?? null,
     staff_name_pool: config.staffNamePool ?? null,
     lead_dialogues: config.leadDialogues ?? null,
+    ui_config: uiConfigPayload,
   };
 
   const { error: upsertError } = await supabase

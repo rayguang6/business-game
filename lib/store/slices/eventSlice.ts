@@ -214,11 +214,9 @@ export interface ResolvedDelayedOutcome {
 
 export interface EventSlice {
   currentEvent: GameEvent | null;
-  wasPausedBeforeEvent: boolean;
   lastEventOutcome: ResolvedEventOutcome | null;
   pendingDelayedConsequences: PendingDelayedConsequence[];
   lastDelayedOutcome: ResolvedDelayedOutcome | null;
-  wasPausedBeforeDelayedOutcome: boolean;
   setCurrentEvent: (event: GameEvent | null) => void;
   resolveEventChoice: (choiceId: string) => void;
   clearLastEventOutcome: () => void;
@@ -410,28 +408,20 @@ const pickConsequence = (choice: GameEventChoice): GameEventConsequence | null =
 
 export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (set, get) => ({
   currentEvent: null,
-  wasPausedBeforeEvent: false,
   lastEventOutcome: null,
   pendingDelayedConsequences: [],
   lastDelayedOutcome: null,
-  wasPausedBeforeDelayedOutcome: false,
   setCurrentEvent: (event) => {
     if (event) {
-      const store = get();
-      const wasPaused = store.isPaused;
       set({
         currentEvent: event,
-        wasPausedBeforeEvent: wasPaused,
         lastEventOutcome: null,
       });
-      if (!wasPaused) {
-        store.pauseGame();
-      }
       return;
     }
 
     const store = get();
-    const { wasPausedBeforeEvent, lastEventOutcome } = store;
+    const { lastEventOutcome } = store;
     if (lastEventOutcome) {
       set({ currentEvent: null });
       return;
@@ -439,11 +429,7 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
 
     set({
       currentEvent: null,
-      wasPausedBeforeEvent: false,
     });
-    if (!wasPausedBeforeEvent) {
-      store.unpauseGame();
-    }
   },
   resolveEventChoice: (choiceId) => {
     const store = get();
@@ -583,7 +569,6 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
   },
   clearLastEventOutcome: () => {
     const store = get();
-    const shouldUnpause = !store.wasPausedBeforeEvent;
 
     // ════════════════════════════════════════════════════════════════════════════════
     // 🎯 EFFECT APPLICATION PHASE - Add new effect types here (STEP 4)
@@ -686,26 +671,18 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
 
     set({
       lastEventOutcome: null,
-      wasPausedBeforeEvent: false,
     });
-
-    if (shouldUnpause) {
-      store.unpauseGame();
-    }
   },
   resetEvents: () => {
     set({
       currentEvent: null,
-      wasPausedBeforeEvent: false,
       lastEventOutcome: null,
       pendingDelayedConsequences: [],
       lastDelayedOutcome: null,
-      wasPausedBeforeDelayedOutcome: false,
     });
   },
   clearLastDelayedOutcome: () => {
     const store = get();
-    const shouldUnpause = !store.wasPausedBeforeDelayedOutcome;
 
     // Apply pre-calculated effect values
     const outcome = store.lastDelayedOutcome;
@@ -793,11 +770,6 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
 
     set({
       lastDelayedOutcome: null,
-      wasPausedBeforeDelayedOutcome: false,
     });
-
-    if (shouldUnpause) {
-      store.unpauseGame();
-    }
   },
 });
