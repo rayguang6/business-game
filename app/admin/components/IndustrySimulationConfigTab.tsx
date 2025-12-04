@@ -25,6 +25,7 @@ interface IndustrySimulationConfigTabProps {
   mainCharacterPosition: GridPosition | null;
   mainCharacterSpriteImage: string;
   capacityImage: string;
+  leadDialogues: string[] | null;
   winCondition: WinCondition | null;
   loseCondition: LoseCondition | null;
   // Event sequencing
@@ -45,6 +46,7 @@ interface IndustrySimulationConfigTabProps {
   setMainCharacterPosition: (value: GridPosition | null) => void;
   setMainCharacterSpriteImage: (value: string) => void;
   setCapacityImage: (value: string) => void;
+  setLeadDialogues: (value: string[] | null) => void;
   setWinCondition: (value: WinCondition | null) => void;
   setLoseCondition: (value: LoseCondition | null) => void;
   setEventSelectionMode: (mode: 'random' | 'sequence') => void;
@@ -71,6 +73,7 @@ export function IndustrySimulationConfigTab({
   mainCharacterPosition,
   mainCharacterSpriteImage,
   capacityImage,
+  leadDialogues,
   winCondition,
   loseCondition,
   eventSelectionMode,
@@ -88,6 +91,7 @@ export function IndustrySimulationConfigTab({
   setMainCharacterPosition,
   setMainCharacterSpriteImage,
   setCapacityImage,
+  setLeadDialogues,
   setWinCondition,
   setLoseCondition,
   setEventSelectionMode,
@@ -718,6 +722,58 @@ export function IndustrySimulationConfigTab({
             )}
           </div>
           <input type="text" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={capacityImage} onChange={(e) => setCapacityImage(e.target.value)} placeholder="/images/beds/bed.png" />
+        </div>
+
+        {/* Lead Dialogues */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Lead Dialogues</h3>
+            {leadDialogues && leadDialogues.length > 0 && (
+              <button onClick={() => setLeadDialogues(null)} className="text-xs text-rose-400 hover:text-rose-300">
+                Clear (use global)
+              </button>
+            )}
+          </div>
+          <p className="text-sm text-slate-400">Custom dialogue lines that leads will randomly display when browsing your business. Leave empty to use global defaults.</p>
+          <div className="space-y-2">
+            {(leadDialogues || []).map((dialogue, index) => (
+              <div key={index} className="flex gap-2">
+                <input
+                  type="text"
+                  value={dialogue}
+                  onChange={(e) => {
+                    const newDialogues = [...(leadDialogues || [])];
+                    newDialogues[index] = e.target.value;
+                    setLeadDialogues(newDialogues);
+                  }}
+                  placeholder="Enter dialogue text..."
+                  className="flex-1 rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200 text-sm"
+                />
+                <button
+                  onClick={() => {
+                    const newDialogues = (leadDialogues || []).filter((_, i) => i !== index);
+                    setLeadDialogues(newDialogues.length > 0 ? newDialogues : null);
+                  }}
+                  className="px-2 py-2 text-rose-400 hover:text-rose-300 rounded"
+                  title="Remove dialogue"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                const newDialogues = [...(leadDialogues || []), ''];
+                setLeadDialogues(newDialogues);
+              }}
+              className="w-full px-3 py-2 text-sm text-blue-400 hover:text-blue-300 border border-slate-600 hover:border-blue-400 rounded-lg transition-colors"
+            >
+              + Add Dialogue Line
+            </button>
+          </div>
+          <div className="mt-3 p-2 bg-slate-800/50 rounded text-xs text-slate-400">
+            💡 Leads are potential customers who walk around browsing your business. Custom dialogues help create unique personalities for this industry.
+          </div>
         </div>
 
         {/* Map Config - Broken Down */}

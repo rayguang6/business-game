@@ -416,6 +416,57 @@ export function GlobalConfigTab({
         </div>
 
         <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
+          <div className="flex items-center justify-between mb-4">
+            <label className="block text-sm font-semibold text-slate-300">Lead Dialogues</label>
+            {leadDialogues && leadDialogues.length > 0 && (
+              <button onClick={() => onUpdateLeadDialogues([])} className="text-xs text-rose-400 hover:text-rose-300">
+                Clear (use defaults)
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-slate-400 mb-3">Custom dialogue lines that leads will randomly display when browsing your business.</p>
+          <div className="space-y-2">
+            {(leadDialogues || []).map((dialogue, index) => (
+              <div key={index} className="flex gap-2">
+                <input
+                  type="text"
+                  value={dialogue}
+                  onChange={(e) => {
+                    const newDialogues = [...(leadDialogues || [])];
+                    newDialogues[index] = e.target.value;
+                    onUpdateLeadDialogues(newDialogues);
+                  }}
+                  placeholder="Enter dialogue text..."
+                  className="flex-1 rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200 text-sm"
+                />
+                <button
+                  onClick={() => {
+                    const newDialogues = (leadDialogues || []).filter((_, i) => i !== index);
+                    onUpdateLeadDialogues(newDialogues.length > 0 ? newDialogues : []);
+                  }}
+                  className="px-2 py-2 text-rose-400 hover:text-rose-300 rounded"
+                  title="Remove dialogue"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                const newDialogues = [...(leadDialogues || []), ''];
+                onUpdateLeadDialogues(newDialogues);
+              }}
+              className="w-full px-3 py-2 text-sm text-blue-400 hover:text-blue-300 border border-slate-600 hover:border-blue-400 rounded-lg transition-colors"
+            >
+              + Add Dialogue Line
+            </button>
+          </div>
+          <div className="mt-3 p-2 bg-slate-700/50 rounded text-xs text-slate-400">
+            💡 Leads are potential customers who walk around browsing your business. Custom dialogues help create unique personalities for different industries.
+          </div>
+        </div>
+
+        <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
           <label className="block text-sm font-semibold text-slate-300 mb-4">Win Condition</label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
