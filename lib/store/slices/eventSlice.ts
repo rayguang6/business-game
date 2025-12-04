@@ -444,6 +444,14 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
       return;
     }
 
+    // Validate time cost - prevent negative time (death by time)
+    const timeCost = Math.max(0, choice.timeCost ?? 0);
+    if (timeCost > 0 && timeCost > store.metrics.time) {
+      console.warn(`Cannot resolve event choice: insufficient time. Required: ${timeCost}, Available: ${store.metrics.time}`);
+      return;
+    }
+
+    // Cash cost validation - allow bankruptcy (negative cash is allowed)
     const cost = Math.max(0, choice.cost ?? 0);
     if (cost > 0) {
       const sourceInfo = SourceHelpers.fromEvent(event.id, event.title, {
@@ -454,7 +462,7 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
       store.recordEventExpense(cost, sourceInfo, `${event.title} - ${choice.label} (cost)`);
     }
 
-    const timeCost = Math.max(0, choice.timeCost ?? 0);
+    // Time cost - deduct time (already validated above)
     if (timeCost > 0 && store.recordTimeSpent) {
       const sourceInfo = SourceHelpers.fromEvent(event.id, event.title, {
         choiceId: choice.id,

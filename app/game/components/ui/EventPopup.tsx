@@ -126,13 +126,22 @@ const EventPopup: React.FC = () => {
       return;
     }
 
-    const defaultChoice = currentEvent.choices[0];
+    // Find the first affordable choice for auto-selection
+    // For time: must have enough time (to prevent death by time)
+    // For cash: always allow (can go bankrupt)
+    const affordableChoice = currentEvent.choices.find(choice => {
+      const hasTimeCost = choice.timeCost !== undefined && choice.timeCost > 0;
+      const canAffordTime = !hasTimeCost || (choice.timeCost !== undefined && choice.timeCost <= metrics.time);
+      return canAffordTime;
+    });
+
+    const defaultChoice = affordableChoice || currentEvent.choices[0];
     if (!defaultChoice) {
       setCountdown(null);
       return;
     }
 
-    // Auto-select timer - automatically selects the default choice after configured duration
+    // Auto-select timer - automatically selects the affordable default choice after configured duration
     const autoSelectDuration = uiConfig.eventAutoSelectDurationSeconds;
     setCountdown(autoSelectDuration);
 
@@ -411,10 +420,20 @@ const EventPopup: React.FC = () => {
   const categoryGradient = isOpportunity 
     ? 'from-green-500/20 via-green-600/15 to-green-700/20'
     : 'from-red-500/20 via-red-600/15 to-red-700/20';
-  const categoryBorder = isOpportunity 
+  const categoryBorder = isOpportunity
     ? 'border-green-500/30'
     : 'border-red-500/30';
-  const defaultChoiceId = currentEvent.choices[0]?.id;
+
+  // Find the first affordable choice for default selection
+  // For time: must have enough time (to prevent death by time)
+  // For cash: always allow (can go bankrupt)
+  const affordableChoice = currentEvent.choices.find(choice => {
+    const hasTimeCost = choice.timeCost !== undefined && choice.timeCost > 0;
+    const canAffordTime = !hasTimeCost || (choice.timeCost !== undefined && choice.timeCost <= metrics.time);
+    return canAffordTime;
+  });
+
+  const defaultChoiceId = affordableChoice?.id || currentEvent.choices[0]?.id;
 
   return (
     <div className="absolute inset-0 z-30 flex items-start md:items-center justify-center px-2 md:px-6 pt-16 md:pt-6 pb-2 md:pb-6 pointer-events-none">
@@ -455,8 +474,10 @@ const EventPopup: React.FC = () => {
               const isDefault = choice.id === defaultChoiceId;
               const hasCost = choice.cost !== undefined && choice.cost > 0;
               const hasTimeCost = choice.timeCost !== undefined && choice.timeCost > 0;
+              // Only disable time costs (prevent death by time), allow cash costs (can go bankrupt)
               const canAffordTime = !hasTimeCost || (choice.timeCost !== undefined && choice.timeCost <= metrics.time);
-              
+              const isDisabled = !canAffordTime;
+
               // Choice button colors based on category
               const choiceBg = isOpportunity
                 ? (isDefault 
@@ -475,9 +496,9 @@ const EventPopup: React.FC = () => {
               return (
                 <button
                   key={choice.id}
-                  onClick={() => canAffordTime ? handleUserChoice(choice) : undefined}
-                  disabled={!canAffordTime}
-                  className={`w-full text-left p-1.5 md:p-3 rounded transition-all duration-200 border ${choiceBg} ${choiceBorder} ${choiceText} text-[10px] md:text-sm flex flex-col items-start relative overflow-hidden group ${!canAffordTime ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}`}
+                  onClick={() => !isDisabled ? handleUserChoice(choice) : undefined}
+                  disabled={isDisabled}
+                  className={`w-full text-left p-1.5 md:p-3 rounded transition-all duration-200 border ${choiceBg} ${choiceBorder} ${choiceText} text-[10px] md:text-sm flex flex-col items-start relative overflow-hidden group ${isDisabled ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}`}
                 >
                   {/* Subtle gloss effect */}
                   <div className="absolute top-0 left-0 w-full h-1/2 bg-white/5 rounded-t-md opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
