@@ -8,7 +8,7 @@ import {
 } from '../lib/game/config';
 import { IndustryId } from '../lib/game/types';
 import { checkRequirements } from '../lib/game/requirementChecker';
-import { getEventsFromStore } from '@/lib/store/configStore';
+import { getEventsFromStore, useConfigStore } from '@/lib/store/configStore';
 
 export const useRandomEventTrigger = () => {
   const gameTime = useGameStore((state) => state.gameTime);
@@ -23,41 +23,16 @@ export const useRandomEventTrigger = () => {
     key: '',
   });
 
-  // Cache for event sequencing data
-  const [sequencingConfig, setSequencingConfig] = useState<{
-    selectionMode: 'random' | 'sequence';
-    eventSequence: string[] | null;
-  }>({
-    selectionMode: 'random',
-    eventSequence: null,
-  });
-
-  // Load event sequencing config when industry changes
-  useEffect(() => {
+  // Get event sequencing config from config store (loaded server-side)
+  const getSequencingConfig = () => {
     const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-
-    const loadSequencingConfig = async () => {
-      try {
-        const { fetchIndustrySimulationConfig } = await import('@/lib/data/industrySimulationConfigRepository');
-        const config = await fetchIndustrySimulationConfig(industryId);
-
-        const newConfig = {
-          selectionMode: config?.eventSelectionMode ?? 'random',
-          eventSequence: config?.eventSequence ?? null,
-        };
-
-
-        setSequencingConfig(newConfig);
-      } catch (error) {
-        setSequencingConfig({
-          selectionMode: 'random',
-          eventSequence: null,
-        });
-      }
+    const industryConfig = useConfigStore.getState().industryConfigs[industryId];
+    
+    return {
+      selectionMode: (industryConfig?.eventSelectionMode ?? 'random') as 'random' | 'sequence',
+      eventSequence: industryConfig?.eventSequence ?? null,
     };
-
-    loadSequencingConfig();
-  }, [selectedIndustry]);
+  };
 
   useEffect(() => {
     if (gameTime <= 0 || currentEvent) {
@@ -113,7 +88,7 @@ export const useRandomEventTrigger = () => {
         if (eligibleEvents.length === 0) {
           // No eligible events - continue silently
         } else {
-          const { selectionMode, eventSequence } = sequencingConfig;
+          const { selectionMode, eventSequence } = getSequencingConfig();
 
           if (selectionMode === 'sequence' && eventSequence && eventSequence.length > 0) {
             // Sequential selection - try to find the next eligible event in sequence

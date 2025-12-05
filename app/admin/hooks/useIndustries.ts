@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { fetchIndustriesFromSupabase, upsertIndustryToSupabase, deleteIndustryFromSupabase } from '@/lib/data/industryRepository';
+import { fetchIndustries, upsertIndustry, deleteIndustry } from '@/lib/server/actions/adminActions';
 import type { Industry } from '@/lib/features/industries';
 import { slugify } from '../components/utils';
 import type { Operation } from './types';
@@ -39,7 +39,7 @@ export function useIndustries(industryId?: string) {
       setOperation('loading');
       setError(null);
       try {
-        const data = await fetchIndustriesFromSupabase();
+        const data = await fetchIndustries();
         if (!isMounted) return;
         if (data) {
           setIndustries(data);
@@ -130,7 +130,7 @@ export function useIndustries(industryId?: string) {
       isAvailable: form.isAvailable,
     };
 
-    const result = await upsertIndustryToSupabase(payload);
+    const result = await upsertIndustry(payload);
     setOperation('idle');
 
     if (!result.success || !result.data) {
@@ -154,7 +154,7 @@ export function useIndustries(industryId?: string) {
     if (isCreating || !form.id) return;
     if (!window.confirm(`Delete industry "${form.name || form.id}"?`)) return;
     setOperation('deleting');
-    const result = await deleteIndustryFromSupabase(form.id);
+    const result = await deleteIndustry(form.id);
     setOperation('idle');
     if (!result.success) {
       setStatus(result.message ?? 'Failed to delete industry.');

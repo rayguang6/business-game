@@ -10,6 +10,7 @@ import {
 } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
 import { useGameStore } from '@/lib/store/gameStore';
+import { useConfigStore } from '@/lib/store/configStore';
 import { Character2DProps } from './Character2D';
 
 interface SpriteCustomerProps {
@@ -19,8 +20,18 @@ interface SpriteCustomerProps {
 
 export function SpriteCustomer({ customer, scaleFactor }: SpriteCustomerProps) {
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
+  const configStatus = useConfigStore((state) => state.configStatus);
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-  const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
+  
+  // Safely get ticks per second - handle case when config isn't loaded yet
+  let ticksPerSecond = 60; // Default fallback
+  try {
+    if (configStatus === 'ready') {
+      ticksPerSecond = getTicksPerSecondForIndustry(industryId);
+    }
+  } catch (error) {
+    console.warn('[SpriteCustomer] Error accessing config, using defaults', error);
+  }
 
   // Use actual position for rendering (not rounded to grid)
   const renderX = customer.x;

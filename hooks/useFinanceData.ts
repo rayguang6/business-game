@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
+import { useConfigStore } from '@/lib/store/configStore';
 import { DEFAULT_INDUSTRY_ID, getBusinessMetrics } from '@/lib/game/config';
 import { buildMonthlyExpenseBreakdown } from '@/lib/features/economy';
 import { REVENUE_CATEGORY_LABELS, RevenueCategory } from '@/lib/store/types';
@@ -21,13 +22,23 @@ export const useFinanceData = () => {
     hiredStaff,
     gameTime,
   } = useGameStore();
+  const configStatus = useConfigStore((state) => state.configStatus);
   const industryId = selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
   const businessMetrics = getBusinessMetrics(industryId);
 
-  const expenseBreakdown = useMemo(
-    () => buildMonthlyExpenseBreakdown(upgrades, industryId, hiredStaff, gameTime),
-    [upgrades, industryId, hiredStaff, gameTime],
-  );
+  // Only build expense breakdown if config is ready
+  const expenseBreakdown = useMemo(() => {
+    if (configStatus !== 'ready' || !businessMetrics) {
+      return [];
+    }
+    try {
+      return buildMonthlyExpenseBreakdown(upgrades, industryId, hiredStaff, gameTime);
+    } catch (error) {
+      // If config isn't ready, return empty array
+      console.warn('[useFinanceData] Config not ready, returning empty expense breakdown', error);
+      return [];
+    }
+  }, [upgrades, industryId, hiredStaff, gameTime, configStatus, businessMetrics]);
 
   const revenueBreakdown = useMemo(() => {
     const totals = new Map<RevenueCategory, number>();
@@ -50,7 +61,7 @@ export const useFinanceData = () => {
     monthlyExpenses, // Current monthly expenses (base + upgrade-driven)
     monthlyExpenseBreakdown: expenseBreakdown,
     monthlyRevenueBreakdown: revenueBreakdown,
-    baseMonthlyExpenses: businessMetrics.monthlyExpenses,
+    baseMonthlyExpenses: businessMetrics?.monthlyExpenses ?? 0,
     monthlyOneTimeCosts,
     // Helper: Get the most recent month's data
     lastMonth: monthlyHistory.length > 0 ? monthlyHistory[monthlyHistory.length - 1] : null,

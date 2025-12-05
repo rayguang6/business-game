@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabaseServer } from '@/lib/server/supabaseServer';
 import type {
   GameEvent,
   GameEventChoice,
@@ -145,12 +145,12 @@ const mapChoices = (raw: RawChoice[] | undefined): GameEventChoice[] => {
 };
 
 export async function fetchEventsForIndustry(industryId: IndustryId): Promise<GameEvent[] | null> {
-  if (!supabase) {
+  if (!supabaseServer) {
     console.error('Supabase client not configured. Unable to fetch events.');
     return null;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from('events')
     .select('id, industry_id, title, category, summary, choices, requirements')
     .eq('industry_id', industryId);
@@ -289,7 +289,7 @@ export async function upsertEventForIndustry(
   event: GameEvent,
 ): Promise<{ success: boolean; message?: string }>
 {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
@@ -316,7 +316,7 @@ export async function upsertEventForIndustry(
 
 export async function deleteEventById(id: string): Promise<{ success: boolean; message?: string }>
 {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
   const { error } = await supabase.from('events').delete().eq('id', id);

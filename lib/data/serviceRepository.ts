@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabaseServer } from '@/lib/server/supabaseServer';
 import type { IndustryId, IndustryServiceDefinition, Requirement, ServicePricingCategory, ServiceTier } from '@/lib/game/types';
 
 interface ServiceRow {
@@ -19,12 +19,12 @@ interface ServiceRow {
 export async function fetchServicesForIndustry(
   industryId: IndustryId,
 ): Promise<IndustryServiceDefinition[] | null> {
-  if (!supabase) {
+  if (!supabaseServer) {
     console.error('Supabase client not configured. Unable to fetch services.');
     return null;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from('services')
     .select('id, industry_id, name, duration, price, tier, exp_gained, requirements, pricing_category, weightage, required_staff_role_ids, time_cost')
     .eq('industry_id', industryId);
@@ -47,7 +47,7 @@ export async function upsertServiceForIndustry(
   service: IndustryServiceDefinition,
 ): Promise<{ success: boolean; data?: IndustryServiceDefinition; message?: string }>
 {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
@@ -68,7 +68,7 @@ export async function upsertServiceForIndustry(
     time_cost: service.timeCost ?? null,
   };
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from('services')
     .upsert(payload, { onConflict: 'id' })
     .select()
@@ -84,11 +84,11 @@ export async function upsertServiceForIndustry(
 
 export async function deleteServiceById(id: string): Promise<{ success: boolean; message?: string }>
 {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
-  const { error } = await supabase.from('services').delete().eq('id', id);
+  const { error } = await supabaseServer.from('services').delete().eq('id', id);
 
   if (error) {
     console.error('Failed to delete service', error);

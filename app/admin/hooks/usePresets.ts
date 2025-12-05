@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { fetchStaffDataForIndustry, upsertStaffPreset, deleteStaffPreset } from '@/lib/data/staffRepository';
+import { fetchStaffData, upsertStaffPresetAction, deleteStaffPresetAction } from '@/lib/server/actions/adminActions';
 import type { StaffPreset, StaffRoleConfig } from '@/lib/game/staffConfig';
 import type { Operation } from './types';
 
@@ -28,7 +28,7 @@ export function usePresets(industryId: string, presetId?: string) {
     if (!industryId) return;
     setOperation('loading');
     setStatus(null);
-    const data = await fetchStaffDataForIndustry(industryId);
+    const data = await fetchStaffData(industryId);
     setOperation('idle');
     if (!data) {
       setPresets([]);
@@ -141,7 +141,7 @@ export function usePresets(industryId: string, presetId?: string) {
     };
 
     setOperation('saving');
-    const result = await upsertStaffPreset(presetData);
+    const result = await upsertStaffPresetAction(presetData);
     setOperation('idle');
     if (!result.success) {
       setStatus(result.message ?? 'Failed to save preset.');
@@ -170,7 +170,7 @@ export function usePresets(industryId: string, presetId?: string) {
     const preset = presets.find(p => p.id === selectedId);
     if (!window.confirm(`Delete preset "${preset?.name || selectedId}"?`)) return;
     setOperation('deleting');
-    const result = await deleteStaffPreset(selectedId, industryId);
+    const result = await deleteStaffPresetAction(selectedId, industryId as any);
     setOperation('idle');
     if (!result.success) {
       setStatus(result.message ?? 'Failed to delete preset.');

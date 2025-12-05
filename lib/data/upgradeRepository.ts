@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabaseServer } from '@/lib/server/supabaseServer';
 import type { IndustryId, UpgradeDefinition, UpgradeEffect, UpgradeLevelConfig } from '@/lib/game/types';
 import { validateAndParseUpgradeEffects, isValidGameMetric, isValidEffectType } from '@/lib/utils/effectValidation';
 
@@ -34,13 +34,13 @@ function parseNumber(value: number | string | null | undefined): number {
 export async function fetchUpgradesForIndustry(
   industryId: IndustryId,
 ): Promise<UpgradeDefinition[] | null> {
-  if (!supabase) {
+  if (!supabaseServer) {
     console.error('Supabase client not configured. Unable to fetch upgrades.');
     return null;
   }
 
   // Fetch base upgrades
-  const { data: upgradesData, error: upgradesError } = await supabase
+  const { data: upgradesData, error: upgradesError } = await supabaseServer
     .from('upgrades')
     .select('id, industry_id, name, description, icon, max_level, sets_flag, requirements')
     .eq('industry_id', industryId);
@@ -56,7 +56,7 @@ export async function fetchUpgradesForIndustry(
 
   // Fetch levels for all upgrades (required)
   // Use a more specific query to avoid any caching issues and ensure we get the latest data
-  const { data: levelsData, error: levelsError } = await supabase
+  const { data: levelsData, error: levelsError } = await supabaseServer
     .from('upgrade_levels')
     .select('upgrade_id, level, name, description, icon, cost, time_cost, effects, created_at, updated_at')
     .eq('industry_id', industryId)
@@ -146,7 +146,7 @@ export async function upsertUpgradeForIndustry(
   upgrade: UpgradeDefinition,
 ): Promise<{ success: boolean; message?: string }>
 {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
@@ -167,7 +167,7 @@ export async function upsertUpgradeForIndustry(
   };
 
   // Upsert base upgrade
-  const { error: upsertError } = await supabase
+  const { error: upsertError } = await supabaseServer
     .from('upgrades')
     .upsert(basePayload, { onConflict: 'industry_id,id' });
 
@@ -181,7 +181,7 @@ export async function upsertUpgradeForIndustry(
   // CRITICAL: Delete ALL existing levels for this upgrade first to avoid duplicates/caching issues
   // This ensures a clean slate before inserting new data
   console.log('[Upgrade Save] Deleting ALL existing levels for upgrade:', upgrade.id);
-  const { data: deletedData, error: deleteError } = await supabase
+  const { data: deletedData, error: deleteError } = await supabaseServer
     .from('upgrade_levels')
     .delete()
     .eq('upgrade_id', upgrade.id)
@@ -216,7 +216,7 @@ export async function upsertUpgradeForIndustry(
   console.log('[Upgrade Save] Inserting levels:', JSON.stringify(levelsToInsert, null, 2));
 
   // Insert new levels (we've already deleted all existing ones, so this is a clean insert)
-  const { error: levelsError, data: insertedData } = await supabase
+  const { error: levelsError, data: insertedData } = await supabaseServer
     .from('upgrade_levels')
     .insert(levelsToInsert)
     .select();
@@ -231,7 +231,7 @@ export async function upsertUpgradeForIndustry(
   console.log('[Upgrade Save] Successfully inserted levels:', insertedData?.length || 0);
   
   // Verify the upsert worked by fetching back what we just saved
-  const { data: verifyData, error: verifyError } = await supabase
+  const { data: verifyData, error: verifyError } = await supabaseServer
     .from('upgrade_levels')
     .select('level, name, cost, time_cost, effects')
     .eq('upgrade_id', upgrade.id)
@@ -262,11 +262,11 @@ export async function upsertUpgradeForIndustry(
 
 export async function deleteUpgradeById(id: string): Promise<{ success: boolean; message?: string }>
 {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
-  const { error } = await supabase.from('upgrades').delete().eq('id', id);
+  const { error } = await supabaseServer.from('upgrades').delete().eq('id', id);
   if (error) {
     console.error('Failed to delete upgrade', error);
     return { success: false, message: error.message };

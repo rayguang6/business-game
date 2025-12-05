@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { fetchGlobalSimulationConfig, upsertGlobalSimulationConfig } from '@/lib/data/simulationConfigRepository';
+import { fetchGlobalConfig, upsertGlobalConfig } from '@/lib/server/actions/adminActions';
 // Note: Using defaults only for admin UI form initialization, not runtime game behavior
 import { DEFAULT_GLOBAL_SIMULATION_CONFIG } from '@/lib/game/industryConfigs';
 import { DEFAULT_WIN_CONDITION, DEFAULT_LOSE_CONDITION, type WinCondition, type LoseCondition } from '@/lib/game/winConditions';
@@ -38,7 +38,7 @@ export function useGlobalConfig() {
     (async () => {
       setOperation('loading');
       try {
-        const global = await fetchGlobalSimulationConfig();
+        const global = await fetchGlobalConfig();
         if (isMounted && global) {
           if (global.businessMetrics) setMetrics(global.businessMetrics);
           if (global.businessStats) {
@@ -89,7 +89,7 @@ export function useGlobalConfig() {
 
 
     setOperation('saving');
-    const result = await upsertGlobalSimulationConfig({
+    const result = await upsertGlobalConfig({
       businessMetrics,
       businessStats,
       movement,

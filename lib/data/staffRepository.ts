@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabaseServer } from '@/lib/server/supabaseServer';
 import type { IndustryId } from '@/lib/game/types';
 import type { StaffRoleConfig, StaffPreset } from '@/lib/game/staffConfig';
 import type { UpgradeEffect } from '@/lib/game/types';
@@ -86,17 +86,17 @@ const mapPresetRows = (rows: StaffPresetRow[] | null | undefined): StaffPreset[]
 export async function fetchStaffDataForIndustry(
   industryId: IndustryId,
 ): Promise<StaffDataResult | null> {
-  if (!supabase) {
+  if (!supabaseServer) {
     console.error('Supabase client not configured. Unable to fetch staff.');
     return null;
   }
 
   const [rolesResponse, presetsResponse] = await Promise.all([
-    supabase
+    supabaseServer
       .from('staff_roles')
       .select('id, industry_id, name, salary, effects, sets_flag, requirements, sprite_image')
       .eq('industry_id', industryId),
-    supabase
+    supabaseServer
       .from('staff_presets')
       .select('id, industry_id, role_id, name, salary_override, service_speed_override, emoji_override')
       .eq('industry_id', industryId),
@@ -137,7 +137,7 @@ export async function upsertStaffRole(role: {
   requirements?: any[];
 }): Promise<{ success: boolean; message?: string }>
 {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
@@ -159,7 +159,7 @@ export async function upsertStaffRole(role: {
     requirements: role.requirements || [],
   };
 
-  const { error } = await supabase
+  const { error } = await supabaseServer
     .from('staff_roles')
     .upsert(payload, { onConflict: 'industry_id,id' });
 
@@ -173,12 +173,12 @@ export async function upsertStaffRole(role: {
 
 export async function deleteStaffRole(id: string, industryId: IndustryId): Promise<{ success: boolean; message?: string }>
 {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
   // Delete only from the specific industry to ensure isolation
-  const { error } = await supabase
+  const { error } = await supabaseServer
     .from('staff_roles')
     .delete()
     .eq('id', id)
@@ -199,7 +199,7 @@ export async function upsertStaffPreset(preset: {
   serviceSpeed?: number;
 }): Promise<{ success: boolean; message?: string }>
 {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
@@ -223,7 +223,7 @@ export async function upsertStaffPreset(preset: {
   };
 
 
-  const { error } = await supabase
+  const { error } = await supabaseServer
     .from('staff_presets')
     .upsert(payload, { onConflict: 'industry_id,id' });
 
@@ -241,12 +241,12 @@ export async function upsertStaffPreset(preset: {
 
 export async function deleteStaffPreset(id: string, industryId: IndustryId): Promise<{ success: boolean; message?: string }>
 {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
   // Delete only from the specific industry to ensure isolation
-  const { error } = await supabase
+  const { error } = await supabaseServer
     .from('staff_presets')
     .delete()
     .eq('id', id)

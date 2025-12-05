@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { fetchMarketingCampaignsForIndustry, upsertMarketingCampaignForIndustry, deleteMarketingCampaignById } from '@/lib/data/marketingRepository';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchMarketingCampaigns, upsertMarketingCampaign, deleteMarketingCampaign } from '@/lib/server/actions/adminActions';
 import type { MarketingCampaign } from '@/lib/store/slices/marketingSlice';
 import type { Requirement } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
@@ -10,7 +11,7 @@ interface CampaignForm {
   name: string;
   description: string;
   cost: string;
-  timeCost?: string; // Optional time cost
+  timeCost?: string;
   cooldownSeconds: string;
   setsFlag?: string;
   requirements: Requirement[];
@@ -23,9 +24,11 @@ interface CampaignEffectForm {
   durationSeconds: string;
 }
 
+// Query key factory for marketing campaigns
+const marketingQueryKey = (industryId: string) => ['marketing', industryId] as const;
+
 export function useMarketing(industryId: string, campaignId?: string) {
-  const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([]);
-  const [operation, setOperation] = useState<Operation>('idle');
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
@@ -40,23 +43,103 @@ export function useMarketing(industryId: string, campaignId?: string) {
   });
   const [effectsForm, setEffectsForm] = useState<CampaignEffectForm[]>([]);
 
-  const load = useCallback(async () => {
-    if (!industryId) return;
-    setOperation('loading');
-    setStatus(null);
-    const result = await fetchMarketingCampaignsForIndustry(industryId);
-    setOperation('idle');
-    if (!result) {
-      setCampaigns([]);
-      return;
-    }
-    setCampaigns(result);
-  }, [industryId]);
+  // Fetch campaigns using React Query
+  const {
+    data: campaigns = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: marketingQueryKey(industryId),
+    queryFn: async () => {
+      if (!industryId) return [];
+      const result = await fetchMarketingCampaigns(industryId);
+      if (!result) return [];
+      return result.sort((a, b) => a.name.localeCompare(b.name));
+    },
+    enabled: !!industryId,
+  });
 
-  // Auto-load when industryId changes
-  useEffect(() => {
-    load();
-  }, [load]);
+  // Save campaign mutation with optimistic update
+  const saveMutation = useMutation({
+    mutationFn: async (payload: MarketingCampaign) => {
+      if (!industryId) throw new Error('Industry ID is required');
+      const result = await upsertMarketingCampaign(industryId, payload);
+      if (!result.success) {
+        throw new Error(result.message ?? 'Failed to save campaign.');
+      }
+      return payload;
+    },
+    onMutate: async (newCampaign) => {
+      await queryClient.cancelQueries({ queryKey: marketingQueryKey(industryId) });
+      const previousCampaigns = queryClient.getQueryData<MarketingCampaign[]>(marketingQueryKey(industryId));
+
+      queryClient.setQueryData<MarketingCampaign[]>(marketingQueryKey(industryId), (old = []) => {
+        const exists = old.some((c) => c.id === newCampaign.id);
+        const next = exists ? old.map((c) => (c.id === newCampaign.id ? newCampaign : c)) : [...old, newCampaign];
+        return next.sort((a, b) => a.name.localeCompare(b.name));
+      });
+
+      return { previousCampaigns };
+    },
+    onError: (err, newCampaign, context) => {
+      if (context?.previousCampaigns) {
+        queryClient.setQueryData(marketingQueryKey(industryId), context.previousCampaigns);
+      }
+      setStatus(err instanceof Error ? err.message : 'Failed to save campaign.');
+    },
+    onSuccess: (savedCampaign) => {
+      setStatus('Campaign saved.');
+      setIsCreating(false);
+      setSelectedId(savedCampaign.id);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: marketingQueryKey(industryId) });
+    },
+  });
+
+  // Delete campaign mutation with optimistic update
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      if (!industryId) throw new Error('Industry ID is required');
+      const result = await deleteMarketingCampaign(id, industryId as any);
+      if (!result.success) {
+        throw new Error(result.message ?? 'Failed to delete campaign.');
+      }
+      return id;
+    },
+    onMutate: async (deletedId) => {
+      await queryClient.cancelQueries({ queryKey: marketingQueryKey(industryId) });
+      const previousCampaigns = queryClient.getQueryData<MarketingCampaign[]>(marketingQueryKey(industryId));
+
+      queryClient.setQueryData<MarketingCampaign[]>(marketingQueryKey(industryId), (old = []) =>
+        old.filter((c) => c.id !== deletedId)
+      );
+
+      return { previousCampaigns };
+    },
+    onError: (err, deletedId, context) => {
+      if (context?.previousCampaigns) {
+        queryClient.setQueryData(marketingQueryKey(industryId), context.previousCampaigns);
+      }
+      setStatus(err instanceof Error ? err.message : 'Failed to delete campaign.');
+    },
+    onSuccess: () => {
+      setSelectedId('');
+      setForm({
+        id: '',
+        name: '',
+        description: '',
+        cost: '0',
+        cooldownSeconds: '15',
+        requirements: [],
+      });
+      setEffectsForm([]);
+      setStatus('Campaign deleted.');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: marketingQueryKey(industryId) });
+    },
+  });
 
   const selectCampaign = useCallback((campaign: MarketingCampaign, resetMsg = true) => {
     setSelectedId(campaign.id);
@@ -71,19 +154,21 @@ export function useMarketing(industryId: string, campaignId?: string) {
       setsFlag: campaign.setsFlag,
       requirements: campaign.requirements || [],
     });
-    setEffectsForm(campaign.effects.map((e) => ({
-      metric: e.metric,
-      type: e.type,
-      value: String(e.value),
-      durationSeconds: String(e.durationSeconds ?? ''),
-    })));
+    setEffectsForm(
+      campaign.effects.map((e) => ({
+        metric: e.metric,
+        type: e.type,
+        value: String(e.value),
+        durationSeconds: String(e.durationSeconds ?? ''),
+      }))
+    );
     if (resetMsg) setStatus(null);
   }, []);
 
   // Select campaign when campaignId changes or campaigns are loaded
   useEffect(() => {
     if (campaignId && campaigns.length > 0) {
-      const campaign = campaigns.find(c => c.id === campaignId);
+      const campaign = campaigns.find((c) => c.id === campaignId);
       if (campaign) {
         setSelectedId(campaign.id);
         setIsCreating(false);
@@ -97,12 +182,14 @@ export function useMarketing(industryId: string, campaignId?: string) {
           setsFlag: campaign.setsFlag,
           requirements: campaign.requirements || [],
         });
-        setEffectsForm(campaign.effects.map((e) => ({
-          metric: e.metric,
-          type: e.type,
-          value: String(e.value),
-          durationSeconds: String(e.durationSeconds ?? ''),
-        })));
+        setEffectsForm(
+          campaign.effects.map((e) => ({
+            metric: e.metric,
+            type: e.type,
+            value: String(e.value),
+            durationSeconds: String(e.durationSeconds ?? ''),
+          }))
+        );
         setStatus(null);
       }
     }
@@ -155,8 +242,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
       value: Number(ef.value) || 0,
       durationSeconds: ef.durationSeconds === '' ? null : Number(ef.durationSeconds) || null,
     }));
-    setOperation('saving');
-    const result = await upsertMarketingCampaignForIndustry(industryId, {
+    const payload: MarketingCampaign = {
       id,
       name,
       description,
@@ -166,51 +252,20 @@ export function useMarketing(industryId: string, campaignId?: string) {
       effects,
       setsFlag,
       requirements,
-    });
-    setOperation('idle');
-    if (!result.success) {
-      setStatus(result.message ?? 'Failed to save campaign.');
-      return;
-    }
-    setCampaigns((prev) => {
-      const exists = prev.some((c) => c.id === id);
-      const nextItem: MarketingCampaign = { id, name, description, cost, timeCost, cooldownSeconds, effects, setsFlag, requirements };
-      const next = exists ? prev.map((c) => (c.id === id ? nextItem : c)) : [...prev, nextItem];
-      return next.sort((a, b) => a.name.localeCompare(b.name));
-    });
-    setStatus('Campaign saved.');
-    setIsCreating(false);
-    setSelectedId(id);
-  }, [industryId, form, effectsForm]);
+    };
+    saveMutation.mutate(payload);
+  }, [industryId, form, effectsForm, saveMutation]);
 
-  const deleteCampaign = useCallback(async () => {
+  const deleteCampaignHandler = useCallback(async () => {
     if (isCreating || !selectedId) return;
-    const campaign = campaigns.find(c => c.id === selectedId);
+    const campaign = campaigns.find((c) => c.id === selectedId);
     if (!window.confirm(`Delete campaign "${campaign?.name || selectedId}"?`)) return;
-    setOperation('deleting');
-    const result = await deleteMarketingCampaignById(selectedId, industryId);
-    setOperation('idle');
-    if (!result.success) {
-      setStatus(result.message ?? 'Failed to delete campaign.');
-      return;
-    }
-    setCampaigns((prev) => prev.filter((c) => c.id !== selectedId));
-    setSelectedId('');
-    setForm({
-      id: '',
-      name: '',
-      description: '',
-      cost: '0',
-      cooldownSeconds: '15',
-      requirements: [],
-    });
-    setEffectsForm([]);
-    setStatus('Campaign deleted.');
-  }, [industryId, selectedId, isCreating, campaigns]);
+    deleteMutation.mutate(selectedId);
+  }, [selectedId, isCreating, campaigns, deleteMutation]);
 
   const reset = useCallback(() => {
     if (selectedId && !isCreating) {
-      const existing = campaigns.find(c => c.id === selectedId);
+      const existing = campaigns.find((c) => c.id === selectedId);
       if (existing) selectCampaign(existing);
     } else {
       setIsCreating(false);
@@ -229,32 +284,33 @@ export function useMarketing(industryId: string, campaignId?: string) {
   }, [selectedId, isCreating, campaigns, selectCampaign]);
 
   const updateForm = useCallback((updates: Partial<CampaignForm>) => {
-    setForm(prev => ({ ...prev, ...updates }));
+    setForm((prev) => ({ ...prev, ...updates }));
   }, []);
 
   const updateEffects = useCallback((effects: CampaignEffectForm[]) => {
     setEffectsForm(effects);
   }, []);
 
+  const operation: Operation = isLoading ? 'loading' : saveMutation.isPending ? 'saving' : deleteMutation.isPending ? 'deleting' : 'idle';
+
   return {
     campaigns,
-    loading: operation === 'loading',
-    status,
+    loading: isLoading,
+    status: status || (error instanceof Error ? error.message : null),
     selectedId,
     isCreating,
-    saving: operation === 'saving',
-    deleting: operation === 'deleting',
+    saving: saveMutation.isPending,
+    deleting: deleteMutation.isPending,
     operation,
     form,
     effectsForm,
-    load,
+    load: () => queryClient.invalidateQueries({ queryKey: marketingQueryKey(industryId) }),
     selectCampaign,
     createCampaign,
     saveCampaign,
-    deleteCampaign,
+    deleteCampaign: deleteCampaignHandler,
     reset,
     updateForm,
     updateEffects,
   };
 }
-

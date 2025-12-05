@@ -1,183 +1,33 @@
-import type { IndustryId, SimulationLayoutConfig } from '@/lib/game/types';
+import type { IndustryId } from '@/lib/game/types';
 import type {
   GlobalSimulationConfigState,
   IndustryContentConfig,
 } from '@/lib/store/config/types';
-import { fetchGlobalSimulationConfig } from '@/lib/data/simulationConfigRepository';
-import { fetchIndustrySimulationConfig } from '@/lib/data/industrySimulationConfigRepository';
-import { fetchServicesForIndustry } from '@/lib/data/serviceRepository';
-import { fetchUpgradesForIndustry } from '@/lib/data/upgradeRepository';
-import { fetchEventsForIndustry } from '@/lib/data/eventRepository';
-import { fetchMarketingCampaignsForIndustry } from '@/lib/data/marketingRepository';
-import { fetchStaffDataForIndustry } from '@/lib/data/staffRepository';
-import { fetchFlagsForIndustry } from '@/lib/data/flagRepository';
-import { fetchConditionsForIndustry } from '@/lib/data/conditionRepository';
+import {
+  loadGlobalSimulationSettings as loadGlobalFromServer,
+  loadIndustryContent as loadIndustryFromServer,
+  type IndustryContentLoadResult,
+} from '@/lib/server/loadGameData';
+
+// Re-export types from loadGameData for backward compatibility
+export type { IndustryContentLoadResult } from '@/lib/server/loadGameData';
 
 /**
- * Resolve layout config from industry config only (no global fallback)
- * Throws error if layout is missing - data must be in database
+ * Load global simulation settings from the database.
+ * This is a wrapper around the server-side loadGlobalSimulationSettings.
+ * @deprecated Use loadGlobalSimulationSettings from '@/lib/server/loadGameData' directly in server components.
  */
-function resolveLayoutConfig(
-  industryId: IndustryId,
-  industrySimConfig: Awaited<ReturnType<typeof fetchIndustrySimulationConfig>>,
-): SimulationLayoutConfig {
-  // Try industry-specific layout only
-  if (industrySimConfig?.layoutConfig) {
-    return industrySimConfig.layoutConfig;
-  }
-
-  // No layout found - validate at load time with clear error
-  throw new Error(
-    `Layout config not found for industry "${industryId}". ` +
-    `Please configure layout (entry_position, waiting_positions, service_rooms, staff_positions) ` +
-    `in industry_simulation_config table via the admin panel.`
-  );
-}
-
-export interface IndustryContentLoadResult extends IndustryContentConfig {
-  staffDataAvailable: boolean;
-}
-
 export async function loadGlobalSimulationSettings(): Promise<GlobalSimulationConfigState | null> {
-  const result = await fetchGlobalSimulationConfig();
-  if (!result) {
-    throw new Error(
-      'Failed to load global simulation config from database. ' +
-      'Please ensure global_simulation_config table has data configured.'
-    );
-  }
-
-  // Validate required fields - fail fast at load time
-  if (!result.businessMetrics) {
-    throw new Error(
-      'Global simulation config is missing business_metrics. ' +
-      'Please configure business_metrics in global_simulation_config table.'
-    );
-  }
-
-  if (!result.businessStats) {
-    throw new Error(
-      'Global simulation config is missing business_stats. ' +
-      'Please configure business_stats in global_simulation_config table.'
-    );
-  }
-
-  if (!result.movement) {
-    throw new Error(
-      'Global simulation config is missing movement. ' +
-      'Please configure movement in global_simulation_config table.'
-    );
-  }
-
-  return {
-    businessMetrics: result.businessMetrics,
-    businessStats: result.businessStats,
-    movement: result.movement,
-    mapConfig: result.mapConfig,
-    // layoutConfig removed - each industry sets its own layout
-    capacityImage: result.capacityImage,
-    winCondition: result.winCondition,
-    loseCondition: result.loseCondition,
-    customerImages: result.customerImages,
-    staffNamePool: result.staffNamePool,
-    leadDialogues: result.leadDialogues,
-    uiConfig: result.uiConfig,
-  };
+  return await loadGlobalFromServer();
 }
 
+/**
+ * Load all content for a specific industry.
+ * This is a wrapper around the server-side loadIndustryContent.
+ * @deprecated Use loadIndustryContent from '@/lib/server/loadGameData' directly in server components.
+ */
 export async function loadIndustryContent(
   industryId: IndustryId,
 ): Promise<IndustryContentLoadResult | null> {
-  const [
-    servicesResult,
-    upgradesResult,
-    eventsResult,
-    marketingResult,
-    staffResult,
-    flagsResult,
-    conditionsResult,
-    industrySimConfig,
-  ] = await Promise.all([
-    fetchServicesForIndustry(industryId),
-    fetchUpgradesForIndustry(industryId),
-    fetchEventsForIndustry(industryId),
-    fetchMarketingCampaignsForIndustry(industryId),
-    fetchStaffDataForIndustry(industryId),
-    fetchFlagsForIndustry(industryId),
-    fetchConditionsForIndustry(industryId),
-    fetchIndustrySimulationConfig(industryId),
-  ]);
-
-  // Check for errors (null = error, [] = success with no data)
-  if (
-    servicesResult === null ||
-    upgradesResult === null ||
-    eventsResult === null ||
-    marketingResult === null ||
-    flagsResult === null ||
-    conditionsResult === null
-  ) {
-    return null;
-  }
-
-  // Use results (empty arrays are valid - means no data configured)
-  const services = servicesResult;
-  const upgrades = upgradesResult;
-  const events = eventsResult;
-  const marketingCampaigns = marketingResult;
-  const flags = flagsResult;
-  const conditions = conditionsResult;
-
-  const staffDataAvailable = Boolean(staffResult);
-
-
-  // Validate required fields - fail fast at load time
-  if (services.length === 0) {
-    throw new Error(
-      `Industry "${industryId}" has no services configured. ` +
-      `Please add at least one service in the admin panel.`
-    );
-  }
-
-  if (upgrades.length === 0) {
-    throw new Error(
-      `Industry "${industryId}" has no upgrades configured. ` +
-      `Please add at least one upgrade in the admin panel.`
-    );
-  }
-
-  if (events.length === 0) {
-    throw new Error(
-      `Industry "${industryId}" has no events configured. ` +
-      `Please add at least one event in the admin panel.`
-    );
-  }
-
-  // Resolve layout config from industry config only (no global fallback)
-  const resolvedLayout = resolveLayoutConfig(industryId, industrySimConfig);
-
-  return {
-    industryId,
-    services,
-    upgrades,
-    events,
-    marketingCampaigns,
-    staffRoles: staffResult?.roles ?? [],
-    staffPresets: staffResult?.initialStaff ?? [],
-    staffNamePool: staffResult?.namePool ?? undefined,
-    flags,
-    conditions,
-    layout: resolvedLayout,
-    // Industry-specific simulation config overrides
-    businessMetrics: industrySimConfig?.businessMetrics,
-    businessStats: industrySimConfig?.businessStats,
-    // movement is now global-only and handled separately
-    mapConfig: industrySimConfig?.mapConfig,
-    capacityImage: industrySimConfig?.capacityImage,
-    winCondition: industrySimConfig?.winCondition,
-    loseCondition: industrySimConfig?.loseCondition,
-    leadDialogues: industrySimConfig?.leadDialogues,
-    // customerImages is now global-only and handled separately
-    staffDataAvailable,
-  };
+  return await loadIndustryFromServer(industryId);
 }

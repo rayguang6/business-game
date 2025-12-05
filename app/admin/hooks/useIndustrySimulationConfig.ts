@@ -5,11 +5,7 @@ import type {
   BusinessStats,
 } from '@/lib/game/types';
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
-import {
-  fetchIndustrySimulationConfig,
-  upsertIndustrySimulationConfig,
-} from '@/lib/data/industrySimulationConfigRepository';
-import { fetchEventsForIndustry } from '@/lib/data/eventRepository';
+import { fetchIndustryConfig, fetchEvents, upsertIndustryConfig } from '@/lib/server/actions/adminActions';
 
 type Operation = 'idle' | 'loading' | 'saving';
 
@@ -72,7 +68,7 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
     (async () => {
       setOperation('loading');
       try {
-        const config = await fetchIndustrySimulationConfig(industryId);
+        const config = await fetchIndustryConfig(industryId);
         if (isMounted && config) {
           if (config.businessMetrics) setBusinessMetrics(config.businessMetrics);
           if (config.businessStats) setBusinessStats(config.businessStats);
@@ -119,7 +115,7 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
         }
 
         // Load events for sequencing
-        const eventsData = await fetchEventsForIndustry(industryId);
+        const eventsData = await fetchEvents(industryId);
         if (eventsData) {
           const sortedEvents = eventsData
             .slice()
@@ -154,7 +150,7 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
 
     try {
       // Save all fields directly - no JSON parsing needed!
-      const result = await upsertIndustrySimulationConfig(industryId, {
+      const result = await upsertIndustryConfig(industryId, {
         businessMetrics: businessMetrics ?? undefined,
         businessStats: businessStats ?? undefined,
         // Movement removed - it's global only

@@ -58,6 +58,9 @@ export interface IndustryContentConfig {
   loseCondition?: LoseCondition;
   customerImages?: string[];
   leadDialogues?: string[];
+  // Event sequencing
+  eventSelectionMode?: 'random' | 'sequence';
+  eventSequence?: string[] | null;
 }
 
 export interface ConfigStoreState {

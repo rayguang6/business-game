@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabaseServer } from '@/lib/server/supabaseServer';
 import type { BusinessMetrics, BusinessStats, MovementConfig, MapConfig } from '@/lib/game/types';
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
 
@@ -148,12 +148,12 @@ const mapUiConfig = (raw: unknown): { eventAutoSelectDurationSeconds?: number; o
 
 
 export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationConfigResult | null> {
-  if (!supabase) {
+  if (!supabaseServer) {
     console.error('Supabase client not configured. Unable to fetch global simulation config.');
     return null;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from('global_simulation_config')
     .select('business_metrics, business_stats, movement, map_width, map_height, map_walls, capacity_image, win_condition, lose_condition, customer_images, staff_name_pool, lead_dialogues, ui_config')
     .limit(1)
@@ -229,12 +229,12 @@ export async function upsertGlobalSimulationConfig(config: {
   };
 }): Promise<{ success: boolean; message?: string }>
 {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
   // Determine a stable id to upsert to. If a row exists, reuse its id; otherwise use 'global'.
-  const { data: existing, error: selectError } = await supabase
+  const { data: existing, error: selectError } = await supabaseServer
     .from('global_simulation_config')
     .select('id')
     .limit(1)
@@ -279,7 +279,7 @@ export async function upsertGlobalSimulationConfig(config: {
     ui_config: uiConfigPayload,
   };
 
-  const { error: upsertError } = await supabase
+  const { error: upsertError } = await supabaseServer
     .from('global_simulation_config')
     .upsert(payload, { onConflict: 'id' });
 

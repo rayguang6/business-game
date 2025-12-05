@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { fetchStaffDataForIndustry, upsertStaffRole, deleteStaffRole, upsertStaffPreset, deleteStaffPreset } from '@/lib/data/staffRepository';
+import { fetchStaffData, upsertStaffRoleAction, deleteStaffRoleAction, upsertStaffPresetAction, deleteStaffPresetAction } from '@/lib/server/actions/adminActions';
 import type { StaffRoleConfig, StaffPreset } from '@/lib/game/staffConfig';
 import type { Requirement } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
@@ -56,7 +56,7 @@ export function useStaff(industryId: string) {
     if (!industryId) return;
     setOperation('loading');
     setStatus(null);
-    const data = await fetchStaffDataForIndustry(industryId);
+    const data = await fetchStaffData(industryId);
     setOperation('idle');
     if (!data) {
       setRoles([]);
@@ -161,7 +161,7 @@ export function useStaff(industryId: string) {
     const setsFlag = roleForm.setsFlag?.trim() || undefined;
     const requirements = roleForm.requirements;
     setRoleOperation('saving');
-    const result = await upsertStaffRole({
+    const result = await upsertStaffRoleAction({
       id,
       industryId,
       name,
@@ -204,7 +204,7 @@ export function useStaff(industryId: string) {
     const role = roles.find(r => r.id === selectedRoleId);
     if (!window.confirm(`Delete role "${role?.name || selectedRoleId}"?`)) return;
     setRoleOperation('deleting');
-    const result = await deleteStaffRole(selectedRoleId, industryId);
+    const result = await deleteStaffRoleAction(selectedRoleId, industryId as any);
     setRoleOperation('idle');
     if (!result.success) {
       setStatus(result.message ?? 'Failed to delete role.');
@@ -287,7 +287,7 @@ export function useStaff(industryId: string) {
 
 
     setPresetOperation('saving');
-    const result = await upsertStaffPreset(presetData);
+    const result = await upsertStaffPresetAction(presetData);
     setPresetOperation('idle');
     if (!result.success) {
       setStatus(result.message ?? 'Failed to save preset.');
@@ -311,7 +311,7 @@ export function useStaff(industryId: string) {
     const preset = presets.find(p => p.id === selectedPresetId);
     if (!window.confirm(`Delete preset "${preset?.name || selectedPresetId}"?`)) return;
     setPresetOperation('deleting');
-    const result = await deleteStaffPreset(selectedPresetId, industryId);
+    const result = await deleteStaffPresetAction(selectedPresetId, industryId as any);
     setPresetOperation('idle');
     if (!result.success) {
       setStatus(result.message ?? 'Failed to delete preset.');

@@ -12,7 +12,7 @@ import { SpriteLead } from './SpriteLead';
 import { SpriteStaff } from './SpriteStaff';
 import { GridOverlay } from './GridOverlay';
 import { LeadProgress } from '../ui/LeadProgress';
-import { DEFAULT_INDUSTRY_ID, getBusinessStats, getLayoutConfig, getCapacityImageForIndustry } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getBusinessStats, getBusinessMetrics, getLayoutConfig, getCapacityImageForIndustry } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import { useConfigStore } from '@/lib/store/configStore';
@@ -121,32 +121,25 @@ export function GameCanvas() {
   }, []);
 
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-  // Get businessStats fresh each time (same as mechanics.ts does)
-  const businessStats = useMemo(() => getBusinessStats(industryId), [industryId]);
-  const layoutOverride = useConfigStore((state) => state.industryConfigs[industryId]?.layout);
-  const layout = useMemo(() => layoutOverride ?? getLayoutConfig(industryId), [layoutOverride, industryId]);
-
-  // Validate required config - show error if missing
-  if (!businessStats || !layout) {
-    return (
-      <ConfigErrorPage
-        title="Configuration Missing"
-        message="Required game configuration is missing. Please configure this industry in the admin panel."
-        errorType="database"
-        details={
-          !businessStats
-            ? 'Business stats are not configured for this industry. Please configure business_stats in the admin panel.'
-            : 'Layout configuration is missing for this industry. Please configure layout positions (entry_position, waiting_positions, service_rooms, staff_positions) in the admin panel.'
-        }
-      />
-    );
-  }
+  const configStatus = useConfigStore((state) => state.configStatus);
+  const globalConfig = useConfigStore((state) => state.globalConfig);
+  const industryConfig = useConfigStore((state) => state.industryConfigs[industryId]);
   
+  // Get businessStats fresh each time (same as mechanics.ts does)
+  // Depend on config store state so it recomputes when config is loaded
+  const businessStats = useMemo(() => getBusinessStats(industryId), [industryId, globalConfig, industryConfig]);
+  const layoutOverride = useConfigStore((state) => state.industryConfigs[industryId]?.layout);
+  const layout = useMemo(() => layoutOverride ?? getLayoutConfig(industryId), [layoutOverride, industryId, industryConfig]);
+
+  // Define computeMetrics BEFORE conditional returns (Rules of Hooks)
   const computeMetrics = useCallback(() => {
     // Mirror exactly what mechanics.ts does (line 580-605)
     // This ensures we use the same calculation path as the game
     const baseStats = getBusinessStats(industryId);
-    const baseMonthlyExpenses = getMonthlyBaseExpenses(industryId);
+    const baseMetrics = getBusinessMetrics(industryId);
+    
+    // Safe fallback for monthly expenses if metrics aren't loaded yet
+    const baseMonthlyExpenses = baseMetrics?.monthlyExpenses ?? 0;
     
     // Early return if baseStats is null (shouldn't happen due to validation above, but TypeScript needs this)
     if (!baseStats) {
@@ -226,7 +219,7 @@ export function GameCanvas() {
       baseExpGainPerHappy: baseStats.expGainPerHappyCustomer,
       baseExpLossPerAngry: baseStats.expLossPerAngryCustomer,
     };
-  }, [industryId]);
+  }, [industryId, globalConfig, industryConfig]);
 
   const [metrics, setMetrics] = useState(() => computeMetrics());
 
@@ -237,6 +230,35 @@ export function GameCanvas() {
     });
     return () => unsubscribe();
   }, [computeMetrics]);
+
+  // Wait for config to be ready before showing errors
+  // If config is still loading, show a loading state instead of error
+  if (configStatus !== 'ready') {
+    return (
+      <div className="flex items-center justify-center h-full w-full">
+        <div className="text-center">
+          <div className="text-lg font-semibold text-white mb-2">Loading game configuration...</div>
+          <div className="text-sm text-gray-400">Please wait while we load the game data.</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Validate required config - show error if missing (only after config is ready)
+  if (!businessStats || !layout) {
+    return (
+      <ConfigErrorPage
+        title="Configuration Missing"
+        message="Required game configuration is missing. Please configure this industry in the admin panel."
+        errorType="database"
+        details={
+          !businessStats
+            ? 'Business stats are not configured for this industry. Please configure business_stats in the admin panel.'
+            : 'Layout configuration is missing for this industry. Please configure layout positions (entry_position, waiting_positions, service_rooms, staff_positions) in the admin panel.'
+        }
+      />
+    );
+  }
 
   if (!selectedIndustry) return null;
   const serviceCapacityLabel = 'Service Capacity';

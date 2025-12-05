@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabaseServer } from '@/lib/server/supabaseServer';
 import type { IndustryId, GridPosition, ServiceRoomConfig } from '@/lib/game/types';
 import type {
   BusinessMetrics,
@@ -100,11 +100,11 @@ const mapLoseCondition = (raw: unknown): LoseCondition | undefined => {
 export async function fetchIndustrySimulationConfig(
   industryId: IndustryId,
 ): Promise<IndustrySimulationConfigResult | null> {
-  if (!supabase) {
+  if (!supabaseServer) {
     return null;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from('industry_simulation_config')
     .select('business_metrics, business_stats, map_width, map_height, map_walls, entry_position, waiting_positions, service_rooms, staff_positions, main_character_position, main_character_sprite_image, capacity_image, win_condition, lose_condition, event_selection_mode, event_sequence, lead_dialogues')
     .eq('industry_id', industryId)
@@ -256,11 +256,11 @@ export async function upsertIndustrySimulationConfig(
     // customerImages and staffNamePool removed - they're global only
   },
 ): Promise<{ success: boolean; message?: string }> {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
-  const { data: existing } = await supabase
+  const { data: existing } = await supabaseServer
     .from('industry_simulation_config')
     .select('id')
     .eq('industry_id', industryId)
@@ -320,7 +320,7 @@ export async function upsertIndustrySimulationConfig(
 
   // customerImages and staffNamePool removed - they're global only
 
-  const { error } = await supabase
+  const { error } = await supabaseServer
     .from('industry_simulation_config')
     .upsert(payload, { onConflict: 'industry_id' });
 

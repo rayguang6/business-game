@@ -9,6 +9,7 @@ import {
 } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
 import { useGameStore } from '@/lib/store/gameStore';
+import { useConfigStore } from '@/lib/store/configStore';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
@@ -22,8 +23,18 @@ interface CustomerCardProps {
 
 export function CustomerCard({ customer, showPatience = false, showServiceProgress = false, scaleFactor }: CustomerCardProps) {
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
+  const configStatus = useConfigStore((state) => state.configStatus);
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-  const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
+  
+  // Safely get ticks per second - handle case when config isn't loaded yet
+  let ticksPerSecond = 60; // Default fallback
+  try {
+    if (configStatus === 'ready') {
+      ticksPerSecond = getTicksPerSecondForIndustry(industryId);
+    }
+  } catch (error) {
+    console.warn('[CustomerCard] Error accessing config, using defaults', error);
+  }
 
   // Force re-render when effect manager changes (tier multipliers update)
   const [, forceUpdate] = useState(0);

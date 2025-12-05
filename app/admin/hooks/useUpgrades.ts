@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { fetchUpgradesForIndustry, upsertUpgradeForIndustry, deleteUpgradeById } from '@/lib/data/upgradeRepository';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchUpgrades, upsertUpgrade, deleteUpgrade } from '@/lib/server/actions/adminActions';
 import type { UpgradeDefinition } from '@/lib/game/types';
 import type { Requirement } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
@@ -11,7 +12,7 @@ interface UpgradeForm {
   description: string;
   icon: string;
   cost: string;
-  timeCost?: string; // Optional time cost
+  timeCost?: string;
   maxLevel: string;
   setsFlag?: string;
   requirements: Requirement[];
@@ -33,9 +34,11 @@ interface LevelForm {
   effects: EffectForm[];
 }
 
+// Query key factory for upgrades
+const upgradesQueryKey = (industryId: string) => ['upgrades', industryId] as const;
+
 export function useUpgrades(industryId: string, upgradeId?: string) {
-  const [upgrades, setUpgrades] = useState<UpgradeDefinition[]>([]);
-  const [operation, setOperation] = useState<Operation>('idle');
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
@@ -51,29 +54,111 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
   });
   const [levelsForm, setLevelsForm] = useState<LevelForm[]>([]);
 
-  const load = useCallback(async () => {
-    if (!industryId) return;
-    setOperation('loading');
-    setStatus(null);
-    const result = await fetchUpgradesForIndustry(industryId);
-    setOperation('idle');
-    if (!result) {
-      setUpgrades([]);
-      return;
-    }
-    const sorted = result.slice().sort((a, b) => a.name.localeCompare(b.name));
-    setUpgrades(sorted);
-  }, [industryId]);
+  // Fetch upgrades using React Query
+  const {
+    data: upgrades = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: upgradesQueryKey(industryId),
+    queryFn: async () => {
+      if (!industryId) return [];
+      const result = await fetchUpgrades(industryId);
+      if (!result) return [];
+      return result.slice().sort((a, b) => a.name.localeCompare(b.name));
+    },
+    enabled: !!industryId,
+  });
 
-  // Auto-load when industryId changes
-  useEffect(() => {
-    load();
-  }, [load]);
+  // Save upgrade mutation with optimistic update
+  const saveMutation = useMutation({
+    mutationFn: async (payload: UpgradeDefinition) => {
+      if (!industryId) throw new Error('Industry ID is required');
+      const result = await upsertUpgrade(industryId as any, payload);
+      if (!result.success) {
+        throw new Error(result.message ?? 'Failed to save upgrade.');
+      }
+      return payload;
+    },
+    onMutate: async (newUpgrade) => {
+      await queryClient.cancelQueries({ queryKey: upgradesQueryKey(industryId) });
+      const previousUpgrades = queryClient.getQueryData<UpgradeDefinition[]>(upgradesQueryKey(industryId));
+
+      queryClient.setQueryData<UpgradeDefinition[]>(upgradesQueryKey(industryId), (old = []) => {
+        const exists = old.some((u) => u.id === newUpgrade.id);
+        const next = exists ? old.map((u) => (u.id === newUpgrade.id ? newUpgrade : u)) : [...old, newUpgrade];
+        return next.sort((a, b) => a.name.localeCompare(b.name));
+      });
+
+      return { previousUpgrades };
+    },
+    onError: (err, newUpgrade, context) => {
+      if (context?.previousUpgrades) {
+        queryClient.setQueryData(upgradesQueryKey(industryId), context.previousUpgrades);
+      }
+      const errorMsg = err instanceof Error ? err.message : 'Failed to save upgrade.';
+      console.error('[Admin] Save failed:', errorMsg);
+      setStatus(errorMsg);
+    },
+    onSuccess: (savedUpgrade) => {
+      setIsCreating(false);
+      setSelectedId(savedUpgrade.id);
+      selectUpgrade(savedUpgrade, false);
+      setStatus(`Upgrade saved successfully with ${savedUpgrade.levels?.length || 0} level(s).`);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: upgradesQueryKey(industryId) });
+    },
+  });
+
+  // Delete upgrade mutation with optimistic update
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const result = await deleteUpgrade(id);
+      if (!result.success) {
+        throw new Error(result.message ?? 'Failed to delete upgrade.');
+      }
+      return id;
+    },
+    onMutate: async (deletedId) => {
+      await queryClient.cancelQueries({ queryKey: upgradesQueryKey(industryId) });
+      const previousUpgrades = queryClient.getQueryData<UpgradeDefinition[]>(upgradesQueryKey(industryId));
+
+      queryClient.setQueryData<UpgradeDefinition[]>(upgradesQueryKey(industryId), (old = []) =>
+        old.filter((u) => u.id !== deletedId)
+      );
+
+      return { previousUpgrades };
+    },
+    onError: (err, deletedId, context) => {
+      if (context?.previousUpgrades) {
+        queryClient.setQueryData(upgradesQueryKey(industryId), context.previousUpgrades);
+      }
+      setStatus(err instanceof Error ? err.message : 'Failed to delete upgrade.');
+    },
+    onSuccess: () => {
+      setSelectedId('');
+      setForm({
+        id: '',
+        name: '',
+        description: '',
+        icon: '⚙️',
+        cost: '0',
+        maxLevel: '1',
+        requirements: [],
+      });
+      setLevelsForm([]);
+      setStatus('Upgrade deleted.');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: upgradesQueryKey(industryId) });
+    },
+  });
 
   const selectUpgrade = useCallback((upgrade: UpgradeDefinition, resetMsg = true) => {
     setSelectedId(upgrade.id);
     setIsCreating(false);
-    
+
     setForm({
       id: upgrade.id,
       name: upgrade.name,
@@ -85,46 +170,50 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
       setsFlag: upgrade.setsFlag,
       requirements: upgrade.requirements || [],
     });
-    
+
     // Always populate levelsForm from upgrade.levels
     if (upgrade.levels && upgrade.levels.length > 0) {
-      setLevelsForm(upgrade.levels.map((level) => ({
-        level: level.level,
-        name: level.name,
-        description: level.description,
-        icon: level.icon,
-        cost: String(level.cost),
-        timeCost: level.timeCost !== undefined ? String(level.timeCost) : '',
-        effects: level.effects.map((e) => ({
-          metric: e.metric,
-          type: e.type,
-          value: String(e.value),
-        })),
-      })));
+      setLevelsForm(
+        upgrade.levels.map((level) => ({
+          level: level.level,
+          name: level.name,
+          description: level.description,
+          icon: level.icon,
+          cost: String(level.cost),
+          timeCost: level.timeCost !== undefined ? String(level.timeCost) : '',
+          effects: level.effects.map((e) => ({
+            metric: e.metric,
+            type: e.type,
+            value: String(e.value),
+          })),
+        }))
+      );
     } else {
       // Fallback: create a single level if none exist
-      setLevelsForm([{
-        level: 1,
-        name: upgrade.name,
-        description: upgrade.description,
-        icon: upgrade.icon,
-        cost: '0',
-        timeCost: '',
-        effects: [],
-      }]);
+      setLevelsForm([
+        {
+          level: 1,
+          name: upgrade.name,
+          description: upgrade.description,
+          icon: upgrade.icon,
+          cost: '0',
+          timeCost: '',
+          effects: [],
+        },
+      ]);
     }
-    
+
     if (resetMsg) setStatus(null);
   }, []);
 
   // Select upgrade when upgradeId changes or upgrades are loaded
   useEffect(() => {
     if (upgradeId && upgrades.length > 0) {
-      const upgrade = upgrades.find(u => u.id === upgradeId);
+      const upgrade = upgrades.find((u) => u.id === upgradeId);
       if (upgrade) {
         setSelectedId(upgrade.id);
         setIsCreating(false);
-        
+
         setForm({
           id: upgrade.id,
           name: upgrade.name,
@@ -136,31 +225,35 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
           setsFlag: upgrade.setsFlag,
           requirements: upgrade.requirements || [],
         });
-        
+
         if (upgrade.levels && upgrade.levels.length > 0) {
-          setLevelsForm(upgrade.levels.map((level) => ({
-            level: level.level,
-            name: level.name,
-            description: level.description,
-            icon: level.icon,
-            cost: String(level.cost),
-            timeCost: level.timeCost !== undefined ? String(level.timeCost) : '',
-            effects: level.effects.map((e) => ({
-              metric: e.metric,
-              type: e.type,
-              value: String(e.value),
-            })),
-          })));
+          setLevelsForm(
+            upgrade.levels.map((level) => ({
+              level: level.level,
+              name: level.name,
+              description: level.description,
+              icon: level.icon,
+              cost: String(level.cost),
+              timeCost: level.timeCost !== undefined ? String(level.timeCost) : '',
+              effects: level.effects.map((e) => ({
+                metric: e.metric,
+                type: e.type,
+                value: String(e.value),
+              })),
+            }))
+          );
         } else {
-          setLevelsForm([{
-            level: 1,
-            name: upgrade.name,
-            description: upgrade.description,
-            icon: upgrade.icon,
-            cost: '0',
-            timeCost: '',
-            effects: [],
-          }]);
+          setLevelsForm([
+            {
+              level: 1,
+              name: upgrade.name,
+              description: upgrade.description,
+              icon: upgrade.icon,
+              cost: '0',
+              timeCost: '',
+              effects: [],
+            },
+          ]);
         }
         setStatus(null);
       }
@@ -185,15 +278,17 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
       requirements: [],
     });
     // Start with one level
-    setLevelsForm([{
-      level: 1,
-      name: '',
-      description: '',
-      icon: '⚙️',
-      cost: '0',
-      timeCost: '',
-      effects: [],
-    }]);
+    setLevelsForm([
+      {
+        level: 1,
+        name: '',
+        description: '',
+        icon: '⚙️',
+        cost: '0',
+        timeCost: '',
+        effects: [],
+      },
+    ]);
     setStatus(null);
   }, [industryId]);
 
@@ -208,7 +303,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
     const icon = form.icon.trim() || '⚙️';
     const setsFlag = form.setsFlag?.trim() || undefined;
     const requirements = form.requirements;
-    
+
     if (!id || !name) {
       setStatus('Upgrade id and name are required.');
       return;
@@ -218,15 +313,15 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
       setStatus('At least one level is required.');
       return;
     }
-    
+
     // Validate and convert levelsForm to UpgradeLevelConfig[]
     let levels: import('@/lib/game/types').UpgradeLevelConfig[];
     try {
       levels = levelsForm.map((levelForm, index) => {
-        const levelNumber = levelForm.level || (index + 1);
+        const levelNumber = levelForm.level || index + 1;
         const cost = Number(levelForm.cost);
         const timeCost = levelForm.timeCost?.trim() ? Number(levelForm.timeCost) : undefined;
-        
+
         if (!Number.isFinite(cost) || cost < 0) {
           throw new Error(`Level ${levelNumber}: Cost must be >= 0.`);
         }
@@ -236,7 +331,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
         if (!levelForm.name.trim()) {
           throw new Error(`Level ${levelNumber}: Name is required.`);
         }
-        
+
         // Validate and convert effects for this level
         const effects = levelForm.effects
           .filter((ef) => {
@@ -255,7 +350,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
               value: Number.isFinite(numValue) ? numValue : 0,
             };
           });
-        
+
         return {
           level: levelNumber,
           name: levelForm.name.trim(),
@@ -273,8 +368,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
 
     const maxLevel = levels.length;
 
-    setOperation('saving');
-    const result = await upsertUpgradeForIndustry(industryId, {
+    const payload: UpgradeDefinition = {
       id,
       name,
       description,
@@ -283,64 +377,21 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
       setsFlag,
       requirements,
       levels,
-    });
-    setOperation('idle');
-    if (!result.success) {
-      const errorMsg = result.message ?? 'Failed to save upgrade.';
-      console.error('[Admin] Save failed:', errorMsg);
-      setStatus(errorMsg);
-      return;
-    }
-    
-    
-    // Reload upgrades from database to ensure we have the latest data
-    const reloaded = await fetchUpgradesForIndustry(industryId);
-    if (reloaded) {
-      setUpgrades(reloaded.sort((a, b) => a.name.localeCompare(b.name)));
-      const savedUpgrade = reloaded.find((u) => u.id === id);
-      if (savedUpgrade) {
-        selectUpgrade(savedUpgrade, false);
-        setStatus(`Upgrade saved successfully with ${levels.length} level(s).`);
-      } else {
-        setStatus('Upgrade saved.');
-      }
-    } else {
-      setStatus('Upgrade saved, but failed to reload. Please refresh.');
-    }
-    
-    setIsCreating(false);
-    setSelectedId(id);
-  }, [industryId, form, levelsForm, selectUpgrade]);
+    };
 
-  const deleteUpgrade = useCallback(async () => {
+    saveMutation.mutate(payload);
+  }, [industryId, form, levelsForm, saveMutation]);
+
+  const deleteUpgradeHandler = useCallback(async () => {
     if (isCreating || !selectedId) return;
-    const upgrade = upgrades.find(u => u.id === selectedId);
+    const upgrade = upgrades.find((u) => u.id === selectedId);
     if (!window.confirm(`Delete upgrade "${upgrade?.name || selectedId}"?`)) return;
-    setOperation('deleting');
-    const result = await deleteUpgradeById(selectedId);
-    setOperation('idle');
-    if (!result.success) {
-      setStatus(result.message ?? 'Failed to delete upgrade.');
-      return;
-    }
-    setUpgrades((prev) => prev.filter((u) => u.id !== selectedId));
-    setSelectedId('');
-    setForm({
-      id: '',
-      name: '',
-      description: '',
-      icon: '⚙️',
-      cost: '0',
-      maxLevel: '1',
-      requirements: [],
-    });
-    setLevelsForm([]);
-    setStatus('Upgrade deleted.');
-  }, [selectedId, isCreating, upgrades]);
+    deleteMutation.mutate(selectedId);
+  }, [selectedId, isCreating, upgrades, deleteMutation]);
 
   const reset = useCallback(() => {
     if (selectedId && !isCreating) {
-      const existing = upgrades.find(u => u.id === selectedId);
+      const existing = upgrades.find((u) => u.id === selectedId);
       if (existing) selectUpgrade(existing);
     } else {
       setIsCreating(false);
@@ -360,7 +411,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
   }, [selectedId, isCreating, upgrades, selectUpgrade]);
 
   const updateForm = useCallback((updates: Partial<UpgradeForm>) => {
-    setForm(prev => ({ ...prev, ...updates }));
+    setForm((prev) => ({ ...prev, ...updates }));
   }, []);
 
   const addLevel = useCallback(() => {
@@ -384,25 +435,28 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
     }));
   }, [levelsForm.length, form.icon]);
 
-  const removeLevel = useCallback((index: number) => {
-    if (levelsForm.length <= 1) {
-      setStatus('At least one level is required.');
-      return;
-    }
-    setLevelsForm((prev) => {
-      const newLevels = prev.filter((_, i) => i !== index);
-      // Re-number levels to be sequential
-      return newLevels.map((level, i) => ({
-        ...level,
-        level: i + 1,
+  const removeLevel = useCallback(
+    (index: number) => {
+      if (levelsForm.length <= 1) {
+        setStatus('At least one level is required.');
+        return;
+      }
+      setLevelsForm((prev) => {
+        const newLevels = prev.filter((_, i) => i !== index);
+        // Re-number levels to be sequential
+        return newLevels.map((level, i) => ({
+          ...level,
+          level: i + 1,
+        }));
+      });
+      // Update maxLevel in form
+      setForm((prev) => ({
+        ...prev,
+        maxLevel: String(levelsForm.length - 1),
       }));
-    });
-    // Update maxLevel in form
-    setForm((prev) => ({
-      ...prev,
-      maxLevel: String(levelsForm.length - 1),
-    }));
-  }, [levelsForm.length]);
+    },
+    [levelsForm.length]
+  );
 
   const updateLevel = useCallback((index: number, updates: Partial<LevelForm>) => {
     setLevelsForm((prev) => {
@@ -412,22 +466,24 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
     });
   }, []);
 
+  const operation: Operation = isLoading ? 'loading' : saveMutation.isPending ? 'saving' : deleteMutation.isPending ? 'deleting' : 'idle';
+
   return {
     upgrades,
-    loading: operation === 'loading',
-    status,
+    loading: isLoading,
+    status: status || (error instanceof Error ? error.message : null),
     selectedId,
     isCreating,
-    saving: operation === 'saving',
-    deleting: operation === 'deleting',
+    saving: saveMutation.isPending,
+    deleting: deleteMutation.isPending,
     operation,
     form,
     levelsForm,
-    load,
+    load: () => queryClient.invalidateQueries({ queryKey: upgradesQueryKey(industryId) }),
     selectUpgrade,
     createUpgrade,
     saveUpgrade,
-    deleteUpgrade,
+    deleteUpgrade: deleteUpgradeHandler,
     reset,
     updateForm,
     addLevel,
@@ -435,4 +491,3 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
     updateLevel,
   };
 }
-

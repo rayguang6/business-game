@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { fetchServicesForIndustry, upsertServiceForIndustry, deleteServiceById } from '@/lib/data/serviceRepository';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchServices, upsertService, deleteService } from '@/lib/server/actions/adminActions';
 import type { IndustryServiceDefinition, Requirement, ServicePricingCategory, ServiceTier } from '@/lib/game/types';
 import type { Operation } from './types';
 
@@ -13,13 +14,15 @@ interface ServiceForm {
   requirements: Requirement[];
   pricingCategory: string;
   weightage: string;
-  requiredStaffRoleIds: string[]; // Array of staff role IDs
+  requiredStaffRoleIds: string[];
   timeCost: string;
 }
 
+// Query key factory for services
+const servicesQueryKey = (industryId: string) => ['services', industryId] as const;
+
 export function useServices(industryId: string, serviceId?: string) {
-  const [services, setServices] = useState<IndustryServiceDefinition[]>([]);
-  const [operation, setOperation] = useState<Operation>('idle');
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
@@ -37,24 +40,111 @@ export function useServices(industryId: string, serviceId?: string) {
     timeCost: '0',
   });
 
-  const load = useCallback(async () => {
-    if (!industryId) return;
-    setOperation('loading');
-    setStatus(null);
-    const result = await fetchServicesForIndustry(industryId);
-    setOperation('idle');
-    if (!result || result.length === 0) {
-      setServices([]);
-      return;
-    }
-    const sorted = result.slice().sort((a, b) => a.name.localeCompare(b.name));
-    setServices(sorted);
-  }, [industryId]);
+  // Fetch services using React Query
+  const {
+    data: services = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: servicesQueryKey(industryId),
+    queryFn: async () => {
+      if (!industryId) return [];
+      const result = await fetchServices(industryId);
+      if (!result || result.length === 0) return [];
+      return result.slice().sort((a, b) => a.name.localeCompare(b.name));
+    },
+    enabled: !!industryId,
+  });
 
-  // Auto-load when industryId changes
-  useEffect(() => {
-    load();
-  }, [load]);
+  // Save service mutation with optimistic update
+  const saveMutation = useMutation({
+    mutationFn: async (payload: IndustryServiceDefinition) => {
+      const result = await upsertService(payload);
+      if (!result.success) {
+        throw new Error(result.message ?? 'Failed to save service.');
+      }
+      return payload;
+    },
+    onMutate: async (newService) => {
+      await queryClient.cancelQueries({ queryKey: servicesQueryKey(industryId) });
+      const previousServices = queryClient.getQueryData<IndustryServiceDefinition[]>(servicesQueryKey(industryId));
+
+      queryClient.setQueryData<IndustryServiceDefinition[]>(servicesQueryKey(industryId), (old = []) => {
+        const exists = old.some((s) => s.id === newService.id);
+        const next = exists ? old.map((s) => (s.id === newService.id ? newService : s)) : [...old, newService];
+        return next.sort((a, b) => a.name.localeCompare(b.name));
+      });
+
+      return { previousServices };
+    },
+    onError: (err, newService, context) => {
+      if (context?.previousServices) {
+        queryClient.setQueryData(servicesQueryKey(industryId), context.previousServices);
+      }
+      setStatus(err instanceof Error ? err.message : 'Failed to save service.');
+    },
+    onSuccess: (savedService) => {
+      setStatus('Service saved.');
+      setIsCreating(false);
+      setSelectedId(savedService.id);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: servicesQueryKey(industryId) });
+    },
+  });
+
+  // Delete service mutation with optimistic update
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const result = await deleteService(id);
+      if (!result.success) {
+        throw new Error(result.message ?? 'Failed to delete service.');
+      }
+      return id;
+    },
+    onMutate: async (deletedId) => {
+      await queryClient.cancelQueries({ queryKey: servicesQueryKey(industryId) });
+      const previousServices = queryClient.getQueryData<IndustryServiceDefinition[]>(servicesQueryKey(industryId));
+
+      queryClient.setQueryData<IndustryServiceDefinition[]>(servicesQueryKey(industryId), (old = []) =>
+        old.filter((s) => s.id !== deletedId)
+      );
+
+      return { previousServices };
+    },
+    onError: (err, deletedId, context) => {
+      if (context?.previousServices) {
+        queryClient.setQueryData(servicesQueryKey(industryId), context.previousServices);
+      }
+      setStatus(err instanceof Error ? err.message : 'Failed to delete service.');
+    },
+    onSuccess: () => {
+      const remaining = queryClient.getQueryData<IndustryServiceDefinition[]>(servicesQueryKey(industryId)) || [];
+      if (remaining.length > 1) {
+        selectService(remaining[0], false);
+      } else {
+        setSelectedId('');
+        setForm({
+          id: '',
+          name: '',
+          duration: '0',
+          price: '0',
+          tier: '',
+          expGained: '0',
+          requirements: [],
+          pricingCategory: '',
+          weightage: '1',
+          requiredStaffRoleIds: [],
+          timeCost: '0',
+        });
+        setIsCreating(false);
+      }
+      setStatus('Service deleted.');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: servicesQueryKey(industryId) });
+    },
+  });
 
   const selectService = useCallback((service: IndustryServiceDefinition, resetMsg = true) => {
     setSelectedId(service.id);
@@ -78,7 +168,7 @@ export function useServices(industryId: string, serviceId?: string) {
   // Select service when serviceId changes or services are loaded
   useEffect(() => {
     if (serviceId && services.length > 0) {
-      const service = services.find(s => s.id === serviceId);
+      const service = services.find((s) => s.id === serviceId);
       if (service) {
         setSelectedId(service.id);
         setIsCreating(false);
@@ -155,7 +245,6 @@ export function useServices(industryId: string, serviceId?: string) {
       setStatus('Time cost must be a non-negative number.');
       return;
     }
-    setOperation('saving');
     const payload: IndustryServiceDefinition = {
       id,
       industryId,
@@ -170,60 +259,19 @@ export function useServices(industryId: string, serviceId?: string) {
       requiredStaffRoleIds: form.requiredStaffRoleIds.length > 0 ? form.requiredStaffRoleIds : undefined,
       timeCost: timeCost > 0 ? timeCost : undefined,
     };
-    const result = await upsertServiceForIndustry(payload);
-    setOperation('idle');
-    if (!result.success) {
-      setStatus(result.message ?? 'Failed to save service.');
-      return;
-    }
-    setServices((prev) => {
-      const exists = prev.some((s) => s.id === id);
-      const next = exists ? prev.map((s) => (s.id === id ? payload : s)) : [...prev, payload];
-      return next.sort((a, b) => a.name.localeCompare(b.name));
-    });
-    setStatus('Service saved.');
-    setIsCreating(false);
-    setSelectedId(id);
-  }, [industryId, form]);
+    saveMutation.mutate(payload);
+  }, [industryId, form, saveMutation]);
 
-  const deleteService = useCallback(async () => {
+  const deleteServiceHandler = useCallback(async () => {
     if (isCreating || !selectedId) return;
-    const service = services.find(s => s.id === selectedId);
+    const service = services.find((s) => s.id === selectedId);
     if (!window.confirm(`Delete service "${service?.name || selectedId}"?`)) return;
-    setOperation('deleting');
-    const result = await deleteServiceById(selectedId);
-    setOperation('idle');
-    if (!result.success) {
-      setStatus(result.message ?? 'Failed to delete service.');
-      return;
-    }
-    setServices((prev) => prev.filter((s) => s.id !== selectedId));
-    if (services.length > 1) {
-      const remaining = services.filter(s => s.id !== selectedId);
-      selectService(remaining[0], false);
-    } else {
-      setSelectedId('');
-      setForm({
-        id: '',
-        name: '',
-        duration: '0',
-        price: '0',
-        tier: '',
-        expGained: '0',
-        requirements: [],
-        pricingCategory: '',
-        weightage: '1',
-        requiredStaffRoleIds: [],
-        timeCost: '0',
-      });
-      setIsCreating(false);
-    }
-    setStatus('Service deleted.');
-  }, [industryId, selectedId, isCreating, services, selectService]);
+    deleteMutation.mutate(selectedId);
+  }, [selectedId, isCreating, services, deleteMutation]);
 
   const reset = useCallback(() => {
     if (selectedId && !isCreating) {
-      const existing = services.find(s => s.id === selectedId);
+      const existing = services.find((s) => s.id === selectedId);
       if (existing) selectService(existing);
     } else {
       setForm({
@@ -246,26 +294,27 @@ export function useServices(industryId: string, serviceId?: string) {
   }, [selectedId, isCreating, services, selectService]);
 
   const updateForm = useCallback((updates: Partial<ServiceForm>) => {
-    setForm(prev => ({ ...prev, ...updates }));
+    setForm((prev) => ({ ...prev, ...updates }));
   }, []);
+
+  const operation: Operation = isLoading ? 'loading' : saveMutation.isPending ? 'saving' : deleteMutation.isPending ? 'deleting' : 'idle';
 
   return {
     services,
-    loading: operation === 'loading',
-    status,
+    loading: isLoading,
+    status: status || (error instanceof Error ? error.message : null),
     selectedId,
     isCreating,
-    saving: operation === 'saving',
-    deleting: operation === 'deleting',
+    saving: saveMutation.isPending,
+    deleting: deleteMutation.isPending,
     operation,
     form,
-    load,
+    load: () => queryClient.invalidateQueries({ queryKey: servicesQueryKey(industryId) }),
     selectService,
     createService,
     saveService,
-    deleteService,
+    deleteService: deleteServiceHandler,
     reset,
     updateForm,
   };
 }
-

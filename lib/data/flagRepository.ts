@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabaseServer } from '@/lib/server/supabaseServer';
 import { IndustryId } from '@/lib/game/types';
 import { cleanupFlagReferences } from './referenceCleanup';
 
@@ -19,12 +19,12 @@ interface FlagRow {
 export async function fetchFlagsForIndustry(
   industryId: IndustryId,
 ): Promise<GameFlag[] | null> {
-  if (!supabase) {
+  if (!supabaseServer) {
     console.error('Supabase client not configured. Unable to fetch flags.');
     return null;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from('flags')
     .select('id, industry_id, name, description')
     .eq('industry_id', industryId)
@@ -53,7 +53,7 @@ export async function upsertFlagForIndustry(
   industryId: IndustryId,
   flag: { id: string; name: string; description: string },
 ): Promise<{ success: boolean; message?: string }> {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
@@ -83,7 +83,7 @@ export async function upsertFlagForIndustry(
 }
 
 export async function deleteFlagById(id: string): Promise<{ success: boolean; message?: string }> {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
@@ -94,7 +94,7 @@ export async function deleteFlagById(id: string): Promise<{ success: boolean; me
   }
 
   // Then delete the flag itself
-  const { error } = await supabase.from('flags').delete().eq('id', id);
+  const { error } = await supabaseServer.from('flags').delete().eq('id', id);
   if (error) {
     console.error('Failed to delete flag', error);
     return { success: false, message: error.message };

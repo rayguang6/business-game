@@ -5,7 +5,8 @@ import { useFinanceData } from '@/hooks/useFinanceData';
 import { useMetricChanges } from '@/hooks/useMetricChanges';
 import { MetricFeedback, FeedbackItem } from './MetricFeedback';
 import { useGameStore } from '@/lib/store/gameStore';
-import { DEFAULT_INDUSTRY_ID, getStartingTime } from '@/lib/game/config';
+import { useConfigStore } from '@/lib/store/configStore';
+import { DEFAULT_INDUSTRY_ID, getStartingTime, getBusinessMetrics } from '@/lib/game/config';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import type { IndustryId } from '@/lib/game/types';
 import { getLevel, getLevelProgress } from '@/lib/store/types';
@@ -16,12 +17,10 @@ export function KeyMetrics() {
   const { metrics } = useFinanceData();
   const changes = useMetricChanges();
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
+  const configStatus = useConfigStore((state) => state.configStatus);
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-  // Show time metric if startingTime is configured or if time > 0
-  const startingTime = getStartingTime(industryId);
-  const showTime = startingTime > 0 || metrics.time > 0;
-  const expPerLevel = getExpPerLevel(industryId);
   
+  // All hooks must be called before any conditional returns
   const [feedbackByMetric, setFeedbackByMetric] = useState<Record<string, FeedbackItem[]>>({
     cash: [],
     time: [],
@@ -88,6 +87,38 @@ export function KeyMetrics() {
     }));
   };
 
+  // Check if config is ready before accessing business metrics
+  const businessMetrics = getBusinessMetrics(industryId);
+  const isConfigReady = configStatus === 'ready' && businessMetrics;
+  
+  // Show time metric if startingTime is configured or if time > 0
+  let startingTime = 0;
+  let expPerLevel = 200; // Default fallback
+  if (isConfigReady) {
+    try {
+      startingTime = getStartingTime(industryId);
+      expPerLevel = getExpPerLevel(industryId);
+    } catch (error) {
+      // If config access fails, use defaults
+      console.warn('[KeyMetrics] Error accessing config, using defaults', error);
+    }
+  }
+  const showTime = startingTime > 0 || metrics.time > 0;
+
+  // If config not ready, return minimal UI
+  if (!isConfigReady) {
+    return (
+      <div className="grid grid-cols-2 gap-y-0.5 sm:gap-y-0.5 md:gap-y-1 gap-x-1 sm:gap-x-1.5 md:gap-x-3">
+        <div className="flex items-center bg-black/65 py-0.5 sm:py-0.5 md:py-1 px-0.5 sm:px-0.5 md:px-1.5 rounded relative w-full min-w-0">
+          <div className="flex flex-col min-w-0 flex-1 pl-0.5 sm:pl-1 md:pl-2">
+            <span className="text-caption font-semibold text-green-400 truncate">Cash</span>
+            <span className="text-white text-label font-bold truncate">{metrics.cash.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const metricsData = [
     {
       key: 'cash',
@@ -112,7 +143,7 @@ export function KeyMetrics() {
       key: 'time',
       icon: '⏱️',
       image: '/images/icons/upgrades.png',
-      value: `${metrics.time}/${getStartingTime(industryId) + effectManager.calculate(GameMetric.MonthlyTimeCapacity, 0)}h`,
+      value: `${metrics.time}/${startingTime + effectManager.calculate(GameMetric.MonthlyTimeCapacity, 0)}h`,
       label: 'Available Time',
       color: 'text-cyan-400',
       feedback: feedbackByMetric.time,

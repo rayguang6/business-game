@@ -4,8 +4,9 @@ import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/store/gameStore';
+import { useConfigStore } from '@/lib/store/configStore';
 import { KeyMetrics } from './KeyMetrics';
-import { DEFAULT_INDUSTRY_ID, getRoundDurationSecondsForIndustry } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getBusinessStats } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
 import { useAudioControls } from '@/hooks/useAudio';
 import Image from 'next/image';
@@ -16,11 +17,55 @@ interface TopBarProps {
 
 export function TopBar({ onSettingsOpen }: TopBarProps) {
   const { selectedIndustry, isPaused, unpauseGame, pauseGame, gameTime, currentMonth, username } = useGameStore();
+  const configStatus = useConfigStore((state) => state.configStatus);
 
   if (!selectedIndustry) return null;
 
   const industryId = (selectedIndustry.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-  const roundDurationSeconds = getRoundDurationSecondsForIndustry(industryId);
+  
+  // Check if config is ready before accessing business stats
+  const stats = getBusinessStats(industryId);
+  if (!stats || configStatus !== 'ready') {
+    // Config not ready yet - render minimal UI without progress bar
+    return (
+      <div className="flex items-center px-0.5 sm:px-1 md:px-4 py-0.5 sm:py-1 md:py-2 h-10 sm:h-12 md:h-16 mt-1 sm:mt-2 md:mt-4">
+        <div className="flex items-center w-[40%] pr-0.5 sm:pr-1 md:pr-2">
+          <button
+            onClick={() => {
+              pauseGame();
+              onSettingsOpen();
+            }}
+            className="relative w-6 h-6 sm:w-8 sm:h-8 md:w-16 md:h-16 rounded-full bg-gradient-to-r from-purple-400 to-purple-600 p-0.5 sm:p-0.5 md:p-1 hover:opacity-80 transition-opacity flex-shrink-0 -mr-1.5 sm:-mr-2 md:-mr-4 z-10"
+          >
+            <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
+              {selectedIndustry.image ? (
+                <Image 
+                  src={selectedIndustry.image} 
+                  alt={selectedIndustry.name}
+                  width={64}
+                  height={64}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="text-xs sm:text-sm md:text-2xl">{selectedIndustry.icon}</div>
+              )}
+            </div>
+          </button>
+          <div className="flex flex-col flex-1 min-w-0">
+            <div className="flex items-center bg-gradient-to-r from-blue-600 to-blue-600/40 py-0.5 sm:py-0.5 md:py-1 pl-1.5 sm:pl-2 md:pl-6 pr-0.5 sm:pr-1">
+              <div className="text-white mr-0.5 sm:mr-0.5 md:mr-1.5 flex-shrink-0 text-ultra-sm sm:text-caption md:text-sm">{selectedIndustry.icon}</div>
+              <span className="text-white font-bold text-ultra-sm sm:text-caption md:text-sm truncate">{selectedIndustry.name}</span>
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 pl-0.5 sm:pl-0.5 md:pl-2 min-w-0 mt-1 sm:mt-1.5 md:mt-3">
+          <KeyMetrics />
+        </div>
+      </div>
+    );
+  }
+
+  const roundDurationSeconds = stats.monthDurationSeconds;
   const progressPct = ((gameTime % roundDurationSeconds) / roundDurationSeconds) * 100;
 
   const openSettings = () => {

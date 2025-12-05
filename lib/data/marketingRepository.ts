@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabaseServer } from '@/lib/server/supabaseServer';
 import type { MarketingCampaign, CampaignEffect } from '@/lib/store/slices/marketingSlice';
 import type { IndustryId } from '@/lib/game/types';
 import { validateAndParseCampaignEffects } from '@/lib/utils/effectValidation';
@@ -33,12 +33,12 @@ const mapEffects = (raw: unknown): CampaignEffect[] => {
 };
 
 export async function fetchMarketingCampaignsForIndustry(industryId: IndustryId): Promise<MarketingCampaign[] | null> {
-  if (!supabase) {
+  if (!supabaseServer) {
     console.error('Supabase client not configured. Unable to fetch marketing campaigns.');
     return null;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from('marketing_campaigns')
     .select('id, industry_id, name, description, cost, time_cost, cooldown_seconds, effects, sets_flag, requirements')
     .eq('industry_id', industryId)
@@ -73,7 +73,7 @@ export async function fetchMarketingCampaignsForIndustry(industryId: IndustryId)
 
 export async function upsertMarketingCampaignForIndustry(industryId: string, campaign: MarketingCampaign): Promise<{ success: boolean; message?: string }>
 {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
@@ -90,7 +90,7 @@ export async function upsertMarketingCampaignForIndustry(industryId: string, cam
     requirements: campaign.requirements || [],
   };
 
-  const { error } = await supabase
+  const { error } = await supabaseServer
     .from('marketing_campaigns')
     .upsert(payload, { onConflict: 'id' });
 
@@ -104,10 +104,10 @@ export async function upsertMarketingCampaignForIndustry(industryId: string, cam
 
 export async function deleteMarketingCampaignById(id: string, industryId: IndustryId): Promise<{ success: boolean; message?: string }>
 {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
-  const { error } = await supabase
+  const { error } = await supabaseServer
     .from('marketing_campaigns')
     .delete()
     .eq('id', id)

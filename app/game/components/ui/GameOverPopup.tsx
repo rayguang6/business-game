@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "../../../../lib/store/gameStore";
 import { getWinCondition } from "../../../../lib/game/config";
 import { DEFAULT_INDUSTRY_ID, IndustryId } from "../../../../lib/game/types";
 import GameButton from '@/app/components/ui/GameButton';
+import { saveGameMetrics } from '@/lib/server/actions/leaderboardActions';
 
 const GameOverPopup: React.FC = () => {
   const isGameOver = useGameStore((state) => state.isGameOver);
@@ -11,6 +12,54 @@ const GameOverPopup: React.FC = () => {
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
   const resetAllGame = useGameStore((state) => state.resetAllGame);
   const router = useRouter();
+  const hasSavedMetrics = useRef(false);
+
+  // Get all game state for leaderboard
+  const metrics = useGameStore((state) => state.metrics);
+  const currentMonth = useGameStore((state) => state.currentMonth);
+  const gameTime = useGameStore((state) => state.gameTime);
+  const username = useGameStore((state) => state.username);
+  const customersServed = useGameStore((state) => state.customersServed);
+  const customersLeftImpatient = useGameStore((state) => state.customersLeftImpatient);
+  const customersServiceFailed = useGameStore((state) => state.customersServiceFailed);
+
+  // Save metrics to leaderboard when game ends
+  useEffect(() => {
+    if (isGameOver && !hasSavedMetrics.current && username && selectedIndustry) {
+      hasSavedMetrics.current = true;
+      
+      saveGameMetrics({
+        username,
+        industryId: selectedIndustry.id as IndustryId,
+        metrics,
+        currentMonth,
+        gameTime,
+        gameOverReason,
+        finalCash: metrics.cash,
+        finalExp: metrics.exp,
+        finalFreedomScore: metrics.freedomScore,
+        totalRevenue: metrics.totalRevenue,
+        totalExpenses: metrics.totalExpenses,
+        customersServed,
+        customersLeftImpatient,
+        customersServiceFailed,
+      }).catch((error) => {
+        console.error('Failed to save game metrics to leaderboard:', error);
+        // Don't show error to user - leaderboard save is non-blocking
+      });
+    }
+  }, [
+    isGameOver,
+    username,
+    selectedIndustry,
+    metrics,
+    currentMonth,
+    gameTime,
+    gameOverReason,
+    customersServed,
+    customersLeftImpatient,
+    customersServiceFailed,
+  ]);
 
   if (!isGameOver) return null;
 

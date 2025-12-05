@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabaseServer } from '@/lib/server/supabaseServer';
 import { Industry } from '@/lib/features/industries';
 
 interface IndustryRow {
@@ -12,9 +12,9 @@ interface IndustryRow {
 }
 
 export async function fetchIndustriesFromSupabase(): Promise<Industry[] | null> {
-  if (!supabase) return null;
+  if (!supabaseServer) return null;
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from('industries')
     .select('id,name,icon,description,image,map_image,is_available');
 
@@ -43,7 +43,7 @@ const mapRowToIndustry = (row: IndustryRow): Industry => ({
 export async function upsertIndustryToSupabase(
   industry: Industry,
 ): Promise<{ success: boolean; data?: Industry; message?: string }> {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
@@ -57,7 +57,7 @@ export async function upsertIndustryToSupabase(
     is_available: industry.isAvailable ?? true,
   };
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from('industries')
     .upsert(payload, { onConflict: 'id' })
     .select()
@@ -72,11 +72,11 @@ export async function upsertIndustryToSupabase(
 
 export async function deleteIndustryFromSupabase(id: string): Promise<{ success: boolean; message?: string }>
 {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
-  const { error } = await supabase.from('industries').delete().eq('id', id);
+  const { error } = await supabaseServer.from('industries').delete().eq('id', id);
 
   if (error) {
     return { success: false, message: error.message };

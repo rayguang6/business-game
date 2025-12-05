@@ -315,7 +315,7 @@ export function getCustomerImagesForIndustry(industryId: IndustryId = DEFAULT_IN
   }
   
   // No customer images found - return empty array (will cause issues, but that's correct - data must be in DB)
-  console.warn(`[Config] Customer images not found for industry ${industryId}. Please configure in database.`);
+  // console.warn(`[Config] Customer images not found for industry ${industryId}. Please configure in database.`);
   return [];
 }
 

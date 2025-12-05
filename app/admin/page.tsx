@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
-import { fetchIndustriesFromSupabase } from '@/lib/data/industryRepository';
-import { DEFAULT_INDUSTRY_ID } from '@/lib/game/types';
+import { loadIndustries } from '@/lib/server/loadGameData';
 
 /**
  * Admin Panel Root Redirect
@@ -15,7 +14,7 @@ import { DEFAULT_INDUSTRY_ID } from '@/lib/game/types';
  */
 export default async function AdminPage() {
   // Try to fetch industries to determine if we should use a specific industry
-  const industries = await fetchIndustriesFromSupabase();
+  const industries = await loadIndustries();
   
   // For now, always redirect to industries page (default tab)
   // In the future, we could redirect to first available industry's services page

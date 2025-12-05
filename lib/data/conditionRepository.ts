@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabaseServer } from '@/lib/server/supabaseServer';
 import { GameCondition } from '@/lib/types/conditions';
 import { IndustryId } from '@/lib/game/types';
 import { cleanupConditionReferences } from './referenceCleanup';
@@ -16,12 +16,12 @@ interface ConditionRow {
 export async function fetchConditionsForIndustry(
   industryId: IndustryId,
 ): Promise<GameCondition[] | null> {
-  if (!supabase) {
+  if (!supabaseServer) {
     console.error('Supabase client not configured. Unable to fetch conditions.');
     return null;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from('conditions')
     .select('id, industry_id, name, description, metric, operator, value')
     .eq('industry_id', industryId)
@@ -52,7 +52,7 @@ export async function upsertConditionForIndustry(
   industryId: IndustryId,
   condition: GameCondition,
 ): Promise<{ success: boolean; message?: string }> {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
@@ -85,7 +85,7 @@ export async function upsertConditionForIndustry(
 }
 
 export async function deleteConditionById(id: string): Promise<{ success: boolean; message?: string }> {
-  if (!supabase) {
+  if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
 
@@ -96,7 +96,7 @@ export async function deleteConditionById(id: string): Promise<{ success: boolea
   }
 
   // Then delete the condition itself
-  const { error } = await supabase.from('conditions').delete().eq('id', id);
+  const { error } = await supabaseServer.from('conditions').delete().eq('id', id);
   if (error) {
     console.error('Failed to delete condition', error);
     return { success: false, message: error.message };

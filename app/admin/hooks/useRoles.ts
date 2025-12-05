@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { fetchStaffDataForIndustry, upsertStaffRole, deleteStaffRole } from '@/lib/data/staffRepository';
+import { fetchStaffData, upsertStaffRoleAction, deleteStaffRoleAction } from '@/lib/server/actions/adminActions';
 import type { StaffRoleConfig } from '@/lib/game/staffConfig';
 import type { Requirement } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
@@ -34,7 +34,7 @@ export function useRoles(industryId: string, roleId?: string) {
     if (!industryId) return;
     setOperation('loading');
     setStatus(null);
-    const data = await fetchStaffDataForIndustry(industryId);
+    const data = await fetchStaffData(industryId);
     setOperation('idle');
     if (!data) {
       setRoles([]);
@@ -143,7 +143,7 @@ export function useRoles(industryId: string, roleId?: string) {
     const setsFlag = form.setsFlag?.trim() || undefined;
     const requirements = form.requirements;
     setOperation('saving');
-    const result = await upsertStaffRole({
+    const result = await upsertStaffRoleAction({
       id,
       industryId,
       name,
@@ -181,7 +181,7 @@ export function useRoles(industryId: string, roleId?: string) {
     const role = roles.find(r => r.id === selectedId);
     if (!window.confirm(`Delete role "${role?.name || selectedId}"?`)) return;
     setOperation('deleting');
-    const result = await deleteStaffRole(selectedId, industryId);
+    const result = await deleteStaffRoleAction(selectedId, industryId as any);
     setOperation('idle');
     if (!result.success) {
       setStatus(result.message ?? 'Failed to delete role.');

@@ -2,13 +2,24 @@
 
 import React from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
+import { useConfigStore } from '@/lib/store/configStore';
 import { DEFAULT_INDUSTRY_ID, getRoundDurationSecondsForIndustry } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
 
 export function MonthProgress() {
   const { gameTime, currentMonth, selectedIndustry } = useGameStore();
+  const configStatus = useConfigStore((state) => state.configStatus);
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-  const roundDurationSeconds = getRoundDurationSecondsForIndustry(industryId);
+  
+  // Safely get round duration - handle case when config isn't loaded yet
+  let roundDurationSeconds = 0;
+  try {
+    if (configStatus === 'ready') {
+      roundDurationSeconds = getRoundDurationSecondsForIndustry(industryId);
+    }
+  } catch (error) {
+    console.warn('[MonthProgress] Error accessing config, using defaults', error);
+  }
   const timeIntoMonth =
     roundDurationSeconds > 0 ? Math.floor(gameTime % roundDurationSeconds) : 0;
   const progress =

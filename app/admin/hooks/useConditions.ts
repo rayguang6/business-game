@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { fetchConditionsForIndustry, upsertConditionForIndustry, deleteConditionById } from '@/lib/data/conditionRepository';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchConditions, upsertCondition, deleteCondition } from '@/lib/server/actions/adminActions';
 import type { GameCondition, ConditionOperator } from '@/lib/types/conditions';
 import { ConditionMetric } from '@/lib/types/conditions';
 import type { Operation } from './types';
@@ -13,9 +14,11 @@ interface ConditionForm {
   value: string;
 }
 
+// Query key factory for conditions
+const conditionsQueryKey = (industryId: string) => ['conditions', industryId] as const;
+
 export function useConditions(industryId: string, conditionId?: string) {
-  const [conditions, setConditions] = useState<GameCondition[]>([]);
-  const [operation, setOperation] = useState<Operation>('idle');
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
@@ -28,23 +31,112 @@ export function useConditions(industryId: string, conditionId?: string) {
     value: '0',
   });
 
-  const load = useCallback(async () => {
-    if (!industryId) return;
-    setOperation('loading');
-    setStatus(null);
-    const result = await fetchConditionsForIndustry(industryId);
-    setOperation('idle');
-    if (!result) {
-      setConditions([]);
-      return;
-    }
-    setConditions(result);
-  }, [industryId]);
+  // Fetch conditions using React Query
+  const {
+    data: conditions = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: conditionsQueryKey(industryId),
+    queryFn: async () => {
+      if (!industryId) return [];
+      const result = await fetchConditions(industryId);
+      return result || [];
+    },
+    enabled: !!industryId,
+  });
 
-  // Auto-load when industryId changes
-  useEffect(() => {
-    load();
-  }, [load]);
+  // Save condition mutation with optimistic update
+  const saveMutation = useMutation({
+    mutationFn: async (payload: GameCondition) => {
+      if (!industryId) throw new Error('Industry ID is required');
+      const result = await upsertCondition(industryId, payload);
+      if (!result.success) {
+        throw new Error(result.message ?? 'Failed to save condition.');
+      }
+      return payload;
+    },
+    onMutate: async (newCondition) => {
+      await queryClient.cancelQueries({ queryKey: conditionsQueryKey(industryId) });
+      const previousConditions = queryClient.getQueryData<GameCondition[]>(conditionsQueryKey(industryId));
+
+      queryClient.setQueryData<GameCondition[]>(conditionsQueryKey(industryId), (old = []) => {
+        const exists = old.some((c) => c.id === newCondition.id);
+        if (exists) {
+          return old.map((c) => (c.id === newCondition.id ? newCondition : c));
+        }
+        return [...old, newCondition];
+      });
+
+      return { previousConditions };
+    },
+    onError: (err, newCondition, context) => {
+      if (context?.previousConditions) {
+        queryClient.setQueryData(conditionsQueryKey(industryId), context.previousConditions);
+      }
+      setStatus(err instanceof Error ? err.message : 'Failed to save condition.');
+    },
+    onSuccess: (savedCondition) => {
+      setStatus('Condition saved.');
+      setIsCreating(false);
+      setSelectedId(savedCondition.id);
+      const condition = conditions.find((c) => c.id === savedCondition.id) || conditions[0];
+      if (condition) {
+        selectCondition(condition, false);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: conditionsQueryKey(industryId) });
+    },
+  });
+
+  // Delete condition mutation with optimistic update
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const result = await deleteCondition(id);
+      if (!result.success) {
+        throw new Error(result.message ?? 'Failed to delete condition.');
+      }
+      return id;
+    },
+    onMutate: async (deletedId) => {
+      await queryClient.cancelQueries({ queryKey: conditionsQueryKey(industryId) });
+      const previousConditions = queryClient.getQueryData<GameCondition[]>(conditionsQueryKey(industryId));
+
+      queryClient.setQueryData<GameCondition[]>(conditionsQueryKey(industryId), (old = []) =>
+        old.filter((c) => c.id !== deletedId)
+      );
+
+      return { previousConditions };
+    },
+    onError: (err, deletedId, context) => {
+      if (context?.previousConditions) {
+        queryClient.setQueryData(conditionsQueryKey(industryId), context.previousConditions);
+      }
+      setStatus(err instanceof Error ? err.message : 'Failed to delete condition.');
+    },
+    onSuccess: () => {
+      setStatus('Condition deleted.');
+      const remaining = queryClient.getQueryData<GameCondition[]>(conditionsQueryKey(industryId)) || [];
+      if (remaining.length > 0) {
+        selectCondition(remaining[0], false);
+      } else {
+        setSelectedId('');
+        setForm({
+          id: '',
+          name: '',
+          description: '',
+          metric: ConditionMetric.Cash,
+          operator: 'greater',
+          value: '0',
+        });
+        setIsCreating(false);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: conditionsQueryKey(industryId) });
+    },
+  });
 
   const selectCondition = useCallback((condition: GameCondition, resetMsg = true) => {
     setSelectedId(condition.id);
@@ -63,7 +155,7 @@ export function useConditions(industryId: string, conditionId?: string) {
   // Select condition when conditionId changes or conditions are loaded
   useEffect(() => {
     if (conditionId && conditions.length > 0) {
-      const condition = conditions.find(c => c.id === conditionId);
+      const condition = conditions.find((c) => c.id === conditionId);
       if (condition) {
         setSelectedId(condition.id);
         setIsCreating(false);
@@ -115,7 +207,6 @@ export function useConditions(industryId: string, conditionId?: string) {
       setStatus('Value must be a valid number.');
       return;
     }
-    setOperation('saving');
     const payload: GameCondition = {
       id,
       name,
@@ -124,60 +215,19 @@ export function useConditions(industryId: string, conditionId?: string) {
       operator: form.operator,
       value,
     };
-    const result = await upsertConditionForIndustry(industryId, payload);
-    setOperation('idle');
-    if (!result.success) {
-      setStatus(result.message ?? 'Failed to save condition.');
-      return;
-    }
-    // Reload to get fresh data
-    const result2 = await fetchConditionsForIndustry(industryId);
-    if (result2) {
-      setConditions(result2);
-      const saved = result2.find(c => c.id === id) || result2[0];
-      if (saved) selectCondition(saved, false);
-    }
-    setStatus('Condition saved.');
-    setIsCreating(false);
-    setSelectedId(id);
-  }, [industryId, form, selectCondition]);
+    saveMutation.mutate(payload);
+  }, [industryId, form, saveMutation]);
 
-  const deleteCondition = useCallback(async () => {
+  const deleteConditionHandler = useCallback(async () => {
     if (isCreating || !selectedId) return;
-    const condition = conditions.find(c => c.id === selectedId);
+    const condition = conditions.find((c) => c.id === selectedId);
     if (!window.confirm(`Delete condition "${condition?.name || selectedId}"?`)) return;
-    setOperation('deleting');
-    const result = await deleteConditionById(selectedId);
-    setOperation('idle');
-    if (!result.success) {
-      setStatus(result.message ?? 'Failed to delete condition.');
-      return;
-    }
-    // Reload to get fresh data
-    const result2 = await fetchConditionsForIndustry(industryId);
-    if (result2) {
-      setConditions(result2);
-      if (result2.length > 0) {
-        selectCondition(result2[0], false);
-      } else {
-        setSelectedId('');
-        setForm({
-          id: '',
-          name: '',
-          description: '',
-          metric: ConditionMetric.Cash,
-          operator: 'greater',
-          value: '0',
-        });
-        setIsCreating(false);
-      }
-    }
-    setStatus('Condition deleted.');
-  }, [industryId, selectedId, isCreating, conditions, selectCondition]);
+    deleteMutation.mutate(selectedId);
+  }, [selectedId, isCreating, conditions, deleteMutation]);
 
   const reset = useCallback(() => {
     if (selectedId && !isCreating) {
-      const existing = conditions.find(c => c.id === selectedId);
+      const existing = conditions.find((c) => c.id === selectedId);
       if (existing) selectCondition(existing);
     } else {
       setIsCreating(false);
@@ -195,26 +245,27 @@ export function useConditions(industryId: string, conditionId?: string) {
   }, [selectedId, isCreating, conditions, selectCondition]);
 
   const updateForm = useCallback((updates: Partial<ConditionForm>) => {
-    setForm(prev => ({ ...prev, ...updates }));
+    setForm((prev) => ({ ...prev, ...updates }));
   }, []);
+
+  const operation: Operation = isLoading ? 'loading' : saveMutation.isPending ? 'saving' : deleteMutation.isPending ? 'deleting' : 'idle';
 
   return {
     conditions,
-    loading: operation === 'loading',
-    status,
+    loading: isLoading,
+    status: status || (error instanceof Error ? error.message : null),
     selectedId,
     isCreating,
-    saving: operation === 'saving',
-    deleting: operation === 'deleting',
+    saving: saveMutation.isPending,
+    deleting: deleteMutation.isPending,
     operation,
     form,
-    load,
+    load: () => queryClient.invalidateQueries({ queryKey: conditionsQueryKey(industryId) }),
     selectCondition,
     createCondition,
     saveCondition,
-    deleteCondition,
+    deleteCondition: deleteConditionHandler,
     reset,
     updateForm,
   };
 }
-

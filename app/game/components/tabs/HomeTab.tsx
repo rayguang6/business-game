@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useFinanceData } from '@/hooks/useFinanceData';
 import { RevenueCategory, type RevenueEntry, type OneTimeCost, type TimeSpentEntry, REVENUE_CATEGORY_LABELS } from '@/lib/store/types';
 import { useGameStore } from '@/lib/store/gameStore';
+import { useConfigStore } from '@/lib/store/configStore';
 import { Card } from '@/app/components/ui/Card';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
 import {
@@ -14,7 +15,7 @@ import {
 } from '@/lib/config/categoryConfig';
 import { getRevenueDisplayLabel, getExpenseDisplayLabel } from '@/lib/utils/financialTracking';
 import { SourceType } from '@/lib/config/sourceTypes';
-import { DEFAULT_INDUSTRY_ID, getStartingTime } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getStartingTime, getBusinessMetrics } from '@/lib/game/config';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import type { IndustryId } from '@/lib/game/types';
 
@@ -38,6 +39,7 @@ export function HomeTab() {
   
   // Get tracking data
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
+  const configStatus = useConfigStore((state) => state.configStatus);
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
   const totalLeadsSpawned = useGameStore((state) => state.metrics.totalLeadsSpawned || 0);
   const totalCustomersGenerated = useGameStore((state) => state.metrics.totalCustomersGenerated || 0);
@@ -53,7 +55,21 @@ export function HomeTab() {
   const monthlyTimeSpent = useGameStore((state) => state.monthlyTimeSpent || 0);
   const monthlyTimeSpentDetails = useGameStore((state) => state.monthlyTimeSpentDetails || []);
   const currentTime = metrics.time;
-  const startingTime = getStartingTime(industryId);
+  
+  // Safely get starting time - handle case when config isn't loaded yet
+  let startingTime = 0;
+  try {
+    if (configStatus === 'ready') {
+      const businessMetrics = getBusinessMetrics(industryId);
+      if (businessMetrics) {
+        startingTime = getStartingTime(industryId);
+      }
+    }
+  } catch (error) {
+    // If config access fails, use default
+    console.warn('[HomeTab] Error accessing config, using defaults', error);
+  }
+  
   const timeCapacityBonus = effectManager.calculate(GameMetric.MonthlyTimeCapacity, 0);
   const maxTime = startingTime + timeCapacityBonus;
   const showTime = startingTime > 0 || currentTime > 0;
