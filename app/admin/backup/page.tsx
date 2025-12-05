@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import { FlagsTab } from '../components/FlagsTab';
 import { ConditionsTab } from '../components/ConditionsTab';
@@ -34,7 +34,7 @@ import { useUrlState } from '../hooks/useUrlState';
  * 
  * Date backed up: Phase 1 migration
  */
-export default function AdminPage() {
+function AdminPageContent() {
   // URL state management
   const { activeTab, setActiveTab, selectedIndustryId, setSelectedIndustryId } = useUrlState();
 
@@ -584,5 +584,17 @@ export default function AdminPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-950 text-slate-100 p-6 flex items-center justify-center">
+        <div className="text-slate-400">Loading admin panel...</div>
+      </div>
+    }>
+      <AdminPageContent />
+    </Suspense>
   );
 }
