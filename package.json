@@ -11,9 +11,9 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.76.1",
-    "next": "15.5.4",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "next": "15.5.7",
+    "react": "19.1.2",
+    "react-dom": "19.1.2",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
@@ -23,7 +23,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.5.4",
+    "eslint-config-next": "15.5.7",
     "tailwindcss": "^4",
     "ts-node": "^10",
     "typescript": "^5"
