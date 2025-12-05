@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { fetchServicesForIndustry, upsertServiceForIndustry, deleteServiceById } from '@/lib/data/serviceRepository';
 import type { IndustryServiceDefinition, Requirement, ServicePricingCategory, ServiceTier } from '@/lib/game/types';
 import type { Operation } from './types';
@@ -17,7 +17,7 @@ interface ServiceForm {
   timeCost: string;
 }
 
-export function useServices(industryId: string) {
+export function useServices(industryId: string, serviceId?: string) {
   const [services, setServices] = useState<IndustryServiceDefinition[]>([]);
   const [operation, setOperation] = useState<Operation>('idle');
   const [status, setStatus] = useState<string | null>(null);
@@ -49,8 +49,12 @@ export function useServices(industryId: string) {
     }
     const sorted = result.slice().sort((a, b) => a.name.localeCompare(b.name));
     setServices(sorted);
-    selectService(sorted[0], false);
   }, [industryId]);
+
+  // Auto-load when industryId changes
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const selectService = useCallback((service: IndustryServiceDefinition, resetMsg = true) => {
     setSelectedId(service.id);
@@ -70,6 +74,31 @@ export function useServices(industryId: string) {
     });
     if (resetMsg) setStatus(null);
   }, []);
+
+  // Select service when serviceId changes or services are loaded
+  useEffect(() => {
+    if (serviceId && services.length > 0) {
+      const service = services.find(s => s.id === serviceId);
+      if (service) {
+        setSelectedId(service.id);
+        setIsCreating(false);
+        setForm({
+          id: service.id,
+          name: service.name,
+          duration: service.duration.toString(),
+          price: service.price.toString(),
+          tier: service.tier || '',
+          expGained: service.expGained?.toString() || '0',
+          requirements: service.requirements || [],
+          pricingCategory: service.pricingCategory || '',
+          weightage: service.weightage?.toString() || '1',
+          requiredStaffRoleIds: service.requiredStaffRoleIds || [],
+          timeCost: service.timeCost?.toString() || '0',
+        });
+        setStatus(null);
+      }
+    }
+  }, [serviceId, services]);
 
   const createService = useCallback(() => {
     if (!industryId) {

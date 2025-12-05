@@ -75,6 +75,11 @@ export function useStaff(industryId: string) {
     }
   }, [industryId]);
 
+  // Auto-load when industryId changes
+  useEffect(() => {
+    load();
+  }, [load]);
+
   // Reset form state when industry changes
   useEffect(() => {
     setSelectedRoleId('');

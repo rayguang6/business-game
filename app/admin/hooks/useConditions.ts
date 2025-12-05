@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { fetchConditionsForIndustry, upsertConditionForIndustry, deleteConditionById } from '@/lib/data/conditionRepository';
 import type { GameCondition, ConditionOperator } from '@/lib/types/conditions';
 import { ConditionMetric } from '@/lib/types/conditions';
@@ -13,7 +13,7 @@ interface ConditionForm {
   value: string;
 }
 
-export function useConditions(industryId: string) {
+export function useConditions(industryId: string, conditionId?: string) {
   const [conditions, setConditions] = useState<GameCondition[]>([]);
   const [operation, setOperation] = useState<Operation>('idle');
   const [status, setStatus] = useState<string | null>(null);
@@ -39,10 +39,12 @@ export function useConditions(industryId: string) {
       return;
     }
     setConditions(result);
-    if (result.length > 0) {
-      selectCondition(result[0], false);
-    }
   }, [industryId]);
+
+  // Auto-load when industryId changes
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const selectCondition = useCallback((condition: GameCondition, resetMsg = true) => {
     setSelectedId(condition.id);
@@ -57,6 +59,26 @@ export function useConditions(industryId: string) {
     });
     if (resetMsg) setStatus(null);
   }, []);
+
+  // Select condition when conditionId changes or conditions are loaded
+  useEffect(() => {
+    if (conditionId && conditions.length > 0) {
+      const condition = conditions.find(c => c.id === conditionId);
+      if (condition) {
+        setSelectedId(condition.id);
+        setIsCreating(false);
+        setForm({
+          id: condition.id,
+          name: condition.name,
+          description: condition.description,
+          metric: condition.metric,
+          operator: condition.operator,
+          value: String(condition.value),
+        });
+        setStatus(null);
+      }
+    }
+  }, [conditionId, conditions]);
 
   const createCondition = useCallback(() => {
     if (!industryId) {

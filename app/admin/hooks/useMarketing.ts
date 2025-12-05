@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { fetchMarketingCampaignsForIndustry, upsertMarketingCampaignForIndustry, deleteMarketingCampaignById } from '@/lib/data/marketingRepository';
 import type { MarketingCampaign } from '@/lib/store/slices/marketingSlice';
 import type { Requirement } from '@/lib/game/types';
@@ -23,7 +23,7 @@ interface CampaignEffectForm {
   durationSeconds: string;
 }
 
-export function useMarketing(industryId: string) {
+export function useMarketing(industryId: string, campaignId?: string) {
   const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([]);
   const [operation, setOperation] = useState<Operation>('idle');
   const [status, setStatus] = useState<string | null>(null);
@@ -51,10 +51,12 @@ export function useMarketing(industryId: string) {
       return;
     }
     setCampaigns(result);
-    if (result.length > 0) {
-      selectCampaign(result[0], false);
-    }
   }, [industryId]);
+
+  // Auto-load when industryId changes
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const selectCampaign = useCallback((campaign: MarketingCampaign, resetMsg = true) => {
     setSelectedId(campaign.id);
@@ -77,6 +79,34 @@ export function useMarketing(industryId: string) {
     })));
     if (resetMsg) setStatus(null);
   }, []);
+
+  // Select campaign when campaignId changes or campaigns are loaded
+  useEffect(() => {
+    if (campaignId && campaigns.length > 0) {
+      const campaign = campaigns.find(c => c.id === campaignId);
+      if (campaign) {
+        setSelectedId(campaign.id);
+        setIsCreating(false);
+        setForm({
+          id: campaign.id,
+          name: campaign.name,
+          description: campaign.description,
+          cost: String(campaign.cost),
+          timeCost: campaign.timeCost !== undefined ? String(campaign.timeCost) : '',
+          cooldownSeconds: String(campaign.cooldownSeconds),
+          setsFlag: campaign.setsFlag,
+          requirements: campaign.requirements || [],
+        });
+        setEffectsForm(campaign.effects.map((e) => ({
+          metric: e.metric,
+          type: e.type,
+          value: String(e.value),
+          durationSeconds: String(e.durationSeconds ?? ''),
+        })));
+        setStatus(null);
+      }
+    }
+  }, [campaignId, campaigns]);
 
   const createCampaign = useCallback(() => {
     setIsCreating(true);

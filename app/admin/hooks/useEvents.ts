@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { fetchEventsForIndustry, upsertEventForIndustry, deleteEventById } from '@/lib/data/eventRepository';
 import type { GameEvent, GameEventChoice } from '@/lib/types/gameEvents';
 import type { Operation } from './types';
@@ -13,7 +13,7 @@ interface EventForm {
   requirements?: Requirement[];
 }
 
-export function useEvents(industryId: string) {
+export function useEvents(industryId: string, eventId?: string) {
   const [events, setEvents] = useState<GameEvent[]>([]);
   const [operation, setOperation] = useState<Operation>('idle');
   const [status, setStatus] = useState<string | null>(null);
@@ -39,10 +39,12 @@ export function useEvents(industryId: string) {
     }
     const sorted = result.slice().sort((a, b) => a.title.localeCompare(b.title));
     setEvents(sorted);
-    if (sorted.length > 0) {
-      selectEvent(sorted[0], false);
-    }
   }, [industryId]);
+
+  // Auto-load when industryId changes
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const selectEvent = useCallback((event: GameEvent, resetMsg = true) => {
     setSelectedId(event.id);
@@ -57,6 +59,26 @@ export function useEvents(industryId: string) {
     setChoices(event.choices || []);
     if (resetMsg) setStatus(null);
   }, []);
+
+  // Select event when eventId changes or events are loaded
+  useEffect(() => {
+    if (eventId && events.length > 0) {
+      const event = events.find(e => e.id === eventId);
+      if (event) {
+        setSelectedId(event.id);
+        setIsCreating(false);
+        setForm({
+          id: event.id,
+          title: event.title,
+          category: event.category,
+          summary: event.summary,
+          requirements: event.requirements || [],
+        });
+        setChoices(event.choices || []);
+        setStatus(null);
+      }
+    }
+  }, [eventId, events]);
 
   const createEvent = useCallback(() => {
     if (!industryId) {

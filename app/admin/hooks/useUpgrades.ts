@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { fetchUpgradesForIndustry, upsertUpgradeForIndustry, deleteUpgradeById } from '@/lib/data/upgradeRepository';
 import type { UpgradeDefinition } from '@/lib/game/types';
 import type { Requirement } from '@/lib/game/types';
@@ -33,7 +33,7 @@ interface LevelForm {
   effects: EffectForm[];
 }
 
-export function useUpgrades(industryId: string) {
+export function useUpgrades(industryId: string, upgradeId?: string) {
   const [upgrades, setUpgrades] = useState<UpgradeDefinition[]>([]);
   const [operation, setOperation] = useState<Operation>('idle');
   const [status, setStatus] = useState<string | null>(null);
@@ -63,10 +63,12 @@ export function useUpgrades(industryId: string) {
     }
     const sorted = result.slice().sort((a, b) => a.name.localeCompare(b.name));
     setUpgrades(sorted);
-    if (sorted.length > 0) {
-      selectUpgrade(sorted[0], false);
-    }
   }, [industryId]);
+
+  // Auto-load when industryId changes
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const selectUpgrade = useCallback((upgrade: UpgradeDefinition, resetMsg = true) => {
     setSelectedId(upgrade.id);
@@ -114,6 +116,56 @@ export function useUpgrades(industryId: string) {
     
     if (resetMsg) setStatus(null);
   }, []);
+
+  // Select upgrade when upgradeId changes or upgrades are loaded
+  useEffect(() => {
+    if (upgradeId && upgrades.length > 0) {
+      const upgrade = upgrades.find(u => u.id === upgradeId);
+      if (upgrade) {
+        setSelectedId(upgrade.id);
+        setIsCreating(false);
+        
+        setForm({
+          id: upgrade.id,
+          name: upgrade.name,
+          description: upgrade.description,
+          icon: upgrade.icon,
+          cost: String(upgrade.levels?.[0]?.cost ?? 0),
+          timeCost: upgrade.levels?.[0]?.timeCost !== undefined ? String(upgrade.levels[0].timeCost) : '',
+          maxLevel: String(upgrade.maxLevel),
+          setsFlag: upgrade.setsFlag,
+          requirements: upgrade.requirements || [],
+        });
+        
+        if (upgrade.levels && upgrade.levels.length > 0) {
+          setLevelsForm(upgrade.levels.map((level) => ({
+            level: level.level,
+            name: level.name,
+            description: level.description,
+            icon: level.icon,
+            cost: String(level.cost),
+            timeCost: level.timeCost !== undefined ? String(level.timeCost) : '',
+            effects: level.effects.map((e) => ({
+              metric: e.metric,
+              type: e.type,
+              value: String(e.value),
+            })),
+          })));
+        } else {
+          setLevelsForm([{
+            level: 1,
+            name: upgrade.name,
+            description: upgrade.description,
+            icon: upgrade.icon,
+            cost: '0',
+            timeCost: '',
+            effects: [],
+          }]);
+        }
+        setStatus(null);
+      }
+    }
+  }, [upgradeId, upgrades]);
 
   const createUpgrade = useCallback(() => {
     if (!industryId) {

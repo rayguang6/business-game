@@ -61,48 +61,24 @@ export function IndustriesTab({
   }, [form.id, isCreating, isSaving, isDeleting, onSave]);
 
   return (
-    <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
-      <div className="p-6 border-b border-slate-800">
-        <h2 className="text-2xl font-semibold">Industries</h2>
+    <div>
+      <div className="border-b border-slate-700 pb-4 mb-6">
+        <h2 className="text-2xl font-semibold">Edit Industry</h2>
         <p className="text-sm text-slate-400 mt-1">
-          Select an industry and edit its basic metadata. Changes persist immediately to Supabase.
+          Edit the selected industry's basic metadata. Changes persist immediately to Supabase.
         </p>
       </div>
 
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={onCreateNew}
-            className="px-3 py-2 text-sm font-medium rounded-lg border border-sky-500 text-sky-200 hover:bg-sky-500/10"
-          >
-            + New Industry
-          </button>
-          {statusMessage && <span className="text-sm text-slate-300">{statusMessage}</span>}
-        </div>
+      <div className="space-y-6">
+        {statusMessage && (
+          <div className="text-sm text-slate-300">{statusMessage}</div>
+        )}
 
         {isLoading ? (
           <div className="text-sm text-slate-400">Loading industries...</div>
         ) : error ? (
           <div className="text-sm text-rose-400">{error}</div>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {industries.map((industry) => (
-                <button
-                  key={industry.id}
-                  onClick={() => onSelectIndustry(industry.id)}
-                  className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
-                    form.id === industry.id
-                      ? 'border-sky-400 bg-sky-500/10 text-sky-200'
-                      : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
-                  }`}
-                >
-                  {industry.icon} {industry.name}
-                </button>
-              ))}
-            </div>
-
-            {form.id || isCreating ? (
+        ) : form.id || isCreating ? (
               <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-slate-300 mb-1">Industry ID</label>
@@ -248,10 +224,8 @@ export function IndustriesTab({
             ) : (
               <div className="text-sm text-slate-400">Select an industry above to view its current details.</div>
             )}
-          </div>
-        )}
       </div>
-    </section>
+    </div>
   );
 }
 

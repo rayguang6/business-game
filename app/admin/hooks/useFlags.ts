@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { fetchFlagsForIndustry, upsertFlagForIndustry, deleteFlagById } from '@/lib/data/flagRepository';
 import type { GameFlag } from '@/lib/data/flagRepository';
 import type { Operation } from './types';
@@ -9,7 +9,7 @@ interface FlagForm {
   description: string;
 }
 
-export function useFlags(industryId: string) {
+export function useFlags(industryId: string, flagId?: string) {
   const [flags, setFlags] = useState<GameFlag[]>([]);
   const [operation, setOperation] = useState<Operation>('idle');
   const [status, setStatus] = useState<string | null>(null);
@@ -28,10 +28,12 @@ export function useFlags(industryId: string) {
       return;
     }
     setFlags(result);
-    if (result.length > 0) {
-      selectFlag(result[0], false);
-    }
   }, [industryId]);
+
+  // Auto-load when industryId changes
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const selectFlag = useCallback((flag: GameFlag, resetMsg = true) => {
     setSelectedId(flag.id);
@@ -39,6 +41,19 @@ export function useFlags(industryId: string) {
     setForm({ id: flag.id, name: flag.name, description: flag.description });
     if (resetMsg) setStatus(null);
   }, []);
+
+  // Select flag when flagId changes or flags are loaded
+  useEffect(() => {
+    if (flagId && flags.length > 0) {
+      const flag = flags.find(f => f.id === flagId);
+      if (flag) {
+        setSelectedId(flag.id);
+        setIsCreating(false);
+        setForm({ id: flag.id, name: flag.name, description: flag.description });
+        setStatus(null);
+      }
+    }
+  }, [flagId, flags]);
 
   const createFlag = useCallback(() => {
     if (!industryId) {

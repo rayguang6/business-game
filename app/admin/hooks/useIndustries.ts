@@ -24,7 +24,7 @@ const emptyForm: IndustryForm = {
   isAvailable: true,
 };
 
-export function useIndustries() {
+export function useIndustries(industryId?: string) {
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [operation, setOperation] = useState<Operation>('loading');
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +32,7 @@ export function useIndustries() {
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState<IndustryForm>(emptyForm);
 
+  // Load industries
   useEffect(() => {
     let isMounted = true;
     (async () => {
@@ -42,7 +43,6 @@ export function useIndustries() {
         if (!isMounted) return;
         if (data) {
           setIndustries(data);
-          // Don't auto-select first industry - let URL state management handle this
         }
       } catch (err) {
         console.error('Failed to load industries', err);
@@ -59,6 +59,26 @@ export function useIndustries() {
       isMounted = false;
     };
   }, []);
+
+  // Select industry when industryId changes or industries are loaded
+  useEffect(() => {
+    if (industryId && industries.length > 0) {
+      const industry = industries.find(i => i.id === industryId);
+      if (industry) {
+        setIsCreating(false);
+        setForm({
+          id: industry.id,
+          name: industry.name,
+          icon: industry.icon,
+          description: industry.description,
+          image: industry.image ?? '',
+          mapImage: industry.mapImage ?? '',
+          isAvailable: industry.isAvailable ?? true,
+        });
+        setStatus(null);
+      }
+    }
+  }, [industryId, industries]);
 
   const selectIndustry = useCallback((industry: Industry) => {
     setIsCreating(false);
