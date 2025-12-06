@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { fetchIndustries, upsertIndustry, deleteIndustry } from '@/lib/server/actions/adminActions';
+import { fetchIndustries, upsertIndustry, deleteIndustry as deleteIndustryAction } from '@/lib/server/actions/adminActions';
 import type { Industry } from '@/lib/features/industries';
 import { slugify } from '../components/utils';
 import type { Operation } from './types';
@@ -154,7 +154,7 @@ export function useIndustries(industryId?: string) {
     if (isCreating || !form.id) return;
     if (!window.confirm(`Delete industry "${form.name || form.id}"?`)) return;
     setOperation('deleting');
-    const result = await deleteIndustry(form.id);
+    const result = await deleteIndustryAction(form.id);
     setOperation('idle');
     if (!result.success) {
       setStatus(result.message ?? 'Failed to delete industry.');
