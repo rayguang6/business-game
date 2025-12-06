@@ -30,7 +30,7 @@ export async function fetchServicesForIndustry(
     .eq('industry_id', industryId);
 
   if (error) {
-    console.error('Failed to fetch services from Supabase', error);
+    console.error(`[Services] Failed to fetch services for industry "${industryId}":`, error);
     return null;
   }
 
@@ -72,11 +72,11 @@ export async function upsertServiceForIndustry(
     .from('services')
     .upsert(payload, { onConflict: 'id' })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) {
-    console.error('Failed to upsert service', error);
-    return { success: false, message: error.message };
+    console.error(`[Services] Failed to upsert service "${service.id}" for industry "${service.industryId}":`, error);
+    return { success: false, message: `Failed to save service: ${error.message}` };
   }
 
   return { success: true, data: data ? mapRowToService(data) : service };
@@ -91,8 +91,8 @@ export async function deleteServiceById(id: string): Promise<{ success: boolean;
   const { error } = await supabaseServer.from('services').delete().eq('id', id);
 
   if (error) {
-    console.error('Failed to delete service', error);
-    return { success: false, message: error.message };
+    console.error(`[Services] Failed to delete service "${id}":`, error);
+    return { success: false, message: `Failed to delete service: ${error.message}` };
   }
 
   return { success: true };
@@ -102,35 +102,42 @@ function mapRowToService(row: ServiceRow): IndustryServiceDefinition {
   // Parse requirements - ensure it's a valid array with all fields
   let requirements: Requirement[] = [];
   if (row.requirements) {
-    if (Array.isArray(row.requirements)) {
-      requirements = row.requirements
-        .map((req: any) => {
-          // Validate requirement has required fields
-          if (!req.type || !req.id) {
-            return null;
-          }
-          
-          const requirement: Requirement = {
-            type: req.type,
-            id: req.id,
-          };
-          
-          // Add optional fields based on type
-          if (req.type === 'flag') {
-            requirement.expected = req.expected !== undefined ? req.expected : true;
-          } else if (['metric', 'upgrade', 'staff'].includes(req.type)) {
-            // Numeric types need operator and value
-            if (req.operator) {
-              requirement.operator = req.operator;
+    try {
+      if (Array.isArray(row.requirements)) {
+        requirements = row.requirements
+          .map((req: any) => {
+            // Validate requirement has required fields
+            if (!req || typeof req !== 'object' || !req.type || !req.id) {
+              return null;
             }
-            if (req.value !== undefined && req.value !== null) {
-              requirement.value = typeof req.value === 'number' ? req.value : Number(req.value);
+            
+            const requirement: Requirement = {
+              type: req.type,
+              id: req.id,
+            };
+            
+            // Add optional fields based on type
+            if (req.type === 'flag') {
+              requirement.expected = req.expected !== undefined ? req.expected : true;
+            } else if (['metric', 'upgrade', 'staff'].includes(req.type)) {
+              // Numeric types need operator and value
+              if (req.operator) {
+                requirement.operator = req.operator;
+              }
+              if (req.value !== undefined && req.value !== null) {
+                requirement.value = typeof req.value === 'number' ? req.value : Number(req.value);
+              }
             }
-          }
-          
-          return requirement;
-        })
-        .filter((req: Requirement | null): req is Requirement => req !== null && req.id.length > 0);
+            
+            return requirement;
+          })
+          .filter((req: Requirement | null): req is Requirement => req !== null && req.id.length > 0);
+      } else {
+        console.warn(`[Services] Invalid requirements format for service "${row.id}": expected array, got ${typeof row.requirements}`);
+      }
+    } catch (err) {
+      console.error(`[Services] Failed to parse requirements for service "${row.id}":`, err);
+      requirements = [];
     }
   }
 

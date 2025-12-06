@@ -73,3 +73,5 @@ export default function IndustryConfigPageClient({ industry, industries }: Indus
     </div>
   );
 }
+
+

@@ -19,7 +19,7 @@ export async function fetchIndustriesFromSupabase(): Promise<Industry[] | null> 
     .select('id,name,icon,description,image,map_image,is_available');
 
   if (error) {
-    console.error('[Industries] Failed to fetch industries from Supabase', error);
+    console.error('[Industries] Failed to fetch industries:', error);
     return null;
   }
 
@@ -61,10 +61,11 @@ export async function upsertIndustryToSupabase(
     .from('industries')
     .upsert(payload, { onConflict: 'id' })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) {
-    return { success: false, message: error.message };
+    console.error(`[Industries] Failed to upsert industry "${industry.id}":`, error);
+    return { success: false, message: `Failed to save industry: ${error.message}` };
   }
 
   return { success: true, data: data ? mapRowToIndustry(data) : industry };
@@ -79,7 +80,8 @@ export async function deleteIndustryFromSupabase(id: string): Promise<{ success:
   const { error } = await supabaseServer.from('industries').delete().eq('id', id);
 
   if (error) {
-    return { success: false, message: error.message };
+    console.error(`[Industries] Failed to delete industry "${id}":`, error);
+    return { success: false, message: `Failed to delete industry: ${error.message}` };
   }
 
   return { success: true };

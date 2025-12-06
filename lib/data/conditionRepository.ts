@@ -28,7 +28,7 @@ export async function fetchConditionsForIndustry(
     .order('name');
 
   if (error) {
-    console.error('Failed to fetch conditions from Supabase', error);
+    console.error(`[Conditions] Failed to fetch conditions for industry "${industryId}":`, error);
     return null;
   }
 
@@ -72,13 +72,13 @@ export async function upsertConditionForIndustry(
     value: condition.value,
   };
 
-  const { error } = await supabase
+  const { error } = await supabaseServer
     .from('conditions')
-    .upsert(payload);
+    .upsert(payload, { onConflict: 'industry_id,id' });
 
   if (error) {
-    console.error('Failed to upsert condition', error);
-    return { success: false, message: error.message };
+    console.error(`[Conditions] Failed to upsert condition "${condition.id}" for industry "${industryId}":`, error);
+    return { success: false, message: `Failed to save condition: ${error.message}` };
   }
 
   return { success: true };
@@ -98,8 +98,8 @@ export async function deleteConditionById(id: string): Promise<{ success: boolea
   // Then delete the condition itself
   const { error } = await supabaseServer.from('conditions').delete().eq('id', id);
   if (error) {
-    console.error('Failed to delete condition', error);
-    return { success: false, message: error.message };
+    console.error(`[Conditions] Failed to delete condition "${id}":`, error);
+    return { success: false, message: `Failed to delete condition: ${error.message}` };
   }
 
   return { success: true };

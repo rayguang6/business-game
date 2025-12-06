@@ -45,7 +45,7 @@ export async function fetchMarketingCampaignsForIndustry(industryId: IndustryId)
     .order('name', { ascending: true });
 
   if (error) {
-    console.error('Failed to fetch marketing campaigns from Supabase', error);
+    console.error(`[Marketing] Failed to fetch campaigns for industry "${industryId}":`, error);
     return null;
   }
 
@@ -53,20 +53,53 @@ export async function fetchMarketingCampaignsForIndustry(industryId: IndustryId)
     return [];
   }
 
-  const campaigns = data
-    .filter((row) => row.id && row.name)
-    .map((row) => ({
-      id: row.id,
-      industryId: row.industry_id as any,
-      name: row.name,
-      description: row.description ?? '',
-      cost: parseNumber(row.cost),
-      timeCost: row.time_cost !== null && row.time_cost !== undefined ? parseNumber(row.time_cost) : undefined,
-      cooldownSeconds: parseNumber(row.cooldown_seconds, 60), // Default to 60s if not set
-      effects: mapEffects(row.effects),
-      setsFlag: row.sets_flag || undefined,
-      requirements: Array.isArray(row.requirements) ? row.requirements as any[] : [],
-    }));
+  const campaigns: MarketingCampaign[] = [];
+  
+  for (const row of data) {
+    if (!row.id || !row.name) {
+      console.warn(`[Marketing] Skipping campaign with missing required fields: id=${row.id}, name=${row.name}`);
+      continue;
+    }
+    
+    try {
+      // Parse effects JSONB with error handling
+      let effects: CampaignEffect[] = [];
+      if (row.effects) {
+        try {
+          effects = mapEffects(row.effects);
+        } catch (err) {
+          console.error(`[Marketing] Failed to parse effects for campaign "${row.id}":`, err);
+          effects = [];
+        }
+      }
+      
+      // Parse requirements JSONB with error handling
+      let requirements: any[] = [];
+      if (row.requirements) {
+        if (Array.isArray(row.requirements)) {
+          requirements = row.requirements;
+        } else {
+          console.warn(`[Marketing] Invalid requirements format for campaign "${row.id}": expected array, got ${typeof row.requirements}`);
+        }
+      }
+      
+      campaigns.push({
+        id: row.id,
+        industryId: row.industry_id as any,
+        name: row.name,
+        description: row.description ?? '',
+        cost: parseNumber(row.cost),
+        timeCost: row.time_cost !== null && row.time_cost !== undefined ? parseNumber(row.time_cost) : undefined,
+        cooldownSeconds: parseNumber(row.cooldown_seconds, 60), // Default to 60s if not set
+        effects,
+        setsFlag: row.sets_flag || undefined,
+        requirements,
+      });
+    } catch (err) {
+      console.error(`[Marketing] Failed to process campaign "${row.id}":`, err);
+      // Continue processing other campaigns
+    }
+  }
 
   return campaigns;
 }
@@ -95,8 +128,8 @@ export async function upsertMarketingCampaignForIndustry(industryId: string, cam
     .upsert(payload, { onConflict: 'id' });
 
   if (error) {
-    console.error('Failed to upsert marketing campaign', error);
-    return { success: false, message: error.message };
+    console.error(`[Marketing] Failed to upsert campaign "${campaign.id}" for industry "${industryId}":`, error);
+    return { success: false, message: `Failed to save campaign: ${error.message}` };
   }
 
   return { success: true };
@@ -113,8 +146,8 @@ export async function deleteMarketingCampaignById(id: string, industryId: Indust
     .eq('id', id)
     .eq('industry_id', industryId);
   if (error) {
-    console.error('Failed to delete marketing campaign', error);
-    return { success: false, message: error.message };
+    console.error(`[Marketing] Failed to delete campaign "${id}" for industry "${industryId}":`, error);
+    return { success: false, message: `Failed to delete campaign: ${error.message}` };
   }
   return { success: true };
 }

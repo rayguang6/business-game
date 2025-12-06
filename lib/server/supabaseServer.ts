@@ -28,3 +28,5 @@ export function isSupabaseConfigured(): boolean {
   return Boolean(supabaseServer);
 }
 
+
+

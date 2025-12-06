@@ -156,7 +156,7 @@ export async function fetchEventsForIndustry(industryId: IndustryId): Promise<Ga
     .eq('industry_id', industryId);
 
   if (error) {
-    console.error('[Events] Failed to fetch events from Supabase', error);
+    console.error(`[Events] Failed to fetch events for industry "${industryId}":`, error);
     return null;
   }
 
@@ -165,16 +165,48 @@ export async function fetchEventsForIndustry(industryId: IndustryId): Promise<Ga
     return [];
   }
 
-  const mapped = data
-    .filter((row) => row.id && row.title && row.category && row.summary)
-    .map((row) => ({
-      id: row.id,
-      title: row.title,
-      category: row.category as GameEvent['category'],
-      summary: row.summary,
-      choices: mapChoices(Array.isArray(row.choices) ? (row.choices as RawChoice[]) : undefined),
-      requirements: Array.isArray(row.requirements) ? row.requirements as Requirement[] : undefined,
-    }));
+  const mapped: GameEvent[] = [];
+  
+  for (const row of data) {
+    if (!row.id || !row.title || !row.category || !row.summary) {
+      console.warn(`[Events] Skipping event with missing required fields: id=${row.id}, title=${row.title}`);
+      continue;
+    }
+    
+    try {
+      // Parse choices JSONB with error handling
+      let choices: GameEventChoice[] = [];
+      if (row.choices) {
+        if (Array.isArray(row.choices)) {
+          choices = mapChoices(row.choices as RawChoice[]);
+        } else {
+          console.warn(`[Events] Invalid choices format for event "${row.id}": expected array, got ${typeof row.choices}`);
+        }
+      }
+      
+      // Parse requirements JSONB with error handling
+      let requirements: Requirement[] | undefined = undefined;
+      if (row.requirements) {
+        if (Array.isArray(row.requirements)) {
+          requirements = row.requirements as Requirement[];
+        } else {
+          console.warn(`[Events] Invalid requirements format for event "${row.id}": expected array, got ${typeof row.requirements}`);
+        }
+      }
+      
+      mapped.push({
+        id: row.id,
+        title: row.title,
+        category: row.category as GameEvent['category'],
+        summary: row.summary,
+        choices,
+        requirements,
+      });
+    } catch (err) {
+      console.error(`[Events] Failed to parse event "${row.id}":`, err);
+      // Continue processing other events
+    }
+  }
 
   return mapped;
 }
@@ -303,13 +335,13 @@ export async function upsertEventForIndustry(
     requirements: event.requirements || [],
   };
 
-  const { error } = await supabase
+  const { error } = await supabaseServer
     .from('events')
     .upsert(payload, { onConflict: 'industry_id,id' });
 
   if (error) {
-    console.error('Failed to upsert event', error);
-    return { success: false, message: error.message };
+    console.error(`[Events] Failed to upsert event "${event.id}" for industry "${industryId}":`, error);
+    return { success: false, message: `Failed to save event: ${error.message}` };
   }
   return { success: true };
 }
@@ -319,10 +351,10 @@ export async function deleteEventById(id: string): Promise<{ success: boolean; m
   if (!supabaseServer) {
     return { success: false, message: 'Supabase client not configured.' };
   }
-  const { error } = await supabase.from('events').delete().eq('id', id);
+  const { error } = await supabaseServer.from('events').delete().eq('id', id);
   if (error) {
-    console.error('Failed to delete event', error);
-    return { success: false, message: error.message };
+    console.error(`[Events] Failed to delete event "${id}":`, error);
+    return { success: false, message: `Failed to delete event: ${error.message}` };
   }
   return { success: true };
 }

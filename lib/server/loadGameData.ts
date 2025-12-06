@@ -196,3 +196,5 @@ export async function loadIndustries() {
   return await fetchIndustriesFromSupabase();
 }
 
+
+

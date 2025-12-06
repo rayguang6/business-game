@@ -46,22 +46,52 @@ const mapRoleRows = (rows: StaffRoleRow[] | null | undefined): StaffRoleConfig[]
     return [];
   }
 
-  return rows
-    .filter((row) => row.id && row.name)
-    .map((row) => {
-      // Validate and parse effects - only accept valid JSON using enum validation
-      const effects: UpgradeEffect[] = validateAndParseUpgradeEffects(row.effects);
-
-      return {
+  const roles: StaffRoleConfig[] = [];
+  
+  for (const row of rows) {
+    if (!row.id || !row.name) {
+      console.warn(`[Staff] Skipping role with missing required fields: id=${row.id}, name=${row.name}`);
+      continue;
+    }
+    
+    try {
+      // Parse effects JSONB with error handling
+      let effects: UpgradeEffect[] = [];
+      if (row.effects) {
+        try {
+          effects = validateAndParseUpgradeEffects(row.effects);
+        } catch (err) {
+          console.error(`[Staff] Failed to parse effects for role "${row.id}":`, err);
+          effects = [];
+        }
+      }
+      
+      // Parse requirements JSONB with error handling
+      let requirements: any[] = [];
+      if (row.requirements) {
+        if (Array.isArray(row.requirements)) {
+          requirements = row.requirements;
+        } else {
+          console.warn(`[Staff] Invalid requirements format for role "${row.id}": expected array, got ${typeof row.requirements}`);
+        }
+      }
+      
+      roles.push({
         id: row.id,
         name: row.name,
         salary: parseNumber(row.salary),
         effects,
         spriteImage: row.sprite_image && row.sprite_image.trim() ? row.sprite_image.trim() : undefined,
         setsFlag: row.sets_flag || undefined,
-        requirements: Array.isArray(row.requirements) ? row.requirements as any[] : [],
-      };
-    });
+        requirements,
+      });
+    } catch (err) {
+      console.error(`[Staff] Failed to process role "${row.id}":`, err);
+      // Continue processing other roles
+    }
+  }
+  
+  return roles;
 };
 
 const mapPresetRows = (rows: StaffPresetRow[] | null | undefined): StaffPreset[] => {
@@ -103,12 +133,12 @@ export async function fetchStaffDataForIndustry(
   ]);
 
   if (rolesResponse.error) {
-    console.error('Failed to fetch staff roles from Supabase', rolesResponse.error);
+    console.error(`[Staff] Failed to fetch roles for industry "${industryId}":`, rolesResponse.error);
     return null;
   }
 
   if (presetsResponse.error) {
-    console.error('Failed to fetch staff presets from Supabase', presetsResponse.error);
+    console.error(`[Staff] Failed to fetch presets for industry "${industryId}":`, presetsResponse.error);
     return null;
   }
 
@@ -164,8 +194,8 @@ export async function upsertStaffRole(role: {
     .upsert(payload, { onConflict: 'industry_id,id' });
 
   if (error) {
-    console.error('Failed to upsert staff role', error);
-    return { success: false, message: error.message };
+    console.error(`[Staff] Failed to upsert role "${role.id}" for industry "${role.industryId}":`, error);
+    return { success: false, message: `Failed to save role: ${error.message}` };
   }
 
   return { success: true };
@@ -184,8 +214,8 @@ export async function deleteStaffRole(id: string, industryId: IndustryId): Promi
     .eq('id', id)
     .eq('industry_id', industryId);
   if (error) {
-    console.error('Failed to delete staff role', error);
-    return { success: false, message: error.message };
+    console.error(`[Staff] Failed to delete role "${id}" for industry "${industryId}":`, error);
+    return { success: false, message: `Failed to delete role: ${error.message}` };
   }
   return { success: true };
 }
@@ -228,12 +258,8 @@ export async function upsertStaffPreset(preset: {
     .upsert(payload, { onConflict: 'industry_id,id' });
 
   if (error) {
-    console.error('Failed to upsert staff preset:', {
-      error,
-      payload,
-      preset
-    });
-    return { success: false, message: error.message };
+    console.error(`[Staff] Failed to upsert preset "${preset.id}" for industry "${preset.industryId}":`, error);
+    return { success: false, message: `Failed to save preset: ${error.message}` };
   }
 
   return { success: true };
@@ -252,8 +278,8 @@ export async function deleteStaffPreset(id: string, industryId: IndustryId): Pro
     .eq('id', id)
     .eq('industry_id', industryId);
   if (error) {
-    console.error('Failed to delete staff preset', error);
-    return { success: false, message: error.message };
+    console.error(`[Staff] Failed to delete preset "${id}" for industry "${industryId}":`, error);
+    return { success: false, message: `Failed to delete preset: ${error.message}` };
   }
   return { success: true };
 }

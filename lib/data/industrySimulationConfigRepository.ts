@@ -111,7 +111,7 @@ export async function fetchIndustrySimulationConfig(
     .maybeSingle();
 
   if (error) {
-    console.error('Failed to fetch industry simulation config:', error);
+    console.error(`[IndustrySimulationConfig] Failed to fetch config for industry "${industryId}":`, error);
     return null;
   }
 
@@ -168,8 +168,12 @@ export async function fetchIndustrySimulationConfig(
       ? data.main_character_sprite_image.trim()
       : (data.main_character_sprite_image === null || data.main_character_sprite_image === '' ? undefined : data.main_character_sprite_image);
     
+    // Parse entry position - use default fallback if data doesn't exist
+    const parsedEntryPosition = parsePosition(data.entry_position);
+    const entryPosition: GridPosition = parsedEntryPosition ?? { x: 0, y: 0 };
+    
     const layoutConfig: SimulationLayoutConfig = {
-      entryPosition: (data.entry_position as unknown as GridPosition) || { x: 0, y: 0 },
+      entryPosition,
       waitingPositions,
       serviceRooms,
       staffPositions,
@@ -189,7 +193,7 @@ export async function fetchIndustrySimulationConfig(
       waitingPositions: [],
       serviceRooms: [],
       staffPositions: [],
-      mainCharacterPosition: undefined,
+      mainCharacterPosition: { x: 1, y: 1 },
       mainCharacterSpriteImage,
     };
   }
@@ -325,8 +329,8 @@ export async function upsertIndustrySimulationConfig(
     .upsert(payload, { onConflict: 'industry_id' });
 
   if (error) {
-    console.error('Failed to upsert industry simulation config:', error);
-    return { success: false, message: error.message };
+    console.error(`[IndustrySimulationConfig] Failed to upsert config for industry "${industryId}":`, error);
+    return { success: false, message: `Failed to save industry config: ${error.message}` };
   }
 
   return { success: true };

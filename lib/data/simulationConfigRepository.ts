@@ -160,7 +160,7 @@ export async function fetchGlobalSimulationConfig(): Promise<GlobalSimulationCon
     .maybeSingle();
 
   if (error) {
-    console.error('Failed to fetch global simulation config from Supabase', error);
+    console.error('[GlobalSimulationConfig] Failed to fetch global config:', error);
     return null;
   }
 
@@ -284,8 +284,8 @@ export async function upsertGlobalSimulationConfig(config: {
     .upsert(payload, { onConflict: 'id' });
 
   if (upsertError) {
-    console.error('Failed to upsert global simulation config', upsertError);
-    return { success: false, message: upsertError.message };
+    console.error('[GlobalSimulationConfig] Failed to upsert global config:', upsertError);
+    return { success: false, message: `Failed to save global config: ${upsertError.message}` };
   }
 
   return { success: true };

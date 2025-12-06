@@ -288,3 +288,5 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
   );
 }
 
+
+

@@ -46,7 +46,7 @@ export async function fetchUpgradesForIndustry(
     .eq('industry_id', industryId);
 
   if (upgradesError) {
-    console.error('Failed to fetch upgrades from Supabase', upgradesError);
+    console.error(`[Upgrades] Failed to fetch upgrades for industry "${industryId}":`, upgradesError);
     return null;
   }
 
@@ -64,7 +64,7 @@ export async function fetchUpgradesForIndustry(
     .order('level', { ascending: true });
 
   if (levelsError) {
-    console.error('Failed to fetch upgrade levels from Supabase', levelsError);
+    console.error(`[Upgrades] Failed to fetch upgrade levels for industry "${industryId}":`, levelsError);
     return null;
   }
 
@@ -72,20 +72,35 @@ export async function fetchUpgradesForIndustry(
   const levelsMap = new Map<string, UpgradeLevelConfig[]>();
   if (levelsData) {
     levelsData.forEach((levelRow: any) => {
-      const parsedEffects = validateAndParseUpgradeEffects(levelRow.effects);
-      const levelConfig: UpgradeLevelConfig = {
-        level: levelRow.level,
-        name: levelRow.name,
-        description: levelRow.description || undefined,
-        icon: levelRow.icon || undefined,
-        cost: parseNumber(levelRow.cost),
-        timeCost: levelRow.time_cost !== null && levelRow.time_cost !== undefined ? parseNumber(levelRow.time_cost) : undefined,
-        effects: parsedEffects,
-      };
+      try {
+        // Parse effects JSONB with error handling
+        let parsedEffects: UpgradeEffect[] = [];
+        if (levelRow.effects) {
+          try {
+            parsedEffects = validateAndParseUpgradeEffects(levelRow.effects);
+          } catch (err) {
+            console.error(`[Upgrades] Failed to parse effects for upgrade "${levelRow.upgrade_id}" level ${levelRow.level}:`, err);
+            parsedEffects = [];
+          }
+        }
+        
+        const levelConfig: UpgradeLevelConfig = {
+          level: levelRow.level,
+          name: levelRow.name,
+          description: levelRow.description || undefined,
+          icon: levelRow.icon || undefined,
+          cost: parseNumber(levelRow.cost),
+          timeCost: levelRow.time_cost !== null && levelRow.time_cost !== undefined ? parseNumber(levelRow.time_cost) : undefined,
+          effects: parsedEffects,
+        };
 
-      const existing = levelsMap.get(levelRow.upgrade_id) || [];
-      existing.push(levelConfig);
-      levelsMap.set(levelRow.upgrade_id, existing);
+        const existing = levelsMap.get(levelRow.upgrade_id) || [];
+        existing.push(levelConfig);
+        levelsMap.set(levelRow.upgrade_id, existing);
+      } catch (err) {
+        console.error(`[Upgrades] Failed to process level for upgrade "${levelRow.upgrade_id}":`, err);
+        // Continue processing other levels
+      }
     });
     
     // Sort levels by level number to ensure correct order (levels array is 0-indexed, level property is 1-indexed)
@@ -95,7 +110,7 @@ export async function fetchUpgradesForIndustry(
       // Validate that levels are sequential starting from 1
       for (let i = 0; i < levels.length; i++) {
         if (levels[i].level !== i + 1) {
-          console.warn(`[UpgradeRepository] Upgrade ${upgradeId} has non-sequential levels. Expected level ${i + 1} at index ${i}, but found level ${levels[i].level}. This may cause issues.`);
+          console.warn(`[Upgrades] Upgrade "${upgradeId}" has non-sequential levels. Expected level ${i + 1} at index ${i}, but found level ${levels[i].level}. This may cause issues.`);
         }
       }
     });
@@ -117,13 +132,13 @@ export async function fetchUpgradesForIndustry(
     }
     
     if (levels.length === 0) {
-      console.warn(`Upgrade ${row.id} has no levels configured. Skipping.`);
+      console.warn(`[Upgrades] Upgrade "${row.id}" has no levels configured. Skipping.`);
       continue;
     }
     
     // Validate maxLevel matches number of levels
     if (row.max_level !== levels.length) {
-      console.warn(`[UpgradeRepository] Upgrade ${row.id} has max_level=${row.max_level} but ${levels.length} levels. Using ${levels.length} as maxLevel.`);
+      console.warn(`[Upgrades] Upgrade "${row.id}" has max_level=${row.max_level} but ${levels.length} levels. Using ${levels.length} as maxLevel.`);
     }
 
     result.push({
@@ -268,8 +283,8 @@ export async function deleteUpgradeById(id: string): Promise<{ success: boolean;
 
   const { error } = await supabaseServer.from('upgrades').delete().eq('id', id);
   if (error) {
-    console.error('Failed to delete upgrade', error);
-    return { success: false, message: error.message };
+    console.error(`[Upgrades] Failed to delete upgrade "${id}":`, error);
+    return { success: false, message: `Failed to delete upgrade: ${error.message}` };
   }
   return { success: true };
 }

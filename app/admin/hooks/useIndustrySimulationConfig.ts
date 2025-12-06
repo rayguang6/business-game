@@ -67,66 +67,84 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
     let isMounted = true;
     (async () => {
       setOperation('loading');
+      setStatus(null); // Clear any previous errors
       try {
         const config = await fetchIndustryConfig(industryId);
-        if (isMounted && config) {
-          if (config.businessMetrics) setBusinessMetrics(config.businessMetrics);
-          if (config.businessStats) setBusinessStats(config.businessStats);
-          
-          // Load map config from separate fields (no JSON parsing!)
-          if (config.mapConfig) {
-            setMapWidth(config.mapConfig.width);
-            setMapHeight(config.mapConfig.height);
-            setMapWalls(config.mapConfig.walls || []);
-          }
-          
-          // Load layout config from separate fields (no JSON parsing!)
-          if (config.layoutConfig) {
-            setEntryPosition(config.layoutConfig.entryPosition || null);
-            setWaitingPositions(config.layoutConfig.waitingPositions || []);
-            setServiceRooms(config.layoutConfig.serviceRooms || []);
-            setStaffPositions(config.layoutConfig.staffPositions || []);
-            setMainCharacterPosition(config.layoutConfig.mainCharacterPosition || null);
-            // Handle sprite image: explicitly check for string value, use empty string if undefined/null
-            // This ensures the input field always has a value (empty string or the actual value)
-            const spriteImage = config.layoutConfig.mainCharacterSpriteImage;
-            if (typeof spriteImage === 'string') {
-              setMainCharacterSpriteImage(spriteImage);
-            } else {
-              setMainCharacterSpriteImage('');
-            }
+        if (!isMounted) return;
+        
+        if (!config) {
+          // Config doesn't exist yet - this is OK, will use defaults
+          setStatus({ type: 'success', message: 'No config found. Using defaults.' });
+          setOperation('idle');
+          return;
+        }
+        
+        if (config.businessMetrics) setBusinessMetrics(config.businessMetrics);
+        if (config.businessStats) setBusinessStats(config.businessStats);
+        
+        // Load map config from separate fields (no JSON parsing!)
+        if (config.mapConfig) {
+          setMapWidth(config.mapConfig.width);
+          setMapHeight(config.mapConfig.height);
+          setMapWalls(config.mapConfig.walls || []);
+        }
+        
+        // Load layout config from separate fields (no JSON parsing!)
+        if (config.layoutConfig) {
+          setEntryPosition(config.layoutConfig.entryPosition || null);
+          setWaitingPositions(config.layoutConfig.waitingPositions || []);
+          setServiceRooms(config.layoutConfig.serviceRooms || []);
+          setStaffPositions(config.layoutConfig.staffPositions || []);
+          setMainCharacterPosition(config.layoutConfig.mainCharacterPosition || null);
+          // Handle sprite image: explicitly check for string value, use empty string if undefined/null
+          // This ensures the input field always has a value (empty string or the actual value)
+          const spriteImage = config.layoutConfig.mainCharacterSpriteImage;
+          if (typeof spriteImage === 'string') {
+            setMainCharacterSpriteImage(spriteImage);
           } else {
-            // If layoutConfig doesn't exist, set to empty string
             setMainCharacterSpriteImage('');
           }
-          
-          // Handle capacityImage: set to empty string if null/undefined, otherwise use the value
-          setCapacityImage(config.capacityImage ?? '');
-          if (config.winCondition) setWinCondition(config.winCondition);
-          if (config.loseCondition) setLoseCondition(config.loseCondition);
-          if (config.leadDialogues) setLeadDialogues(config.leadDialogues);
-          else setLeadDialogues(null);
-
-          // Load event sequencing from simulation config
-          setEventSelectionMode(config.eventSelectionMode ?? 'random');
-          setEventSequence(config.eventSequence ?? []);
-
-          // customerImages and staffNamePool removed - they're global only
+        } else {
+          // If layoutConfig doesn't exist, set to empty string
+          setMainCharacterSpriteImage('');
         }
+        
+        // Handle capacityImage: set to empty string if null/undefined, otherwise use the value
+        setCapacityImage(config.capacityImage ?? '');
+        if (config.winCondition) setWinCondition(config.winCondition);
+        if (config.loseCondition) setLoseCondition(config.loseCondition);
+        if (config.leadDialogues) setLeadDialogues(config.leadDialogues);
+        else setLeadDialogues(null);
+
+        // Load event sequencing from simulation config
+        setEventSelectionMode(config.eventSelectionMode ?? 'random');
+        setEventSequence(config.eventSequence ?? []);
+
+        // customerImages and staffNamePool removed - they're global only
 
         // Load events for sequencing
-        const eventsData = await fetchEvents(industryId);
-        if (eventsData) {
-          const sortedEvents = eventsData
-            .slice()
-            .sort((a, b) => a.title.localeCompare(b.title))
-            .map(event => ({ id: event.id, title: event.title }));
-          setEvents(sortedEvents);
+        try {
+          const eventsData = await fetchEvents(industryId);
+          if (eventsData) {
+            const sortedEvents = eventsData
+              .slice()
+              .sort((a, b) => a.title.localeCompare(b.title))
+              .map(event => ({ id: event.id, title: event.title }));
+            setEvents(sortedEvents);
+          }
+        } catch (eventsErr) {
+          console.error('Failed to load events for sequencing', eventsErr);
+          // Don't fail the whole load if events fail
+        }
+        
+        if (isMounted) {
+          setStatus({ type: 'success', message: 'Config loaded successfully' });
         }
       } catch (err) {
-        console.error('Failed to load industry simulation config', err);
+        console.error(`Failed to load industry simulation config for "${industryId}"`, err);
         if (isMounted) {
-          setStatus({ type: 'error', message: 'Failed to load config' });
+          const errorMessage = err instanceof Error ? err.message : 'Failed to load config';
+          setStatus({ type: 'error', message: `Failed to load config: ${errorMessage}` });
         }
       } finally {
         if (isMounted) {
@@ -149,6 +167,19 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
     setOperation('saving');
 
     try {
+      // Validate data before saving
+      if (mapWidth !== null && (mapWidth < 1 || !Number.isFinite(mapWidth))) {
+        setStatus({ type: 'error', message: 'Map width must be a positive number' });
+        setOperation('idle');
+        return;
+      }
+      
+      if (mapHeight !== null && (mapHeight < 1 || !Number.isFinite(mapHeight))) {
+        setStatus({ type: 'error', message: 'Map height must be a positive number' });
+        setOperation('idle');
+        return;
+      }
+
       // Save all fields directly - no JSON parsing needed!
       const result = await upsertIndustryConfig(industryId, {
         businessMetrics: businessMetrics ?? undefined,
@@ -178,11 +209,13 @@ export function useIndustrySimulationConfig(industryId: IndustryId | null) {
       if (result.success) {
         setStatus({ type: 'success', message: 'Config saved successfully!' });
       } else {
-        setStatus({ type: 'error', message: result.message || 'Failed to save config' });
+        const errorMsg = result.message || 'Failed to save config';
+        setStatus({ type: 'error', message: errorMsg });
       }
     } catch (err) {
-      console.error('Failed to save industry simulation config', err);
-      setStatus({ type: 'error', message: 'Failed to save config' });
+      console.error(`Failed to save industry simulation config for "${industryId}"`, err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save config';
+      setStatus({ type: 'error', message: `Failed to save config: ${errorMessage}` });
     } finally {
       setOperation('idle');
     }

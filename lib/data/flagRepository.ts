@@ -31,7 +31,7 @@ export async function fetchFlagsForIndustry(
     .order('name');
 
   if (error) {
-    console.error('Failed to fetch flags from Supabase', error);
+    console.error(`[Flags] Failed to fetch flags for industry "${industryId}":`, error);
     return null;
   }
 
@@ -70,13 +70,13 @@ export async function upsertFlagForIndustry(
     description: flag.description || null,
   };
 
-  const { error } = await supabase
+  const { error } = await supabaseServer
     .from('flags')
     .upsert(payload, { onConflict: 'industry_id,id' });
 
   if (error) {
-    console.error('Failed to upsert flag', error);
-    return { success: false, message: error.message };
+    console.error(`[Flags] Failed to upsert flag "${flag.id}" for industry "${industryId}":`, error);
+    return { success: false, message: `Failed to save flag: ${error.message}` };
   }
 
   return { success: true };
@@ -96,8 +96,8 @@ export async function deleteFlagById(id: string): Promise<{ success: boolean; me
   // Then delete the flag itself
   const { error } = await supabaseServer.from('flags').delete().eq('id', id);
   if (error) {
-    console.error('Failed to delete flag', error);
-    return { success: false, message: error.message };
+    console.error(`[Flags] Failed to delete flag "${id}":`, error);
+    return { success: false, message: `Failed to delete flag: ${error.message}` };
   }
 
   return { success: true };
