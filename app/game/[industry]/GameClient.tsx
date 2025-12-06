@@ -119,6 +119,7 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
   const quitGame = () => {
     resetAllGame();
     setSettingsOpen(false);
+    router.push('/');
   };
 
   if (!audioState) {
