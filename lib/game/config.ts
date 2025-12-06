@@ -325,7 +325,7 @@ export function getBaseUpgradeMetricsForIndustry(
   if (!stats || !metrics) throw new Error('Business config not loaded');
   return {
     monthlyExpenses: metrics.monthlyExpenses,
-    spawnIntervalSeconds: stats.customerSpawnIntervalSeconds,
+    leadsPerMonth: stats.leadsPerMonth,
     serviceSpeedMultiplier: 1,
     exp: 0, // EXP starts at 0, modified by effects
     serviceCapacity: stats.serviceCapacity,
@@ -432,7 +432,7 @@ export function calculateMonthlyRevenuePotential(
   if (!stats) throw new Error('Business stats not loaded');
   const services = getServicesForIndustry(industryId);
 
-  const customersPerMonth = Math.floor(stats.monthDurationSeconds / stats.customerSpawnIntervalSeconds);
+  const customersPerMonth = stats.leadsPerMonth;
   const averageServicePrice =
     services.reduce((sum, service) => sum + service.price, 0) / Math.max(services.length, 1);
   const potentialRevenue = customersPerMonth * averageServicePrice;

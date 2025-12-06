@@ -144,6 +144,7 @@ export function GameCanvas() {
     // Early return if baseStats is null (shouldn't happen due to validation above, but TypeScript needs this)
     if (!baseStats) {
       return {
+        leadsPerMonth: 20,
         spawnIntervalSeconds: 3,
         serviceSpeedMultiplier: 1.0,
         serviceCapacity: 1,
@@ -176,12 +177,21 @@ export function GameCanvas() {
     // Note: Game uses fallbacks (?? 1, ?? 10, ?? 0) for calculations to work
     // But we also track base values (without fallbacks) to show N/A when missing
     // Check if values exist in the returned config (not using fallbacks)
+    
+    // Calculate leadsPerMonth with effects applied, then convert to spawnIntervalSeconds
+    const leadsPerMonth = Math.max(0, Math.round(effectManager.calculate(GameMetric.LeadsPerMonth, baseStats.leadsPerMonth)));
+    const monthDurationSeconds = baseStats.monthDurationSeconds;
+    // Formula: spawnIntervalSeconds = monthDurationSeconds / leadsPerMonth
+    // Example: 60s month / 1 lead = 60s per lead
+    // Example: 60s month / 2 leads = 30s per lead
+    const spawnIntervalSeconds = monthDurationSeconds > 0 && leadsPerMonth > 0
+      ? monthDurationSeconds / leadsPerMonth
+      : monthDurationSeconds; // If no leads, use month duration as fallback (no spawning)
+    
     return {
       // Calculated values (with effects applied) - same as game uses
-      spawnIntervalSeconds: effectManager.calculate(
-        GameMetric.SpawnIntervalSeconds,
-        baseStats.customerSpawnIntervalSeconds,
-      ),
+      leadsPerMonth,
+      spawnIntervalSeconds,
       serviceSpeedMultiplier: effectManager.calculate(GameMetric.ServiceSpeedMultiplier, 1.0),
       serviceCapacity: effectManager.calculate(GameMetric.ServiceCapacity, baseStats.serviceCapacity),
       serviceRevenueMultiplier: effectManager.calculate(
@@ -286,9 +296,13 @@ export function GameCanvas() {
   const mainCharacterSpriteImage = mainCharacter?.spriteImage || '/images/staff/staff1.png';
   const TILE_SIZE = 32;
 
+  // Base stats (non-editable) - read directly from config (same as game uses)
+  const customerPatience = businessStats.customerPatienceSeconds;
+  const monthDuration = businessStats.monthDurationSeconds;
+  
   // Use calculated values (with effects) - these match what the game uses
+  const leadsPerMonth = metrics.leadsPerMonth;
   const spawnIntervalSeconds = metrics.spawnIntervalSeconds;
-  const customersPerMinute = spawnIntervalSeconds > 0 ? 60 / spawnIntervalSeconds : null;
   const serviceSpeedMultiplier = metrics.serviceSpeedMultiplier;
   const serviceRevenueMultiplier = metrics.serviceRevenueMultiplier;
   const serviceRevenueBonus = metrics.serviceRevenueFlatBonus;
@@ -304,9 +318,6 @@ export function GameCanvas() {
   const expLossPerAngry = metrics.expLossPerAngryCustomer; // Read directly from config
   const hasExpGainConfig = typeof metrics.baseExpGainPerHappy === 'number' && !Number.isNaN(metrics.baseExpGainPerHappy);
   const hasExpLossConfig = typeof metrics.baseExpLossPerAngry === 'number' && !Number.isNaN(metrics.baseExpLossPerAngry);
-  
-  const customerPatience = businessStats.customerPatienceSeconds;
-  const monthDuration = businessStats.monthDurationSeconds;
   
   // Check if base values exist (to show N/A when missing)
   const baseConversionRate = metrics.baseConversionRate;
@@ -337,15 +348,25 @@ export function GameCanvas() {
           <div className="bg-black/75 text-white text-xs sm:text-[13px] px-3 py-2 rounded-lg shadow-lg space-y-1.5 max-w-[280px] max-h-[80vh] overflow-y-auto">
             <div className="font-semibold text-sm mb-1 sticky top-0 bg-black/75 pb-1">Live Modifiers</div>
             
-            {/* Customer Flow Section */}
+            {/* Lead Flow Section */}
             <div className="space-y-1 border-b border-gray-600 pb-1">
-              <div className="text-[10px] text-gray-400 uppercase tracking-wide">Customer Flow</div>
+              <div className="text-[10px] text-gray-400 uppercase tracking-wide">Lead Flow</div>
               <div>
-                <span className="text-gray-300">Spawn interval:</span>{' '}
+                <span className="text-gray-300">Leads per month:</span>{' '}
                 <span className="font-semibold">
-                  {spawnIntervalSeconds.toFixed(2)}s
-                  {customersPerMinute != null ? ` (${customersPerMinute.toFixed(1)}/min)` : ''}
+                  {leadsPerMonth != null ? `${leadsPerMonth}` : 'N/A'}
                 </span>
+                {spawnIntervalSeconds > 0 && monthDuration > 0 && (
+                  <div className="text-xs text-slate-500 mt-0.5 ml-4">
+                    Spawn interval: {spawnIntervalSeconds.toFixed(2)}s
+                    <br />
+                    Month duration: {monthDuration}s
+                    <br />
+                    <span className="text-slate-400">
+                      Formula: {monthDuration}s ÷ {leadsPerMonth} = {spawnIntervalSeconds.toFixed(2)}s per lead
+                    </span>
+                  </div>
+                )}
               </div>
               <div>
                 <span className="text-gray-300">Conversion rate:</span>{' '}

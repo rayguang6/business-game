@@ -79,7 +79,7 @@ const mapBusinessStats = (raw: unknown): BusinessStats | undefined => {
   if (
     typeof candidate.ticksPerSecond === 'number' &&
     typeof candidate.monthDurationSeconds === 'number' &&
-    typeof candidate.customerSpawnIntervalSeconds === 'number'
+    typeof candidate.leadsPerMonth === 'number'
   ) {
     const spawnPosition = candidate.customerSpawnPosition;
     if (spawnPosition && typeof spawnPosition.x === 'number' && typeof spawnPosition.y === 'number') {

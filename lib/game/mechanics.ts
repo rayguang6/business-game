@@ -1207,8 +1207,19 @@ export function tickOnce(state: TickInput): TickResult {
   // Calculate all metrics using effectManager (includes upgrades, marketing, staff effects)
   const baseStats = getBusinessStats(industryId);
   if (!baseStats) throw new Error('Business stats not loaded');
+  
+  // Calculate leadsPerMonth with effects applied, then convert to spawnIntervalSeconds
+  const leadsPerMonth = Math.max(0, Math.round(effectManager.calculate(GameMetric.LeadsPerMonth, baseStats.leadsPerMonth)));
+  const monthDurationSeconds = baseStats.monthDurationSeconds;
+  // Formula: spawnIntervalSeconds = monthDurationSeconds / leadsPerMonth
+  // Example: 60s month / 1 lead = 60s per lead
+  // Example: 60s month / 2 leads = 30s per lead
+  const spawnIntervalSeconds = monthDurationSeconds > 0 && leadsPerMonth > 0
+    ? monthDurationSeconds / leadsPerMonth
+    : monthDurationSeconds; // If no leads, use month duration as fallback (no spawning)
+  
   const gameMetrics = {
-    spawnIntervalSeconds: effectManager.calculate(GameMetric.SpawnIntervalSeconds, baseStats.customerSpawnIntervalSeconds),
+    spawnIntervalSeconds,
     serviceSpeedMultiplier: effectManager.calculate(GameMetric.ServiceSpeedMultiplier, 1.0),
     serviceCapacity: effectManager.calculate(GameMetric.ServiceCapacity, baseStats.serviceCapacity),
     // Skill level is handled directly (like cash), not through effect system
@@ -1242,9 +1253,12 @@ export function tickOnce(state: TickInput): TickResult {
   monthlyExpenses = gameMetrics.monthlyExpenses;
 
   // Calculate spawn interval in ticks and check if it's time to spawn leads
+  // Only spawn if leadsPerMonth > 0
   const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
-  const spawnIntervalTicks = Math.max(1, Math.round(gameMetrics.spawnIntervalSeconds * ticksPerSecond));
-  const shouldSpawnLeads = spawnIntervalTicks > 0 && nextTick % spawnIntervalTicks === 0;
+  const spawnIntervalTicks = leadsPerMonth > 0 && gameMetrics.spawnIntervalSeconds > 0 && gameMetrics.spawnIntervalSeconds !== Infinity
+    ? Math.max(1, Math.round(gameMetrics.spawnIntervalSeconds * ticksPerSecond))
+    : Infinity; // Don't spawn if no leads per month
+  const shouldSpawnLeads = spawnIntervalTicks > 0 && spawnIntervalTicks !== Infinity && nextTick % spawnIntervalTicks === 0;
 
   // Lead system: spawn leads that accumulate toward customer conversion
   if (shouldSpawnLeads) {

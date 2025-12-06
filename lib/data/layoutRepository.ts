@@ -1,7 +1,7 @@
 /**
  * Layout positions parsing utilities
- * Parses layout data from JSONB columns in industry_simulation_config
- * Note: Layout fetching is handled by industrySimulationConfigRepository.ts
+ * Parses layout data from JSONB columns in simulation_config table
+ * Note: Layout fetching is handled by simulationConfigRepository.ts (unified config)
  */
 
 import { GridPosition, AnchorPoint, ServiceRoomConfig } from '@/lib/game/types';

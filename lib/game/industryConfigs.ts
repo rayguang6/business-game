@@ -19,11 +19,11 @@ import {
 // - Game engine timing (ticksPerSecond, monthDurationSeconds, leavingAngryDurationTicks)
 // - Game pacing (eventTriggerSeconds)
 // - Default balance values (expGainPerHappyCustomer, expLossPerAngryCustomer, conversionRate)
-// - Reasonable defaults (customerSpawnIntervalSeconds, customerPatienceSeconds, etc.)
+// - Reasonable defaults (leadsPerMonth, customerPatienceSeconds, etc.)
 //
 // Industry-specific (commonly overridden):
 // - Starting values (startingCash, monthlyExpenses) - vary significantly by industry
-// - Customer behavior (customerSpawnIntervalSeconds, customerPatienceSeconds) - varies by industry
+// - Customer behavior (leadsPerMonth, customerPatienceSeconds) - varies by industry
 // - Revenue models (serviceRevenueMultiplier, serviceRevenueScale) - varies by industry
 // - Risk levels (failureRate) - varies by industry
 // - Map positions (customerSpawnPosition, serviceCapacity) - unique per industry
@@ -52,7 +52,7 @@ const DEFAULT_BUSINESS_STATS: BusinessStats = {
   conversionRate: 10, // Default conversion rate - industries can override (freelance: 15, luxury: 5)
   
   // Reasonable defaults (GLOBAL - industries commonly override)
-  customerSpawnIntervalSeconds: 3, // Default spawn rate - industries override (fast food: 1.5, consulting: 5)
+  leadsPerMonth: 20, // Default leads per month (60s month / 3s interval = 20) - industries override (fast food: 40, consulting: 12)
   customerPatienceSeconds: 10, // Default patience - industries override (fast food: 5, spa: 15)
   serviceRevenueMultiplier: 1, // Default pricing - industries override (dental: 1.2, restaurant: 0.8)
   serviceRevenueScale: 10, // Default revenue scale - industries override (freelance: 5, restaurant: 15)

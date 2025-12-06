@@ -26,7 +26,7 @@ export default async function GamePage({ params }: GamePageProps) {
           title="Configuration Error"
           message="Failed to load global simulation configuration."
           errorType="database"
-          details="Please ensure global_simulation_config table has data configured in the admin panel."
+          details="Please ensure simulation_config table has data configured for industry_id='global' in the admin panel."
           onRetry={() => window.location.reload()}
         />
       );

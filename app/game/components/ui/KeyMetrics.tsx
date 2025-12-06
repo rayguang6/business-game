@@ -6,7 +6,7 @@ import { useMetricChanges } from '@/hooks/useMetricChanges';
 import { MetricFeedback, FeedbackItem } from './MetricFeedback';
 import { useGameStore } from '@/lib/store/gameStore';
 import { useConfigStore } from '@/lib/store/configStore';
-import { DEFAULT_INDUSTRY_ID, getStartingTime, getBusinessMetrics } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getStartingTime, getBusinessMetrics, getBusinessStats } from '@/lib/game/config';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import type { IndustryId } from '@/lib/game/types';
 import { getLevel, getLevelProgress } from '@/lib/store/types';
@@ -174,6 +174,18 @@ export function KeyMetrics() {
             color = 'text-blue-400';
             feedback = [];
             break;
+          case GameMetric.LeadsPerMonth: {
+            // Calculate leadsPerMonth with effects applied
+            const baseStats = getBusinessStats(industryId);
+            const baseLeadsPerMonth = baseStats?.leadsPerMonth ?? 20;
+            const calculatedLeadsPerMonth = Math.max(0, Math.round(effectManager.calculate(GameMetric.LeadsPerMonth, baseLeadsPerMonth)));
+            value = `${calculatedLeadsPerMonth}${unit}`;
+            icon = '👥';
+            image = iconPath || '/images/icons/marketing.png';
+            color = 'text-cyan-400';
+            feedback = [];
+            break;
+          }
           default:
             // For other metrics, try to get value from metrics object
             const metricValue = (metrics as unknown as Record<string, number>)[def.id] ?? 0;

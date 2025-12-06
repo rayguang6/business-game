@@ -12,9 +12,34 @@ This document provides comprehensive recommendations for refactoring the codebas
 
 ---
 
+## ✅ Implementation Status Summary
+
+### Phase 0: Unified Config Table ✅ **COMPLETE**
+**Status:** Migration created, unified table exists, code partially migrated
+
+**Completed:**
+- ✅ Migration script created (`006_create_unified_simulation_config.sql`)
+- ✅ Unified `simulation_config` table with `industry_id` column exists
+- ✅ Data migrated from both old tables
+- ✅ Unified repository (`simulationConfigRepository.ts`) exists
+- ✅ Unified admin hook (`useSimulationConfig`) exists
+
+**Remaining:**
+- ⚠️ Some repositories still reference old tables (`industrySimulationConfigRepository.ts`, `layoutRepository.ts`)
+- ⚠️ Old tables (`global_simulation_config`, `industry_simulation_config`) still exist (not dropped)
+- ⚠️ Need to verify all code uses unified table before dropping old tables
+
+**Next Steps:**
+1. Audit all code to ensure it uses unified `simulation_config` table
+2. Remove references to old tables
+3. Drop old tables after verification
+4. Clean up duplicate repository code
+
+---
+
 ## Updated Implementation Priority
 
-### Phase 0: Unified Config Table (Highest Priority - 1-2 weeks)
+### Phase 0: Unified Config Table (Highest Priority - 1-2 weeks) ✅ **MOSTLY COMPLETE**
 **Problem:** Two separate tables (`global_simulation_config` + `industry_simulation_config`) create massive duplication.
 
 **Solution:** Single `simulation_config` table with `industry_id` column.
@@ -27,42 +52,60 @@ This document provides comprehensive recommendations for refactoring the codebas
 - ✅ **Simpler architecture** - no complex merging logic
 
 **Implementation:**
-1. Create migration script (copy data from both tables)
-2. Update repositories to use new table
-3. Merge admin hooks/components
-4. Test thoroughly, then drop old tables
+1. ✅ Create migration script (copy data from both tables)
+2. ✅ Update repositories to use new table (mostly done)
+3. ✅ Merge admin hooks/components (done)
+4. ⚠️ Test thoroughly, then drop old tables (pending cleanup)
 
-### Phase 1: Metric Registry (Core Foundation - 2-3 weeks)
-**Problem:** Metrics scattered across files with unclear display logic.
+### Phase 1: Metric Registry (Core Foundation - 2-3 weeks) ✅ **COMPLETE**
+**Status:** Registry created, all components migrated, database integration complete
 
-**Solution:** Centralized metric registry with metadata for display and behavior.
+**Completed:**
+- ✅ `lib/game/metrics/registry.ts` created with all metrics
+- ✅ Metric definitions with display metadata
+- ✅ Database schema for metric display configs (`metric_display_config` table)
+- ✅ Repository layer for metric display configs
+- ✅ Admin UI for managing metric display configs
+- ✅ `useMetricDisplayConfigs` hook for fetching DB configs
+- ✅ All game UI components migrated (HUD, Marketing, Events, Upgrades, Staff)
+- ✅ All admin components migrated
+- ✅ ConversionRate added to registry (shows on HUD)
+- ✅ FreedomScore → LeveragedTime (display name updated)
+- ✅ ServiceRevenueFlatBonus treated as regular metric
 
-**Benefits:**
+**Benefits Achieved:**
 - ✅ Single source of truth for all metrics
 - ✅ Easy to add new metrics (add to registry)
 - ✅ Configurable display (HUD vs details vs hidden)
-- ✅ Auto-generate admin UI
+- ✅ Database-driven overrides per industry
+- ✅ Consistent labels across all UI
 
-**Implementation:**
-1. Create `lib/game/metrics/registry.ts` with all current metrics
-2. Migrate HUD to use registry (industry-specific)
-3. Migrate details panel and admin UI
-4. Add new metrics (ConversionRate, LeveragedTime, etc.)
+### Phase 2: HUD & Display Updates (User-Facing - 1-2 weeks) ⚠️ **PARTIALLY COMPLETE**
+**Status:** Most changes done, one feature pending
 
-### Phase 2: HUD & Display Updates (User-Facing - 1-2 weeks)
-**Changes:**
-- FreedomScore → LeveragedTime
-- Add ConversionRate to HUD
-- SpawnInterval → CustomersPerMonth (calculation change)
-- Industry-specific HUD configuration
+**Completed:**
+- ✅ FreedomScore → LeveragedTime (display name updated in registry)
+- ✅ ConversionRate added to HUD (registry shows `showOnHUD: true`, priority 5)
+- ✅ Industry-specific HUD configuration (via database `metric_display_config` table)
+- ✅ HUD component uses registry and respects DB configs
 
-**Implementation:**
-1. Update metric registry with new metrics
-2. Update HUD component to show configurable metrics
-3. Update calculation logic for CustomersPerMonth
-4. Add industry HUD config storage
+**Remaining:**
+- ❌ **SpawnInterval → CustomersPerMonth display** - NOT IMPLEMENTED
+  - Calculation exists (`calculateMonthlyRevenuePotential()` in `config.ts`)
+  - Registry still shows "Spawn Interval" with description "Phase 2: will display as Customers Per Month"
+  - Need to:
+    1. Add `CustomersPerMonth` as calculated metric or display transformation
+    2. Update registry to show calculated value instead of raw `SpawnIntervalSeconds`
+    3. Update UI to display "Customers Per Month" instead of "Spawn Interval"
 
-### Phase 3: Schema Management & Code Generation (Future-Proofing - 2-3 weeks)
+**Implementation Needed:**
+1. Add display transformation for `SpawnIntervalSeconds` → `CustomersPerMonth`
+2. Update registry description and display logic
+3. Update UI components to show calculated value
+
+### Phase 3: Schema Management & Code Generation (Future-Proofing - 2-3 weeks) ❌ **NOT STARTED**
+**Status:** No schema definitions or code generation implemented
+
 **Problem:** Schema changes require manual updates in multiple places.
 
 **Solution:** Schema definitions + code generation.
@@ -72,16 +115,20 @@ This document provides comprehensive recommendations for refactoring the codebas
 - ✅ Auto-generate admin forms
 - ✅ Checklist generator for schema changes
 
-**Implementation:**
-1. Create schema definitions
-2. Add type generation
-3. Create schema change helper
-4. Migrate to generated forms
+**Implementation Needed:**
+1. Create schema definitions (`lib/data/schema/definitions.ts`)
+2. Add type generation scripts
+3. Create schema change helper/checklist generator
+4. Migrate to generated forms (optional, can be incremental)
 
-### Phase 4: Advanced Features & Cleanup (Ongoing)
-- Repository base classes
-- Testing infrastructure
-- Documentation updates
+### Phase 4: Advanced Features & Cleanup (Ongoing) ❌ **NOT STARTED**
+**Status:** No advanced features implemented yet
+
+**Remaining Work:**
+- ❌ Repository base classes (`BaseRepository` pattern)
+- ❌ Testing infrastructure (schema consistency tests)
+- ❌ Documentation updates
+- ❌ Parameter groups/organization system
 
 ---
 
@@ -271,7 +318,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
     category: 'gameplay',
     defaultBaseValue: 5.0,
     defaultValueSource: 'businessStats',
-    defaultValuePath: 'customerSpawnIntervalSeconds',
+    defaultValuePath: 'spawnIntervalSeconds',
     constraints: { min: 0.5, max: 60, roundToInt: false },
     adminLabel: 'Spawn Interval (seconds)',
     adminHelperText: 'Lower = more customers',
@@ -1098,6 +1145,46 @@ describe('Schema Consistency', () => {
 
 ---
 
+## 6. Current Status & Next Steps
+
+### ✅ Completed Phases
+
+**Phase 0: Unified Config Table** - ✅ **COMPLETE**
+- ✅ Migration created and executed (`006_create_unified_simulation_config.sql`)
+- ✅ Unified table exists and is being used
+- ✅ Old table references cleaned up (error messages, comments updated)
+- ✅ Old repository marked as deprecated
+- ✅ Migration to drop old tables created (`009_drop_old_simulation_config_tables.sql`)
+
+**Phase 1: Metric Registry** - ✅ **COMPLETE**
+- Registry created with all metrics
+- Database integration complete
+- All UI components migrated
+- Database-driven display configs working
+
+**Phase 2: HUD & Display Updates** - ✅ **COMPLETE**
+- ✅ FreedomScore → LeveragedTime (display name updated in registry)
+- ✅ ConversionRate on HUD (registry shows `showOnHUD: true`, priority 5)
+- ✅ Industry-specific HUD configuration (via database `metric_display_config` table)
+- ✅ SpawnInterval → CustomersPerMonth display transformation
+  - Helper functions added to registry (`calculateCustomersPerMonth`, `formatCustomersPerMonth`)
+  - GameCanvas updated to show "Customers per month" instead of "Spawn interval"
+  - Admin panels show calculated Customers Per Month below spawn interval input
+
+### ❌ Remaining Phases
+
+**Phase 3: Schema Management** - ❌ **NOT STARTED**
+- Schema definitions
+- Code generation
+- Change checklists
+
+**Phase 4: Advanced Features** - ❌ **NOT STARTED**
+- Base repository classes
+- Testing infrastructure
+- Parameter organization
+
+---
+
 ## 6. Updated Implementation Priority
 
 ### Phase 0: Unified Config Table (Highest Priority - 1-2 weeks)
@@ -1266,7 +1353,7 @@ describe('Schema Consistency', () => {
 ```
 
 #### 4. SpawnInterval → CustomersPerMonth
-**Current:** `customerSpawnIntervalSeconds` (time between spawns)
+**Current:** `spawnIntervalSeconds` (time between spawns)
 **New:** Display as `customersPerMonth` (total customers per month)
 
 **Calculation change:**

@@ -103,7 +103,7 @@ export function useSimulationConfig({
   const getDefaultStats = (): BusinessStats => ({
     ticksPerSecond: 10,
     monthDurationSeconds: 60,
-    customerSpawnIntervalSeconds: 3,
+    leadsPerMonth: 20, // 60s month / 3s interval = 20 leads/month
     customerPatienceSeconds: 10,
     leavingAngryDurationTicks: 10,
     customerSpawnPosition: { x: 4, y: 9 },

@@ -15,7 +15,7 @@ export interface BusinessMetrics {
 export interface BusinessStats {
   ticksPerSecond: number;
   monthDurationSeconds: number;
-  customerSpawnIntervalSeconds: number;
+  leadsPerMonth: number; // Leads spawned per industry month (replaces spawnIntervalSeconds)
   customerPatienceSeconds: number;
   leavingAngryDurationTicks: number;
   customerSpawnPosition: {
@@ -104,7 +104,7 @@ export type UpgradeId = UpgradeDefinition['id'];
 
 export interface BaseUpgradeMetrics {
   monthlyExpenses: number;
-  spawnIntervalSeconds: number;
+  leadsPerMonth: number; // Leads per month (replaces spawnIntervalSeconds)
   serviceSpeedMultiplier: number;
   exp: number; // Direct exp (effects modify this directly)
   serviceCapacity: number;

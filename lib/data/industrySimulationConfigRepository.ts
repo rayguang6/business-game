@@ -1,3 +1,10 @@
+/**
+ * @deprecated This repository is deprecated. Use simulationConfigRepository.ts instead.
+ * The unified simulation_config table replaces both global_simulation_config and industry_simulation_config.
+ * This file is kept for reference but should not be used in new code.
+ * TODO: Remove this file after verifying all code uses the unified repository.
+ */
+
 import { supabaseServer } from '@/lib/server/supabaseServer';
 import type { IndustryId, GridPosition, ServiceRoomConfig } from '@/lib/game/types';
 import type {
@@ -52,7 +59,7 @@ const mapBusinessStats = (raw: unknown): BusinessStats | undefined => {
   if (
     typeof c.ticksPerSecond === 'number' &&
     typeof c.monthDurationSeconds === 'number' &&
-    typeof c.customerSpawnIntervalSeconds === 'number'
+    typeof c.leadsPerMonth === 'number'
   ) {
     const pos = c.customerSpawnPosition;
     if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {

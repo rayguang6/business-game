@@ -12,14 +12,14 @@
  */
 
 import { IndustryId } from './types';
-import { getTicksPerSecondForIndustry } from './config';
+import { getTicksPerSecondForIndustry, getBusinessStats } from './config';
 
 // All game metrics that can be affected by effects
 export enum GameMetric {
   Cash = 'cash', // Direct cash modification (add/subtract)
   Time = 'time', // Direct time modification (add/subtract)
   MonthlyTimeCapacity = 'monthlyTimeCapacity', // Monthly time capacity increase (permanent)
-  SpawnIntervalSeconds = 'spawnIntervalSeconds',
+  LeadsPerMonth = 'leadsPerMonth', // Leads spawned per industry month (replaces SpawnIntervalSeconds)
   ServiceSpeedMultiplier = 'serviceSpeedMultiplier',
   ServiceCapacity = 'serviceCapacity',
   Exp = 'exp', // Direct exp modification (add/subtract)
@@ -117,6 +117,10 @@ export const METRIC_CONSTRAINTS: Partial<Record<GameMetric, MetricConstraints>> 
   [GameMetric.ConversionRate]: {
     min: 0.1,         // Can't have negative or zero conversion rate
     roundToInt: false, // Can be decimal
+  },
+  [GameMetric.LeadsPerMonth]: {
+    min: 0,           // Can't have negative leads per month
+    roundToInt: true, // Must be whole number
   },
   // Add more constraints here only when needed
   // Metrics without constraints will work fine (no validation)
@@ -226,21 +230,12 @@ export function calculateMetricValue(
       (sum, effect) => sum + effect.value,
       0,
     );
-    if (metric === GameMetric.SpawnIntervalSeconds) {
-      const divisor = Math.max(0.01, 1 + percentTotal / 100);
-      value /= divisor;
-    } else {
-      value *= 1 + percentTotal / 100;
-    }
+    value *= 1 + percentTotal / 100;
   }
 
   if (byType[EffectType.Multiply].length > 0) {
     sortEffectsByPriority(byType[EffectType.Multiply]).forEach((effect) => {
-      if (metric === GameMetric.SpawnIntervalSeconds) {
-        value /= Math.max(0.01, Math.abs(effect.value));
-      } else {
-        value *= effect.value;
-      }
+      value *= effect.value;
     });
   }
 
@@ -537,11 +532,18 @@ export function calculateMetricWithIndustry(
 ): { value: number; ticks?: number } {
   const value = effectManager.calculate(metric, baseValue);
 
-  // Special handling for spawn interval - also return as ticks
-  if (metric === GameMetric.SpawnIntervalSeconds) {
-    const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
-    const ticks = Math.max(1, Math.round(value * ticksPerSecond));
-    return { value, ticks };
+  // Special handling for leads per month - convert to spawn interval and ticks
+  if (metric === GameMetric.LeadsPerMonth) {
+    const stats = getBusinessStats(industryId);
+    if (stats) {
+      const monthDurationSeconds = stats.monthDurationSeconds;
+      const spawnIntervalSeconds = monthDurationSeconds > 0 && value > 0
+        ? Math.max(0.1, monthDurationSeconds / value)
+        : 3; // fallback
+      const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
+      const ticks = Math.max(1, Math.round(spawnIntervalSeconds * ticksPerSecond));
+      return { value, ticks };
+    }
   }
 
   return { value };

@@ -17,7 +17,7 @@ const toMetricValues = (base: BaseUpgradeMetrics): MetricValues => ({
   [GameMetric.Time]: 0, // Not affected by upgrades
   [GameMetric.GenerateLeads]: 0, // Not affected by upgrades
   [GameMetric.MonthlyExpenses]: base.monthlyExpenses,
-  [GameMetric.SpawnIntervalSeconds]: base.spawnIntervalSeconds,
+  [GameMetric.LeadsPerMonth]: base.leadsPerMonth,
   [GameMetric.ServiceSpeedMultiplier]: base.serviceSpeedMultiplier,
   [GameMetric.Exp]: base.exp,
   [GameMetric.ServiceCapacity]: base.serviceCapacity,
@@ -35,7 +35,7 @@ const toMetricValues = (base: BaseUpgradeMetrics): MetricValues => ({
 
 const fromMetricValues = (values: MetricValues): BaseUpgradeMetrics => ({
   monthlyExpenses: values[GameMetric.MonthlyExpenses],
-  spawnIntervalSeconds: values[GameMetric.SpawnIntervalSeconds],
+  leadsPerMonth: values[GameMetric.LeadsPerMonth],
   serviceSpeedMultiplier: values[GameMetric.ServiceSpeedMultiplier],
   exp: values[GameMetric.Exp],
   serviceCapacity: values[GameMetric.ServiceCapacity],

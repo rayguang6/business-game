@@ -218,21 +218,21 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
     canBeModifiedByEffects: true,
   },
   
-  [GameMetric.SpawnIntervalSeconds]: {
-    id: GameMetric.SpawnIntervalSeconds,
-    displayLabel: 'Spawn Interval',
-    description: 'Seconds between customer spawns (Phase 2: will display as Customers Per Month)',
+  [GameMetric.LeadsPerMonth]: {
+    id: GameMetric.LeadsPerMonth,
+    displayLabel: 'Leads Per Month',
+    description: 'Number of leads spawned per industry month. Internally converted to spawn interval for game mechanics.',
     defaultValueSource: 'businessStats',
-    defaultValuePath: 'customerSpawnIntervalSeconds',
+    defaultValuePath: 'leadsPerMonth',
     constraints: {
-      min: 0.5,
-      max: 60,
+      min: 0,
+      roundToInt: true,
     },
     display: {
-      showOnHUD: false,
+      showOnHUD: true,
       showInDetails: false,
-      showInAdmin: true,
-      unit: ' sec',
+      showInAdmin: false,
+      unit: ' leads/month',
     },
     canBeModifiedByEffects: true,
   },
@@ -549,4 +549,40 @@ export function getDefaultValue(metric: GameMetric, industryId: IndustryId = 'fr
   }
   
   return 0;
+}
+
+/**
+ * Calculate Customers Per Month from Spawn Interval Seconds
+ * Formula: customersPerMonth = monthDurationSeconds / spawnIntervalSeconds
+ * 
+ * @param spawnIntervalSeconds Seconds between customer spawns
+ * @param monthDurationSeconds Duration of a month in seconds
+ * @returns Number of customers per month (rounded down)
+ */
+export function calculateCustomersPerMonth(
+  spawnIntervalSeconds: number,
+  monthDurationSeconds: number,
+): number {
+  if (spawnIntervalSeconds <= 0 || monthDurationSeconds <= 0) {
+    return 0;
+  }
+  return Math.floor(monthDurationSeconds / spawnIntervalSeconds);
+}
+
+/**
+ * Format SpawnIntervalSeconds as Customers Per Month for display
+ * 
+ * @param spawnIntervalSeconds Seconds between customer spawns
+ * @param monthDurationSeconds Duration of a month in seconds (optional, will fetch from config if not provided)
+ * @param industryId Industry ID to fetch month duration from config (default: 'freelance')
+ * @returns Formatted string like "60 customers/month"
+ */
+export function formatCustomersPerMonth(
+  spawnIntervalSeconds: number,
+  monthDurationSeconds?: number,
+  industryId: IndustryId = 'freelance',
+): string {
+  const monthDuration = monthDurationSeconds ?? getBusinessStats(industryId)?.monthDurationSeconds ?? 0;
+  const customersPerMonth = calculateCustomersPerMonth(spawnIntervalSeconds, monthDuration);
+  return `${customersPerMonth} customers/month`;
 }

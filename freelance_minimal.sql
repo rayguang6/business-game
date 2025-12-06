@@ -26,7 +26,7 @@ INSERT INTO industry_simulation_configs (
         "startingTime": 100
     }'::jsonb,
     '{
-        "customerSpawnIntervalSeconds": 4,
+        "spawnIntervalSeconds": 4,
         "customerPatienceSeconds": 12,
         "serviceRevenueMultiplier": 0.8,
         "serviceRevenueScale": 8,

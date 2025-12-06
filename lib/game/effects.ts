@@ -57,34 +57,12 @@ const applyUpgradeEffectsToCombined = (
 
   effects.forEach((effect) => {
     switch (effect.metric) {
-      case GameMetric.SpawnIntervalSeconds: {
-        let updatedSeconds = result.spawnIntervalSeconds;
-        switch (effect.type) {
-          case EffectType.Add:
-            updatedSeconds = result.spawnIntervalSeconds + effect.value;
-            break;
-          case EffectType.Percent: {
-            const divisor = Math.max(0.01, 1 + effect.value / 100);
-            updatedSeconds = result.spawnIntervalSeconds / divisor;
-            break;
-          }
-          case EffectType.Multiply: {
-            const divisor = Math.max(0.01, Math.abs(effect.value));
-            updatedSeconds = result.spawnIntervalSeconds / divisor;
-            break;
-          }
-          case EffectType.Set:
-            updatedSeconds = effect.value;
-            break;
-          default:
-            break;
-        }
-        updatedSeconds = Math.max(0.1, updatedSeconds);
-        const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
+      case GameMetric.LeadsPerMonth: {
+        const updated = applyUpgradeEffectMetric(result.leadsPerMonth, effect);
+        const updatedLeadsPerMonth = Math.max(0, Math.round(updated));
         result = {
           ...result,
-          spawnIntervalSeconds: updatedSeconds,
-          spawnIntervalTicks: Math.max(1, Math.round(updatedSeconds * ticksPerSecond)),
+          leadsPerMonth: updatedLeadsPerMonth,
         };
         break;
       }
@@ -172,14 +150,12 @@ const applyMultipliersToCombined = (
     }
     const safeMultiplier = Math.max(0, multiplier);
     switch (metric) {
-      case GameMetric.SpawnIntervalSeconds: {
-        const divisor = Math.max(0.01, safeMultiplier);
-        const updatedSeconds = Math.max(0.1, combined.spawnIntervalSeconds / divisor);
-        const ticksPerSecond = getTicksPerSecondForIndustry(industryId);
+      case GameMetric.LeadsPerMonth: {
+        // LeadsPerMonth multiplier: multiply the leads per month
+        const updatedLeadsPerMonth = Math.max(0, Math.round(combined.leadsPerMonth * safeMultiplier));
         result = {
           ...result,
-          spawnIntervalSeconds: updatedSeconds,
-          spawnIntervalTicks: Math.max(1, Math.round(updatedSeconds * ticksPerSecond)),
+          leadsPerMonth: updatedLeadsPerMonth,
         };
         break;
       }

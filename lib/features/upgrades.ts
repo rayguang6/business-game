@@ -10,6 +10,7 @@ import {
   UpgradeId,
   getUpgradesForIndustry,
   getBaseUpgradeMetricsForIndustry,
+  getBusinessStats,
   secondsToTicks,
 } from '@/lib/game/config';
 import { Upgrades } from '@/lib/store/types';
@@ -20,8 +21,9 @@ import { UpgradeLevelDefinition } from '@/lib/game/effects/upgradeEffects';
 export type ActiveUpgradeIds = UpgradeId[]; // Legacy type for compatibility
 
 export interface UpgradeEffects {
-  spawnIntervalSeconds: number;
-  spawnIntervalTicks: number;
+  leadsPerMonth: number; // Leads per month (from config + effects)
+  spawnIntervalSeconds: number; // Computed: monthDurationSeconds / leadsPerMonth
+  spawnIntervalTicks: number; // Computed: spawnIntervalSeconds * ticksPerSecond
   serviceSpeedMultiplier: number;
   exp: number; // Direct exp (effects modify this directly)
   serviceCapacity: number;
@@ -64,12 +66,24 @@ export function getUpgradeEffects(
   industryId: IndustryId,
 ): UpgradeEffects {
   const baseMetrics = getBaseUpgradeMetricsForIndustry(industryId);
+  const stats = getBusinessStats(industryId);
+  if (!stats) throw new Error('Business stats not loaded');
 
   // Use effectManager for consistent calculation (includes all effects: upgrades, staff, etc.)
-  const spawnIntervalSeconds = Math.max(0.5, effectManager.calculate(GameMetric.SpawnIntervalSeconds, baseMetrics.spawnIntervalSeconds));
+  const leadsPerMonth = Math.max(1, Math.round(effectManager.calculate(GameMetric.LeadsPerMonth, baseMetrics.leadsPerMonth)));
+  
+  // Calculate spawnIntervalSeconds from leadsPerMonth and monthDurationSeconds
+  // Formula: spawnIntervalSeconds = monthDurationSeconds / leadsPerMonth
+  // Example: 60s month / 1 lead = 60s per lead
+  // Example: 60s month / 2 leads = 30s per lead
+  const monthDurationSeconds = stats.monthDurationSeconds;
+  const spawnIntervalSeconds = monthDurationSeconds > 0 && leadsPerMonth > 0
+    ? monthDurationSeconds / leadsPerMonth
+    : monthDurationSeconds; // If no leads, use month duration as fallback (no spawning)
   const spawnIntervalTicks = Math.max(1, secondsToTicks(spawnIntervalSeconds, industryId));
 
   return {
+    leadsPerMonth,
     spawnIntervalSeconds,
     spawnIntervalTicks,
     serviceSpeedMultiplier: Math.max(0.1, effectManager.calculate(GameMetric.ServiceSpeedMultiplier, baseMetrics.serviceSpeedMultiplier)),

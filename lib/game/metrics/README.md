@@ -173,7 +173,7 @@ Values from `BusinessMetrics` interface:
 Values from `BusinessStats` interface:
 - `serviceCapacity`
 - `serviceRevenueMultiplier`
-- `customerSpawnIntervalSeconds`
+- `spawnIntervalSeconds`
 - `conversionRate`
 - `failureRate`
 

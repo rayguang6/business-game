@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import type { BusinessMetrics, BusinessStats, GridPosition, AnchorPoint, ServiceRoomConfig } from '@/lib/game/types';
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
-import { getMetricDefinition } from '@/lib/game/metrics/registry';
+import { getMetricDefinition, calculateCustomersPerMonth } from '@/lib/game/metrics/registry';
 import { GameMetric } from '@/lib/game/effectManager';
 
 interface IndustrySimulationConfigTabProps {
@@ -437,14 +437,23 @@ export function IndustrySimulationConfigTab({
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Customer Spawn Interval (sec)</label>
+              <label className="block text-xs text-slate-400 mb-1">Leads Per Month</label>
               <input 
                 type="number" 
-                min="0" 
+                min="1" 
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getValue(businessStats?.customerSpawnIntervalSeconds)} 
-                onChange={(e) => updateStats({ customerSpawnIntervalSeconds: e.target.value === '' ? undefined : Number(e.target.value) })} 
+                value={getValue(businessStats?.leadsPerMonth)} 
+                onChange={(e) => updateStats({ leadsPerMonth: e.target.value === '' ? undefined : Number(e.target.value) })} 
               />
+              {(businessStats?.leadsPerMonth ?? globalStats?.leadsPerMonth) && 
+               (businessStats?.monthDurationSeconds ?? globalStats?.monthDurationSeconds) && (
+                <div className="text-xs text-slate-500 mt-1">
+                  = spawn interval: {(
+                    (businessStats?.monthDurationSeconds ?? globalStats?.monthDurationSeconds ?? 0) / 
+                    (businessStats?.leadsPerMonth ?? globalStats?.leadsPerMonth ?? 1)
+                  ).toFixed(2)}s
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Customer Patience (sec)</label>
