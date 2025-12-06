@@ -15,11 +15,13 @@ interface GlobalConfigTabProps {
   globalSaving: boolean;
   metrics: BusinessMetrics | null;
   stats: BusinessStats | null;
+  movement: MovementConfig | null;
   winCondition: WinCondition | null;
   loseCondition: LoseCondition | null;
   uiConfig: UiConfig;
   onUpdateMetrics: (updates: Partial<BusinessMetrics>) => void;
   onUpdateStats: (updates: Partial<BusinessStats>) => void;
+  onUpdateMovement: (movement: MovementConfig | null) => void;
   onUpdateWinCondition: (updates: Partial<WinCondition>) => void;
   onUpdateLoseCondition: (updates: Partial<LoseCondition>) => void;
   onUpdateUiConfig: (updates: Partial<UiConfig>) => void;
@@ -32,46 +34,25 @@ export function GlobalConfigTab({
   globalSaving,
   metrics,
   stats,
+  movement,
   winCondition,
   loseCondition,
   uiConfig,
   onUpdateMetrics,
   onUpdateStats,
+  onUpdateMovement,
   onUpdateWinCondition,
   onUpdateLoseCondition,
   onUpdateUiConfig,
   onSave,
 }: GlobalConfigTabProps) {
-  // Safe defaults for build-time rendering
-  const safeMetrics = metrics || {
-    startingCash: 10000,
-    monthlyExpenses: 1000,
-    startingExp: 0,
-    startingFreedomScore: 80,
+  // Helper to get value or empty string for inputs
+  const getValue = (val: number | null | undefined): string => {
+    return val !== null && val !== undefined ? String(val) : '';
   };
 
-  const safeStats = stats || {
-    ticksPerSecond: 10,
-    monthDurationSeconds: 60,
-    customerSpawnIntervalSeconds: 3,
-    customerPatienceSeconds: 10,
-    leavingAngryDurationTicks: 10,
-    customerSpawnPosition: { x: 4, y: 9 },
-    serviceCapacity: 2,
-    expGainPerHappyCustomer: 1,
-    expLossPerAngryCustomer: 1,
-    expPerLevel: 200,
-    serviceRevenueMultiplier: 1,
-    eventTriggerSeconds: [],
-  };
-
-  const safeWinCondition = winCondition || {
-    cashTarget: 50000,
-  };
-
-  const safeLoseCondition = loseCondition || {
-    cashThreshold: 0,
-    timeThreshold: 90,
+  const getArrayValue = (arr: number[] | null | undefined): string => {
+    return arr && arr.length > 0 ? arr.join(', ') : '';
   };
   // Keyboard shortcut for save
   useEffect(() => {
@@ -91,14 +72,8 @@ export function GlobalConfigTab({
   return (
     <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
       <div className="p-6 border-b border-slate-800">
-        <h2 className="text-2xl font-semibold">Global Simulation Config</h2>
-        <p className="text-sm text-slate-400 mt-1">Edit core defaults used by all industries.</p>
-        <div className="mt-3 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
-          <p className="text-xs text-slate-300">
-            <span className="font-semibold">How it works:</span> Values set here become defaults for all industries.
-            Industries can override specific values in their own config. Priority: <span className="font-mono text-slate-200">Industry → Global → Code Defaults</span>
-          </p>
-        </div>
+        <h2 className="text-2xl font-semibold">Simulation Config</h2>
+        <p className="text-sm text-slate-400 mt-1">Configure simulation settings.</p>
       </div>
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
@@ -111,41 +86,32 @@ export function GlobalConfigTab({
             <label className="block text-sm font-semibold text-slate-300">Business Metrics</label>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  Starting Cash
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded">Commonly Overridden</span>
-                </label>
+                <label className="block text-xs text-slate-400 mb-1">Starting Cash</label>
                 <input
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={metrics?.startingCash ?? 10000}
-                  onChange={(e) => onUpdateMetrics({ startingCash: Number(e.target.value) })}
+                  value={getValue(metrics?.startingCash)}
+                  onChange={(e) => onUpdateMetrics({ startingCash: e.target.value === '' ? undefined : Number(e.target.value) })}
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  Monthly Expenses
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded">Commonly Overridden</span>
-                </label>
+                <label className="block text-xs text-slate-400 mb-1">Monthly Expenses</label>
                 <input
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={safeMetrics.monthlyExpenses}
-                  onChange={(e) => onUpdateMetrics({ monthlyExpenses: Number(e.target.value) })}
+                  value={getValue(metrics?.monthlyExpenses)}
+                  onChange={(e) => onUpdateMetrics({ monthlyExpenses: e.target.value === '' ? undefined : Number(e.target.value) })}
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  Starting EXP
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-blue-500/20 text-blue-300 rounded">Global Default</span>
-                </label>
+                <label className="block text-xs text-slate-400 mb-1">Starting EXP</label>
                 <input
                   type="number"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={safeMetrics.startingExp}
-                  onChange={(e) => onUpdateMetrics({ startingExp: Number(e.target.value) })}
+                  value={getValue(metrics?.startingExp)}
+                  onChange={(e) => onUpdateMetrics({ startingExp: e.target.value === '' ? undefined : Number(e.target.value) })}
                 />
               </div>
               <div>
@@ -154,8 +120,8 @@ export function GlobalConfigTab({
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={safeMetrics.startingFreedomScore}
-                  onChange={(e) => onUpdateMetrics({ startingFreedomScore: Number(e.target.value) })}
+                  value={getValue(metrics?.startingFreedomScore)}
+                  onChange={(e) => onUpdateMetrics({ startingFreedomScore: e.target.value === '' ? undefined : Number(e.target.value) })}
                 />
               </div>
               <div>
@@ -164,9 +130,9 @@ export function GlobalConfigTab({
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={safeMetrics.startingTime ?? ''}
-                  onChange={(e) => onUpdateMetrics({ startingTime: e.target.value ? Number(e.target.value) : undefined })}
-                  placeholder="0 (leave empty to disable)"
+                  value={getValue(metrics?.startingTime)}
+                  onChange={(e) => onUpdateMetrics({ startingTime: e.target.value === '' ? undefined : Number(e.target.value) })}
+                  placeholder="Leave empty to disable"
                 />
                 <p className="text-xs text-slate-500 mt-1">
                   Monthly available time (refreshes each month). Set to enable time currency.
@@ -178,199 +144,343 @@ export function GlobalConfigTab({
             <label className="block text-sm font-semibold text-slate-300">Business Stats</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  Ticks Per Second
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-yellow-500/20 text-yellow-300 rounded">Commonly Override</span>
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={safeStats.ticksPerSecond}
-                  onChange={(e) => onUpdateStats({ ticksPerSecond: Number(e.target.value) })}
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  Month Duration (sec)
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-yellow-500/20 text-yellow-300 rounded">Commonly Override</span>
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={safeStats.monthDurationSeconds}
-                  onChange={(e) => onUpdateStats({ monthDurationSeconds: Number(e.target.value) })}
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  Customer Spawn Interval (sec)
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-yellow-500/20 text-yellow-300 rounded">Commonly Override</span>
-                </label>
+                <label className="block text-xs text-slate-400 mb-1">Ticks Per Second</label>
                 <input
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={safeStats.customerSpawnIntervalSeconds}
-                  onChange={(e) => onUpdateStats({ customerSpawnIntervalSeconds: Number(e.target.value) })}
+                  value={getValue(stats?.ticksPerSecond)}
+                  onChange={(e) => onUpdateStats({ ticksPerSecond: e.target.value === '' ? undefined : Number(e.target.value) })}
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  Customer Patience (sec)
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded">Commonly Overridden</span>
-                </label>
+                <label className="block text-xs text-slate-400 mb-1">Month Duration (sec)</label>
                 <input
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={safeStats.customerPatienceSeconds}
-                  onChange={(e) => onUpdateStats({ customerPatienceSeconds: Number(e.target.value) })}
+                  value={getValue(stats?.monthDurationSeconds)}
+                  onChange={(e) => onUpdateStats({ monthDurationSeconds: e.target.value === '' ? undefined : Number(e.target.value) })}
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  Leaving Angry Duration (ticks)
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-green-500/20 text-green-300 rounded">Never Override</span>
-                </label>
+                <label className="block text-xs text-slate-400 mb-1">Customer Spawn Interval (sec)</label>
                 <input
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={safeStats.leavingAngryDurationTicks}
-                  onChange={(e) => onUpdateStats({ leavingAngryDurationTicks: Number(e.target.value) })}
+                  value={getValue(stats?.customerSpawnIntervalSeconds)}
+                  onChange={(e) => onUpdateStats({ customerSpawnIntervalSeconds: e.target.value === '' ? undefined : Number(e.target.value) })}
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  Service Capacity
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded">Commonly Overridden</span>
-                </label>
+                <label className="block text-xs text-slate-400 mb-1">Customer Patience (sec)</label>
                 <input
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={safeStats.serviceCapacity}
-                  onChange={(e) => onUpdateStats({ serviceCapacity: Number(e.target.value) })}
+                  value={getValue(stats?.customerPatienceSeconds)}
+                  onChange={(e) => onUpdateStats({ customerPatienceSeconds: e.target.value === '' ? undefined : Number(e.target.value) })}
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  EXP Gain per Happy Customer
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-blue-500/20 text-blue-300 rounded">Global Default</span>
-                </label>
+                <label className="block text-xs text-slate-400 mb-1">Leaving Angry Duration (ticks)</label>
                 <input
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={safeStats.expGainPerHappyCustomer ?? ''}
-                  onChange={(e) => {
-                    const value = e.target.value === '' ? undefined : Number(e.target.value);
-                    if (value !== undefined && !isNaN(value)) {
-                      onUpdateStats({ expGainPerHappyCustomer: value });
-                    }
-                  }}
+                  value={getValue(stats?.leavingAngryDurationTicks)}
+                  onChange={(e) => onUpdateStats({ leavingAngryDurationTicks: e.target.value === '' ? undefined : Number(e.target.value) })}
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  EXP Loss per Angry Customer
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-blue-500/20 text-blue-300 rounded">Global Default</span>
-                </label>
+                <label className="block text-xs text-slate-400 mb-1">Service Capacity</label>
                 <input
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={safeStats.expLossPerAngryCustomer ?? ''}
-                  onChange={(e) => {
-                    const value = e.target.value === '' ? undefined : Number(e.target.value);
-                    if (value !== undefined && !isNaN(value)) {
-                      onUpdateStats({ expLossPerAngryCustomer: value });
-                    }
-                  }}
+                  value={getValue(stats?.serviceCapacity)}
+                  onChange={(e) => onUpdateStats({ serviceCapacity: e.target.value === '' ? undefined : Number(e.target.value) })}
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  EXP Required Per Level
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-blue-500/20 text-blue-300 rounded">Global Default</span>
-                </label>
+                <label className="block text-xs text-slate-400 mb-1">EXP Gain per Happy Customer</label>
                 <input
                   type="number"
-                  min="1"
+                  min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={safeStats.expPerLevel ?? ''}
-                  onChange={(e) => {
-                    const value = e.target.value === '' ? undefined : Number(e.target.value);
-                    if (value !== undefined && !isNaN(value)) {
-                      onUpdateStats({ expPerLevel: value });
-                    }
-                  }}
+                  value={getValue(stats?.expGainPerHappyCustomer)}
+                  onChange={(e) => onUpdateStats({ expGainPerHappyCustomer: e.target.value === '' ? undefined : Number(e.target.value) })}
                 />
               </div>
               <div>
-                {/* baseHappyProbability removed - not used in game mechanics */}
+                <label className="block text-xs text-slate-400 mb-1">EXP Loss per Angry Customer</label>
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                  value={getValue(stats?.expLossPerAngryCustomer)}
+                  onChange={(e) => onUpdateStats({ expLossPerAngryCustomer: e.target.value === '' ? undefined : Number(e.target.value) })}
+                />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  Service Revenue Multiplier
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded">Commonly Overridden</span>
-                </label>
+                <label className="block text-xs text-slate-400 mb-1">EXP Required Per Level</label>
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                  value={getValue(stats?.expPerLevel)}
+                  onChange={(e) => onUpdateStats({ expPerLevel: e.target.value === '' ? undefined : Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Service Revenue Multiplier</label>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={safeStats.serviceRevenueMultiplier}
-                  onChange={(e) => onUpdateStats({ serviceRevenueMultiplier: Number(e.target.value) })}
+                  value={getValue(stats?.serviceRevenueMultiplier)}
+                  onChange={(e) => onUpdateStats({ serviceRevenueMultiplier: e.target.value === '' ? undefined : Number(e.target.value) })}
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  Service Revenue Scale
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded">Commonly Overridden</span>
-                </label>
+                <label className="block text-xs text-slate-400 mb-1">Service Revenue Scale</label>
                 <input
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={safeStats.serviceRevenueScale}
-                  onChange={(e) => onUpdateStats({ serviceRevenueScale: Number(e.target.value) })}
+                  value={getValue(stats?.serviceRevenueScale)}
+                  onChange={(e) => onUpdateStats({ serviceRevenueScale: e.target.value === '' ? undefined : Number(e.target.value) })}
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  Spawn Position X
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded">Always Override</span>
-                </label>
+                <label className="block text-xs text-slate-400 mb-1">Spawn Position X</label>
                 <input
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                      value={safeStats.customerSpawnPosition.x}
-                  onChange={(e) =>
-                    onUpdateStats({
-                      customerSpawnPosition: { ...safeStats.customerSpawnPosition, x: Number(e.target.value) },
-                    })
-                  }
+                  value={getValue(stats?.customerSpawnPosition?.x)}
+                  onChange={(e) => {
+                    const xValue = e.target.value === '' ? undefined : Number(e.target.value);
+                    const currentPos = stats?.customerSpawnPosition || { x: 0, y: 0 };
+                    if (xValue !== undefined) {
+                      onUpdateStats({
+                        customerSpawnPosition: { ...currentPos, x: xValue },
+                      });
+                    }
+                  }}
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  Spawn Position Y
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-300 rounded">Always Override</span>
-                </label>
+                <label className="block text-xs text-slate-400 mb-1">Spawn Position Y</label>
                 <input
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                      value={safeStats.customerSpawnPosition.y}
-                  onChange={(e) =>
-                    onUpdateStats({
-                      customerSpawnPosition: { ...safeStats.customerSpawnPosition, y: Number(e.target.value) },
-                    })
-                  }
+                  value={getValue(stats?.customerSpawnPosition?.y)}
+                  onChange={(e) => {
+                    const yValue = e.target.value === '' ? undefined : Number(e.target.value);
+                    const currentPos = stats?.customerSpawnPosition || { x: 0, y: 0 };
+                    if (yValue !== undefined) {
+                      onUpdateStats({
+                        customerSpawnPosition: { ...currentPos, y: yValue },
+                      });
+                    }
+                  }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Event Trigger Times (seconds)</label>
+                <input
+                  type="text"
+                  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                  value={getArrayValue(stats?.eventTriggerSeconds)}
+                  onChange={(e) => {
+                    const value = e.target.value.trim();
+                    if (value === '') {
+                      onUpdateStats({ eventTriggerSeconds: [] });
+                    } else {
+                      const numbers = value.split(',').map(s => s.trim()).filter(s => s).map(s => Number(s)).filter(n => !isNaN(n));
+                      onUpdateStats({ eventTriggerSeconds: numbers });
+                    }
+                  }}
+                  placeholder="15, 30, 45"
+                />
+                <p className="text-xs text-slate-500 mt-1">Comma-separated list of seconds when events should trigger during a month</p>
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Conversion Rate</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                  value={getValue(stats?.conversionRate)}
+                  onChange={(e) => onUpdateStats({ conversionRate: e.target.value === '' ? undefined : Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Failure Rate (%)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                  value={getValue(stats?.failureRate)}
+                  onChange={(e) => onUpdateStats({ failureRate: e.target.value === '' ? undefined : Number(e.target.value) })}
+                />
+                <p className="text-xs text-slate-500 mt-1">Base failure rate percentage (0-100%)</p>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-slate-300">Movement Config</label>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Customer Tiles Per Tick</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                  value={getValue(movement?.customerTilesPerTick)}
+                  onChange={(e) => {
+                    const newValue = e.target.value === '' ? undefined : Number(e.target.value);
+                    if (movement && newValue !== undefined) {
+                      onUpdateMovement({ ...movement, customerTilesPerTick: newValue });
+                    } else if (newValue !== undefined) {
+                      onUpdateMovement({
+                        customerTilesPerTick: newValue,
+                        animationReferenceTilesPerTick: 0.25,
+                        walkFrameDurationMs: 200,
+                        minWalkFrameDurationMs: 80,
+                        maxWalkFrameDurationMs: 320,
+                        celebrationFrameDurationMs: 200,
+                      });
+                    }
+                  }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Animation Reference Tiles Per Tick</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                  value={getValue(movement?.animationReferenceTilesPerTick)}
+                  onChange={(e) => {
+                    const newValue = e.target.value === '' ? undefined : Number(e.target.value);
+                    if (movement && newValue !== undefined) {
+                      onUpdateMovement({ ...movement, animationReferenceTilesPerTick: newValue });
+                    } else if (newValue !== undefined) {
+                      onUpdateMovement({
+                        customerTilesPerTick: 0.25,
+                        animationReferenceTilesPerTick: newValue,
+                        walkFrameDurationMs: 200,
+                        minWalkFrameDurationMs: 80,
+                        maxWalkFrameDurationMs: 320,
+                        celebrationFrameDurationMs: 200,
+                      });
+                    }
+                  }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Walk Frame Duration (ms)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                  value={getValue(movement?.walkFrameDurationMs)}
+                  onChange={(e) => {
+                    const newValue = e.target.value === '' ? undefined : Number(e.target.value);
+                    if (movement && newValue !== undefined) {
+                      onUpdateMovement({ ...movement, walkFrameDurationMs: newValue });
+                    } else if (newValue !== undefined) {
+                      onUpdateMovement({
+                        customerTilesPerTick: 0.25,
+                        animationReferenceTilesPerTick: 0.25,
+                        walkFrameDurationMs: newValue,
+                        minWalkFrameDurationMs: 80,
+                        maxWalkFrameDurationMs: 320,
+                        celebrationFrameDurationMs: 200,
+                      });
+                    }
+                  }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Min Walk Frame Duration (ms)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                  value={getValue(movement?.minWalkFrameDurationMs)}
+                  onChange={(e) => {
+                    const newValue = e.target.value === '' ? undefined : Number(e.target.value);
+                    if (movement && newValue !== undefined) {
+                      onUpdateMovement({ ...movement, minWalkFrameDurationMs: newValue });
+                    } else if (newValue !== undefined) {
+                      onUpdateMovement({
+                        customerTilesPerTick: 0.25,
+                        animationReferenceTilesPerTick: 0.25,
+                        walkFrameDurationMs: 200,
+                        minWalkFrameDurationMs: newValue,
+                        maxWalkFrameDurationMs: 320,
+                        celebrationFrameDurationMs: 200,
+                      });
+                    }
+                  }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Max Walk Frame Duration (ms)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                  value={getValue(movement?.maxWalkFrameDurationMs)}
+                  onChange={(e) => {
+                    const newValue = e.target.value === '' ? undefined : Number(e.target.value);
+                    if (movement && newValue !== undefined) {
+                      onUpdateMovement({ ...movement, maxWalkFrameDurationMs: newValue });
+                    } else if (newValue !== undefined) {
+                      onUpdateMovement({
+                        customerTilesPerTick: 0.25,
+                        animationReferenceTilesPerTick: 0.25,
+                        walkFrameDurationMs: 200,
+                        minWalkFrameDurationMs: 80,
+                        maxWalkFrameDurationMs: newValue,
+                        celebrationFrameDurationMs: 200,
+                      });
+                    }
+                  }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Celebration Frame Duration (ms)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                  value={getValue(movement?.celebrationFrameDurationMs)}
+                  onChange={(e) => {
+                    const newValue = e.target.value === '' ? undefined : Number(e.target.value);
+                    if (movement && newValue !== undefined) {
+                      onUpdateMovement({ ...movement, celebrationFrameDurationMs: newValue });
+                    } else if (newValue !== undefined) {
+                      onUpdateMovement({
+                        customerTilesPerTick: 0.25,
+                        animationReferenceTilesPerTick: 0.25,
+                        walkFrameDurationMs: 200,
+                        minWalkFrameDurationMs: 80,
+                        maxWalkFrameDurationMs: 320,
+                        celebrationFrameDurationMs: newValue,
+                      });
+                    }
+                  }}
                 />
               </div>
             </div>
@@ -381,10 +491,7 @@ export function GlobalConfigTab({
           <label className="block text-sm font-semibold text-slate-300 mb-4">UI Configuration</label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-slate-400 mb-1">
-                Event Auto-Select Duration (seconds)
-                <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-blue-500/20 text-blue-300 rounded">UI Setting</span>
-              </label>
+              <label className="block text-xs text-slate-400 mb-1">Event Auto-Select Duration (seconds)</label>
               <input
                 type="number"
                 min="1"
@@ -396,10 +503,7 @@ export function GlobalConfigTab({
               <p className="text-xs text-slate-500 mt-1">How long to wait before auto-selecting the default event choice</p>
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">
-                Outcome Popup Duration (seconds)
-                <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-blue-500/20 text-blue-300 rounded">UI Setting</span>
-              </label>
+              <label className="block text-xs text-slate-400 mb-1">Outcome Popup Duration (seconds)</label>
               <input
                 type="number"
                 min="1"
@@ -425,19 +529,19 @@ export function GlobalConfigTab({
                 type="number"
                 min="0"
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
-                value={safeWinCondition.cashTarget}
-                onChange={(e) => onUpdateWinCondition({ cashTarget: Number(e.target.value) })}
+                value={getValue(winCondition?.cashTarget)}
+                onChange={(e) => onUpdateWinCondition({ cashTarget: e.target.value === '' ? undefined : Number(e.target.value) })}
               />
               <p className="text-xs text-slate-500 mt-1">Target cash amount to win the game</p>
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Month Target (Optional)</label>
+              <label className="block text-xs text-slate-400 mb-1">Month Target</label>
               <input
                 type="number"
-                min="1"
+                min="0"
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
-                value={safeWinCondition.monthTarget || ''}
-                onChange={(e) => onUpdateWinCondition({ monthTarget: e.target.value ? Number(e.target.value) : undefined })}
+                value={getValue(winCondition?.monthTarget)}
+                onChange={(e) => onUpdateWinCondition({ monthTarget: e.target.value === '' ? undefined : Number(e.target.value) })}
               />
               <p className="text-xs text-slate-500 mt-1">Win by surviving this many months</p>
             </div>
@@ -446,7 +550,7 @@ export function GlobalConfigTab({
               <input
                 type="text"
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
-                value={safeWinCondition.customTitle || ''}
+                value={winCondition?.customTitle || ''}
                 onChange={(e) => onUpdateWinCondition({ customTitle: e.target.value || undefined })}
                 placeholder="🎉 Mission Accomplished!"
               />
@@ -457,7 +561,7 @@ export function GlobalConfigTab({
               <textarea
                 rows={3}
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200 resize-none"
-                value={safeWinCondition.customMessage || ''}
+                value={winCondition?.customMessage || ''}
                 onChange={(e) => onUpdateWinCondition({ customMessage: e.target.value || undefined })}
                 placeholder="Congratulations! You've successfully completed your business challenge!"
               />
@@ -474,20 +578,20 @@ export function GlobalConfigTab({
               <input
                 type="number"
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
-                value={safeLoseCondition.cashThreshold}
-                onChange={(e) => onUpdateLoseCondition({ cashThreshold: Number(e.target.value) })}
+                value={getValue(loseCondition?.cashThreshold)}
+                onChange={(e) => onUpdateLoseCondition({ cashThreshold: e.target.value === '' ? undefined : Number(e.target.value) })}
               />
-              <p className="text-xs text-slate-500 mt-1">Game over if cash &lt;= this value (default: 0)</p>
+              <p className="text-xs text-slate-500 mt-1">Game over if cash &lt;= this value</p>
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Time Threshold</label>
               <input
                 type="number"
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
-                value={safeLoseCondition.timeThreshold}
-                onChange={(e) => onUpdateLoseCondition({ timeThreshold: Number(e.target.value) })}
+                value={getValue(loseCondition?.timeThreshold)}
+                onChange={(e) => onUpdateLoseCondition({ timeThreshold: e.target.value === '' ? undefined : Number(e.target.value) })}
               />
-              <p className="text-xs text-slate-500 mt-1">Game over if available time &lt;= this value (default: 0, only applies if time system is enabled)</p>
+              <p className="text-xs text-slate-500 mt-1">Game over if available time &lt;= this value (only applies if time system is enabled)</p>
             </div>
           </div>
         </div>
@@ -499,11 +603,11 @@ export function GlobalConfigTab({
             disabled={globalSaving}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
               globalSaving
-                ? 'bg-amber-900 text-amber-200 cursor-wait'
-                : 'bg-amber-600 hover:bg-amber-500 text-white'
+                ? 'bg-slate-700 text-slate-400 cursor-wait'
+                : 'bg-blue-600 hover:bg-blue-500 text-white'
             }`}
           >
-            {globalSaving ? 'Saving…' : 'Save Global Config'}
+            {globalSaving ? 'Saving…' : 'Save Config'}
           </button>
         </div>
 
@@ -516,11 +620,11 @@ export function GlobalConfigTab({
               disabled={globalSaving}
               className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
                 globalSaving
-                  ? 'bg-amber-900 text-amber-200 cursor-wait'
-                  : 'bg-amber-600 hover:bg-amber-500 text-white'
+                  ? 'bg-slate-700 text-slate-400 cursor-wait'
+                  : 'bg-blue-600 hover:bg-blue-500 text-white'
               }`}
             >
-              {globalSaving ? '💾 Saving…' : '💾 Save Global Config (⌘↵)'}
+              {globalSaving ? '💾 Saving…' : '💾 Save Config (⌘↵)'}
             </button>
           </div>
         </div>

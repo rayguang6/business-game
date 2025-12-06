@@ -140,30 +140,14 @@ export function IndustrySimulationConfigTab({
     }
   };
 
-  // Helper functions - return current values or defaults for display
-  const getMetrics = (): BusinessMetrics => businessMetrics || {
-    startingCash: 0,
-    monthlyExpenses: 0,
-    startingExp: 0,
-    startingFreedomScore: 0,
+  // Helper to get value or empty string for inputs
+  const getValue = (val: number | null | undefined): string => {
+    return val !== null && val !== undefined ? String(val) : '';
   };
-  const getStats = (): BusinessStats => businessStats || {
-    ticksPerSecond: 10,
-    monthDurationSeconds: 60,
-    customerSpawnIntervalSeconds: 3,
-    customerPatienceSeconds: 10,
-    leavingAngryDurationTicks: 10,
-    customerSpawnPosition: { x: 4, y: 9 },
-    serviceCapacity: 2,
-    expGainPerHappyCustomer: 1,
-    expLossPerAngryCustomer: 1,
-    expPerLevel: 200,
-    eventTriggerSeconds: [],
-    serviceRevenueMultiplier: 1,
-    serviceRevenueScale: 10,
+
+  const getArrayValue = (arr: number[] | null | undefined): string => {
+    return arr && arr.length > 0 ? arr.join(', ') : '';
   };
-  const getWinCondition = (): WinCondition => winCondition || { cashTarget: 50000 };
-  const getLoseCondition = (): LoseCondition => loseCondition || { cashThreshold: 0, timeThreshold: 0 };
 
   const updateMetrics = (updates: Partial<BusinessMetrics>) => {
     // Merge with existing data, allowing undefined to clear values
@@ -174,6 +158,7 @@ export function IndustrySimulationConfigTab({
     const cleaned: Partial<BusinessMetrics> = {};
     Object.entries(merged).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (cleaned as any)[key] = value;
       }
     });
@@ -198,12 +183,15 @@ export function IndustrySimulationConfigTab({
       // Special handling for arrays and objects
       if (Array.isArray(value)) {
         if (value.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (cleaned as any)[key] = value;
         }
       } else if (typeof value === 'object' && value !== null) {
         // Keep objects (like customerSpawnPosition)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (cleaned as any)[key] = value;
       } else if (value !== undefined && value !== null) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (cleaned as any)[key] = value;
       }
     });
@@ -218,13 +206,55 @@ export function IndustrySimulationConfigTab({
   };
 
   const updateWinCondition = (updates: Partial<WinCondition>) => {
-    const current = getWinCondition();
-    setWinCondition({ ...current, ...updates });
+    const current = winCondition || {};
+    const merged = { ...current, ...updates };
+    // Remove undefined/null/empty string values
+    const cleaned: Partial<WinCondition> = {};
+    Object.entries(merged).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        if (typeof value === 'string') {
+          if (value !== '') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (cleaned as any)[key] = value;
+          }
+        } else if (typeof value === 'number') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (cleaned as any)[key] = value;
+        }
+      }
+    });
+    // If we have at least cashTarget (required field) or any other field, set it
+    if (cleaned.cashTarget !== undefined || Object.keys(cleaned).length > 0) {
+      setWinCondition(cleaned as WinCondition);
+    } else {
+      setWinCondition(null);
+    }
   };
 
   const updateLoseCondition = (updates: Partial<LoseCondition>) => {
-    const current = getLoseCondition();
-    setLoseCondition({ ...current, ...updates });
+    const current = loseCondition || {};
+    const merged = { ...current, ...updates };
+    // Remove undefined/null/empty string values
+    const cleaned: Partial<LoseCondition> = {};
+    Object.entries(merged).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        if (typeof value === 'string') {
+          if (value !== '') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (cleaned as any)[key] = value;
+          }
+        } else if (typeof value === 'number') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (cleaned as any)[key] = value;
+        }
+      }
+    });
+    // If we have required fields or any field, set it
+    if (cleaned.cashThreshold !== undefined || cleaned.timeThreshold !== undefined || Object.keys(cleaned).length > 0) {
+      setLoseCondition(cleaned as LoseCondition);
+    } else {
+      setLoseCondition(null);
+    }
   };
 
   // Layout position helpers - now much simpler!
@@ -300,43 +330,11 @@ export function IndustrySimulationConfigTab({
     setMapWalls(mapWalls.map((wall, i) => i === index ? { ...wall, [field]: value } : wall));
   };
 
-  const clearField = (field: string) => {
-    switch (field) {
-      case 'metrics': setBusinessMetrics(null); break;
-      case 'stats': setBusinessStats(null); break;
-      case 'map': 
-        setMapWidth(null);
-        setMapHeight(null);
-        setMapWalls([]);
-        break;
-      case 'layout': 
-        setEntryPosition(null);
-        setWaitingPositions([]);
-        setServiceRooms([]);
-        setStaffPositions([]);
-        setMainCharacterPosition(null);
-        setMainCharacterSpriteImage('');
-        break;
-      case 'capacity': setCapacityImage(''); break;
-      case 'win': setWinCondition(null); break;
-      case 'lose': setLoseCondition(null); break;
-    }
-  };
-
   return (
     <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
       <div className="p-6 border-b border-slate-800">
-        <h2 className="text-2xl font-semibold">Industry Simulation Config</h2>
-        <p className="text-sm text-slate-400 mt-1">
-          Override simulation settings for <span className="font-medium text-slate-300">{industryName}</span>.
-          Leave fields empty to use global defaults.
-        </p>
-        <div className="mt-3 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
-          <p className="text-xs text-slate-300">
-            <span className="font-semibold">Tip:</span> Only override values that differ from global defaults.
-            Values shown below are your overrides. Empty fields inherit from Global Config.
-          </p>
-        </div>
+        <h2 className="text-2xl font-semibold">Simulation Config</h2>
+        <p className="text-sm text-slate-400 mt-1">Configure simulation settings for <span className="font-medium text-slate-300">{industryName}</span>.</p>
       </div>
 
       <div className="p-6 space-y-8 max-h-[calc(100vh-300px)] overflow-y-auto">
@@ -352,76 +350,45 @@ export function IndustrySimulationConfigTab({
 
         {/* Business Metrics */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Business Metrics</h3>
-            {businessMetrics && (
-              <button onClick={() => clearField('metrics')} className="text-xs text-rose-400 hover:text-rose-300">
-                Clear (use global)
-              </button>
-            )}
-          </div>
+          <h3 className="text-lg font-semibold">Business Metrics</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-xs text-slate-400 mb-1">
-                Starting Cash
-                {globalMetrics?.startingCash !== undefined && !businessMetrics?.startingCash && (
-                  <span className="ml-2 text-[10px] text-slate-500">(global: {globalMetrics.startingCash})</span>
-                )}
-              </label>
+              <label className="block text-xs text-slate-400 mb-1">Starting Cash</label>
               <input 
                 type="number" 
                 min="0" 
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getMetrics().startingCash ?? ''} 
+                value={getValue(businessMetrics?.startingCash)} 
                 onChange={(e) => updateMetrics({ startingCash: e.target.value === '' ? undefined : Number(e.target.value) })} 
-                placeholder={globalMetrics?.startingCash?.toString() || "0"} 
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">
-                Monthly Expenses
-                {globalMetrics?.monthlyExpenses !== undefined && !businessMetrics?.monthlyExpenses && (
-                  <span className="ml-2 text-[10px] text-slate-500">(global: {globalMetrics.monthlyExpenses})</span>
-                )}
-              </label>
+              <label className="block text-xs text-slate-400 mb-1">Monthly Expenses</label>
               <input 
                 type="number" 
                 min="0" 
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getMetrics().monthlyExpenses ?? ''} 
+                value={getValue(businessMetrics?.monthlyExpenses)} 
                 onChange={(e) => updateMetrics({ monthlyExpenses: e.target.value === '' ? undefined : Number(e.target.value) })} 
-                placeholder={globalMetrics?.monthlyExpenses?.toString() || "0"} 
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">
-                Starting EXP
-                {globalMetrics?.startingExp !== undefined && !businessMetrics?.startingExp && (
-                  <span className="ml-2 text-[10px] text-slate-500">(global: {globalMetrics.startingExp})</span>
-                )}
-              </label>
+              <label className="block text-xs text-slate-400 mb-1">Starting EXP</label>
               <input 
                 type="number" 
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getMetrics().startingExp ?? ''} 
+                value={getValue(businessMetrics?.startingExp)} 
                 onChange={(e) => updateMetrics({ startingExp: e.target.value === '' ? undefined : Number(e.target.value) })} 
-                placeholder={globalMetrics?.startingExp?.toString() || "0"} 
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">
-                Starting Freedom Score
-                {globalMetrics?.startingFreedomScore !== undefined && !businessMetrics?.startingFreedomScore && (
-                  <span className="ml-2 text-[10px] text-slate-500">(global: {globalMetrics.startingFreedomScore})</span>
-                )}
-              </label>
+              <label className="block text-xs text-slate-400 mb-1">Starting Freedom Score</label>
               <input 
                 type="number" 
                 min="0" 
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getMetrics().startingFreedomScore ?? ''} 
+                value={getValue(businessMetrics?.startingFreedomScore)} 
                 onChange={(e) => updateMetrics({ startingFreedomScore: e.target.value === '' ? undefined : Number(e.target.value) })} 
-                placeholder={globalMetrics?.startingFreedomScore?.toString() || "0"} 
               />
             </div>
           </div>
@@ -432,9 +399,9 @@ export function IndustrySimulationConfigTab({
                 type="number"
                 min="0"
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                value={getMetrics().startingTime ?? ''}
-                onChange={(e) => updateMetrics({ startingTime: e.target.value ? Number(e.target.value) : undefined })}
-                placeholder="0 (leave empty to disable)"
+                value={getValue(businessMetrics?.startingTime)}
+                onChange={(e) => updateMetrics({ startingTime: e.target.value === '' ? undefined : Number(e.target.value) })}
+                placeholder="Leave empty to disable"
               />
               <p className="text-xs text-slate-500 mt-1">
                 Monthly available time (refreshes each month). Set to enable time currency.
@@ -445,210 +412,192 @@ export function IndustrySimulationConfigTab({
 
         {/* Business Stats */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Business Stats</h3>
-            {businessStats && (
-              <button onClick={() => clearField('stats')} className="text-xs text-rose-400 hover:text-rose-300">
-                Clear (use global)
-              </button>
-            )}
-          </div>
+          <h3 className="text-lg font-semibold">Business Stats</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs text-slate-400 mb-1">
-                Ticks Per Second
-                {globalStats?.ticksPerSecond !== undefined && !businessStats?.ticksPerSecond && (
-                  <span className="ml-2 text-[10px] text-slate-500">(global: {globalStats.ticksPerSecond})</span>
-                )}
-              </label>
+              <label className="block text-xs text-slate-400 mb-1">Ticks Per Second</label>
               <input 
                 type="number" 
                 min="1" 
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getStats().ticksPerSecond} 
+                value={getValue(businessStats?.ticksPerSecond)} 
                 onChange={(e) => updateStats({ ticksPerSecond: e.target.value === '' ? undefined : Number(e.target.value) })} 
-                placeholder={globalStats?.ticksPerSecond?.toString()}
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">
-                Month Duration (sec)
-                {globalStats?.monthDurationSeconds !== undefined && !businessStats?.monthDurationSeconds && (
-                  <span className="ml-2 text-[10px] text-slate-500">(global: {globalStats.monthDurationSeconds})</span>
-                )}
-              </label>
+              <label className="block text-xs text-slate-400 mb-1">Month Duration (sec)</label>
               <input 
                 type="number" 
-                min="1" 
+                min="0" 
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getStats().monthDurationSeconds} 
+                value={getValue(businessStats?.monthDurationSeconds)} 
                 onChange={(e) => updateStats({ monthDurationSeconds: e.target.value === '' ? undefined : Number(e.target.value) })} 
-                placeholder={globalStats?.monthDurationSeconds?.toString()}
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">
-                Spawn Interval (sec)
-                {globalStats?.customerSpawnIntervalSeconds !== undefined && !businessStats?.customerSpawnIntervalSeconds && (
-                  <span className="ml-2 text-[10px] text-slate-500">(global: {globalStats.customerSpawnIntervalSeconds})</span>
-                )}
-              </label>
+              <label className="block text-xs text-slate-400 mb-1">Customer Spawn Interval (sec)</label>
               <input 
                 type="number" 
                 min="0" 
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getStats().customerSpawnIntervalSeconds} 
+                value={getValue(businessStats?.customerSpawnIntervalSeconds)} 
                 onChange={(e) => updateStats({ customerSpawnIntervalSeconds: e.target.value === '' ? undefined : Number(e.target.value) })} 
-                placeholder={globalStats?.customerSpawnIntervalSeconds?.toString()}
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">
-                Customer Patience (sec)
-                {globalStats?.customerPatienceSeconds !== undefined && !businessStats?.customerPatienceSeconds && (
-                  <span className="ml-2 text-[10px] text-slate-500">(global: {globalStats.customerPatienceSeconds})</span>
-                )}
-              </label>
+              <label className="block text-xs text-slate-400 mb-1">Customer Patience (sec)</label>
               <input 
                 type="number" 
                 min="0" 
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getStats().customerPatienceSeconds} 
+                value={getValue(businessStats?.customerPatienceSeconds)} 
                 onChange={(e) => updateStats({ customerPatienceSeconds: e.target.value === '' ? undefined : Number(e.target.value) })} 
-                placeholder={globalStats?.customerPatienceSeconds?.toString()}
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">
-                Service Capacity
-                {globalStats?.serviceCapacity !== undefined && !businessStats?.serviceCapacity && (
-                  <span className="ml-2 text-[10px] text-slate-500">(global: {globalStats.serviceCapacity})</span>
-                )}
-              </label>
+              <label className="block text-xs text-slate-400 mb-1">Leaving Angry Duration (ticks)</label>
               <input 
                 type="number" 
                 min="0" 
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getStats().serviceCapacity} 
-                onChange={(e) => updateStats({ serviceCapacity: e.target.value === '' ? undefined : Number(e.target.value) })} 
-                placeholder={globalStats?.serviceCapacity?.toString()}
+                value={getValue(businessStats?.leavingAngryDurationTicks)} 
+                onChange={(e) => updateStats({ leavingAngryDurationTicks: e.target.value === '' ? undefined : Number(e.target.value) })} 
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">
-                Service Revenue Multiplier
-                {globalStats?.serviceRevenueMultiplier !== undefined && !businessStats?.serviceRevenueMultiplier && (
-                  <span className="ml-2 text-[10px] text-slate-500">(global: {globalStats.serviceRevenueMultiplier})</span>
-                )}
-              </label>
+              <label className="block text-xs text-slate-400 mb-1">Service Capacity</label>
+              <input 
+                type="number" 
+                min="0" 
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
+                value={getValue(businessStats?.serviceCapacity)} 
+                onChange={(e) => updateStats({ serviceCapacity: e.target.value === '' ? undefined : Number(e.target.value) })} 
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Service Revenue Multiplier</label>
               <input 
                 type="number" 
                 step="0.01" 
                 min="0" 
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getStats().serviceRevenueMultiplier ?? ''} 
+                value={getValue(businessStats?.serviceRevenueMultiplier)} 
                 onChange={(e) => updateStats({ serviceRevenueMultiplier: e.target.value === '' ? undefined : Number(e.target.value) })} 
-                placeholder={globalStats?.serviceRevenueMultiplier?.toString() || "1"}
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">
-                Lead Conversion Rate
-                {globalStats?.conversionRate !== undefined && !businessStats?.conversionRate && (
-                  <span className="ml-2 text-[10px] text-slate-500">(global: {globalStats.conversionRate})</span>
-                )}
-              </label>
+              <label className="block text-xs text-slate-400 mb-1">Service Revenue Scale</label>
               <input 
                 type="number" 
-                min="0.1" 
-                step="0.1" 
+                min="0" 
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getStats().conversionRate ?? ''} 
-                onChange={(e) => updateStats({ conversionRate: e.target.value === '' ? undefined : Number(e.target.value) })} 
-                placeholder={globalStats?.conversionRate?.toString() || "10"}
+                value={getValue(businessStats?.serviceRevenueScale)} 
+                onChange={(e) => updateStats({ serviceRevenueScale: e.target.value === '' ? undefined : Number(e.target.value) })} 
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">
-                Failure Rate (%)
-                {globalStats?.failureRate !== undefined && !businessStats?.failureRate && (
-                  <span className="ml-2 text-[10px] text-slate-500">(global: {globalStats.failureRate})</span>
-                )}
-              </label>
+              <label className="block text-xs text-slate-400 mb-1">Spawn Position X</label>
+              <input
+                type="number"
+                min="0"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getValue(businessStats?.customerSpawnPosition?.x)}
+                onChange={(e) => {
+                  const xValue = e.target.value === '' ? undefined : Number(e.target.value);
+                  const currentPos = businessStats?.customerSpawnPosition || { x: 0, y: 0 };
+                  if (xValue !== undefined) {
+                    updateStats({ customerSpawnPosition: { ...currentPos, x: xValue } });
+                  }
+                }}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Spawn Position Y</label>
+              <input
+                type="number"
+                min="0"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getValue(businessStats?.customerSpawnPosition?.y)}
+                onChange={(e) => {
+                  const yValue = e.target.value === '' ? undefined : Number(e.target.value);
+                  const currentPos = businessStats?.customerSpawnPosition || { x: 0, y: 0 };
+                  if (yValue !== undefined) {
+                    updateStats({ customerSpawnPosition: { ...currentPos, y: yValue } });
+                  }
+                }}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Event Trigger Times (seconds)</label>
+              <input
+                type="text"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getArrayValue(businessStats?.eventTriggerSeconds)}
+                onChange={(e) => {
+                  const value = e.target.value.trim();
+                  if (value === '') {
+                    updateStats({ eventTriggerSeconds: [] });
+                  } else {
+                    const numbers = value.split(',').map(s => s.trim()).filter(s => s).map(s => Number(s)).filter(n => !isNaN(n));
+                    updateStats({ eventTriggerSeconds: numbers });
+                  }
+                }}
+                placeholder="15, 30, 45"
+              />
+              <p className="text-xs text-slate-500 mt-1">Comma-separated list of seconds when events should trigger during a month</p>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">EXP Gain per Happy Customer</label>
+              <input 
+                type="number" 
+                min="0" 
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
+                value={getValue(businessStats?.expGainPerHappyCustomer)} 
+                onChange={(e) => updateStats({ expGainPerHappyCustomer: e.target.value === '' ? undefined : Number(e.target.value) })} 
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">EXP Loss per Angry Customer</label>
+              <input
+                type="number"
+                min="0"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getValue(businessStats?.expLossPerAngryCustomer)}
+                onChange={(e) => updateStats({ expLossPerAngryCustomer: e.target.value === '' ? undefined : Number(e.target.value) })}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">EXP Required Per Level</label>
+              <input
+                type="number"
+                min="0"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getValue(businessStats?.expPerLevel)}
+                onChange={(e) => updateStats({ expPerLevel: e.target.value === '' ? undefined : Number(e.target.value) })}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Conversion Rate</label>
+              <input 
+                type="number" 
+                min="0"
+                step="0.1" 
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
+                value={getValue(businessStats?.conversionRate)} 
+                onChange={(e) => updateStats({ conversionRate: e.target.value === '' ? undefined : Number(e.target.value) })} 
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Failure Rate (%)</label>
               <input 
                 type="number" 
                 min="0" 
                 max="100" 
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getStats().failureRate ?? ''} 
+                value={getValue(businessStats?.failureRate)} 
                 onChange={(e) => updateStats({ failureRate: e.target.value === '' ? undefined : Number(e.target.value) })} 
-                placeholder={globalStats?.failureRate?.toString() || "0"}
               />
               <p className="text-xs text-slate-500 mt-1">Base failure rate percentage (0-100%)</p>
-            </div>
-            <div>
-              <label className="block text-xs text-slate-400 mb-1">
-                Service Revenue Scale
-                {globalStats?.serviceRevenueScale !== undefined && !businessStats?.serviceRevenueScale && (
-                  <span className="ml-2 text-[10px] text-slate-500">(global: {globalStats.serviceRevenueScale})</span>
-                )}
-              </label>
-              <input 
-                type="number" 
-                min="0" 
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getStats().serviceRevenueScale ?? ''} 
-                onChange={(e) => updateStats({ serviceRevenueScale: e.target.value === '' ? undefined : Number(e.target.value) })} 
-                placeholder={globalStats?.serviceRevenueScale?.toString() || "10"}
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-slate-400 mb-1">
-                EXP Gain per Happy Customer
-                {globalStats?.expGainPerHappyCustomer !== undefined && !businessStats?.expGainPerHappyCustomer && (
-                  <span className="ml-2 text-[10px] text-slate-500">(global: {globalStats.expGainPerHappyCustomer})</span>
-                )}
-              </label>
-              <input 
-                type="number" 
-                min="0" 
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getStats().expGainPerHappyCustomer ?? ''} 
-                onChange={(e) => updateStats({ expGainPerHappyCustomer: e.target.value === '' ? undefined : Number(e.target.value) })} 
-                placeholder={globalStats?.expGainPerHappyCustomer?.toString() || "2"}
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-slate-400 mb-1">
-                EXP Loss per Angry Customer
-                {globalStats?.expLossPerAngryCustomer !== undefined && !businessStats?.expLossPerAngryCustomer && (
-                  <span className="ml-2 text-[10px] text-slate-500">(global: {globalStats.expLossPerAngryCustomer})</span>
-                )}
-              </label>
-              <input
-                type="number"
-                min="0"
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                value={getStats().expLossPerAngryCustomer ?? ''}
-                onChange={(e) => updateStats({ expLossPerAngryCustomer: e.target.value === '' ? undefined : Number(e.target.value) })}
-                placeholder={globalStats?.expLossPerAngryCustomer?.toString() || "1"}
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-slate-400 mb-1">
-                EXP Required Per Level
-                {globalStats?.expPerLevel !== undefined && !businessStats?.expPerLevel && (
-                  <span className="ml-2 text-[10px] text-slate-500">(global: {globalStats.expPerLevel})</span>
-                )}
-              </label>
-              <input
-                type="number"
-                min="1"
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                value={getStats().expPerLevel ?? ''}
-                onChange={(e) => updateStats({ expPerLevel: e.target.value === '' ? undefined : Number(e.target.value) })}
-                placeholder={globalStats?.expPerLevel?.toString() || "100"}
-              />
             </div>
           </div>
         </div>
@@ -656,56 +605,42 @@ export function IndustrySimulationConfigTab({
         {/* Win/Lose Conditions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Win Condition</h3>
-              {winCondition && (
-                <button onClick={() => clearField('win')} className="text-xs text-rose-400 hover:text-rose-300">
-                  Clear (use global)
-                </button>
-              )}
-            </div>
+            <h3 className="text-lg font-semibold">Win Condition</h3>
             <div className="space-y-3">
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Cash Target</label>
-                <input type="number" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getWinCondition().cashTarget} onChange={(e) => updateWinCondition({ cashTarget: Number(e.target.value) })} />
+                <input type="number" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(winCondition?.cashTarget)} onChange={(e) => updateWinCondition({ cashTarget: e.target.value === '' ? undefined : Number(e.target.value) })} />
                 <p className="text-xs text-slate-500 mt-1">Target cash amount to win the game</p>
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Month Target (Optional)</label>
-                <input type="number" min="1" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getWinCondition().monthTarget || ''} onChange={(e) => updateWinCondition({ monthTarget: e.target.value ? Number(e.target.value) : undefined })} />
+                <label className="block text-xs text-slate-400 mb-1">Month Target</label>
+                <input type="number" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(winCondition?.monthTarget)} onChange={(e) => updateWinCondition({ monthTarget: e.target.value === '' ? undefined : Number(e.target.value) })} />
                 <p className="text-xs text-slate-500 mt-1">Win by surviving this many months (alternative to cash target)</p>
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Custom Victory Title (Optional)</label>
-                <input type="text" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getWinCondition().customTitle || ''} onChange={(e) => updateWinCondition({ customTitle: e.target.value || undefined })} placeholder="🎉 Mission Accomplished!" />
+                <input type="text" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={winCondition?.customTitle || ''} onChange={(e) => updateWinCondition({ customTitle: e.target.value || undefined })} placeholder="🎉 Mission Accomplished!" />
                 <p className="text-xs text-slate-500 mt-1">Override the default victory title</p>
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Custom Victory Message (Optional)</label>
-                <textarea rows={3} className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200 resize-none" value={getWinCondition().customMessage || ''} onChange={(e) => updateWinCondition({ customMessage: e.target.value || undefined })} placeholder="Congratulations! You've successfully completed your business challenge!" />
+                <textarea rows={3} className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200 resize-none" value={winCondition?.customMessage || ''} onChange={(e) => updateWinCondition({ customMessage: e.target.value || undefined })} placeholder="Congratulations! You've successfully completed your business challenge!" />
                 <p className="text-xs text-slate-500 mt-1">Override the default victory message</p>
               </div>
             </div>
           </div>
 
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Lose Condition</h3>
-              {loseCondition && (
-                <button onClick={() => clearField('lose')} className="text-xs text-rose-400 hover:text-rose-300">
-                  Clear (use global)
-                </button>
-              )}
-            </div>
+            <h3 className="text-lg font-semibold">Lose Condition</h3>
             <div className="space-y-3">
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Cash Threshold</label>
-                <input type="number" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getLoseCondition().cashThreshold} onChange={(e) => updateLoseCondition({ cashThreshold: Number(e.target.value) })} />
+                <input type="number" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(loseCondition?.cashThreshold)} onChange={(e) => updateLoseCondition({ cashThreshold: e.target.value === '' ? undefined : Number(e.target.value) })} />
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Time Threshold</label>
-                <input type="number" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getLoseCondition().timeThreshold} onChange={(e) => updateLoseCondition({ timeThreshold: Number(e.target.value) })} />
-                <p className="text-xs text-slate-500 mt-1">Game over if available time &lt;= this value (default: 0, only applies if time system is enabled)</p>
+                <input type="number" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(loseCondition?.timeThreshold)} onChange={(e) => updateLoseCondition({ timeThreshold: e.target.value === '' ? undefined : Number(e.target.value) })} />
+                <p className="text-xs text-slate-500 mt-1">Game over if available time &lt;= this value (only applies if time system is enabled)</p>
               </div>
             </div>
           </div>
@@ -713,28 +648,14 @@ export function IndustrySimulationConfigTab({
 
         {/* Capacity Image */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Capacity Image</h3>
-            {capacityImage && (
-              <button onClick={() => clearField('capacity')} className="text-xs text-rose-400 hover:text-rose-300">
-                Clear (use global)
-              </button>
-            )}
-          </div>
+          <h3 className="text-lg font-semibold">Capacity Image</h3>
           <input type="text" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={capacityImage} onChange={(e) => setCapacityImage(e.target.value)} placeholder="/images/beds/bed.png" />
         </div>
 
         {/* Lead Dialogues */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Lead Dialogues</h3>
-            {leadDialogues && leadDialogues.length > 0 && (
-              <button onClick={() => setLeadDialogues(null)} className="text-xs text-rose-400 hover:text-rose-300">
-                Clear (use global)
-              </button>
-            )}
-          </div>
-          <p className="text-sm text-slate-400">Custom dialogue lines that leads will randomly display when browsing your business. Leave empty to use global defaults.</p>
+          <h3 className="text-lg font-semibold">Lead Dialogues</h3>
+          <p className="text-sm text-slate-400">Custom dialogue lines that leads will randomly display when browsing your business.</p>
           <div className="space-y-2">
             {(leadDialogues || []).map((dialogue, index) => (
               <div key={index} className="flex gap-2">
@@ -778,14 +699,7 @@ export function IndustrySimulationConfigTab({
 
         {/* Map Config - Broken Down */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Map Configuration</h3>
-            {(mapWidth !== null || mapHeight !== null || mapWalls.length > 0) && (
-              <button onClick={() => clearField('map')} className="text-xs text-rose-400 hover:text-rose-300">
-                Clear (use global)
-              </button>
-            )}
-          </div>
+          <h3 className="text-lg font-semibold">Map Configuration</h3>
           
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -818,16 +732,9 @@ export function IndustrySimulationConfigTab({
 
         {/* Layout Positions - At Bottom */}
         <div className="space-y-3 border-t border-slate-800 pt-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">Layout Positions</h3>
-              <p className="text-xs text-slate-500 mt-1">Configure where entities appear on the map</p>
-            </div>
-            {(entryPosition || waitingPositions.length > 0 || serviceRooms.length > 0 || staffPositions.length > 0) && (
-              <button onClick={() => clearField('layout')} className="text-xs text-rose-400 hover:text-rose-300">
-                Clear Layout
-              </button>
-            )}
+          <div>
+            <h3 className="text-lg font-semibold">Layout Positions</h3>
+            <p className="text-xs text-slate-500 mt-1">Configure where entities appear on the map</p>
           </div>
           
           {/* Entry Position */}
@@ -1257,7 +1164,7 @@ export function IndustrySimulationConfigTab({
         {/* Save Button */}
         <div className="flex justify-end pt-4 border-t border-slate-800">
           <button onClick={onSave} disabled={saving || loading} className={`px-6 py-2 rounded-lg font-medium transition ${saving || loading ? 'bg-slate-700 text-slate-400 cursor-wait' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}>
-            {saving ? 'Saving…' : 'Save Industry Config'}
+            {saving ? 'Saving…' : 'Save Config'}
           </button>
         </div>
 
@@ -1265,7 +1172,7 @@ export function IndustrySimulationConfigTab({
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
           <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-xl px-6 py-3 shadow-2xl">
             <button onClick={onSave} disabled={saving || loading} className={`px-6 py-2 rounded-lg font-medium transition ${saving || loading ? 'bg-slate-700 text-slate-400 cursor-wait' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}>
-              {saving ? '💾 Saving…' : '💾 Save Industry Config (⌘↵)'}
+              {saving ? '💾 Saving…' : '💾 Save Config (⌘↵)'}
             </button>
           </div>
         </div>
