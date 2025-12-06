@@ -23,9 +23,8 @@ const findUpgradeDefinition = (industryId: IndustryId, upgradeId: UpgradeId): Up
 // These bypass effectManager for Add effects to enable immediate updates and PnL tracking
 const DIRECT_STATE_METRICS = [
   GameMetric.Cash,
-  GameMetric.Time,
+  GameMetric.MyTime,
   GameMetric.Exp,
-  GameMetric.FreedomScore,
 ] as const;
 
 /**
@@ -66,7 +65,6 @@ export interface UpgradeEffectStore {
   applyCashChange?: (amount: number) => void;
   applyTimeChange?: (amount: number) => void;
   applyExpChange?: (amount: number) => void;
-  applyFreedomScoreChange?: (amount: number) => void;
   recordEventRevenue?: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => void;
   recordEventExpense?: (amount: number, labelOrSource: string | SourceInfo, label?: string) => void;
   previousLevel?: number; // Previous level for calculating delta (0 if first purchase)
@@ -74,7 +72,7 @@ export interface UpgradeEffectStore {
 
 /**
  * Register upgrade effects with effectManager
- * For direct state metrics (Cash, Time, Exp, FreedomScore) with Add effects:
+ * For direct state metrics (Cash, Time, Exp) with Add effects:
  *   - Applied directly to game state for immediate updates
  *   - Purely additive - each level adds its effect value directly (only the NEW level)
  * For other metrics or effect types:
@@ -131,7 +129,7 @@ export function addUpgradeEffects(upgrade: UpgradeDefinition, level: number, sto
             store.applyCashChange(effectValue);
           }
           break;
-        case GameMetric.Time:
+        case GameMetric.MyTime:
           if (store.applyTimeChange) {
             store.applyTimeChange(effectValue);
           }
@@ -139,11 +137,6 @@ export function addUpgradeEffects(upgrade: UpgradeDefinition, level: number, sto
         case GameMetric.Exp:
           if (store.applyExpChange) {
             store.applyExpChange(effectValue);
-          }
-          break;
-        case GameMetric.FreedomScore:
-          if (store.applyFreedomScoreChange) {
-            store.applyFreedomScoreChange(effectValue);
           }
           break;
       }
@@ -238,7 +231,7 @@ export function addUpgradeEffectsUpToLevel(upgrade: UpgradeDefinition, targetLev
                 store.applyCashChange(effectValue);
               }
               break;
-            case GameMetric.Time:
+            case GameMetric.MyTime:
               if (store.applyTimeChange) {
                 store.applyTimeChange(effectValue);
               }
@@ -246,11 +239,6 @@ export function addUpgradeEffectsUpToLevel(upgrade: UpgradeDefinition, targetLev
             case GameMetric.Exp:
               if (store.applyExpChange) {
                 store.applyExpChange(effectValue);
-              }
-              break;
-            case GameMetric.FreedomScore:
-              if (store.applyFreedomScoreChange) {
-                store.applyFreedomScoreChange(effectValue);
               }
               break;
           }
@@ -274,7 +262,8 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
     const { metrics } = get();
     // Check both cash and time if both are required
     const hasCash = cost === 0 || metrics.cash >= cost;
-    const hasTime = timeCost === undefined || timeCost === 0 || metrics.time >= timeCost;
+    const totalAvailableTime = metrics.myTime + metrics.leveragedTime;
+    const hasTime = timeCost === undefined || timeCost === 0 || totalAvailableTime >= timeCost;
     return hasCash && hasTime;
   },
 
@@ -348,12 +337,13 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
       return { success: false, message: `Need $${upgradeCost} to purchase ${upgrade.name}.` };
     }
     
-    if (needsTime && metrics.time < upgradeTimeCost!) {
+    const totalAvailableTime = metrics.myTime + metrics.leveragedTime;
+    if (needsTime && totalAvailableTime < upgradeTimeCost!) {
       return { success: false, message: `Need ${upgradeTimeCost}h to purchase ${upgrade.name}.` };
     }
     
     // If both are needed, check both
-    if (needsCash && needsTime && (metrics.cash < upgradeCost || metrics.time < upgradeTimeCost!)) {
+    if (needsCash && needsTime && (metrics.cash < upgradeCost || totalAvailableTime < upgradeTimeCost!)) {
       return { success: false, message: `Need $${upgradeCost} and ${upgradeTimeCost}h to purchase ${upgrade.name}.` };
     }
 
@@ -437,7 +427,6 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
       applyCashChange: store.applyCashChange,
       applyTimeChange: store.applyTimeChange,
       applyExpChange: store.applyExpChange,
-      applyFreedomScoreChange: store.applyFreedomScoreChange,
       recordEventRevenue: store.recordEventRevenue,
       recordEventExpense: store.recordEventExpense,
     });

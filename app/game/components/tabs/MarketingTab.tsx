@@ -245,7 +245,7 @@ export function MarketingTab() {
           const needsCash = campaign.cost > 0;
           const needsTime = campaign.timeCost !== undefined && campaign.timeCost > 0;
           const hasCash = !needsCash || metrics.cash >= campaign.cost;
-          const hasTime = !needsTime || metrics.time >= campaign.timeCost!;
+          const hasTime = !needsTime || (metrics.myTime + metrics.leveragedTime) >= campaign.timeCost!;
           const canAfford = hasCash && hasTime;
           const cooldownEnd = campaignCooldowns[campaign.id];
           const isOnCooldown = !!(cooldownEnd && gameTime < cooldownEnd);
@@ -259,7 +259,7 @@ export function MarketingTab() {
               isOnCooldown={isOnCooldown}
               cooldownRemaining={cooldownRemaining}
               onLaunch={handleLaunch}
-              metrics={metrics}
+              metrics={{ cash: metrics.cash, time: metrics.myTime + metrics.leveragedTime }}
               getDisplayLabel={getDisplayLabel}
             />
           );

@@ -109,12 +109,11 @@ function StaffCandidateCard({ candidate, onHire, formatEffect }: StaffCandidateC
   const getEffectIcon = (metric: GameMetric) => {
     switch (metric) {
       case GameMetric.Cash: return '💵';
-      case GameMetric.Time: return '⏰';
+      case GameMetric.MyTime: return '⏰';
       case GameMetric.ServiceSpeedMultiplier: return '⚡';
       case GameMetric.Exp: return '⭐';
       case GameMetric.ServiceRevenueMultiplier: return '💰';
       case GameMetric.ServiceRevenueFlatBonus: return '💵';
-      case GameMetric.FreedomScore: return '⏰';
       case GameMetric.MonthlyExpenses: return '💸';
       default: return '✨';
     }
@@ -288,12 +287,11 @@ export function StaffTab() {
             const getEffectIcon = (metric: GameMetric) => {
               switch (metric) {
                 case GameMetric.Cash: return '💵';
-                case GameMetric.Time: return '⏰';
+                case GameMetric.MyTime: return '⏰';
                 case GameMetric.ServiceSpeedMultiplier: return '⚡';
                 case GameMetric.Exp: return '⭐';
                 case GameMetric.ServiceRevenueMultiplier: return '💰';
                 case GameMetric.ServiceRevenueFlatBonus: return '💵';
-                case GameMetric.FreedomScore: return '⏰';
                 case GameMetric.MonthlyExpenses: return '💸';
                 default: return '✨';
               }

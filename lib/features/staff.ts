@@ -48,7 +48,6 @@ export function addStaffEffects(staff: Staff, store?: {
   applyCashChange?: (amount: number) => void;
   applyTimeChange?: (amount: number) => void;
   applyExpChange?: (amount: number) => void;
-  applyFreedomScoreChange?: (amount: number) => void;
   recordEventRevenue?: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => void;
   recordEventExpense?: (amount: number, labelOrSource: string | SourceInfo, label?: string) => void;
 }): void {
@@ -69,10 +68,10 @@ export function addStaffEffects(staff: Staff, store?: {
 
   // Apply all staff effects (flexible system like upgrades)
   staff.effects.forEach((effect, index) => {
-    // Direct state metrics (Cash, Time, SkillLevel, FreedomScore) are applied directly
+    // Direct state metrics (Cash, Time, SkillLevel) are applied directly
     // Other metrics go through effectManager
-    if ((effect.metric === GameMetric.Cash || effect.metric === GameMetric.Time || 
-         effect.metric === GameMetric.Exp || effect.metric === GameMetric.FreedomScore)
+    if ((effect.metric === GameMetric.Cash || effect.metric === GameMetric.MyTime ||
+         effect.metric === GameMetric.Exp)
         && effect.type === EffectType.Add && store) {
       // Apply directly to state
       if (effect.metric === GameMetric.Cash) {
@@ -87,12 +86,10 @@ export function addStaffEffects(staff: Staff, store?: {
         } else if (store.applyCashChange) {
           store.applyCashChange(effect.value);
         }
-      } else if (effect.metric === GameMetric.Time && store.applyTimeChange) {
+      } else if (effect.metric === GameMetric.MyTime && store.applyTimeChange) {
         store.applyTimeChange(effect.value);
       } else if (effect.metric === GameMetric.Exp && store.applyExpChange) {
         store.applyExpChange(effect.value);
-      } else if (effect.metric === GameMetric.FreedomScore && store.applyFreedomScoreChange) {
-        store.applyFreedomScoreChange(effect.value);
       }
       // Direct state metrics are always permanent (one-time add/subtract)
       // Don't add to effectManager for direct state metrics with Add effects

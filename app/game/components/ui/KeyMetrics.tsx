@@ -28,7 +28,6 @@ export function KeyMetrics() {
     cash: [],
     time: [],
     exp: [],
-    freedomScore: [],
   });
 
   useEffect(() => {
@@ -40,7 +39,6 @@ export function KeyMetrics() {
         cash: [...prev.cash],
         time: [...prev.time],
         exp: [...prev.exp],
-        freedomScore: [...prev.freedomScore],
       };
 
       // Add cash change feedback
@@ -67,15 +65,6 @@ export function KeyMetrics() {
           id: `exp-${Date.now()}`,
           value: changes.exp,
           color: changes.exp > 0 ? 'yellow' : 'red',
-        });
-      }
-
-      // Add freedom score change feedback (previously founderWorkingHours)
-      if (changes.freedomScore !== undefined && changes.freedomScore !== 0) {
-        newFeedback.freedomScore.push({
-          id: `freedomScore-${Date.now()}`,
-          value: changes.freedomScore,
-          color: changes.freedomScore < 0 ? 'green' : 'red', // Green when reduced, red when increased
         });
       }
 
@@ -106,7 +95,7 @@ export function KeyMetrics() {
       console.warn('[KeyMetrics] Error accessing config, using defaults', error);
     }
   }
-  const showTime = startingTime > 0 || metrics.time > 0;
+  const showTime = startingTime > 0 || (metrics.myTime + metrics.leveragedTime) > 0;
 
   // Get metrics that should be shown on HUD (from registry + DB configs)
   const hudMetrics = useMemo(() => {
@@ -120,8 +109,8 @@ export function KeyMetrics() {
 
     return hudMetrics
       .filter(def => {
-        // Filter Time metric based on game state
-        if (def.id === GameMetric.Time) return showTime;
+        // Filter MyTime metric based on game state
+        if (def.id === GameMetric.MyTime) return showTime;
         return true;
       })
       .map(def => {
@@ -153,20 +142,25 @@ export function KeyMetrics() {
             color = 'text-yellow-400';
             feedback = feedbackByMetric.exp;
             break;
-          case GameMetric.Time:
-            value = `${metrics.time}/${startingTime + effectManager.calculate(GameMetric.MonthlyTimeCapacity, 0)}${unit}`;
+          case GameMetric.MyTime: {
+            // Calculate max capacities
+            const maxMyTime = startingTime; // MyTime capacity is startingTime
+            const maxLeveragedTime = effectManager.calculate(GameMetric.LeveragedTime, 0); // LeveragedTime capacity from effects
+            const totalTime = metrics.myTime + metrics.leveragedTime;
+            const maxTotalTime = maxMyTime + maxLeveragedTime;
+            
+            // Display format: myTime/maxMyTime + leveragedTime/maxLeveragedTime = total/maxTotal
+            if (metrics.leveragedTime > 0) {
+              value = `${metrics.myTime}/${maxMyTime}+${metrics.leveragedTime}/${maxLeveragedTime}=${totalTime}/${maxTotalTime}${unit}`;
+            } else {
+              value = `${metrics.myTime}/${maxMyTime}${unit}`;
+            }
             icon = '⏱️';
             image = iconPath || '/images/icons/upgrades.png'; // Use DB iconPath with fallback
             color = 'text-cyan-400';
             feedback = feedbackByMetric.time;
             break;
-          case GameMetric.FreedomScore:
-            value = `${metrics.freedomScore}${unit}`;
-            icon = '⏰';
-            image = iconPath || '/images/icons/upgrades.png'; // Use DB iconPath with fallback
-            color = 'text-purple-400';
-            feedback = feedbackByMetric.freedomScore;
-            break;
+          }
           case GameMetric.ConversionRate:
             value = `${conversionRate?.toFixed(1) ?? 0}${unit}`;
             icon = '📊';

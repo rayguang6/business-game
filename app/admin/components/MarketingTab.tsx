@@ -241,7 +241,7 @@ export function MarketingTab({
                   title="Effects (temporary)"
                   description="Add = flat, Percent = +/-%, Multiply = × factor, Set = exact value."
                   defaultEffect={{
-                    metric: GameMetric.SpawnIntervalSeconds,
+                    metric: GameMetric.LeadsPerMonth,
                     type: EffectType.Add,
                     value: '0',
                     durationSeconds: '',

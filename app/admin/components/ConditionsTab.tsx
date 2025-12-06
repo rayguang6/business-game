@@ -69,8 +69,6 @@ export function ConditionsTab({
         return getMetricDefinition(GameMetric.MonthlyExpenses).displayLabel;
       case ConditionMetric.GameTime:
         return 'Game Time (seconds)'; // Not a game metric, just game time
-      case ConditionMetric.FreedomScore:
-        return getMetricDefinition(GameMetric.FreedomScore).displayLabel;
       default:
         return metric;
     }
@@ -194,7 +192,6 @@ export function ConditionsTab({
                         <option value={ConditionMetric.Level}>{getConditionMetricLabel(ConditionMetric.Level)}</option>
                         <option value={ConditionMetric.Expenses}>{getConditionMetricLabel(ConditionMetric.Expenses)}</option>
                         <option value={ConditionMetric.GameTime}>{getConditionMetricLabel(ConditionMetric.GameTime)}</option>
-                        <option value={ConditionMetric.FreedomScore}>{getConditionMetricLabel(ConditionMetric.FreedomScore)}</option>
                       </select>
                     </div>
                     <div>

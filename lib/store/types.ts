@@ -10,11 +10,11 @@ import { SourceType } from '@/lib/config/sourceTypes';
 
 export interface Metrics {
   cash: number;
-  time: number; // Monthly available time (refreshes monthly)
+  myTime: number; // Personal time (refreshes monthly)
+  leveragedTime: number; // Leveraged time from staff/upgrades (refreshes monthly)
   totalRevenue: number;
   totalExpenses: number;
   exp: number; // Previously: skillLevel (reputation)
-  freedomScore: number; // Previously: founderWorkingHours
   totalLeadsSpawned: number; // Lifetime count of leads spawned
   totalCustomersGenerated: number; // Lifetime count of customers spawned
   totalTimeSpent: number; // Lifetime time spent (in hours)
@@ -73,7 +73,6 @@ export interface MonthlyHistoryEntry {
   expChange: number; // Previously: skillLevelChange
   level: number; // Current level at end of month
   levelChange: number; // Level change during the month
-  freedomScore: number; // Previously: founderWorkingHours
   revenueBreakdown?: RevenueEntry[];
   expenseBreakdown?: ExpenseBreakdownItem[]; // Individual operating expenses breakdown
   leadsSpawned?: number; // Leads spawned in this month

@@ -117,16 +117,6 @@ export function GlobalConfigTab({
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Starting {getMetricDefinition(GameMetric.FreedomScore).displayLabel}</label>
-                <input
-                  type="number"
-                  min="0"
-                  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={getValue(metrics?.startingFreedomScore)}
-                  onChange={(e) => onUpdateMetrics({ startingFreedomScore: e.target.value === '' ? undefined : Number(e.target.value) })}
-                />
-              </div>
-              <div>
                 <label className="block text-xs text-slate-400 mb-1">Starting Time (Hours)</label>
                 <input
                   type="number"

@@ -7,11 +7,11 @@ import type { IndustryId } from '@/lib/game/types';
 // Safe default metrics for store initialization (before config loads)
 const SAFE_DEFAULT_METRICS: Metrics = {
   cash: 0,
-  time: 0,
+  myTime: 0,
+  leveragedTime: 0,
   totalRevenue: 0,
   totalExpenses: 0,
   exp: 0,
-  freedomScore: 0,
   totalLeadsSpawned: 0,
   totalCustomersGenerated: 0,
   totalTimeSpent: 0,
@@ -28,11 +28,11 @@ export const getInitialMetrics = (industryId: IndustryId = DEFAULT_INDUSTRY_ID):
   }
   return {
     cash: metrics.startingCash,
-    time: metrics.startingTime ?? 0, // Monthly available time, defaults to 0
+    myTime: metrics.startingTime ?? 0, // Personal time, defaults to 0
+    leveragedTime: 0, // Leveraged time starts at 0 (will be added by upgrades/staff)
     totalRevenue: 0,
     totalExpenses: 0,
     exp: metrics.startingExp ?? 0, // Previously: startingSkillLevel - defaults to 0
-    freedomScore: metrics.startingFreedomScore ?? 0, // Previously: founderWorkHours - defaults to 0
     totalLeadsSpawned: 0,
     totalCustomersGenerated: 0,
     totalTimeSpent: 0,

@@ -59,7 +59,6 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
         applyCashChange: store.applyCashChange,
         applyTimeChange: store.applyTimeChange,
         applyExpChange: store.applyExpChange,
-        applyFreedomScoreChange: store.applyFreedomScoreChange,
         recordEventRevenue: store.recordEventRevenue,
         recordEventExpense: store.recordEventExpense,
       });
@@ -153,7 +152,6 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
         applyCashChange: currentStore.applyCashChange,
         applyTimeChange: currentStore.applyTimeChange,
         applyExpChange: currentStore.applyExpChange,
-        applyFreedomScoreChange: currentStore.applyFreedomScoreChange,
         recordEventRevenue: currentStore.recordEventRevenue,
         recordEventExpense: currentStore.recordEventExpense,
       }));
@@ -183,7 +181,6 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
         applyCashChange: currentStore.applyCashChange,
         applyTimeChange: currentStore.applyTimeChange,
         applyExpChange: currentStore.applyExpChange,
-        applyFreedomScoreChange: currentStore.applyFreedomScoreChange,
         recordEventRevenue: currentStore.recordEventRevenue,
         recordEventExpense: currentStore.recordEventExpense,
       }));

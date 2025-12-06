@@ -103,10 +103,10 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
         case GameMetric.MonthlyExpenses:
         case GameMetric.ServiceRevenueFlatBonus:
           return `${sign}${formatCurrency(value)} ${label}`;
-        case GameMetric.Time:
+        case GameMetric.MyTime:
           return `${sign}${formatMagnitude(value)}h ${label}`;
-        case GameMetric.SpawnIntervalSeconds:
-          return `${sign}${formatMagnitude(value)}s ${label} Interval`;
+        case GameMetric.LeadsPerMonth:
+          return `${sign}${formatMagnitude(value)} ${label}`;
         case GameMetric.ServiceCapacity:
           return `${sign}${formatMagnitude(value)} ${label}`;
         default:
@@ -117,8 +117,8 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
     if (type === EffectType.Percent) {
       const percent = Math.round(absValue);
       switch (metric) {
-        case GameMetric.SpawnIntervalSeconds:
-          return `${sign}${percent}% Customer Spawn Rate`;
+        case GameMetric.LeadsPerMonth:
+          return `${sign}${percent}% ${label}`;
         default:
           return `${sign}${percent}% ${label}`;
       }
@@ -134,8 +134,8 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
         case GameMetric.MonthlyExpenses:
         case GameMetric.ServiceRevenueFlatBonus:
           return `Set ${label} to ${formatRawCurrency(value)}`;
-        case GameMetric.SpawnIntervalSeconds:
-          return `Set ${label} Interval to ${formatRawNumber(value)}s`;
+        case GameMetric.LeadsPerMonth:
+          return `Set ${label} to ${formatRawNumber(value)}`;
         default:
           return `Set ${label} to ${formatRawNumber(value)}`;
       }
@@ -168,18 +168,18 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
   // Calculate affordability directly using subscribed metrics to ensure reactivity
   const canAfford = useMemo(() => {
     const hasCash = upgradeCost === 0 || metrics.cash >= upgradeCost;
-    const hasTime = upgradeTimeCost === undefined || upgradeTimeCost === 0 || metrics.time >= upgradeTimeCost;
+    const hasTime = upgradeTimeCost === undefined || upgradeTimeCost === 0 || (metrics.myTime + metrics.leveragedTime) >= upgradeTimeCost;
     return hasCash && hasTime;
-  }, [metrics.cash, metrics.time, upgradeCost, upgradeTimeCost]);
+  }, [metrics.cash, metrics.myTime, metrics.leveragedTime, upgradeCost, upgradeTimeCost]);
   const isMaxed = currentLevel >= upgrade.maxLevel;
   
   // Determine what's missing for button text
   const needText = useMemo(() => {
     const missing: string[] = [];
     if (needsCash && metrics.cash < upgradeCost) missing.push('Cash');
-    if (needsTime && metrics.time < upgradeTimeCost!) missing.push('Time');
+    if (needsTime && (metrics.myTime + metrics.leveragedTime) < upgradeTimeCost!) missing.push('Time');
     return missing.length > 0 ? `Need ${missing.join(' + ')}` : 'Need Cash';
-  }, [needsCash, needsTime, metrics.cash, metrics.time, upgradeCost, upgradeTimeCost]);
+  }, [needsCash, needsTime, metrics.cash, metrics.myTime, metrics.leveragedTime, upgradeCost, upgradeTimeCost]);
   
   // Get next level effects for display
   const nextLevelEffects = useMemo(() => {
@@ -277,8 +277,8 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
             )}
             {needsTime && (
               <div className={`flex items-center gap-1.5 sm:gap-2 ${
-                metrics.time >= upgradeTimeCost!
-                  ? 'text-cyan-600 dark:text-cyan-400' 
+                (metrics.myTime + metrics.leveragedTime) >= upgradeTimeCost!
+                  ? 'text-cyan-600 dark:text-cyan-400'
                   : 'text-red-600 dark:text-red-400'
               }`}>
                 <span className="text-base sm:text-lg">⏱️</span>
@@ -420,12 +420,11 @@ const getRoleStyles = (role: string) => ROLE_STYLE_MAP[role] ?? FALLBACK_STYLE;
 const getEffectIcon = (metric: GameMetric) => {
   switch (metric) {
     case GameMetric.Cash: return '💵';
-    case GameMetric.Time: return '⏰';
+    case GameMetric.MyTime: return '⏰';
     case GameMetric.ServiceSpeedMultiplier: return '⚡';
     case GameMetric.Exp: return '⭐';
     case GameMetric.ServiceRevenueMultiplier: return '💰';
     case GameMetric.ServiceRevenueFlatBonus: return '💵';
-    case GameMetric.FreedomScore: return '⏰';
     case GameMetric.MonthlyExpenses: return '💸';
     default: return '✨';
   }
@@ -597,6 +596,9 @@ interface HiredStaffCardProps {
 }
 
 function HiredStaffCard({ member, onFire }: HiredStaffCardProps) {
+  const { selectedIndustry } = useGameStore();
+  const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+  const { getDisplayLabel } = useMetricDisplayConfigs(industryId);
   const styles = getRoleStyles(member.role);
   const [showFireConfirm, setShowFireConfirm] = useState(false);
   const metrics = useGameStore((state) => state.metrics);
@@ -618,6 +620,20 @@ function HiredStaffCard({ member, onFire }: HiredStaffCardProps) {
   const handleCancelFire = useCallback(() => {
     setShowFireConfirm(false);
   }, []);
+
+  const formatStaffEffect = useCallback((effect: { metric: GameMetric; type: EffectType; value: number }) => {
+    const getTypeSymbol = (type: EffectType, value: number) => {
+      switch (type) {
+        case EffectType.Add: return value >= 0 ? `+${value}` : value.toString();
+        case EffectType.Percent: return `${value >= 0 ? '+' : ''}${value}%`;
+        case EffectType.Multiply: return `×${value}`;
+        default: return value.toString();
+      }
+    };
+
+    const label = getDisplayLabel(effect.metric);
+    return `${getTypeSymbol(effect.type, effect.value)} ${label}`;
+  }, [getDisplayLabel]);
 
   return (
     <div

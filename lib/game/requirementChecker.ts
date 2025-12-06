@@ -33,7 +33,6 @@ function getMetricValueById(metricId: string, store: GameStore): number {
     case 'level': return getLevel(metrics.exp, expPerLevel);
     case 'expenses': return metrics.totalExpenses;
     case 'gameTime': return gameTime;
-    case 'freedomScore': return metrics.freedomScore;
     default:
       console.warn(`[Requirements] Unknown metric: ${metricId}`);
       return 0;

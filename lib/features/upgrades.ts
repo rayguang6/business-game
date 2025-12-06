@@ -31,7 +31,6 @@ export interface UpgradeEffects {
   // happyProbability removed - not used in game mechanics
   serviceRevenueMultiplier: number;
   serviceRevenueFlatBonus: number;
-  founderWorkingHours: number;
   // Tier-specific service modifiers (defaults to 1 if not specified)
   highTierServiceRevenueMultiplier?: number;
   highTierServiceWeightageMultiplier?: number;
@@ -93,7 +92,6 @@ export function getUpgradeEffects(
     // happyProbability removed - not used in game mechanics
     serviceRevenueMultiplier: Math.max(0, effectManager.calculate(GameMetric.ServiceRevenueMultiplier, baseMetrics.serviceRevenueMultiplier)),
     serviceRevenueFlatBonus: effectManager.calculate(GameMetric.ServiceRevenueFlatBonus, baseMetrics.serviceRevenueFlatBonus),
-    founderWorkingHours: Math.max(0, Math.round(effectManager.calculate(GameMetric.FreedomScore, baseMetrics.founderWorkingHours))),
     // Tier-specific service modifiers
     highTierServiceRevenueMultiplier: effectManager.calculate(GameMetric.HighTierServiceRevenueMultiplier, baseMetrics.highTierServiceRevenueMultiplier || 1),
     highTierServiceWeightageMultiplier: effectManager.calculate(GameMetric.HighTierServiceWeightageMultiplier, baseMetrics.highTierServiceWeightageMultiplier || 1),

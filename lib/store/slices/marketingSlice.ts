@@ -41,13 +41,12 @@ export interface MarketingSlice {
 
 /**
  * Add marketing campaign effects to the effect manager
- * For direct state metrics (Cash, Time, SkillLevel, FreedomScore, GenerateLeads), apply directly
+ * For direct state metrics (Cash, Time, SkillLevel, GenerateLeads), apply directly
  */
 function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: number, store?: {
   applyCashChange?: (amount: number) => void;
   applyTimeChange?: (amount: number) => void;
   applyExpChange?: (amount: number) => void;
-  applyFreedomScoreChange?: (amount: number) => void;
   recordEventRevenue?: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => void;
   recordEventExpense?: (amount: number, labelOrSource: string | SourceInfo, label?: string) => void;
   recordTimeSpent?: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => void;
@@ -59,11 +58,11 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
   updateLeadProgress?: (progress: number) => void;
 }): void {
   campaign.effects.forEach((effect, index) => {
-    // Direct state metrics (Cash, Time, SkillLevel, FreedomScore, GenerateLeads) with Add effects are applied directly
+    // Direct state metrics (Cash, Time, SkillLevel, GenerateLeads) with Add effects are applied directly
     // These are one-time permanent effects (no duration tracking)
-    if ((effect.metric === GameMetric.Cash || effect.metric === GameMetric.Time || 
-         effect.metric === GameMetric.Exp || effect.metric === GameMetric.FreedomScore ||
-         effect.metric === GameMetric.GenerateLeads) 
+    if ((effect.metric === GameMetric.Cash || effect.metric === GameMetric.MyTime ||
+         effect.metric === GameMetric.Exp ||
+         effect.metric === GameMetric.GenerateLeads)
         && effect.type === EffectType.Add && store) {
       // Apply directly to state
       if (effect.metric === GameMetric.Cash) {
@@ -77,7 +76,7 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
         } else if (store.applyCashChange) {
           store.applyCashChange(effect.value);
         }
-      } else if (effect.metric === GameMetric.Time) {
+      } else if (effect.metric === GameMetric.MyTime) {
         // Use recordTimeSpent for negative values (time spent), applyTimeChange for positive (time gained)
         if (effect.value < 0 && store.recordTimeSpent) {
           const sourceInfo: SourceInfo = SourceHelpers.fromMarketing(campaign.id, campaign.name);
@@ -87,8 +86,6 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
         }
       } else if (effect.metric === GameMetric.Exp && store.applyExpChange) {
         store.applyExpChange(effect.value);
-      } else if (effect.metric === GameMetric.FreedomScore && store.applyFreedomScoreChange) {
-        store.applyFreedomScoreChange(effect.value);
       } else if (effect.metric === GameMetric.GenerateLeads && store.spawnLead && store.updateLeads && store.getState && store.updateLeadProgress) {
         // Use shared lead generation utility (single source of truth)
         generateLeads(effect.value, {
@@ -120,8 +117,8 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
     }, currentGameTime);
     
     // For direct state metrics with non-Add effects, calculate and apply the change
-    if (store && (effect.metric === GameMetric.Cash || effect.metric === GameMetric.Time || 
-                  effect.metric === GameMetric.Exp || effect.metric === GameMetric.FreedomScore)) {
+    if (store && (effect.metric === GameMetric.Cash || effect.metric === GameMetric.MyTime ||
+                  effect.metric === GameMetric.Exp)) {
       // Get current values from store (would need to pass metrics or calculate)
       // For now, non-Add effects on direct state metrics go through effectManager
       // and would need to be applied elsewhere if needed
@@ -178,12 +175,13 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       return { success: false, message: `Need $${campaign.cost} to launch ${campaign.name}.` };
     }
     
-    if (needsTime && metrics.time < campaign.timeCost!) {
+    const totalAvailableTime = metrics.myTime + metrics.leveragedTime;
+    if (needsTime && totalAvailableTime < campaign.timeCost!) {
       return { success: false, message: `Need ${campaign.timeCost}h to launch ${campaign.name}.` };
     }
     
     // If both are needed, check both
-    if (needsCash && needsTime && (metrics.cash < campaign.cost || metrics.time < campaign.timeCost!)) {
+    if (needsCash && needsTime && (metrics.cash < campaign.cost || totalAvailableTime < campaign.timeCost!)) {
       return { success: false, message: `Need $${campaign.cost} and ${campaign.timeCost}h to launch ${campaign.name}.` };
     }
 
@@ -228,7 +226,6 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       applyCashChange: store.applyCashChange,
       applyTimeChange: store.applyTimeChange,
       applyExpChange: store.applyExpChange,
-      applyFreedomScoreChange: store.applyFreedomScoreChange,
       recordEventRevenue: store.recordEventRevenue,
       recordEventExpense: store.recordEventExpense,
       recordTimeSpent: store.recordTimeSpent,

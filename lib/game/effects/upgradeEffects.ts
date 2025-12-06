@@ -14,7 +14,8 @@ export interface UpgradeLevelDefinition {
 
 const toMetricValues = (base: BaseUpgradeMetrics): MetricValues => ({
   [GameMetric.Cash]: 0, // Not affected by upgrades
-  [GameMetric.Time]: 0, // Not affected by upgrades
+  [GameMetric.MyTime]: 0, // Not affected by upgrades
+  [GameMetric.LeveragedTime]: 0, // Not affected by upgrades
   [GameMetric.GenerateLeads]: 0, // Not affected by upgrades
   [GameMetric.MonthlyExpenses]: base.monthlyExpenses,
   [GameMetric.LeadsPerMonth]: base.leadsPerMonth,
@@ -24,7 +25,8 @@ const toMetricValues = (base: BaseUpgradeMetrics): MetricValues => ({
   // [GameMetric.HappyProbability] removed - not used in game mechanics
   [GameMetric.ServiceRevenueMultiplier]: base.serviceRevenueMultiplier,
   [GameMetric.ServiceRevenueFlatBonus]: base.serviceRevenueFlatBonus,
-  [GameMetric.FreedomScore]: base.founderWorkingHours,
+  [GameMetric.FailureRate]: 0, // Default: no failure rate increase from upgrades
+  [GameMetric.ConversionRate]: 0, // Default: no conversion rate change from upgrades
   [GameMetric.HighTierServiceRevenueMultiplier]: base.highTierServiceRevenueMultiplier || 1,
   [GameMetric.HighTierServiceWeightageMultiplier]: base.highTierServiceWeightageMultiplier || 1,
   [GameMetric.MidTierServiceRevenueMultiplier]: base.midTierServiceRevenueMultiplier || 1,
@@ -42,7 +44,6 @@ const fromMetricValues = (values: MetricValues): BaseUpgradeMetrics => ({
   // happyProbability removed - not used in game mechanics
   serviceRevenueMultiplier: values[GameMetric.ServiceRevenueMultiplier],
   serviceRevenueFlatBonus: values[GameMetric.ServiceRevenueFlatBonus],
-  founderWorkingHours: values[GameMetric.FreedomScore],
   highTierServiceRevenueMultiplier: values[GameMetric.HighTierServiceRevenueMultiplier],
   highTierServiceWeightageMultiplier: values[GameMetric.HighTierServiceWeightageMultiplier],
   midTierServiceRevenueMultiplier: values[GameMetric.MidTierServiceRevenueMultiplier],

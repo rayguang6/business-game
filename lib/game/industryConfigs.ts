@@ -33,7 +33,6 @@ const DEFAULT_BUSINESS_METRICS: BusinessMetrics = {
   monthlyExpenses: 3000, // Generic default - industries typically override (freelance: 1000, dental: 5000, restaurant: 8000)
   // Global defaults - rarely overridden
   startingExp: 10, // Everyone starts at same skill level
-  startingFreedomScore: 360, // Standard starting freedom (12 hours * 30 days) - industries can override for special cases
 } as const;
 
 const DEFAULT_BUSINESS_STATS: BusinessStats = {

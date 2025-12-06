@@ -115,7 +115,7 @@ const EventPopup: React.FC = () => {
     // For cash: always allow (can go bankrupt)
     const affordableChoice = currentEvent.choices.find(choice => {
       const hasTimeCost = choice.timeCost !== undefined && choice.timeCost > 0;
-      const canAffordTime = !hasTimeCost || (choice.timeCost !== undefined && choice.timeCost <= metrics.time);
+      const canAffordTime = !hasTimeCost || (choice.timeCost !== undefined && choice.timeCost <= (metrics.myTime + metrics.leveragedTime));
       return canAffordTime;
     });
 
@@ -413,7 +413,7 @@ const EventPopup: React.FC = () => {
   // For cash: always allow (can go bankrupt)
   const affordableChoice = currentEvent.choices.find(choice => {
     const hasTimeCost = choice.timeCost !== undefined && choice.timeCost > 0;
-    const canAffordTime = !hasTimeCost || (choice.timeCost !== undefined && choice.timeCost <= metrics.time);
+    const canAffordTime = !hasTimeCost || (choice.timeCost !== undefined && choice.timeCost <= (metrics.myTime + metrics.leveragedTime));
     return canAffordTime;
   });
 
@@ -459,7 +459,7 @@ const EventPopup: React.FC = () => {
               const hasCost = choice.cost !== undefined && choice.cost > 0;
               const hasTimeCost = choice.timeCost !== undefined && choice.timeCost > 0;
               // Only disable time costs (prevent death by time), allow cash costs (can go bankrupt)
-              const canAffordTime = !hasTimeCost || (choice.timeCost !== undefined && choice.timeCost <= metrics.time);
+              const canAffordTime = !hasTimeCost || (choice.timeCost !== undefined && choice.timeCost <= (metrics.myTime + metrics.leveragedTime));
               const isDisabled = !canAffordTime;
 
               // Choice button colors based on category

@@ -54,7 +54,6 @@ export function HomeTab() {
   const totalTimeSpent = useGameStore((state) => state.metrics.totalTimeSpent || 0);
   const monthlyTimeSpent = useGameStore((state) => state.monthlyTimeSpent || 0);
   const monthlyTimeSpentDetails = useGameStore((state) => state.monthlyTimeSpentDetails || []);
-  const currentTime = metrics.time;
   
   // Safely get starting time - handle case when config isn't loaded yet
   let startingTime = 0;
@@ -70,9 +69,8 @@ export function HomeTab() {
     console.warn('[HomeTab] Error accessing config, using defaults', error);
   }
   
-  const timeCapacityBonus = effectManager.calculate(GameMetric.MonthlyTimeCapacity, 0);
-  const maxTime = startingTime + timeCapacityBonus;
-  const showTime = startingTime > 0 || currentTime > 0;
+  const totalTime = metrics.myTime + metrics.leveragedTime;
+  const showTime = startingTime > 0 || totalTime > 0;
 
   // Collapsible state for current month sections (auto-expanded by default)
   const [isRevenueExpanded, setIsRevenueExpanded] = useState(true);
@@ -156,7 +154,6 @@ export function HomeTab() {
     expChange: 0,
     level: Math.floor(metrics.exp / 100),
     levelChange: 0,
-    freedomScore: metrics.freedomScore,
     revenueBreakdown: monthlyRevenueDetails,
     expenseBreakdown: operatingExpenses,
     leadsSpawned: monthlyLeadsSpawned,

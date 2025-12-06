@@ -17,8 +17,8 @@ import { getTicksPerSecondForIndustry, getBusinessStats } from './config';
 // All game metrics that can be affected by effects
 export enum GameMetric {
   Cash = 'cash', // Direct cash modification (add/subtract)
-  Time = 'time', // Direct time modification (add/subtract)
-  MonthlyTimeCapacity = 'monthlyTimeCapacity', // Monthly time capacity increase (permanent)
+  MyTime = 'myTime', // Personal time (add/subtract)
+  LeveragedTime = 'leveragedTime', // Leveraged time from staff/upgrades (add/subtract)
   LeadsPerMonth = 'leadsPerMonth', // Leads spawned per industry month (replaces SpawnIntervalSeconds)
   ServiceSpeedMultiplier = 'serviceSpeedMultiplier',
   ServiceCapacity = 'serviceCapacity',
@@ -27,7 +27,6 @@ export enum GameMetric {
   MonthlyExpenses = 'monthlyExpenses',
   ServiceRevenueMultiplier = 'serviceRevenueMultiplier',
   ServiceRevenueFlatBonus = 'serviceRevenueFlatBonus',
-  FreedomScore = 'freedomScore', // Previously: FounderWorkingHours
   FailureRate = 'failureRate', // Chance of business operations failing (0-100%)
   ConversionRate = 'conversionRate', // How much progress each lead adds toward customer conversion
   GenerateLeads = 'generateLeads', // Immediate lead generation (one-time action)
@@ -87,12 +86,12 @@ export const METRIC_CONSTRAINTS: Partial<Record<GameMetric, MetricConstraints>> 
     min: 0,           // Can't have negative cash (game over condition)
     roundToInt: true, // Must be whole number
   },
-  [GameMetric.Time]: {
+  [GameMetric.MyTime]: {
     min: 0,           // Can't have negative time (game over condition)
     roundToInt: true, // Must be whole number
   },
-  [GameMetric.MonthlyTimeCapacity]: {
-    min: 0,           // Can't have negative monthly capacity
+  [GameMetric.LeveragedTime]: {
+    min: 0,           // Can't have negative leveraged time
     roundToInt: true, // Must be whole number
   },
   [GameMetric.ServiceCapacity]: {
@@ -101,10 +100,6 @@ export const METRIC_CONSTRAINTS: Partial<Record<GameMetric, MetricConstraints>> 
     roundToInt: true, // Must be whole number
   },
   // [GameMetric.HappyProbability] removed - not used in game mechanics
-  [GameMetric.FreedomScore]: {
-    min: 0,           // Can't have negative hours
-    roundToInt: true, // Must be whole number
-  },
   [GameMetric.Exp]: {
     min: 0,           // Can't have negative skill level
     roundToInt: true, // Must be whole number
@@ -198,7 +193,7 @@ const applyConstraints = (value: number, metric: GameMetric): number => {
     result = Math.min(constraints.max, result);
   }
 
-  // Round to integer if needed (e.g., for ServiceCapacity, FreedomScore)
+  // Round to integer if needed (e.g., for ServiceCapacity)
   if (constraints.roundToInt) {
     result = Math.round(result);
   }

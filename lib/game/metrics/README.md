@@ -181,7 +181,7 @@ Values from `BusinessStats` interface:
 Always the same value (not from config):
 - `ServiceSpeedMultiplier` → 1.0
 - `ServiceRevenueFlatBonus` → 0
-- `MonthlyTimeCapacity` → 0
+- `LeveragedTime` → 0
 - All tier multipliers → 1.0
 
 ## Constraints

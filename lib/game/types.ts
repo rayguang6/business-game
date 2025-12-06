@@ -9,7 +9,6 @@ export interface BusinessMetrics {
   startingTime?: number; // Optional monthly available time (hours)
   monthlyExpenses: number;
   startingExp: number; // Previously: startingSkillLevel
-  startingFreedomScore: number; // Previously: founderWorkHours - Base freedom score (monthly requirement)
 }
 
 export interface BusinessStats {
@@ -111,7 +110,6 @@ export interface BaseUpgradeMetrics {
   // happyProbability removed - not used in game mechanics
   serviceRevenueMultiplier: number;
   serviceRevenueFlatBonus: number;
-  founderWorkingHours: number;
   // Tier-specific service modifiers (default to 1 if not specified)
   highTierServiceRevenueMultiplier?: number;
   highTierServiceWeightageMultiplier?: number;

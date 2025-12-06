@@ -8,8 +8,7 @@
  * - Auto-generation of admin forms
  * - Industry-specific HUD configuration (Phase 2)
  * 
- * To change a metric's display name (e.g., FreedomScore → Leveraged Time),
- * just update the `displayLabel` field in the registry entry.
+ * To change a metric's display name, just update the `displayLabel` field in the registry entry.
  */
 
 import { GameMetric } from '../effectManager';
@@ -105,46 +104,6 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
       showInAdmin: true,
       priority: 2,
       unit: ' EXP',
-    },
-    canBeModifiedByEffects: true,
-  },
-  
-  [GameMetric.Time]: {
-    id: GameMetric.Time,
-    displayLabel: 'Available Time',
-    description: 'Monthly available time (hours) - only shown if time system is enabled',
-    defaultValueSource: 'businessMetrics',
-    defaultValuePath: 'startingTime',
-    constraints: {
-      min: 0,
-      roundToInt: true,
-    },
-    display: {
-      showOnHUD: true, // Conditional: only if startingTime > 0
-      showInDetails: true,
-      showInAdmin: true,
-      priority: 3,
-      unit: 'h',
-    },
-    canBeModifiedByEffects: true,
-  },
-  
-  [GameMetric.FreedomScore]: {
-    id: GameMetric.FreedomScore,
-    displayLabel: 'Leveraged Time', // Display name changed for Phase 2
-    description: 'Monthly leveraged time requirement (hours) - lower is better',
-    defaultValueSource: 'businessMetrics',
-    defaultValuePath: 'startingFreedomScore',
-    constraints: {
-      min: 0,
-      roundToInt: true,
-    },
-    display: {
-      showOnHUD: true,
-      showInDetails: true,
-      showInAdmin: true,
-      priority: 4,
-      unit: 'h',
     },
     canBeModifiedByEffects: true,
   },
@@ -293,10 +252,29 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
     canBeModifiedByEffects: true,
   },
   
-  [GameMetric.MonthlyTimeCapacity]: {
-    id: GameMetric.MonthlyTimeCapacity,
-    displayLabel: 'Time Capacity',
-    description: 'Additional monthly time capacity (hours) - permanent increase',
+  [GameMetric.MyTime]: {
+    id: GameMetric.MyTime,
+    displayLabel: 'My Time',
+    description: 'Personal time (hours)',
+    defaultValueSource: 'businessMetrics',
+    defaultValuePath: 'startingTime',
+    constraints: {
+      min: 0,
+      roundToInt: true,
+    },
+    display: {
+      showOnHUD: true,
+      showInDetails: true,
+      showInAdmin: true,
+      unit: 'h',
+    },
+    canBeModifiedByEffects: true,
+  },
+  
+  [GameMetric.LeveragedTime]: {
+    id: GameMetric.LeveragedTime,
+    displayLabel: 'Leveraged Time',
+    description: 'Leveraged time from staff/upgrades (hours)',
     defaultValueSource: 'calculated',
     calculatedDefaultValue: 0,
     constraints: {

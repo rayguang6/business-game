@@ -106,7 +106,7 @@ export const useBusinessActivity = () => {
     historyTotals,
 
     // Current time remaining
-    timeRemaining: metrics.time,
+    timeRemaining: metrics.myTime + metrics.leveragedTime,
   };
 };
 

@@ -57,8 +57,6 @@ function getMetricValue(metric: ConditionMetric, store: GameStore): number {
       return metrics.totalExpenses;
     case ConditionMetric.GameTime:
       return gameTime; // in seconds
-    case ConditionMetric.FreedomScore:
-      return metrics.freedomScore;
     default:
       console.warn(`[Condition System] Unknown metric: ${metric}`);
       return 0;

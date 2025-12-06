@@ -41,13 +41,11 @@ const mapBusinessMetrics = (raw: unknown): BusinessMetrics | undefined => {
   if (
     typeof c.startingCash === 'number' &&
     typeof c.monthlyExpenses === 'number' &&
-    typeof c.startingExp === 'number' &&
-    typeof c.startingFreedomScore === 'number'
+    typeof c.startingExp === 'number'
   ) {
     return {
       ...c,
       startingTime: typeof c.startingTime === 'number' ? c.startingTime : undefined,
-      startingFreedomScore: c.startingFreedomScore,
     };
   }
   return undefined;

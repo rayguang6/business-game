@@ -293,11 +293,11 @@ const applyEventEffect = (
       return; // Don't use effectManager for skill level (handled directly)
     }
     case EventEffectType.Metric: {
-      // For direct state metrics (Cash, Time, SkillLevel, FreedomScore, GenerateLeads) with Add effects, apply directly
+      // For direct state metrics (Cash, Time, SkillLevel, GenerateLeads) with Add effects, apply directly
       // These are one-time permanent effects (no duration tracking)
-      if ((effect.metric === GameMetric.Cash || effect.metric === GameMetric.Time || 
-           effect.metric === GameMetric.Exp || effect.metric === GameMetric.FreedomScore ||
-           effect.metric === GameMetric.GenerateLeads) 
+      if ((effect.metric === GameMetric.Cash || effect.metric === GameMetric.MyTime ||
+           effect.metric === GameMetric.Exp ||
+           effect.metric === GameMetric.GenerateLeads)
           && effect.effectType === EffectType.Add) {
         if (effect.metric === GameMetric.Cash) {
           const { recordEventRevenue, recordEventExpense } = store;
@@ -313,7 +313,7 @@ const applyEventEffect = (
           } else {
             recordEventExpense(Math.abs(effect.value), sourceInfo, label);
           }
-        } else if (effect.metric === GameMetric.Time) {
+        } else if (effect.metric === GameMetric.MyTime) {
           // Use recordTimeSpent for negative values (time spent), applyTimeChange for positive (time gained)
           if (effect.value < 0 && store.recordTimeSpent) {
             const sourceInfo = SourceHelpers.fromEvent(event.id, event.title, {
@@ -329,8 +329,6 @@ const applyEventEffect = (
           }
         } else if (effect.metric === GameMetric.Exp) {
           store.applyExpChange(effect.value);
-        } else if (effect.metric === GameMetric.FreedomScore) {
-          store.applyFreedomScoreChange(effect.value);
         } else if (effect.metric === GameMetric.GenerateLeads) {
           // NOTE: This is a legacy function that is not currently used.
           // All GenerateLeads effects should go through the two-phase system (resolveEventChoice -> clearLastEventOutcome),
@@ -377,18 +375,25 @@ const applyEventEffect = (
         const currentCash = metrics.cash;
         const newCash = effectManager.calculate(GameMetric.Cash, currentCash);
         store.applyCashChange(newCash - currentCash);
-      } else if (effect.metric === GameMetric.Time) {
-        const currentTime = metrics.time;
-        const newTime = effectManager.calculate(GameMetric.Time, currentTime);
-        store.applyTimeChange(newTime - currentTime);
+      } else if (effect.metric === GameMetric.MyTime || effect.metric === GameMetric.LeveragedTime) {
+        // Handle MyTime and LeveragedTime separately
+        if (effect.metric === GameMetric.MyTime) {
+          const currentTime = metrics.myTime;
+          const newTime = effectManager.calculate(GameMetric.MyTime, currentTime);
+          store.applyTimeChange(newTime - currentTime);
+        } else if (effect.metric === GameMetric.LeveragedTime) {
+          const currentTime = metrics.leveragedTime;
+          const newTime = effectManager.calculate(GameMetric.LeveragedTime, currentTime);
+          const delta = newTime - currentTime;
+          // Update through metrics slice if available
+          if ((store as any).updateMetrics) {
+            (store as any).updateMetrics({ leveragedTime: Math.max(0, Math.round(newTime)) });
+          }
+        }
       } else if (effect.metric === GameMetric.Exp) {
         const currentExp = metrics.exp;
         const newExp = effectManager.calculate(GameMetric.Exp, currentExp);
         store.applyExpChange(newExp - currentExp);
-      } else if (effect.metric === GameMetric.FreedomScore) {
-        const currentFreedomScore = metrics.freedomScore;
-        const newFreedomScore = effectManager.calculate(GameMetric.FreedomScore, currentFreedomScore);
-        store.applyFreedomScoreChange(newFreedomScore - currentFreedomScore);
       }
       break;
     }
@@ -467,8 +472,9 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
 
     // Validate time cost - prevent negative time (death by time)
     const timeCost = Math.max(0, choice.timeCost ?? 0);
-    if (timeCost > 0 && timeCost > store.metrics.time) {
-      console.warn(`Cannot resolve event choice: insufficient time. Required: ${timeCost}, Available: ${store.metrics.time}`);
+    const totalAvailableTime = store.metrics.myTime + store.metrics.leveragedTime;
+    if (timeCost > 0 && timeCost > totalAvailableTime) {
+      console.warn(`Cannot resolve event choice: insufficient time. Required: ${timeCost}, Available: ${totalAvailableTime}`);
       return;
     }
 
@@ -631,7 +637,7 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
           // Metric effects go through effect manager
           const { gameTime, metrics } = store;
           
-          // For direct state metrics (Cash, Time, SkillLevel, FreedomScore), apply immediately if Add effect
+          // For direct state metrics (Cash, Time, SkillLevel), apply immediately if Add effect
           if (resolvedEffect.metric === GameMetric.Cash && resolvedEffect.effectType === EffectType.Add) {
             // Cash effects should go through revenue/expense tracking (same as EventEffectType.Cash)
             const { recordEventRevenue, recordEventExpense } = store;
@@ -646,12 +652,10 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
             } else {
               recordEventExpense(Math.abs(resolvedEffect.value), sourceInfo, label);
             }
-          } else if (resolvedEffect.metric === GameMetric.Time && resolvedEffect.effectType === EffectType.Add) {
+          } else if (resolvedEffect.metric === GameMetric.MyTime && resolvedEffect.effectType === EffectType.Add) {
             store.applyTimeChange(resolvedEffect.value);
           } else if (resolvedEffect.metric === GameMetric.Exp && resolvedEffect.effectType === EffectType.Add) {
             store.applyExpChange(resolvedEffect.value);
-          } else if (resolvedEffect.metric === GameMetric.FreedomScore && resolvedEffect.effectType === EffectType.Add) {
-            store.applyFreedomScoreChange(resolvedEffect.value);
           } else if (resolvedEffect.metric === GameMetric.GenerateLeads && resolvedEffect.effectType === EffectType.Add) {
             // Use shared lead generation utility (single source of truth)
             generateLeads(resolvedEffect.value, {
@@ -687,18 +691,26 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
               const currentCash = metrics.cash;
               const newCash = effectManager.calculate(GameMetric.Cash, currentCash);
               store.applyCashChange(newCash - currentCash);
-            } else if (resolvedEffect.metric === GameMetric.Time) {
-              const currentTime = metrics.time;
-              const newTime = effectManager.calculate(GameMetric.Time, currentTime);
-              store.applyTimeChange(newTime - currentTime);
+            } else if (resolvedEffect.metric === GameMetric.MyTime || resolvedEffect.metric === GameMetric.LeveragedTime) {
+              // Handle MyTime and LeveragedTime separately
+              if (resolvedEffect.metric === GameMetric.MyTime) {
+                const currentTime = metrics.myTime;
+                const newTime = effectManager.calculate(GameMetric.MyTime, currentTime);
+                store.applyTimeChange(newTime - currentTime);
+              } else if (resolvedEffect.metric === GameMetric.LeveragedTime) {
+                const currentTime = metrics.leveragedTime;
+                const newTime = effectManager.calculate(GameMetric.LeveragedTime, currentTime);
+                set((state) => ({
+                  metrics: {
+                    ...state.metrics,
+                    leveragedTime: Math.max(0, Math.round(newTime)),
+                  },
+                }));
+              }
             } else if (resolvedEffect.metric === GameMetric.Exp) {
               const currentExp = metrics.exp;
               const newExp = effectManager.calculate(GameMetric.Exp, currentExp);
               store.applyExpChange(newExp - currentExp);
-            } else if (resolvedEffect.metric === GameMetric.FreedomScore) {
-              const currentFreedomScore = metrics.freedomScore;
-              const newFreedomScore = effectManager.calculate(GameMetric.FreedomScore, currentFreedomScore);
-              store.applyFreedomScoreChange(newFreedomScore - currentFreedomScore);
             }
           }
         }
@@ -767,12 +779,10 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
             } else {
               recordEventExpense(Math.abs(resolvedEffect.value), sourceInfo, label);
             }
-          } else if (resolvedEffect.metric === GameMetric.Time && resolvedEffect.effectType === EffectType.Add) {
+          } else if (resolvedEffect.metric === GameMetric.MyTime && resolvedEffect.effectType === EffectType.Add) {
             store.applyTimeChange(resolvedEffect.value);
           } else if (resolvedEffect.metric === GameMetric.Exp && resolvedEffect.effectType === EffectType.Add) {
             store.applyExpChange(resolvedEffect.value);
-          } else if (resolvedEffect.metric === GameMetric.FreedomScore && resolvedEffect.effectType === EffectType.Add) {
-            store.applyFreedomScoreChange(resolvedEffect.value);
           } else if (resolvedEffect.metric === GameMetric.GenerateLeads && resolvedEffect.effectType === EffectType.Add) {
             // Use shared lead generation utility (single source of truth)
             generateLeads(resolvedEffect.value, {
@@ -806,18 +816,26 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
               const currentCash = metrics.cash;
               const newCash = effectManager.calculate(GameMetric.Cash, currentCash);
               store.applyCashChange(newCash - currentCash);
-            } else if (resolvedEffect.metric === GameMetric.Time) {
-              const currentTime = metrics.time;
-              const newTime = effectManager.calculate(GameMetric.Time, currentTime);
-              store.applyTimeChange(newTime - currentTime);
+            } else if (resolvedEffect.metric === GameMetric.MyTime || resolvedEffect.metric === GameMetric.LeveragedTime) {
+              // Handle MyTime and LeveragedTime separately
+              if (resolvedEffect.metric === GameMetric.MyTime) {
+                const currentTime = metrics.myTime;
+                const newTime = effectManager.calculate(GameMetric.MyTime, currentTime);
+                store.applyTimeChange(newTime - currentTime);
+              } else if (resolvedEffect.metric === GameMetric.LeveragedTime) {
+                const currentTime = metrics.leveragedTime;
+                const newTime = effectManager.calculate(GameMetric.LeveragedTime, currentTime);
+                set((state) => ({
+                  metrics: {
+                    ...state.metrics,
+                    leveragedTime: Math.max(0, Math.round(newTime)),
+                  },
+                }));
+              }
             } else if (resolvedEffect.metric === GameMetric.Exp) {
               const currentExp = metrics.exp;
               const newExp = effectManager.calculate(GameMetric.Exp, currentExp);
               store.applyExpChange(newExp - currentExp);
-            } else if (resolvedEffect.metric === GameMetric.FreedomScore) {
-              const currentFreedomScore = metrics.freedomScore;
-              const newFreedomScore = effectManager.calculate(GameMetric.FreedomScore, currentFreedomScore);
-              store.applyFreedomScoreChange(newFreedomScore - currentFreedomScore);
             }
           }
         }

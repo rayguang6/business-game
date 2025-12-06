@@ -6,10 +6,10 @@
 CREATE TABLE IF NOT EXISTS metric_display_config (
   id TEXT PRIMARY KEY,  -- Composite: {industry_id}_{metric_id}
   industry_id TEXT NOT NULL,  -- 'global' for global defaults, industry ID for industry-specific overrides
-  metric_id TEXT NOT NULL,  -- References GameMetric enum value (e.g., 'cash', 'exp', 'freedomScore')
+  metric_id TEXT NOT NULL,  -- References GameMetric enum value (e.g., 'cash', 'exp')
   
   -- Presentation
-  display_label TEXT NOT NULL,  -- What to show in UI (e.g., "Leveraged Time" for FreedomScore)
+  display_label TEXT NOT NULL,  -- What to show in UI
   description TEXT,              -- Description of what this metric does
   unit TEXT,                     -- Unit label (e.g., 'h', 'x', '%', 'sec')
   icon_path TEXT,                -- Path to icon image (optional, for future use)
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS metric_display_config (
   CONSTRAINT valid_metric_id CHECK (metric_id IN (
     'cash', 'time', 'monthlyTimeCapacity', 'spawnIntervalSeconds', 'serviceSpeedMultiplier',
     'serviceCapacity', 'exp', 'monthlyExpenses', 'serviceRevenueMultiplier',
-    'serviceRevenueFlatBonus', 'freedomScore', 'failureRate', 'conversionRate',
+    'serviceRevenueFlatBonus', 'failureRate', 'conversionRate',
     'generateLeads', 'highTierServiceRevenueMultiplier', 'highTierServiceWeightageMultiplier',
     'midTierServiceRevenueMultiplier', 'midTierServiceWeightageMultiplier',
     'lowTierServiceRevenueMultiplier', 'lowTierServiceWeightageMultiplier'

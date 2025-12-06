@@ -97,7 +97,6 @@ export function useSimulationConfig({
     startingCash: configType === 'global' ? 10000 : 0,
     monthlyExpenses: configType === 'global' ? 1000 : 0,
     startingExp: 0,
-    startingFreedomScore: configType === 'global' ? 80 : 0,
   });
 
   const getDefaultStats = (): BusinessStats => ({

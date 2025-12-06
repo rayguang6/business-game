@@ -22,7 +22,6 @@ const METRIC_OPTIONS = [
   { id: 'level', name: 'Level' },
   { id: 'expenses', name: getMetricDefinition(GameMetric.MonthlyExpenses).displayLabel },
   { id: 'gameTime', name: 'Game Time' },
-  { id: 'freedomScore', name: getMetricDefinition(GameMetric.FreedomScore).displayLabel },
 ] as const;
 
 const OPERATOR_OPTIONS = [

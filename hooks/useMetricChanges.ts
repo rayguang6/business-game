@@ -7,18 +7,16 @@ export interface MetricChange {
   exp?: number; // Previously: skillLevel
   revenue?: number;
   expenses?: number;
-  freedomScore?: number; // Previously: founderWorkingHours
 }
 
 export function useMetricChanges() {
   const { metrics, monthlyRevenue, monthlyExpenses } = useGameStore();
   const prevMetrics = useRef({
     cash: metrics.cash,
-    time: metrics.time,
+    time: metrics.myTime + metrics.leveragedTime,
     exp: metrics.exp,
     revenue: monthlyRevenue,
     expenses: monthlyExpenses,
-    freedomScore: metrics.freedomScore,
   });
   const [changes, setChanges] = useState<MetricChange>({});
 
@@ -31,8 +29,9 @@ export function useMetricChanges() {
     }
 
     // Track time changes
-    if (metrics.time !== prevMetrics.current.time) {
-      newChanges.time = metrics.time - prevMetrics.current.time;
+    const currentTime = metrics.myTime + metrics.leveragedTime;
+    if (currentTime !== prevMetrics.current.time) {
+      newChanges.time = currentTime - prevMetrics.current.time;
     }
 
     // Track exp changes (previously skill level)
@@ -50,19 +49,13 @@ export function useMetricChanges() {
       newChanges.expenses = monthlyExpenses - prevMetrics.current.expenses;
     }
 
-    // Track freedom score changes (previously founderWorkingHours)
-    if (metrics.freedomScore !== prevMetrics.current.freedomScore) {
-      newChanges.freedomScore = metrics.freedomScore - prevMetrics.current.freedomScore;
-    }
-
     // Update previous values
     prevMetrics.current = {
       cash: metrics.cash,
-      time: metrics.time,
+      time: metrics.myTime + metrics.leveragedTime,
       exp: metrics.exp,
       revenue: monthlyRevenue,
       expenses: monthlyExpenses,
-      freedomScore: metrics.freedomScore,
     };
 
     // Only set changes if there are actual changes
@@ -76,7 +69,7 @@ export function useMetricChanges() {
 
       return () => clearTimeout(timer);
     }
-  }, [metrics.cash, metrics.time, metrics.exp, metrics.freedomScore, monthlyRevenue, monthlyExpenses]);
+  }, [metrics.cash, metrics.myTime, metrics.leveragedTime, metrics.exp, monthlyRevenue, monthlyExpenses]);
 
   return changes;
 }

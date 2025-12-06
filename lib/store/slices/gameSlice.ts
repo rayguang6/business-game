@@ -95,7 +95,7 @@ export interface GameSlice {
   isGameOver: boolean;
   gameOverReason: 'cash' | 'time' | 'victory' | null;
 
-  // Username (for future leaderboard)
+  // Username
   username: string | null;
 
   // Main Character (Founder) - always present
@@ -134,7 +134,6 @@ export interface GameSlice {
   applyCashChange: (amount: number) => void;
   applyTimeChange: (amount: number) => void;
   applyExpChange: (amount: number) => void; // Previously: applySkillLevelChange
-  applyFreedomScoreChange: (amount: number) => void;
   // Record revenue with source tracking
   // Supports both: recordEventRevenue(amount, label) and recordEventRevenue(amount, sourceInfo, label?)
   recordEventRevenue: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => void;
@@ -590,12 +589,12 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       }
     }
     
-    // For positive amounts (time gained) or if recordTimeSpent is not available,
-    // update time
+    // For positive amounts (time gained) - default to myTime for backward compatibility
+    // For new effects, use MyTime or LeveragedTime metrics directly
     set((state) => ({
       metrics: {
         ...state.metrics,
-        time: state.metrics.time + amount,
+        myTime: state.metrics.myTime + amount,
       },
     }));
     const { checkGameOver } = get();
@@ -611,12 +610,6 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     if (checkGameOver) {
       checkGameOver();
     }
-  },
-  applyFreedomScoreChange: (amount: number) => {
-    set((state) => ({
-      metrics: { ...state.metrics, freedomScore: state.metrics.freedomScore + amount },
-    }));
-    // FreedomScore doesn't trigger game over, but we could add it if needed
   },
 
   //adds a revenue ledger entry, bumps monthly revenue, and updates cash/total revenue.
@@ -720,25 +713,36 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
 
     const timeSpent = Math.abs(amount); // Convert to positive for tracking
     
-    set((state) => ({
-      metrics: {
-        ...state.metrics,
-        // Deduct time (allow it to go negative if insufficient)
-        time: state.metrics.time + amount,
-        totalTimeSpent: state.metrics.totalTimeSpent + timeSpent,
-      },
-      monthlyTimeSpent: state.monthlyTimeSpent + timeSpent,
-      monthlyTimeSpentDetails: [
-        ...state.monthlyTimeSpentDetails,
-        {
-          amount: timeSpent,
-          label: finalLabel,
-          sourceId: sourceInfo.id,
-          sourceType: sourceInfo.type,
-          sourceName: sourceInfo.name,
+    set((state) => {
+      // Deduct leveraged time first, then my time
+      let remaining = timeSpent;
+      let leveragedDeduction = Math.min(remaining, state.metrics.leveragedTime);
+      let myTimeDeduction = remaining - leveragedDeduction;
+      
+      // Clamp to prevent negative values (though we allow going negative for game logic)
+      leveragedDeduction = Math.max(0, leveragedDeduction);
+      myTimeDeduction = Math.max(0, myTimeDeduction);
+      
+      return {
+        metrics: {
+          ...state.metrics,
+          leveragedTime: state.metrics.leveragedTime - leveragedDeduction,
+          myTime: state.metrics.myTime - myTimeDeduction,
+          totalTimeSpent: state.metrics.totalTimeSpent + timeSpent,
         },
-      ],
-    }));
+        monthlyTimeSpent: state.monthlyTimeSpent + timeSpent,
+        monthlyTimeSpentDetails: [
+          ...state.monthlyTimeSpentDetails,
+          {
+            amount: timeSpent,
+            label: finalLabel,
+            sourceId: sourceInfo.id,
+            sourceType: sourceInfo.type,
+            sourceName: sourceInfo.name,
+          },
+        ],
+      };
+    });
 
     const { checkGameOver } = get();
     if (checkGameOver) {
@@ -750,7 +754,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     const state = get();
     if (state.isGameOver) return; // Already game over
     
-    const { cash, time } = state.metrics;
+    const { cash } = state.metrics;
     const industryId = (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
     const loseCondition = getLoseCondition(industryId);
     if (!loseCondition) return; // Can't check lose condition if not loaded

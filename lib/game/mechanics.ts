@@ -18,7 +18,6 @@ import {
   isNewMonth,
   UpgradeEffect,
   DEFAULT_INDUSTRY_ID,
-  getFounderWorkingHoursBase,
   getStartingTime,
   getLayoutConfig,
 } from '@/lib/game/config';
@@ -313,14 +312,15 @@ function processMonthTransition({
   const expensesActuallyDeducted = monthlyExpenses + payableOneTimeCosts;
 
   // Refresh available time at start of new month
-  const baseTimeBudget = getStartingTime(industryId);
-  const timeCapacityBonus = effectManager.calculate(GameMetric.MonthlyTimeCapacity, 0);
-  const timeBudget = baseTimeBudget + timeCapacityBonus;
+  const baseMyTime = getStartingTime(industryId);
+  // Leveraged time is refreshed from upgrades/staff effects (calculated separately)
+  const leveragedTimeBonus = effectManager.calculate(GameMetric.LeveragedTime, 0);
 
   const updatedMetrics: Metrics = {
     ...metrics,
     cash: monthResult.cash,
-    time: timeBudget, // Refresh available time each month
+    myTime: baseMyTime, // Refresh personal time each month
+    leveragedTime: leveragedTimeBonus, // Refresh leveraged time from effects
     // Only add expenses that were actually deducted at month end
     totalExpenses: metrics.totalExpenses + expensesActuallyDeducted,
   };
@@ -353,7 +353,6 @@ function processMonthTransition({
       expChange: updatedMetrics.exp - previousExp,
       level: currentLevel,
       levelChange: currentLevel - previousLevel,
-      freedomScore: metrics.freedomScore,
       leadsSpawned: monthlyLeadsSpawned,
       customersGenerated: monthlyCustomersGenerated,
       customersServed: monthlyCustomersServed,
@@ -510,7 +509,8 @@ function processCustomersForTick({
         if (availableProvider) {
           // Check if there's enough time available for this service
           const serviceTimeCost = updatedCustomer.service.timeCost || 0;
-          if (serviceTimeCost > 0 && metrics.time < serviceTimeCost) {
+          const totalAvailableTime = metrics.myTime + metrics.leveragedTime;
+          if (serviceTimeCost > 0 && totalAvailableTime < serviceTimeCost) {
             // Not enough time available for this service - skip to next room
             continue;
           }
@@ -614,13 +614,16 @@ function processCustomersForTick({
           }
 
           // Deduct time cost when service starts (upfront payment)
+          // Deduct leveraged time first, then my time
           if (serviceTimeCost > 0) {
-            // Deduct time from available time
-            const oldTime = metricsAccumulator.time;
-            const newTime = Math.max(0, oldTime - serviceTimeCost);
+            let remaining = serviceTimeCost;
+            const leveragedDeduction = Math.min(remaining, metricsAccumulator.leveragedTime);
+            const myTimeDeduction = remaining - leveragedDeduction;
+            
             metricsAccumulator = {
               ...metricsAccumulator,
-              time: newTime,
+              leveragedTime: Math.max(0, metricsAccumulator.leveragedTime - leveragedDeduction),
+              myTime: Math.max(0, metricsAccumulator.myTime - myTimeDeduction),
             };
 
             // Track time spent
@@ -1238,10 +1241,6 @@ export function tickOnce(state: TickInput): TickResult {
       GameMetric.MonthlyExpenses,
       getMonthlyBaseExpenses(industryId),
     ),
-    founderWorkingHours: effectManager.calculate(
-      GameMetric.FreedomScore,
-      getFounderWorkingHoursBase(industryId),
-    ),
     // EXP gain/loss are config-only (read directly from baseStats, not modifiable by effects)
     expGainPerHappyCustomer: (typeof baseStats.expGainPerHappyCustomer === 'number' && !Number.isNaN(baseStats.expGainPerHappyCustomer))
       ? baseStats.expGainPerHappyCustomer
@@ -1365,10 +1364,6 @@ export function tickOnce(state: TickInput): TickResult {
   // Accumulate time spent on services this tick
   monthlyTimeSpent += processedCustomersForTick.timeSpentThisTick;
   monthlyTimeSpentDetails.push(...processedCustomersForTick.timeSpentDetailsThisTick);
-
-  // FreedomScore is now direct state (like Cash/Time/SkillLevel)
-  // It's modified directly via applyFreedomScoreChange(), not calculated here
-  // Staff/upgrade effects on FreedomScore are applied directly when hired/purchased
 
   return {
     gameTick: nextTick,

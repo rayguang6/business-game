@@ -34,8 +34,7 @@ VALUES (
     "startingCash": 3000,
     "startingTime": 80,
     "monthlyExpenses": 1000,
-    "startingSkillLevel": 0,
-    "startingFreedomScore": 0
+    "startingSkillLevel": 0
   }'::jsonb,
   'random', -- Freelance industry uses random events for unpredictability
   '[]'::jsonb -- Empty sequence for random mode
@@ -629,8 +628,7 @@ VALUES
     'Virtual Assistant',
     800,
     '[
-      {"metric": "serviceSpeedMultiplier", "type": "percent", "value": 5},
-      {"metric": "freedomScore", "type": "add", "value": -1}
+      {"metric": "serviceSpeedMultiplier", "type": "percent", "value": 5}
     ]'::jsonb,
     NULL,
     '[]'::jsonb,
@@ -642,8 +640,7 @@ VALUES
     'Junior Designer',
     1200,
     '[
-      {"metric": "serviceSpeedMultiplier", "type": "percent", "value": 8},
-      {"metric": "freedomScore", "type": "add", "value": -1}
+      {"metric": "serviceSpeedMultiplier", "type": "percent", "value": 8}
     ]'::jsonb,
     'has-junior-designer',
     '[{"type": "flag", "id": "learned-design", "expected": true}]'::jsonb,
@@ -655,8 +652,7 @@ VALUES
     'Junior Developer',
     1500,
     '[
-      {"metric": "serviceSpeedMultiplier", "type": "percent", "value": 10},
-      {"metric": "freedomScore", "type": "add", "value": -2}
+      {"metric": "serviceSpeedMultiplier", "type": "percent", "value": 10}
     ]'::jsonb,
     'has-junior-developer',
     '[{"type": "flag", "id": "learned-web-dev", "expected": true}]'::jsonb,

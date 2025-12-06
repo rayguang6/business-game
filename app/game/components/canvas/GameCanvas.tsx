@@ -154,7 +154,6 @@ export function GameCanvas() {
         conversionRate: 10,
         failureRate: 0,
         monthlyExpenses: baseMonthlyExpenses,
-        monthlyTimeCapacity: 0,
         expGainPerHappyCustomer: 1,
         expLossPerAngryCustomer: 1,
         highTierRevenueMultiplier: 1,
@@ -203,7 +202,6 @@ export function GameCanvas() {
       conversionRate: effectManager.calculate(GameMetric.ConversionRate, baseStats.conversionRate ?? 10),
       failureRate: effectManager.calculate(GameMetric.FailureRate, baseStats.failureRate ?? 0),
       monthlyExpenses: effectManager.calculate(GameMetric.MonthlyExpenses, baseMonthlyExpenses),
-      monthlyTimeCapacity: effectManager.calculate(GameMetric.MonthlyTimeCapacity, 0),
       // EXP gain/loss are config-only (read directly from baseStats, not modifiable by effects)
       expGainPerHappyCustomer: (typeof baseStats.expGainPerHappyCustomer === 'number' && !Number.isNaN(baseStats.expGainPerHappyCustomer))
         ? baseStats.expGainPerHappyCustomer
@@ -311,7 +309,6 @@ export function GameCanvas() {
   // Use conversionRate from calculated metrics (same as game uses)
   const conversionRateValue = metrics.conversionRate;
   const monthlyExpensesValue = metrics.monthlyExpenses;
-  const monthlyTimeCapacity = metrics.monthlyTimeCapacity;
   
   // Base stats (non-editable) - read directly from config (same as game uses)
   const expGainPerHappy = metrics.expGainPerHappyCustomer; // Read directly from config
@@ -435,21 +432,13 @@ export function GameCanvas() {
             </div>
 
             {/* Expenses & Capacity Section */}
-            {(monthlyExpensesValue > 0 || monthlyTimeCapacity > 0) && (
+            {monthlyExpensesValue > 0 && (
               <div className="space-y-1 border-b border-gray-600 pb-1">
-                <div className="text-[10px] text-gray-400 uppercase tracking-wide">Expenses & Capacity</div>
-                {monthlyExpensesValue > 0 && (
-                  <div>
-                    <span className="text-gray-300">Monthly expenses:</span>{' '}
-                    <span className="font-semibold">${monthlyExpensesValue.toLocaleString()}</span>
-                  </div>
-                )}
-                {monthlyTimeCapacity > 0 && (
-                  <div>
-                    <span className="text-gray-300">Time capacity bonus:</span>{' '}
-                    <span className="font-semibold">+{monthlyTimeCapacity}h/month</span>
-                  </div>
-                )}
+                <div className="text-[10px] text-gray-400 uppercase tracking-wide">Expenses</div>
+                <div>
+                  <span className="text-gray-300">Monthly expenses:</span>{' '}
+                  <span className="font-semibold">${monthlyExpensesValue.toLocaleString()}</span>
+                </div>
               </div>
             )}
 

@@ -22,7 +22,6 @@ INSERT INTO industry_simulation_configs (
         "startingCash": 2000,
         "monthlyExpenses": 500,
         "startingExp": 0,
-        "startingFreedomScore": 0,
         "startingTime": 100
     }'::jsonb,
     '{
@@ -110,9 +109,7 @@ INSERT INTO events (id, industry_id, name, description, trigger_seconds, choices
     {
         "text": "Schedule for tomorrow",
         "consequences": [{
-            "effects": [
-                {"metric": "freedomScore", "type": "add", "value": -2}
-            ]
+            "effects": []
         }]
     }
  ]'::jsonb),

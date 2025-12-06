@@ -332,7 +332,6 @@ export function getBaseUpgradeMetricsForIndustry(
     // happyProbability removed - not used in game mechanics (customers happy/angry based on patience)
     serviceRevenueMultiplier: stats.serviceRevenueMultiplier ?? 1,
     serviceRevenueFlatBonus: 0,
-    founderWorkingHours: getFounderWorkingHoursBase(industryId),
   };
 }
 
@@ -348,12 +347,6 @@ export function getRoundDurationSecondsForIndustry(
   const stats = getBusinessStats(industryId);
   if (!stats) throw new Error('Business stats not loaded');
   return stats.monthDurationSeconds;
-}
-
-export function getFounderWorkingHoursBase(industryId: IndustryId = DEFAULT_INDUSTRY_ID): number {
-  const metrics = getBusinessMetrics(industryId);
-  if (!metrics) throw new Error('Business metrics not loaded');
-  return metrics.startingFreedomScore; // Previously: founderWorkHours
 }
 
 /**

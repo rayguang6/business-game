@@ -101,9 +101,10 @@ export const createCustomerSlice: StateCreator<GameState, [], [], CustomerSlice>
 
       // Check if there's enough time available for this service
       const serviceTimeCost = customer.service.timeCost || 0;
-      if (serviceTimeCost > 0 && state.metrics.time < serviceTimeCost) {
+      const totalAvailableTime = state.metrics.myTime + state.metrics.leveragedTime;
+      if (serviceTimeCost > 0 && totalAvailableTime < serviceTimeCost) {
         // Not enough time available - don't start service
-        console.warn(`Not enough time available for service ${customer.service.name}. Required: ${serviceTimeCost}, Available: ${state.metrics.time}`);
+        console.warn(`Not enough time available for service ${customer.service.name}. Required: ${serviceTimeCost}, Available: ${totalAvailableTime}`);
         return state;
       }
 
@@ -116,14 +117,18 @@ export const createCustomerSlice: StateCreator<GameState, [], [], CustomerSlice>
       );
 
       if (serviceTimeCost > 0) {
-        // Deduct time cost
-        const newTime = state.metrics.time - serviceTimeCost;
+        // Deduct time cost - leveraged time first, then my time
+        let remaining = serviceTimeCost;
+        const leveragedDeduction = Math.min(remaining, state.metrics.leveragedTime);
+        const myTimeDeduction = remaining - leveragedDeduction;
+        
         return {
           ...state,
           customers: updatedCustomers,
           metrics: {
             ...state.metrics,
-            time: newTime,
+            leveragedTime: Math.max(0, state.metrics.leveragedTime - leveragedDeduction),
+            myTime: Math.max(0, state.metrics.myTime - myTimeDeduction),
             totalTimeSpent: state.metrics.totalTimeSpent + serviceTimeCost,
           },
           monthlyTimeSpent: state.monthlyTimeSpent + serviceTimeCost,

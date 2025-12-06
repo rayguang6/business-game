@@ -9,7 +9,6 @@ export enum ConditionMetric {
   Level = 'level', // Calculated from EXP using getLevel()
   Expenses = 'expenses',
   GameTime = 'gameTime',
-  FreedomScore = 'freedomScore', // Previously: FounderWorkingHours = 'founderWorkingHours'
 }
 
 // Metric-based condition (simplified version)
