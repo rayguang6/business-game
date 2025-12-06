@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { IndustrySimulationConfigTab } from '../../components/IndustrySimulationConfigTab';
-import { useIndustrySimulationConfig } from '../../hooks/useIndustrySimulationConfig';
-import { useGlobalConfig } from '../../hooks/useGlobalConfig';
+import { useSimulationConfig } from '../../hooks/useSimulationConfig';
 import type { Industry } from '@/lib/features/industries';
 
 interface IndustryConfigPageClientProps {
@@ -12,9 +11,28 @@ interface IndustryConfigPageClientProps {
 }
 
 export default function IndustryConfigPageClient({ industry, industries }: IndustryConfigPageClientProps) {
-  const industrySimConfig = useIndustrySimulationConfig(industry);
-  const globalConfig = useGlobalConfig();
+  const industrySimConfig = useSimulationConfig({ configType: 'industry', industryId: industry });
+  const globalConfig = useSimulationConfig({ configType: 'global' });
   const [industryName, setIndustryName] = useState<string>('Unknown');
+
+  // Adapter functions for IndustrySimulationConfigTab compatibility
+  const setBusinessMetrics = (value: any) => industrySimConfig.updateMetrics(value || {});
+  const setBusinessStats = (value: any) => industrySimConfig.updateStats(value || {});
+  const setMapWidth = (value: number | null) => industrySimConfig.updateMapConfig(value || 10, industrySimConfig.mapHeight || 10, industrySimConfig.mapWalls);
+  const setMapHeight = (value: number | null) => industrySimConfig.updateMapConfig(industrySimConfig.mapWidth || 10, value || 10, industrySimConfig.mapWalls);
+  const setMapWalls = (value: any[]) => industrySimConfig.updateMapConfig(industrySimConfig.mapWidth || 10, industrySimConfig.mapHeight || 10, value);
+  const setEntryPosition = (value: any) => industrySimConfig.updateLayoutConfig({ entryPosition: value });
+  const setWaitingPositions = (value: any[]) => industrySimConfig.updateLayoutConfig({ waitingPositions: value });
+  const setServiceRooms = (value: any[]) => industrySimConfig.updateLayoutConfig({ serviceRooms: value });
+  const setStaffPositions = (value: any[]) => industrySimConfig.updateLayoutConfig({ staffPositions: value });
+  const setMainCharacterPosition = (value: any) => industrySimConfig.updateLayoutConfig({ mainCharacterPosition: value });
+  const setMainCharacterSpriteImage = (value: string) => industrySimConfig.updateLayoutConfig({ mainCharacterSpriteImage: value });
+  const setCapacityImage = (value: string) => industrySimConfig.updateMediaConfig({ capacityImage: value });
+  const setLeadDialogues = (value: string[] | null) => industrySimConfig.updateMediaConfig({ leadDialogues: value || [] });
+  const setWinCondition = (value: any) => industrySimConfig.updateWinCondition(value);
+  const setLoseCondition = (value: any) => industrySimConfig.updateLoseCondition(value);
+  const setEventSelectionMode = (value: 'random' | 'sequence') => industrySimConfig.updateEventConfig(value, industrySimConfig.eventSequence);
+  const setEventSequence = (value: string[]) => industrySimConfig.updateEventConfig(industrySimConfig.eventSelectionMode, value);
 
   // Set industry name from props
   useEffect(() => {
@@ -28,13 +46,13 @@ export default function IndustryConfigPageClient({ industry, industries }: Indus
     <div className="max-w-5xl">
       <IndustrySimulationConfigTab
         industryName={industryName}
-        loading={industrySimConfig.operation === 'loading'}
-        status={industrySimConfig.status}
-        saving={industrySimConfig.operation === 'saving'}
+        loading={industrySimConfig.loading}
+        status={industrySimConfig.status ? { type: industrySimConfig.status.includes('success') ? 'success' : 'error', message: industrySimConfig.status } : null}
+        saving={industrySimConfig.saving}
         businessMetrics={industrySimConfig.businessMetrics}
         businessStats={industrySimConfig.businessStats}
-        globalMetrics={globalConfig.metrics}
-        globalStats={globalConfig.stats}
+        globalMetrics={globalConfig.businessMetrics}
+        globalStats={globalConfig.businessStats}
         mapWidth={industrySimConfig.mapWidth}
         mapHeight={industrySimConfig.mapHeight}
         mapWalls={industrySimConfig.mapWalls}
@@ -50,24 +68,24 @@ export default function IndustryConfigPageClient({ industry, industries }: Indus
         loseCondition={industrySimConfig.loseCondition}
         eventSelectionMode={industrySimConfig.eventSelectionMode}
         eventSequence={industrySimConfig.eventSequence}
-        events={industrySimConfig.events}
-        setBusinessMetrics={industrySimConfig.setBusinessMetrics}
-        setBusinessStats={industrySimConfig.setBusinessStats}
-        setMapWidth={industrySimConfig.setMapWidth}
-        setMapHeight={industrySimConfig.setMapHeight}
-        setMapWalls={industrySimConfig.setMapWalls}
-        setEntryPosition={industrySimConfig.setEntryPosition}
-        setWaitingPositions={industrySimConfig.setWaitingPositions}
-        setServiceRooms={industrySimConfig.setServiceRooms}
-        setStaffPositions={industrySimConfig.setStaffPositions}
-        setMainCharacterPosition={industrySimConfig.setMainCharacterPosition}
-        setMainCharacterSpriteImage={industrySimConfig.setMainCharacterSpriteImage}
-        setCapacityImage={industrySimConfig.setCapacityImage}
-        setLeadDialogues={industrySimConfig.setLeadDialogues}
-        setWinCondition={industrySimConfig.setWinCondition}
-        setLoseCondition={industrySimConfig.setLoseCondition}
-        setEventSelectionMode={industrySimConfig.setEventSelectionMode}
-        setEventSequence={industrySimConfig.setEventSequence}
+        events={[]}  // TODO: Need to load events separately
+        setBusinessMetrics={setBusinessMetrics}
+        setBusinessStats={setBusinessStats}
+        setMapWidth={setMapWidth}
+        setMapHeight={setMapHeight}
+        setMapWalls={setMapWalls}
+        setEntryPosition={setEntryPosition}
+        setWaitingPositions={setWaitingPositions}
+        setServiceRooms={setServiceRooms}
+        setStaffPositions={setStaffPositions}
+        setMainCharacterPosition={setMainCharacterPosition}
+        setMainCharacterSpriteImage={setMainCharacterSpriteImage}
+        setCapacityImage={setCapacityImage}
+        setLeadDialogues={setLeadDialogues}
+        setWinCondition={setWinCondition}
+        setLoseCondition={setLoseCondition}
+        setEventSelectionMode={setEventSelectionMode}
+        setEventSequence={setEventSequence}
         onSave={industrySimConfig.save}
       />
     </div>

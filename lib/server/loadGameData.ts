@@ -1,8 +1,8 @@
 import 'server-only';
 import type { IndustryId } from '@/lib/game/types';
 import type { GlobalSimulationConfigState, IndustryContentConfig } from '@/lib/store/config/types';
-import { fetchGlobalSimulationConfig } from '@/lib/data/simulationConfigRepository';
-import { fetchIndustrySimulationConfig } from '@/lib/data/industrySimulationConfigRepository';
+// Import unified simulation config repository
+import { fetchSimulationConfig } from '@/lib/data/simulationConfigRepository';
 import { fetchServicesForIndustry } from '@/lib/data/serviceRepository';
 import { fetchUpgradesForIndustry } from '@/lib/data/upgradeRepository';
 import { fetchEventsForIndustry } from '@/lib/data/eventRepository';
@@ -23,7 +23,7 @@ export interface IndustryContentLoadResult extends IndustryContentConfig {
  */
 function resolveLayoutConfig(
   industryId: IndustryId,
-  industrySimConfig: Awaited<ReturnType<typeof fetchIndustrySimulationConfig>>,
+  industrySimConfig: Awaited<ReturnType<typeof fetchSimulationConfig>>,
 ): SimulationLayoutConfig {
   // Try industry-specific layout only
   if (industrySimConfig?.layoutConfig) {
@@ -34,7 +34,7 @@ function resolveLayoutConfig(
   throw new Error(
     `Layout config not found for industry "${industryId}". ` +
     `Please configure layout (entry_position, waiting_positions, service_rooms, staff_positions) ` +
-    `in industry_simulation_config table via the admin panel.`
+    `in simulation_config table via the admin panel.`
   );
 }
 
@@ -43,11 +43,11 @@ function resolveLayoutConfig(
  * This should be called once when the game starts.
  */
 export async function loadGlobalSimulationSettings(): Promise<GlobalSimulationConfigState | null> {
-  const result = await fetchGlobalSimulationConfig();
+  const result = await fetchSimulationConfig('global');
   if (!result) {
     throw new Error(
       'Failed to load global simulation config from database. ' +
-      'Please ensure global_simulation_config table has data configured.'
+      'Please ensure simulation_config table has data configured for industry_id = "global".'
     );
   }
 
@@ -55,21 +55,21 @@ export async function loadGlobalSimulationSettings(): Promise<GlobalSimulationCo
   if (!result.businessMetrics) {
     throw new Error(
       'Global simulation config is missing business_metrics. ' +
-      'Please configure business_metrics in global_simulation_config table.'
+      'Please configure business_metrics in simulation_config table for industry_id = "global".'
     );
   }
 
   if (!result.businessStats) {
     throw new Error(
       'Global simulation config is missing business_stats. ' +
-      'Please configure business_stats in global_simulation_config table.'
+      'Please configure business_stats in simulation_config table for industry_id = "global".'
     );
   }
 
   if (!result.movement) {
     throw new Error(
       'Global simulation config is missing movement. ' +
-      'Please configure movement in global_simulation_config table.'
+      'Please configure movement in simulation_config table for industry_id = "global".'
     );
   }
 
@@ -112,7 +112,7 @@ export async function loadIndustryContent(
     fetchStaffDataForIndustry(industryId),
     fetchFlagsForIndustry(industryId),
     fetchConditionsForIndustry(industryId),
-    fetchIndustrySimulationConfig(industryId),
+    fetchSimulationConfig(industryId),
   ]);
 
   // Check for errors (null = error, [] = success with no data)

@@ -13,26 +13,16 @@ interface GlobalConfigTabProps {
   globalLoading: boolean;
   globalStatus: string | null;
   globalSaving: boolean;
-  metrics: BusinessMetrics;
-  stats: BusinessStats;
-  eventSecondsInput: string;
-  movementJSON: string;
-  winCondition: WinCondition;
-  loseCondition: LoseCondition;
+  metrics: BusinessMetrics | null;
+  stats: BusinessStats | null;
+  winCondition: WinCondition | null;
+  loseCondition: LoseCondition | null;
   uiConfig: UiConfig;
-  leadDialogues: string[];
-  customerImages: string[];
-  capacityImage: string | null;
   onUpdateMetrics: (updates: Partial<BusinessMetrics>) => void;
   onUpdateStats: (updates: Partial<BusinessStats>) => void;
-  onUpdateEventSeconds: (value: string) => void;
-  onUpdateMovementJSON: (value: string) => void;
   onUpdateWinCondition: (updates: Partial<WinCondition>) => void;
   onUpdateLoseCondition: (updates: Partial<LoseCondition>) => void;
   onUpdateUiConfig: (updates: Partial<UiConfig>) => void;
-  onUpdateLeadDialogues: (leadDialogues: string[]) => void;
-  onUpdateCustomerImages: (customerImages: string[]) => void;
-  onUpdateCapacityImage: (capacityImage: string | null) => void;
   onSave: () => Promise<void>;
 }
 
@@ -42,26 +32,47 @@ export function GlobalConfigTab({
   globalSaving,
   metrics,
   stats,
-  eventSecondsInput,
-  movementJSON,
   winCondition,
   loseCondition,
   uiConfig,
-  leadDialogues,
-  customerImages,
-  capacityImage,
   onUpdateMetrics,
   onUpdateStats,
-  onUpdateEventSeconds,
-  onUpdateMovementJSON,
   onUpdateWinCondition,
   onUpdateLoseCondition,
   onUpdateUiConfig,
-  onUpdateLeadDialogues,
-  onUpdateCustomerImages,
-  onUpdateCapacityImage,
   onSave,
 }: GlobalConfigTabProps) {
+  // Safe defaults for build-time rendering
+  const safeMetrics = metrics || {
+    startingCash: 10000,
+    monthlyExpenses: 1000,
+    startingExp: 0,
+    startingFreedomScore: 80,
+  };
+
+  const safeStats = stats || {
+    ticksPerSecond: 10,
+    monthDurationSeconds: 60,
+    customerSpawnIntervalSeconds: 3,
+    customerPatienceSeconds: 10,
+    leavingAngryDurationTicks: 10,
+    customerSpawnPosition: { x: 4, y: 9 },
+    serviceCapacity: 2,
+    expGainPerHappyCustomer: 1,
+    expLossPerAngryCustomer: 1,
+    expPerLevel: 200,
+    serviceRevenueMultiplier: 1,
+    eventTriggerSeconds: [],
+  };
+
+  const safeWinCondition = winCondition || {
+    cashTarget: 50000,
+  };
+
+  const safeLoseCondition = loseCondition || {
+    cashThreshold: 0,
+    timeThreshold: 90,
+  };
   // Keyboard shortcut for save
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -108,7 +119,7 @@ export function GlobalConfigTab({
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={metrics.startingCash}
+                  value={metrics?.startingCash ?? 10000}
                   onChange={(e) => onUpdateMetrics({ startingCash: Number(e.target.value) })}
                 />
               </div>
@@ -121,7 +132,7 @@ export function GlobalConfigTab({
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={metrics.monthlyExpenses}
+                  value={safeMetrics.monthlyExpenses}
                   onChange={(e) => onUpdateMetrics({ monthlyExpenses: Number(e.target.value) })}
                 />
               </div>
@@ -133,7 +144,7 @@ export function GlobalConfigTab({
                 <input
                   type="number"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={metrics.startingExp}
+                  value={safeMetrics.startingExp}
                   onChange={(e) => onUpdateMetrics({ startingExp: Number(e.target.value) })}
                 />
               </div>
@@ -143,7 +154,7 @@ export function GlobalConfigTab({
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={metrics.startingFreedomScore}
+                  value={safeMetrics.startingFreedomScore}
                   onChange={(e) => onUpdateMetrics({ startingFreedomScore: Number(e.target.value) })}
                 />
               </div>
@@ -153,7 +164,7 @@ export function GlobalConfigTab({
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={metrics.startingTime ?? ''}
+                  value={safeMetrics.startingTime ?? ''}
                   onChange={(e) => onUpdateMetrics({ startingTime: e.target.value ? Number(e.target.value) : undefined })}
                   placeholder="0 (leave empty to disable)"
                 />
@@ -175,7 +186,7 @@ export function GlobalConfigTab({
                   type="number"
                   min="1"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.ticksPerSecond}
+                  value={safeStats.ticksPerSecond}
                   onChange={(e) => onUpdateStats({ ticksPerSecond: Number(e.target.value) })}
                 />
               </div>
@@ -188,7 +199,7 @@ export function GlobalConfigTab({
                   type="number"
                   min="1"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.monthDurationSeconds}
+                  value={safeStats.monthDurationSeconds}
                   onChange={(e) => onUpdateStats({ monthDurationSeconds: Number(e.target.value) })}
                 />
               </div>
@@ -201,7 +212,7 @@ export function GlobalConfigTab({
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.customerSpawnIntervalSeconds}
+                  value={safeStats.customerSpawnIntervalSeconds}
                   onChange={(e) => onUpdateStats({ customerSpawnIntervalSeconds: Number(e.target.value) })}
                 />
               </div>
@@ -214,7 +225,7 @@ export function GlobalConfigTab({
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.customerPatienceSeconds}
+                  value={safeStats.customerPatienceSeconds}
                   onChange={(e) => onUpdateStats({ customerPatienceSeconds: Number(e.target.value) })}
                 />
               </div>
@@ -227,7 +238,7 @@ export function GlobalConfigTab({
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.leavingAngryDurationTicks}
+                  value={safeStats.leavingAngryDurationTicks}
                   onChange={(e) => onUpdateStats({ leavingAngryDurationTicks: Number(e.target.value) })}
                 />
               </div>
@@ -240,7 +251,7 @@ export function GlobalConfigTab({
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.serviceCapacity}
+                  value={safeStats.serviceCapacity}
                   onChange={(e) => onUpdateStats({ serviceCapacity: Number(e.target.value) })}
                 />
               </div>
@@ -253,7 +264,7 @@ export function GlobalConfigTab({
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.expGainPerHappyCustomer ?? ''}
+                  value={safeStats.expGainPerHappyCustomer ?? ''}
                   onChange={(e) => {
                     const value = e.target.value === '' ? undefined : Number(e.target.value);
                     if (value !== undefined && !isNaN(value)) {
@@ -271,7 +282,7 @@ export function GlobalConfigTab({
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.expLossPerAngryCustomer ?? ''}
+                  value={safeStats.expLossPerAngryCustomer ?? ''}
                   onChange={(e) => {
                     const value = e.target.value === '' ? undefined : Number(e.target.value);
                     if (value !== undefined && !isNaN(value)) {
@@ -289,7 +300,7 @@ export function GlobalConfigTab({
                   type="number"
                   min="1"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.expPerLevel ?? ''}
+                  value={safeStats.expPerLevel ?? ''}
                   onChange={(e) => {
                     const value = e.target.value === '' ? undefined : Number(e.target.value);
                     if (value !== undefined && !isNaN(value)) {
@@ -301,18 +312,6 @@ export function GlobalConfigTab({
               <div>
                 {/* baseHappyProbability removed - not used in game mechanics */}
               </div>
-              <div className="sm:col-span-2">
-                <label className="block text-xs text-slate-400 mb-1">
-                  Event Trigger Seconds (comma-separated)
-                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-green-500/20 text-green-300 rounded">Never Override</span>
-                </label>
-                <input
-                  type="text"
-                  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={eventSecondsInput}
-                  onChange={(e) => onUpdateEventSeconds(e.target.value)}
-                />
-              </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">
                   Service Revenue Multiplier
@@ -323,7 +322,7 @@ export function GlobalConfigTab({
                   step="0.01"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.serviceRevenueMultiplier}
+                  value={safeStats.serviceRevenueMultiplier}
                   onChange={(e) => onUpdateStats({ serviceRevenueMultiplier: Number(e.target.value) })}
                 />
               </div>
@@ -336,7 +335,7 @@ export function GlobalConfigTab({
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.serviceRevenueScale}
+                  value={safeStats.serviceRevenueScale}
                   onChange={(e) => onUpdateStats({ serviceRevenueScale: Number(e.target.value) })}
                 />
               </div>
@@ -349,10 +348,10 @@ export function GlobalConfigTab({
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.customerSpawnPosition.x}
+                      value={safeStats.customerSpawnPosition.x}
                   onChange={(e) =>
                     onUpdateStats({
-                      customerSpawnPosition: { ...stats.customerSpawnPosition, x: Number(e.target.value) },
+                      customerSpawnPosition: { ...safeStats.customerSpawnPosition, x: Number(e.target.value) },
                     })
                   }
                 />
@@ -366,24 +365,15 @@ export function GlobalConfigTab({
                   type="number"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  value={stats.customerSpawnPosition.y}
+                      value={safeStats.customerSpawnPosition.y}
                   onChange={(e) =>
                     onUpdateStats({
-                      customerSpawnPosition: { ...stats.customerSpawnPosition, y: Number(e.target.value) },
+                      customerSpawnPosition: { ...safeStats.customerSpawnPosition, y: Number(e.target.value) },
                     })
                   }
                 />
               </div>
             </div>
-          </div>
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-slate-300">Movement</label>
-            <textarea
-              rows={10}
-              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200 font-mono text-xs"
-              value={movementJSON}
-              onChange={(e) => onUpdateMovementJSON(e.target.value)}
-            />
           </div>
         </div>
 
@@ -423,135 +413,8 @@ export function GlobalConfigTab({
           </div>
         </div>
 
-        <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
-          <div className="flex items-center justify-between mb-4">
-            <label className="block text-sm font-semibold text-slate-300">Lead Dialogues</label>
-            {leadDialogues && leadDialogues.length > 0 && (
-              <button onClick={() => onUpdateLeadDialogues([])} className="text-xs text-rose-400 hover:text-rose-300">
-                Clear (use defaults)
-              </button>
-            )}
-          </div>
-          <p className="text-xs text-slate-400 mb-3">Custom dialogue lines that leads will randomly display when browsing your business.</p>
-          <div className="space-y-2">
-            {(leadDialogues || []).map((dialogue, index) => (
-              <div key={index} className="flex gap-2">
-                <input
-                  type="text"
-                  value={dialogue}
-                  onChange={(e) => {
-                    const newDialogues = [...(leadDialogues || [])];
-                    newDialogues[index] = e.target.value;
-                    onUpdateLeadDialogues(newDialogues);
-                  }}
-                  placeholder="Enter dialogue text..."
-                  className="flex-1 rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200 text-sm"
-                />
-                <button
-                  onClick={() => {
-                    const newDialogues = (leadDialogues || []).filter((_, i) => i !== index);
-                    onUpdateLeadDialogues(newDialogues.length > 0 ? newDialogues : []);
-                  }}
-                  className="px-2 py-2 text-rose-400 hover:text-rose-300 rounded"
-                  title="Remove dialogue"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-            <button
-              onClick={() => {
-                const newDialogues = [...(leadDialogues || []), ''];
-                onUpdateLeadDialogues(newDialogues);
-              }}
-              className="w-full px-3 py-2 text-sm text-blue-400 hover:text-blue-300 border border-slate-600 hover:border-blue-400 rounded-lg transition-colors"
-            >
-              + Add Dialogue Line
-            </button>
-          </div>
-          <div className="mt-3 p-2 bg-slate-700/50 rounded text-xs text-slate-400">
-            💡 Leads are potential customers who walk around browsing your business. Custom dialogues help create unique personalities for different industries.
-          </div>
-        </div>
 
-        <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
-          <div className="flex items-center justify-between mb-4">
-            <label className="block text-sm font-semibold text-slate-300">Customer Images</label>
-            {customerImages && customerImages.length > 0 && (
-              <button onClick={() => onUpdateCustomerImages([])} className="text-xs text-rose-400 hover:text-rose-300">
-                Clear (use defaults)
-              </button>
-            )}
-          </div>
-          <p className="text-xs text-slate-400 mb-3">Image paths for customer sprites. Leave empty to use default customer images.</p>
-          <div className="space-y-2">
-            {(customerImages || []).map((image, index) => (
-              <div key={index} className="flex gap-2">
-                <input
-                  type="text"
-                  value={image}
-                  onChange={(e) => {
-                    const newImages = [...(customerImages || [])];
-                    newImages[index] = e.target.value;
-                    onUpdateCustomerImages(newImages);
-                  }}
-                  placeholder="e.g. /images/customer/customer1.png"
-                  className="flex-1 rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200 text-sm"
-                />
-                <button
-                  onClick={() => {
-                    const newImages = (customerImages || []).filter((_, i) => i !== index);
-                    onUpdateCustomerImages(newImages.length > 0 ? newImages : []);
-                  }}
-                  className="px-2 py-2 text-rose-400 hover:text-rose-300 rounded"
-                  title="Remove image"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-            <button
-              onClick={() => {
-                const newImages = [...(customerImages || []), ''];
-                onUpdateCustomerImages(newImages);
-              }}
-              className="w-full px-3 py-2 text-sm text-blue-400 hover:text-blue-300 border border-slate-600 hover:border-blue-400 rounded-lg transition-colors"
-            >
-              + Add Image Path
-            </button>
-          </div>
-          <div className="mt-3 p-2 bg-slate-700/50 rounded text-xs text-slate-400">
-            💡 Available images: /images/customer/customer1.png through customer10.png
-          </div>
-        </div>
 
-        <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
-          <label className="block text-sm font-semibold text-slate-300 mb-4">Capacity Image</label>
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs text-slate-400 mb-1">
-                Image Path
-                <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-blue-500/20 text-blue-300 rounded">Optional</span>
-              </label>
-              <input
-                type="text"
-                className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
-                value={capacityImage || ''}
-                onChange={(e) => onUpdateCapacityImage(e.target.value || null)}
-                placeholder="e.g. /images/capacity-indicator.png"
-              />
-              <p className="text-xs text-slate-500 mt-1">Image used to indicate capacity levels in the game UI</p>
-            </div>
-            {capacityImage && (
-              <button
-                onClick={() => onUpdateCapacityImage(null)}
-                className="text-xs text-rose-400 hover:text-rose-300"
-              >
-                Clear (use default)
-              </button>
-            )}
-          </div>
-        </div>
 
         <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
           <label className="block text-sm font-semibold text-slate-300 mb-4">Win Condition</label>
@@ -562,7 +425,7 @@ export function GlobalConfigTab({
                 type="number"
                 min="0"
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
-                value={winCondition.cashTarget}
+                value={safeWinCondition.cashTarget}
                 onChange={(e) => onUpdateWinCondition({ cashTarget: Number(e.target.value) })}
               />
               <p className="text-xs text-slate-500 mt-1">Target cash amount to win the game</p>
@@ -573,7 +436,7 @@ export function GlobalConfigTab({
                 type="number"
                 min="1"
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
-                value={winCondition.monthTarget || ''}
+                value={safeWinCondition.monthTarget || ''}
                 onChange={(e) => onUpdateWinCondition({ monthTarget: e.target.value ? Number(e.target.value) : undefined })}
               />
               <p className="text-xs text-slate-500 mt-1">Win by surviving this many months</p>
@@ -583,7 +446,7 @@ export function GlobalConfigTab({
               <input
                 type="text"
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
-                value={winCondition.customTitle || ''}
+                value={safeWinCondition.customTitle || ''}
                 onChange={(e) => onUpdateWinCondition({ customTitle: e.target.value || undefined })}
                 placeholder="🎉 Mission Accomplished!"
               />
@@ -594,7 +457,7 @@ export function GlobalConfigTab({
               <textarea
                 rows={3}
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200 resize-none"
-                value={winCondition.customMessage || ''}
+                value={safeWinCondition.customMessage || ''}
                 onChange={(e) => onUpdateWinCondition({ customMessage: e.target.value || undefined })}
                 placeholder="Congratulations! You've successfully completed your business challenge!"
               />
@@ -611,7 +474,7 @@ export function GlobalConfigTab({
               <input
                 type="number"
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
-                value={loseCondition.cashThreshold}
+                value={safeLoseCondition.cashThreshold}
                 onChange={(e) => onUpdateLoseCondition({ cashThreshold: Number(e.target.value) })}
               />
               <p className="text-xs text-slate-500 mt-1">Game over if cash &lt;= this value (default: 0)</p>
@@ -621,7 +484,7 @@ export function GlobalConfigTab({
               <input
                 type="number"
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
-                value={loseCondition.timeThreshold}
+                value={safeLoseCondition.timeThreshold}
                 onChange={(e) => onUpdateLoseCondition({ timeThreshold: Number(e.target.value) })}
               />
               <p className="text-xs text-slate-500 mt-1">Game over if available time &lt;= this value (default: 0, only applies if time system is enabled)</p>

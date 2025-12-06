@@ -112,11 +112,11 @@ export function ConfigErrorPage({
       
       <div className="flex gap-4 mt-4">
         {onRetry && (
-          <GameButton onClick={onRetry} variant="primary">
+          <GameButton onClick={onRetry} color="blue">
             Try Again
           </GameButton>
         )}
-        <GameButton onClick={() => router.push('/select-industry')} variant="secondary">
+        <GameButton onClick={() => router.push('/select-industry')} color="gold">
           Back to Industry Selection
         </GameButton>
       </div>

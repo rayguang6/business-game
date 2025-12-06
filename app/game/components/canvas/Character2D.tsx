@@ -33,6 +33,7 @@ export function Character2D({
 }: Character2DProps) {
   const [currentFrame, setCurrentFrame] = useState(frame);
   const selectedIndustryId = useGameStore((state) => state.selectedIndustry?.id as IndustryId | undefined);
+  const movementConfig = getMovementConfigForIndustry(selectedIndustryId);
   const {
     customerTilesPerTick,
     animationReferenceTilesPerTick,
@@ -40,7 +41,14 @@ export function Character2D({
     minWalkFrameDurationMs,
     maxWalkFrameDurationMs,
     celebrationFrameDurationMs,
-  } = getMovementConfigForIndustry(selectedIndustryId);
+  } = movementConfig || {
+    customerTilesPerTick: 0.25,
+    animationReferenceTilesPerTick: 0.25,
+    walkFrameDurationMs: 200,
+    minWalkFrameDurationMs: 80,
+    maxWalkFrameDurationMs: 320,
+    celebrationFrameDurationMs: 200,
+  };
 
   const animationSpeedRatio = animationReferenceTilesPerTick > 0
     ? customerTilesPerTick / animationReferenceTilesPerTick

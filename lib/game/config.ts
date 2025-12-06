@@ -22,6 +22,9 @@ import {
 } from '@/lib/store/configStore';
 import type { WinCondition, LoseCondition } from './winConditions';
 
+// Import unified simulation config repository
+import { fetchSimulationConfig as fetchUnifiedSimulationConfig } from '@/lib/data/simulationConfigRepository';
+
 export type {
   BusinessMetrics,
   BusinessStats,
@@ -133,92 +136,27 @@ const getGlobalConfigOverride = () => useConfigStore.getState().globalConfig;
 // Removed getFallbackSimulationConfig and getSimulationConfig - no code defaults, data must be in database
 
 export function getBusinessMetrics(industryId: IndustryId = DEFAULT_INDUSTRY_ID): BusinessMetrics | null {
-  // Check industry-specific override first
+  // Use unified config repository
   const industryConfig = getIndustryOverride(industryId);
-  const industryMetrics = industryConfig?.businessMetrics;
-  
-  // Get global config as base
-  const globalConfig = getGlobalConfigOverride();
-  const globalMetrics = globalConfig?.businessMetrics;
-  
-  // Merge: industry-specific overrides global
-  if (industryMetrics && globalMetrics) {
-    return { ...globalMetrics, ...industryMetrics };
-  }
-  
-  if (industryMetrics) {
-    return industryMetrics;
-  }
-  
-  if (globalMetrics) {
-    return globalMetrics;
-  }
-  
-  // Data not loaded - return null (should be caught at load time)
-  return null;
+  return industryConfig?.businessMetrics || null;
 }
 
 export function getBusinessStats(industryId: IndustryId = DEFAULT_INDUSTRY_ID): BusinessStats | null {
-  // Check industry-specific override first
+  // Use unified config repository
   const industryConfig = getIndustryOverride(industryId);
-  const industryStats = industryConfig?.businessStats;
-  
-  // Get global config as base
-  const globalConfig = getGlobalConfigOverride();
-  const globalStats = globalConfig?.businessStats;
-  
-  // Merge: industry-specific overrides global
-  if (industryStats && globalStats) {
-    const merged = { ...globalStats, ...industryStats };
-    // If industry config doesn't have eventTriggerSeconds or it's empty, use global
-    if (!merged.eventTriggerSeconds || merged.eventTriggerSeconds.length === 0) {
-      if (globalStats.eventTriggerSeconds && globalStats.eventTriggerSeconds.length > 0) {
-        merged.eventTriggerSeconds = [...globalStats.eventTriggerSeconds];
-      }
-    }
-    return merged;
-  }
-  
-  if (industryStats) {
-    return industryStats;
-  }
-  
-  if (globalStats) {
-    return globalStats;
-  }
-  
-  // Data not loaded - return null (should be caught at load time)
-  return null;
+  return industryConfig?.businessStats || null;
 }
 
 export function getMapConfigForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID) {
+  // Use unified config repository
   const industryConfig = getIndustryOverride(industryId);
-  if (industryConfig?.mapConfig) {
-    return industryConfig.mapConfig;
-  }
-  
-  const globalConfig = getGlobalConfigOverride();
-  if (globalConfig?.mapConfig) {
-    return globalConfig.mapConfig;
-  }
-  
-  // No map config found - return undefined (optional config)
-  return undefined;
+  return industryConfig?.mapConfig;
 }
 
 export function getMovementConfigForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): MovementConfig | null {
-  const industryConfig = getIndustryOverride(industryId);
-  if (industryConfig?.movement) {
-    return { ...industryConfig.movement };
-  }
-  
+  // Movement is stored in global config only
   const globalConfig = getGlobalConfigOverride();
-  if (globalConfig?.movement) {
-    return { ...globalConfig.movement };
-  }
-  
-  // Data not loaded - return null (should be caught at load time)
-  return null;
+  return globalConfig?.movement ? { ...globalConfig.movement } : null;
 }
 
 export function getGlobalMovementConfig(): MovementConfig | null {
@@ -232,51 +170,40 @@ export function getGlobalMovementConfig(): MovementConfig | null {
 }
 
 export function getWinCondition(industryId?: IndustryId): WinCondition | null {
-  // If industryId provided, check industry-specific override
+  // Use unified config repository
   if (industryId) {
     const industryConfig = getIndustryOverride(industryId);
     if (industryConfig?.winCondition) {
       return { ...industryConfig.winCondition };
     }
   }
-  
-  // Check global config
+
+  // Check global config as fallback
   const global = getGlobalConfigOverride()?.winCondition;
-  if (global) {
-    return { ...global };
-  }
-  
-  // Data not loaded - return null (should be caught at load time)
-  return null;
+  return global ? { ...global } : null;
 }
 
 export function getLoseCondition(industryId?: IndustryId): LoseCondition | null {
-  // If industryId provided, check industry-specific override
+  // Use unified config repository
   if (industryId) {
     const industryConfig = getIndustryOverride(industryId);
     if (industryConfig?.loseCondition) {
       return { ...industryConfig.loseCondition };
     }
   }
-  
-  // Check global config
+
+  // Check global config as fallback
   const global = getGlobalConfigOverride()?.loseCondition;
-  if (global) {
-    return { ...global };
-  }
-  
-  // Data not loaded - return null (should be caught at load time)
-  return null;
+  return global ? { ...global } : null;
 }
 
 export function getLayoutConfig(industryId: IndustryId = DEFAULT_INDUSTRY_ID): SimulationLayoutConfig | null {
-  // Check industry-specific config only (no global fallback)
-  // The layout is resolved during loadIndustryContent which fetches from DB
+  // Use unified config repository - layout is industry-specific only
   const industryConfig = getIndustryOverride(industryId);
   if (industryConfig?.layout) {
     return cloneLayout(industryConfig.layout);
   }
-  
+
   // Data not loaded - return null (should be caught at load time)
   return null;
 }
@@ -302,20 +229,18 @@ export function getEventsForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_I
 }
 
 export function getCustomerImagesForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): string[] {
-  // Check industry-specific override first
+  // Use unified config repository
   const industryConfig = getIndustryOverride(industryId);
   if (industryConfig?.customerImages && industryConfig.customerImages.length > 0) {
     return [...industryConfig.customerImages];
   }
-  
-  // Check global config
+
+  // Check global config as fallback
   const globalConfig = getGlobalConfigOverride();
   if (globalConfig?.customerImages && globalConfig.customerImages.length > 0) {
     return [...globalConfig.customerImages];
   }
-  
-  // No customer images found - return empty array (will cause issues, but that's correct - data must be in DB)
-  // console.warn(`[Config] Customer images not found for industry ${industryId}. Please configure in database.`);
+
   return [];
 }
 
@@ -325,39 +250,35 @@ export function getDefaultCustomerImageForIndustry(industryId: IndustryId = DEFA
 }
 
 export function getStaffNamePoolForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): string[] {
-  // Check industry-specific override first
+  // Use unified config repository
   const industryConfig = getIndustryOverride(industryId);
   if (industryConfig?.staffNamePool && industryConfig.staffNamePool.length > 0) {
     return [...industryConfig.staffNamePool];
   }
-  
-  // Check global config
+
+  // Check global config as fallback
   const globalConfig = getGlobalConfigOverride();
   if (globalConfig?.staffNamePool && globalConfig.staffNamePool.length > 0) {
     return [...globalConfig.staffNamePool];
   }
-  
-  // No staff name pool found - return empty array (will cause issues if staff are created, but that's correct)
+
   console.warn(`[Config] Staff name pool not found for industry ${industryId}. Please configure in database.`);
   return [];
 }
 
 export function getCapacityImageForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): string | null {
-  // Check industry-specific override first
+  // Use unified config repository
   const industryConfig = getIndustryOverride(industryId);
   if (industryConfig?.capacityImage !== undefined) {
-    // Return null if explicitly set to empty string, otherwise return the value
     return industryConfig.capacityImage || null;
   }
-  
-  // Check global config
+
+  // Check global config as fallback
   const globalConfig = getGlobalConfigOverride();
   if (globalConfig?.capacityImage !== undefined) {
-    // Return null if explicitly set to empty string, otherwise return the value
     return globalConfig.capacityImage || null;
   }
-  
-  // No fallback - return null if no image is configured
+
   return null;
 }
 
@@ -374,18 +295,18 @@ const DEFAULT_LEAD_DIALOGUES = [
 ];
 
 export function getLeadDialoguesForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): string[] {
-  // Check industry-specific override first
+  // Use unified config repository
   const industryConfig = getIndustryOverride(industryId);
   if (industryConfig?.leadDialogues && industryConfig.leadDialogues.length > 0) {
     return [...industryConfig.leadDialogues];
   }
-  
-  // Check global config
+
+  // Check global config as fallback
   const globalConfig = getGlobalConfigOverride();
   if (globalConfig?.leadDialogues && globalConfig.leadDialogues.length > 0) {
     return [...globalConfig.leadDialogues];
   }
-  
+
   // Fallback to defaults
   return [...DEFAULT_LEAD_DIALOGUES];
 }

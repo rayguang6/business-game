@@ -8,8 +8,8 @@ import { fetchMarketingCampaignsForIndustry, upsertMarketingCampaignForIndustry,
 import { fetchStaffDataForIndustry, upsertStaffRole, deleteStaffRole, upsertStaffPreset, deleteStaffPreset } from '@/lib/data/staffRepository';
 import { fetchFlagsForIndustry, upsertFlagForIndustry, deleteFlagById } from '@/lib/data/flagRepository';
 import { fetchConditionsForIndustry, upsertConditionForIndustry, deleteConditionById } from '@/lib/data/conditionRepository';
-import { fetchGlobalSimulationConfig, upsertGlobalSimulationConfig } from '@/lib/data/simulationConfigRepository';
-import { fetchIndustrySimulationConfig, upsertIndustrySimulationConfig } from '@/lib/data/industrySimulationConfigRepository';
+// Import unified simulation config repository
+import { fetchSimulationConfig, upsertSimulationConfig } from '@/lib/data/simulationConfigRepository';
 import type { Industry } from '@/lib/features/industries';
 import type { IndustryId, IndustryServiceDefinition, UpgradeDefinition } from '@/lib/game/types';
 import type { GameEvent } from '@/lib/types/gameEvents';
@@ -54,11 +54,11 @@ export async function fetchConditions(industryId: IndustryId) {
 }
 
 export async function fetchGlobalConfig() {
-  return await fetchGlobalSimulationConfig();
+  return await fetchSimulationConfig('global');
 }
 
 export async function fetchIndustryConfig(industryId: IndustryId) {
-  return await fetchIndustrySimulationConfig(industryId);
+  return await fetchSimulationConfig(industryId);
 }
 
 // Industry Actions
@@ -177,7 +177,7 @@ export async function upsertGlobalConfig(config: {
     outcomePopupDurationSeconds?: number;
   };
 }) {
-  return await upsertGlobalSimulationConfig(config);
+  return await upsertSimulationConfig('global', config);
 }
 
 // Industry Config Actions
@@ -205,6 +205,6 @@ export async function upsertIndustryConfig(
     leadDialogues?: string[] | null;
   },
 ) {
-  return await upsertIndustrySimulationConfig(industryId, config);
+  return await upsertSimulationConfig(industryId, config);
 }
 
