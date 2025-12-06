@@ -10,6 +10,10 @@ import { fetchFlagsForIndustry, upsertFlagForIndustry, deleteFlagById } from '@/
 import { fetchConditionsForIndustry, upsertConditionForIndustry, deleteConditionById } from '@/lib/data/conditionRepository';
 // Import unified simulation config repository
 import { fetchSimulationConfig, upsertSimulationConfig } from '@/lib/data/simulationConfigRepository';
+import { fetchAllMetricDisplayConfigs, fetchIndustrySpecificMetricDisplayConfigs, upsertMetricDisplayConfig, deleteMetricDisplayConfig } from '@/lib/data/metricDisplayConfigRepository';
+import { seedMetricDisplayConfig } from '@/lib/data/seedMetricDisplayConfig';
+import type { MetricDisplayConfig } from '@/lib/data/metricDisplayConfigRepository';
+import { GameMetric } from '@/lib/game/effectManager';
 import type { Industry } from '@/lib/features/industries';
 import type { IndustryId, IndustryServiceDefinition, UpgradeDefinition } from '@/lib/game/types';
 import type { GameEvent } from '@/lib/types/gameEvents';
@@ -59,6 +63,14 @@ export async function fetchGlobalConfig() {
 
 export async function fetchIndustryConfig(industryId: IndustryId) {
   return await fetchSimulationConfig(industryId);
+}
+
+export async function fetchMetricDisplayConfigs(industryId: IndustryId | 'global') {
+  return await fetchAllMetricDisplayConfigs(industryId);
+}
+
+export async function fetchIndustrySpecificMetricDisplayConfigsAction(industryId: IndustryId) {
+  return await fetchIndustrySpecificMetricDisplayConfigs(industryId);
 }
 
 // Industry Actions
@@ -206,5 +218,23 @@ export async function upsertIndustryConfig(
   },
 ) {
   return await upsertSimulationConfig(industryId, config);
+}
+
+// Metric Display Config Actions
+export async function upsertMetricDisplayConfigAction(
+  config: Omit<MetricDisplayConfig, 'id' | 'createdAt' | 'updatedAt'>,
+) {
+  return await upsertMetricDisplayConfig(config);
+}
+
+export async function deleteMetricDisplayConfigAction(
+  industryId: string,
+  metricId: GameMetric,
+) {
+  return await deleteMetricDisplayConfig(industryId, metricId);
+}
+
+export async function seedMetricDisplayConfigAction() {
+  return await seedMetricDisplayConfig();
 }
 

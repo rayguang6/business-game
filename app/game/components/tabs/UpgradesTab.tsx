@@ -14,22 +14,9 @@ import { SectionHeading } from '@/app/components/ui/SectionHeading';
 import { Modal } from '@/app/components/ui/Modal';
 import type { Staff } from '@/lib/features/staff';
 import { calculateSeveranceCost, SEVERANCE_MULTIPLIER } from '@/lib/features/staff';
+import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
 
-const METRIC_LABELS: Partial<Record<GameMetric, string>> = {
-  [GameMetric.Cash]: 'Cash',
-  [GameMetric.Time]: 'Available Time',
-  [GameMetric.MonthlyTimeCapacity]: 'Monthly Time Capacity',
-  [GameMetric.ServiceCapacity]: 'Service Capacity',
-  [GameMetric.MonthlyExpenses]: 'Monthly Expenses',
-  [GameMetric.ServiceSpeedMultiplier]: 'Service Speed',
-  [GameMetric.SpawnIntervalSeconds]: 'Customer Spawn',
-  [GameMetric.Exp]: 'EXP',
-  // [GameMetric.HappyProbability] removed - not used in game mechanics
-  [GameMetric.ServiceRevenueMultiplier]: 'Service Price',
-  [GameMetric.ServiceRevenueFlatBonus]: 'Service Price',
-  [GameMetric.FreedomScore]: 'Freedom Score',
-  // Note: ExpGainPerHappyCustomer and ExpLossPerAngryCustomer are config-only (not modifiable by upgrades)
-};
+// METRIC_LABELS removed - now using merged definitions from registry + database
 
 const formatMagnitude = (value: number): string => {
   return Number.isInteger(value) ? Math.abs(value).toString() : Math.abs(value).toFixed(2);
@@ -42,58 +29,7 @@ const formatRawNumber = (value: number): string => {
 const formatCurrency = (value: number): string => `$${Math.abs(value).toLocaleString()}`;
 const formatRawCurrency = (value: number): string => `${value < 0 ? '-' : ''}$${Math.abs(value).toLocaleString()}`;
 
-const formatEffect = (effect: UpgradeEffect): string => {
-  const { metric, type, value } = effect;
-  const label = METRIC_LABELS[metric] ?? metric;
-  const sign = value >= 0 ? '+' : '-';
-  const absValue = Math.abs(value);
-
-  if (type === EffectType.Add) {
-    switch (metric) {
-      case GameMetric.Cash:
-      case GameMetric.MonthlyExpenses:
-      case GameMetric.ServiceRevenueFlatBonus:
-        return `${sign}${formatCurrency(value)} ${label}`;
-      case GameMetric.Time:
-        return `${sign}${formatMagnitude(value)}h ${label}`;
-      case GameMetric.SpawnIntervalSeconds:
-        return `${sign}${formatMagnitude(value)}s ${label} Interval`;
-      case GameMetric.ServiceCapacity:
-        return `${sign}${formatMagnitude(value)} ${label}`;
-      default:
-        return `${sign}${formatMagnitude(value)} ${label}`;
-    }
-  }
-
-  if (type === EffectType.Percent) {
-    const percent = Math.round(absValue);
-    switch (metric) {
-      case GameMetric.SpawnIntervalSeconds:
-        return `${sign}${percent}% Customer Spawn Rate`;
-      default:
-        return `${sign}${percent}% ${label}`;
-    }
-  }
-
-  if (type === EffectType.Multiply) {
-    const multiplier = Number.isInteger(value) ? value.toString() : value.toFixed(2);
-    return `×${multiplier} ${label}`;
-  }
-
-  if (type === EffectType.Set) {
-    switch (metric) {
-      case GameMetric.MonthlyExpenses:
-      case GameMetric.ServiceRevenueFlatBonus:
-        return `Set ${label} to ${formatRawCurrency(value)}`;
-      case GameMetric.SpawnIntervalSeconds:
-        return `Set ${label} Interval to ${formatRawNumber(value)}s`;
-      default:
-        return `Set ${label} to ${formatRawNumber(value)}`;
-    }
-  }
-
-  return `${sign}${formatMagnitude(value)} ${label}`;
-};
+// formatEffect moved inside component to use hook - see UpgradeCard component
 
 interface UpgradeCardProps {
   upgrade: UpgradeDefinition;
@@ -103,6 +39,7 @@ interface UpgradeCardProps {
 function compareEffects(
   currentEffects: UpgradeEffect[],
   nextEffects: UpgradeEffect[],
+  formatEffect: (effect: UpgradeEffect) => string,
 ): Array<{ effect: string; isNew: boolean; isImproved: boolean }> {
   // Create a map of current effects by metric+type
   const currentMap = new Map<string, UpgradeEffect>();
@@ -144,12 +81,68 @@ function compareEffects(
 
 function UpgradeCard({ upgrade }: UpgradeCardProps) {
   const { getUpgradeLevel, purchaseUpgrade } = useGameStore();
+  const selectedIndustry = useGameStore((state) => state.selectedIndustry);
+  const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+  const { getDisplayLabel } = useMetricDisplayConfigs(industryId);
   // Subscribe to upgrades state to ensure re-renders when levels change
   const upgrades = useGameStore((state) => state.upgrades);
   // Subscribe to metrics with selector to ensure re-renders when metrics change
   const metrics = useGameStore((state) => state.metrics);
   const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(upgrade.requirements);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
+
+  const formatEffect = useCallback((effect: UpgradeEffect): string => {
+    const { metric, type, value } = effect;
+    const label = getDisplayLabel(metric);
+    const sign = value >= 0 ? '+' : '-';
+    const absValue = Math.abs(value);
+
+    if (type === EffectType.Add) {
+      switch (metric) {
+        case GameMetric.Cash:
+        case GameMetric.MonthlyExpenses:
+        case GameMetric.ServiceRevenueFlatBonus:
+          return `${sign}${formatCurrency(value)} ${label}`;
+        case GameMetric.Time:
+          return `${sign}${formatMagnitude(value)}h ${label}`;
+        case GameMetric.SpawnIntervalSeconds:
+          return `${sign}${formatMagnitude(value)}s ${label} Interval`;
+        case GameMetric.ServiceCapacity:
+          return `${sign}${formatMagnitude(value)} ${label}`;
+        default:
+          return `${sign}${formatMagnitude(value)} ${label}`;
+      }
+    }
+
+    if (type === EffectType.Percent) {
+      const percent = Math.round(absValue);
+      switch (metric) {
+        case GameMetric.SpawnIntervalSeconds:
+          return `${sign}${percent}% Customer Spawn Rate`;
+        default:
+          return `${sign}${percent}% ${label}`;
+      }
+    }
+
+    if (type === EffectType.Multiply) {
+      const multiplier = Number.isInteger(value) ? value.toString() : value.toFixed(2);
+      return `×${multiplier} ${label}`;
+    }
+
+    if (type === EffectType.Set) {
+      switch (metric) {
+        case GameMetric.MonthlyExpenses:
+        case GameMetric.ServiceRevenueFlatBonus:
+          return `Set ${label} to ${formatRawCurrency(value)}`;
+        case GameMetric.SpawnIntervalSeconds:
+          return `Set ${label} Interval to ${formatRawNumber(value)}s`;
+        default:
+          return `Set ${label} to ${formatRawNumber(value)}`;
+      }
+    }
+
+    return `${sign}${formatMagnitude(value)} ${label}`;
+  }, [getDisplayLabel]);
 
   // Calculate current level from subscribed upgrades state
   // currentLevel is 1-indexed: 0 = not purchased, 1 = level 1 purchased, 2 = level 2 purchased, etc.
@@ -192,7 +185,7 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
   const nextLevelEffects = useMemo(() => {
     if (!nextLevelConfig) return [];
     return nextLevelConfig.effects.map(effect => formatEffect(effect));
-  }, [nextLevelConfig]);
+  }, [nextLevelConfig, formatEffect]);
 
   const buttonDisabled = isMaxed || !canAfford || !requirementsMet;
 
@@ -422,33 +415,7 @@ const FALLBACK_STYLE = {
 
 const getRoleStyles = (role: string) => ROLE_STYLE_MAP[role] ?? FALLBACK_STYLE;
 
-// Format effect for staff display
-const formatStaffEffect = (effect: { metric: GameMetric; type: EffectType; value: number }) => {
-  const getMetricLabel = (metric: GameMetric) => {
-    switch (metric) {
-      case GameMetric.Cash: return 'Cash';
-      case GameMetric.Time: return 'Available Time';
-      case GameMetric.ServiceSpeedMultiplier: return 'Service Speed';
-      case GameMetric.FreedomScore: return 'Freedom Score';
-      case GameMetric.MonthlyExpenses: return 'Monthly Expenses';
-      case GameMetric.Exp: return 'EXP';
-      case GameMetric.ServiceRevenueMultiplier: return 'Revenue';
-      case GameMetric.ServiceRevenueFlatBonus: return 'Revenue Bonus';
-      default: return metric;
-    }
-  };
-
-  const getTypeSymbol = (type: EffectType, value: number) => {
-    switch (type) {
-      case EffectType.Add: return value >= 0 ? `+${value}` : value.toString();
-      case EffectType.Percent: return `${value >= 0 ? '+' : ''}${value}%`;
-      case EffectType.Multiply: return `×${value}`;
-      default: return value.toString();
-    }
-  };
-
-  return `${getTypeSymbol(effect.type, effect.value)} ${getMetricLabel(effect.metric)}`;
-};
+// formatStaffEffect moved inside StaffCandidateCard component to use hook
 
 const getEffectIcon = (metric: GameMetric) => {
   switch (metric) {
@@ -470,11 +437,28 @@ interface StaffCandidateCardProps {
 }
 
 function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
+  const selectedIndustry = useGameStore((state) => state.selectedIndustry);
+  const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+  const { getDisplayLabel } = useMetricDisplayConfigs(industryId);
   const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(candidate.requirements);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
   const styles = useMemo(() => getRoleStyles(candidate.role), [candidate.role]);
   const metrics = useGameStore((state) => state.metrics);
   const canAfford = useMemo(() => metrics.cash >= candidate.salary, [metrics.cash, candidate.salary]);
+
+  const formatStaffEffect = useCallback((effect: { metric: GameMetric; type: EffectType; value: number }) => {
+    const getTypeSymbol = (type: EffectType, value: number) => {
+      switch (type) {
+        case EffectType.Add: return value >= 0 ? `+${value}` : value.toString();
+        case EffectType.Percent: return `${value >= 0 ? '+' : ''}${value}%`;
+        case EffectType.Multiply: return `×${value}`;
+        default: return value.toString();
+      }
+    };
+
+    const label = getDisplayLabel(effect.metric);
+    return `${getTypeSymbol(effect.type, effect.value)} ${label}`;
+  }, [getDisplayLabel]);
 
   const handleHire = useCallback(() => {
     if (requirementsMet && canAfford) {

@@ -4,6 +4,8 @@ import { useState } from 'react';
 import type { GameFlag } from '@/lib/data/flagRepository';
 import type { Requirement, UpgradeDefinition } from '@/lib/game/types';
 import type { StaffRoleConfig } from '@/lib/game/staffConfig';
+import { getMetricDefinition } from '@/lib/game/metrics/registry';
+import { GameMetric } from '@/lib/game/effectManager';
 
 interface RequirementsSelectorProps {
   flags: GameFlag[];
@@ -15,12 +17,12 @@ interface RequirementsSelectorProps {
 }
 
 const METRIC_OPTIONS = [
-  { id: 'cash', name: 'Cash' },
-  { id: 'exp', name: 'Experience' },
+  { id: 'cash', name: getMetricDefinition(GameMetric.Cash).displayLabel },
+  { id: 'exp', name: getMetricDefinition(GameMetric.Exp).displayLabel },
   { id: 'level', name: 'Level' },
-  { id: 'expenses', name: 'Expenses' },
+  { id: 'expenses', name: getMetricDefinition(GameMetric.MonthlyExpenses).displayLabel },
   { id: 'gameTime', name: 'Game Time' },
-  { id: 'freedomScore', name: 'Freedom Score' },
+  { id: 'freedomScore', name: getMetricDefinition(GameMetric.FreedomScore).displayLabel },
 ] as const;
 
 const OPERATOR_OPTIONS = [

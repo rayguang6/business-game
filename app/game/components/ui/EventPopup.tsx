@@ -5,6 +5,9 @@ import { EffectType, GameMetric } from '@/lib/game/effectManager';
 import type { ResolvedEventOutcome, ResolvedDelayedOutcome } from '@/lib/store/slices/eventSlice';
 import GameButton from '@/app/components/ui/GameButton';
 import { useConfigStore } from '@/lib/store/configStore';
+import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
+import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
+import type { IndustryId } from '@/lib/game/types';
 
 const getEffectIcon = (type: GameEventEffect['type']) => {
   switch (type) {
@@ -34,31 +37,7 @@ const formatEffect = (effect: GameEventEffect) => {
   return ''; // Metric effects are handled separately
 };
 
-const METRIC_LABELS: Record<GameMetric, string> = {
-  [GameMetric.Cash]: 'Cash',
-  [GameMetric.Time]: 'Available Time',
-  [GameMetric.MonthlyTimeCapacity]: 'Monthly Time Capacity',
-  [GameMetric.SpawnIntervalSeconds]: 'Customer Spawn Speed',
-  [GameMetric.ServiceSpeedMultiplier]: 'Service Speed',
-  [GameMetric.ServiceCapacity]: 'Service Capacity',
-  [GameMetric.Exp]: 'EXP',
-  [GameMetric.FailureRate]: 'Failure Rate',
-  // [GameMetric.HappyProbability] removed - not used in game mechanics
-  [GameMetric.MonthlyExpenses]: 'Monthly Expenses',
-  [GameMetric.ServiceRevenueMultiplier]: 'Service Revenue Multiplier',
-  [GameMetric.ServiceRevenueFlatBonus]: 'Service Revenue Bonus',
-  [GameMetric.FreedomScore]: 'Freedom Score',
-  [GameMetric.ConversionRate]: 'Lead Conversion Rate',
-  [GameMetric.GenerateLeads]: 'Generate Leads',
-  // Note: ExpGainPerHappyCustomer and ExpLossPerAngryCustomer are config-only (not modifiable by events)
-  // Tier-specific metrics
-  [GameMetric.HighTierServiceRevenueMultiplier]: 'High-Tier Service Revenue',
-  [GameMetric.HighTierServiceWeightageMultiplier]: 'High-Tier Service Selection',
-  [GameMetric.MidTierServiceRevenueMultiplier]: 'Mid-Tier Service Revenue',
-  [GameMetric.MidTierServiceWeightageMultiplier]: 'Mid-Tier Service Selection',
-  [GameMetric.LowTierServiceRevenueMultiplier]: 'Low-Tier Service Revenue',
-  [GameMetric.LowTierServiceWeightageMultiplier]: 'Low-Tier Service Selection',
-};
+// METRIC_LABELS removed - now using merged definitions from registry + database
 
 const formatDurationLabel = (durationSeconds: number | null | undefined) => {
   if (durationSeconds === null || durationSeconds === undefined || !Number.isFinite(durationSeconds)) {
@@ -70,22 +49,7 @@ const formatDurationLabel = (durationSeconds: number | null | undefined) => {
   return ` for ${durationSeconds}s`;
 };
 
-const formatMetricEffect = (effect: GameEventEffect & { type: EventEffectType.Metric }) => {
-  const label = METRIC_LABELS[effect.metric] ?? effect.metric;
-  const durationLabel = formatDurationLabel(effect.durationSeconds);
-  switch (effect.effectType) {
-    case EffectType.Add:
-      return `${label}: ${effect.value >= 0 ? '+' : ''}${effect.value}${durationLabel}`;
-    case EffectType.Percent:
-      return `${label}: ${effect.value >= 0 ? '+' : ''}${effect.value}%${durationLabel}`;
-    case EffectType.Multiply:
-      return `${label}: ×${effect.value}${durationLabel}`;
-    case EffectType.Set:
-      return `${label}: set to ${effect.value}${durationLabel}`;
-    default:
-      return `${label}: effect active${durationLabel}`;
-  }
-};
+// formatMetricEffect moved inside component to use hook
 
 const EventPopup: React.FC = () => {
   const currentEvent = useGameStore((state) => state.currentEvent);
@@ -95,6 +59,26 @@ const EventPopup: React.FC = () => {
   const lastDelayedOutcome = useGameStore((state) => state.lastDelayedOutcome);
   const clearLastDelayedOutcome = useGameStore((state) => state.clearLastDelayedOutcome);
   const metrics = useGameStore((state) => state.metrics);
+  const selectedIndustry = useGameStore((state) => state.selectedIndustry);
+  const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+  const { getDisplayLabel } = useMetricDisplayConfigs(industryId);
+
+  const formatMetricEffect = (effect: GameEventEffect & { type: EventEffectType.Metric }) => {
+    const label = getDisplayLabel(effect.metric);
+    const durationLabel = formatDurationLabel(effect.durationSeconds);
+    switch (effect.effectType) {
+      case EffectType.Add:
+        return `${label}: ${effect.value >= 0 ? '+' : ''}${effect.value}${durationLabel}`;
+      case EffectType.Percent:
+        return `${label}: ${effect.value >= 0 ? '+' : ''}${effect.value}%${durationLabel}`;
+      case EffectType.Multiply:
+        return `${label}: ×${effect.value}${durationLabel}`;
+      case EffectType.Set:
+        return `${label}: set to ${effect.value}${durationLabel}`;
+      default:
+        return `${label}: effect active${durationLabel}`;
+    }
+  };
 
   // Get reactive UI config from store
   const globalConfig = useConfigStore((state) => state.globalConfig);

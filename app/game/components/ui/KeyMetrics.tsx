@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useFinanceData } from '@/hooks/useFinanceData';
 import { useMetricChanges } from '@/hooks/useMetricChanges';
 import { MetricFeedback, FeedbackItem } from './MetricFeedback';
@@ -11,6 +11,7 @@ import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import type { IndustryId } from '@/lib/game/types';
 import { getLevel, getLevelProgress } from '@/lib/store/types';
 import { getExpPerLevel } from '@/lib/game/config';
+import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
 import Image from 'next/image';
 
 export function KeyMetrics() {
@@ -18,7 +19,9 @@ export function KeyMetrics() {
   const changes = useMetricChanges();
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
   const configStatus = useConfigStore((state) => state.configStatus);
+  const conversionRate = useGameStore((state) => state.conversionRate);
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+  const { getMetricsForHUD, getMergedDefinition, loading: configsLoading } = useMetricDisplayConfigs(industryId);
   
   // All hooks must be called before any conditional returns
   const [feedbackByMetric, setFeedbackByMetric] = useState<Record<string, FeedbackItem[]>>({
@@ -89,7 +92,7 @@ export function KeyMetrics() {
 
   // Check if config is ready before accessing business metrics
   const businessMetrics = getBusinessMetrics(industryId);
-  const isConfigReady = configStatus === 'ready' && businessMetrics;
+  const isConfigReady = configStatus === 'ready' && businessMetrics && !configsLoading;
   
   // Show time metric if startingTime is configured or if time > 0
   let startingTime = 0;
@@ -105,6 +108,94 @@ export function KeyMetrics() {
   }
   const showTime = startingTime > 0 || metrics.time > 0;
 
+  // Get metrics that should be shown on HUD (from registry + DB configs)
+  const hudMetrics = useMemo(() => {
+    if (!isConfigReady) return [];
+    return getMetricsForHUD();
+  }, [isConfigReady, getMetricsForHUD]);
+
+  // Map metric definitions to display data
+  const metricsData = useMemo(() => {
+    if (!isConfigReady) return [];
+
+    return hudMetrics
+      .filter(def => {
+        // Filter Time metric based on game state
+        if (def.id === GameMetric.Time) return showTime;
+        return true;
+      })
+      .map(def => {
+        const merged = getMergedDefinition(def.id);
+        let value = '';
+        let icon = '💎';
+        let image: string | null = null;
+        let color = 'text-green-400';
+        let key = def.id;
+        let feedback: FeedbackItem[] = [];
+
+        // Get unit and iconPath from merged configuration (DB override or code default)
+        const unit = merged.display.unit || '';
+        const iconPath = merged.iconPath;
+
+        // Map metric ID to display data
+        switch (def.id) {
+          case GameMetric.Cash:
+            value = `${metrics.cash.toLocaleString()}${unit}`;
+            icon = '💎';
+            image = iconPath || '/images/icons/finance.png'; // Use DB iconPath with fallback
+            color = 'text-green-400';
+            feedback = feedbackByMetric.cash;
+            break;
+          case GameMetric.Exp:
+            value = `Level ${getLevel(metrics.exp, expPerLevel)} (${getLevelProgress(metrics.exp, expPerLevel)}/${expPerLevel}${unit})`;
+            icon = '💎';
+            image = iconPath || '/images/icons/marketing.png'; // Use DB iconPath with fallback
+            color = 'text-yellow-400';
+            feedback = feedbackByMetric.exp;
+            break;
+          case GameMetric.Time:
+            value = `${metrics.time}/${startingTime + effectManager.calculate(GameMetric.MonthlyTimeCapacity, 0)}${unit}`;
+            icon = '⏱️';
+            image = iconPath || '/images/icons/upgrades.png'; // Use DB iconPath with fallback
+            color = 'text-cyan-400';
+            feedback = feedbackByMetric.time;
+            break;
+          case GameMetric.FreedomScore:
+            value = `${metrics.freedomScore}${unit}`;
+            icon = '⏰';
+            image = iconPath || '/images/icons/upgrades.png'; // Use DB iconPath with fallback
+            color = 'text-purple-400';
+            feedback = feedbackByMetric.freedomScore;
+            break;
+          case GameMetric.ConversionRate:
+            value = `${conversionRate?.toFixed(1) ?? 0}${unit}`;
+            icon = '📊';
+            image = iconPath || null; // Use DB iconPath (no fallback for conversion rate)
+            color = 'text-blue-400';
+            feedback = [];
+            break;
+          default:
+            // For other metrics, try to get value from metrics object
+            const metricValue = (metrics as unknown as Record<string, number>)[def.id] ?? 0;
+            value = `${metricValue}${unit}`;
+            icon = '📊';
+            image = iconPath || null; // Use DB iconPath (no fallback for other metrics)
+            color = 'text-gray-400';
+            feedback = [];
+        }
+
+        return {
+          key,
+          icon,
+          image,
+          value,
+          label: merged.displayLabel, // Use merged label (DB override if available)
+          color,
+          feedback,
+        };
+      });
+  }, [isConfigReady, hudMetrics, getMergedDefinition, metrics, expPerLevel, startingTime, showTime, feedbackByMetric, conversionRate]);
+
   // If config not ready, return minimal UI
   if (!isConfigReady) {
     return (
@@ -118,46 +209,6 @@ export function KeyMetrics() {
       </div>
     );
   }
-
-  const metricsData = [
-    {
-      key: 'cash',
-      icon: '💎',
-      image: '/images/icons/finance.png',
-      value: metrics.cash.toLocaleString(),
-      label: 'Cash',
-      color: 'text-green-400',
-      feedback: feedbackByMetric.cash,
-    },
-    {
-      key: 'exp',
-      icon: '💎',
-      image: '/images/icons/marketing.png',
-      value: `Level ${getLevel(metrics.exp, expPerLevel)} (${getLevelProgress(metrics.exp, expPerLevel)}/${expPerLevel} EXP)`,
-      label: selectedIndustry?.id === 'freelance' ? 'Skill Level' : 'Level',
-      color: 'text-yellow-400',
-      feedback: feedbackByMetric.exp,
-    },
-    // Conditionally show time if configured
-    ...(showTime ? [{
-      key: 'time',
-      icon: '⏱️',
-      image: '/images/icons/upgrades.png',
-      value: `${metrics.time}/${startingTime + effectManager.calculate(GameMetric.MonthlyTimeCapacity, 0)}h`,
-      label: 'Available Time',
-      color: 'text-cyan-400',
-      feedback: feedbackByMetric.time,
-    }] : []),
-    {
-      key: 'freedomScore',
-      icon: '⏰',
-      image: '/images/icons/upgrades.png',
-      value: `${metrics.freedomScore}`,
-      label: 'Freedom Score',
-      color: 'text-purple-400',
-      feedback: feedbackByMetric.freedomScore,
-    }
-  ];
 
   return (
     <div className="grid grid-cols-2 gap-y-0.5 sm:gap-y-0.5 md:gap-y-1 gap-x-1 sm:gap-x-1.5 md:gap-x-3">

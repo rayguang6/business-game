@@ -23,7 +23,9 @@ import { prefetchTabData, prefetchIndustryData } from './utils/prefetch';
 const TAB_CONFIG = {
   industries: { label: 'Industries', icon: '🏢' },
   global: { label: 'Global Config', icon: '⚡' },
+  'global-metric-display': { label: 'Global Metric Display', icon: '📊' },
   'industry-config': { label: 'Industry Config', icon: '🎯' },
+  'industry-metric-display': { label: 'Industry Metric Display', icon: '📊' },
   services: { label: 'Services', icon: '🛎️' },
   roles: { label: 'Roles', icon: '👥' },
   presets: { label: 'Presets', icon: '👤' },
@@ -35,21 +37,22 @@ const TAB_CONFIG = {
 } as const;
 
 // Organized by workflow (matching original):
-// 1. Setup (Industries, Global Config, Industry Config)
+// 1. Setup (Industries, Global Config, Global Metric Display, Industry Config, Industry Metric Display)
 // 2. Content (Services, Roles, Presets)
 // 3. Mechanics (Upgrades, Marketing, Events)
 // 4. System (Flags, Conditions)
-const GLOBAL_TABS: GlobalTab[] = ['industries', 'global'];
+const GLOBAL_TABS: GlobalTab[] = ['industries', 'global', 'global-metric-display'];
 const INDUSTRY_TABS: IndustryTab[] = [
-  'industry-config',  // Setup
-  'services',         // Content
-  'roles',           // Content (Staff Roles)
-  'presets',         // Content (Staff Presets)
-  'upgrades',         // Mechanics
-  'marketing',        // Mechanics
-  'events',           // Mechanics
-  'flags',            // System
-  'conditions',       // System
+  'industry-config',        // Setup
+  'industry-metric-display', // Setup (Metric Display Config)
+  'services',               // Content
+  'roles',                  // Content (Staff Roles)
+  'presets',                // Content (Staff Presets)
+  'upgrades',               // Mechanics
+  'marketing',              // Mechanics
+  'events',                 // Mechanics
+  'flags',                  // System
+  'conditions',             // System
 ];
 
 interface AdminLayoutClientProps {
@@ -97,7 +100,7 @@ function AdminLayoutContent({ industries, children }: AdminLayoutClientProps) {
   
   // Handle sidebar tab navigation
   const handleTabClick = (tab: AdminTab) => {
-    if (tab === 'industries' || tab === 'global') {
+    if (GLOBAL_TABS.includes(tab as GlobalTab)) {
       // Global tabs
       router.push(buildGlobalTabUrl(tab as GlobalTab));
     } else {
@@ -110,7 +113,7 @@ function AdminLayoutContent({ industries, children }: AdminLayoutClientProps) {
 
   // Prefetch data on hover
   const handleTabHover = (tab: AdminTab) => {
-    if (tab === 'industries' || tab === 'global') return;
+    if (GLOBAL_TABS.includes(tab as GlobalTab)) return;
     const targetIndustry = currentIndustry || lastSelectedIndustry ||
       (industries.length > 0 ? industries[0].id : DEFAULT_INDUSTRY_ID);
     if (targetIndustry) {
@@ -127,14 +130,16 @@ function AdminLayoutContent({ industries, children }: AdminLayoutClientProps) {
       // Silently fail prefetch - it's just an optimization
     });
 
-    if (isIndustry && currentTab) {
-      // Navigate to same tab under new industry
+    if (isIndustry && currentTab && !GLOBAL_TABS.includes(currentTab as GlobalTab)) {
+      // Navigate to same tab under new industry (only if it's an industry tab)
       router.push(buildIndustryTabUrl(industryId, currentTab as IndustryTab));
     } else {
-      // If on global page, just update the stored industry
+      // If on global page or global tab, just update the stored industry
       setLastSelectedIndustry(industryId);
       if (typeof window !== 'undefined') {
         localStorage.setItem('admin_last_industry', industryId);
+        // Dispatch custom event for global-metric-display page to listen
+        window.dispatchEvent(new CustomEvent('industryChanged', { detail: industryId }));
       }
     }
   };
@@ -210,8 +215,8 @@ function AdminLayoutContent({ industries, children }: AdminLayoutClientProps) {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Bar with Industry Dropdown */}
-        {/* Hide dropdown on global config and industries pages */}
-        {currentTab !== 'global' && currentTab !== 'industries' && (
+        {/* Hide dropdown on global config and industries pages, but show on global-metric-display for reference */}
+        {(currentTab !== 'global' && currentTab !== 'industries') || currentTab === 'global-metric-display' ? (
           <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex-shrink-0">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
@@ -219,9 +224,9 @@ function AdminLayoutContent({ industries, children }: AdminLayoutClientProps) {
                 <select
                   value={displayIndustry}
                   onChange={(e) => handleIndustryChange(e.target.value)}
-                  disabled={isGlobal}
+                  disabled={isGlobal && currentTab !== 'global-metric-display'}
                   className={`px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 text-sm font-medium min-w-[180px] ${
-                    isGlobal
+                    isGlobal && currentTab !== 'global-metric-display'
                       ? 'opacity-50 cursor-not-allowed'
                       : 'hover:bg-slate-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                   }`}
@@ -236,15 +241,20 @@ function AdminLayoutContent({ industries, children }: AdminLayoutClientProps) {
                     ))
                   )}
                 </select>
-                {isGlobal && (
+                {isGlobal && currentTab !== 'global-metric-display' && (
                   <span className="text-xs text-slate-500 italic">
                     (disabled on global pages)
+                  </span>
+                )}
+                {currentTab === 'global-metric-display' && (
+                  <span className="text-xs text-slate-500 italic">
+                    (for reference only - changes save to global)
                   </span>
                 )}
               </div>
             </div>
           </header>
-        )}
+        ) : null}
 
         {/* Page Content */}
         <main className="flex-1 overflow-auto">

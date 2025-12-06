@@ -4,18 +4,18 @@
  * URL builders for navigation. Next.js App Router handles routing automatically.
  */
 
-export type AdminTab = 'services' | 'roles' | 'presets' | 'upgrades' | 'flags' | 'conditions' | 'events' | 'marketing' | 'industry-config' | 'industries' | 'global';
-export type IndustryTab = 'services' | 'roles' | 'presets' | 'upgrades' | 'flags' | 'conditions' | 'events' | 'marketing' | 'industry-config';
-export type GlobalTab = 'industries' | 'global';
+export type AdminTab = 'services' | 'roles' | 'presets' | 'upgrades' | 'flags' | 'conditions' | 'events' | 'marketing' | 'industry-config' | 'industry-metric-display' | 'global-metric-display' | 'industries' | 'global';
+export type IndustryTab = 'services' | 'roles' | 'presets' | 'upgrades' | 'flags' | 'conditions' | 'events' | 'marketing' | 'industry-config' | 'industry-metric-display';
+export type GlobalTab = 'industries' | 'global' | 'global-metric-display';
 
 // All valid industry tab routes
-const INDUSTRY_TAB_ROUTES: IndustryTab[] = ['services', 'roles', 'presets', 'upgrades', 'flags', 'conditions', 'events', 'marketing', 'industry-config'];
+const INDUSTRY_TAB_ROUTES: IndustryTab[] = ['services', 'roles', 'presets', 'upgrades', 'flags', 'conditions', 'events', 'marketing', 'industry-config', 'industry-metric-display'];
 
 /**
  * Check if a pathname represents a global route (no industry parameter)
  */
 export function isGlobalRoute(pathname: string): boolean {
-  return pathname === '/admin/industries' || pathname === '/admin/global';
+  return pathname === '/admin/industries' || pathname === '/admin/global' || pathname === '/admin/global-metric-display';
 }
 
 /**
@@ -44,6 +44,7 @@ export function getIndustryFromPath(pathname: string): string | null {
 export function getTabFromPath(pathname: string): AdminTab | null {
   if (pathname === '/admin/industries') return 'industries';
   if (pathname === '/admin/global') return 'global';
+  if (pathname === '/admin/global-metric-display') return 'global-metric-display';
   
   // Check for list routes: /admin/[industry]/[tab]
   const listPattern = new RegExp(`^/admin/[^/]+/(${INDUSTRY_TAB_ROUTES.join('|')})$`);
@@ -111,4 +112,12 @@ export function buildRoleDetailUrl(industry: string, roleId: string): string {
 
 export function buildPresetDetailUrl(industry: string, presetId: string): string {
   return `/admin/${industry}/presets/${presetId}`;
+}
+
+export function buildGlobalMetricDisplayUrl(): string {
+  return '/admin/global-metric-display';
+}
+
+export function buildIndustryMetricDisplayUrl(industry: string): string {
+  return `/admin/${industry}/industry-metric-display`;
 }

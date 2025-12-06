@@ -12,6 +12,7 @@ import { Card } from '@/app/components/ui/Card';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
 import { Modal } from '@/app/components/ui/Modal';
 import GameButton from '@/app/components/ui/GameButton';
+import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
 
 const formatSeconds = (seconds: number): string => {
   const clamped = Math.max(0, Math.floor(seconds));
@@ -23,31 +24,7 @@ const formatSeconds = (seconds: number): string => {
   return `${mins}m ${secs}s`;
 };
 
-const METRIC_LABELS: Record<GameMetric, string> = {
-  [GameMetric.Cash]: 'Cash',
-  [GameMetric.Time]: 'Available Time',
-  [GameMetric.MonthlyTimeCapacity]: 'Monthly Time Capacity',
-  [GameMetric.SpawnIntervalSeconds]: 'Customer flow',
-  [GameMetric.GenerateLeads]: 'Generate leads',
-  [GameMetric.ConversionRate]: 'Lead conversion rate',
-  [GameMetric.ServiceSpeedMultiplier]: 'Service speed',
-  [GameMetric.ServiceCapacity]: 'Service capacity',
-  [GameMetric.Exp]: 'EXP',
-  [GameMetric.FailureRate]: 'Failure rate',
-  // [GameMetric.HappyProbability] removed - not used in game mechanics
-  [GameMetric.MonthlyExpenses]: 'Monthly expenses',
-  [GameMetric.ServiceRevenueMultiplier]: 'Service revenue',
-  [GameMetric.ServiceRevenueFlatBonus]: 'Average ticket',
-  [GameMetric.FreedomScore]: 'Freedom Score',
-  // Note: ExpGainPerHappyCustomer and ExpLossPerAngryCustomer are config-only (not modifiable by marketing)
-  // Tier-specific metrics
-  [GameMetric.HighTierServiceRevenueMultiplier]: 'High-tier revenue',
-  [GameMetric.HighTierServiceWeightageMultiplier]: 'High-tier selection',
-  [GameMetric.MidTierServiceRevenueMultiplier]: 'Mid-tier revenue',
-  [GameMetric.MidTierServiceWeightageMultiplier]: 'Mid-tier selection',
-  [GameMetric.LowTierServiceRevenueMultiplier]: 'Low-tier revenue',
-  [GameMetric.LowTierServiceWeightageMultiplier]: 'Low-tier selection',
-};
+// METRIC_LABELS removed - now using merged definitions from registry + database
 
 const formatValue = (value: number): string => {
   return Number.isInteger(value) ? value.toString() : value.toFixed(2).replace(/0+$/u, '').replace(/\.$/u, '');
@@ -68,30 +45,7 @@ const formatDurationLabel = (durationSeconds: number | null | undefined): string
   return ` for ${durationSeconds}s`;
 };
 
-const describeEffect = (effect: CampaignEffect): string => {
-  const label = METRIC_LABELS[effect.metric] ?? effect.metric;
-  
-  // GenerateLeads is an immediate action - duration doesn't apply
-  if (effect.metric === GameMetric.GenerateLeads) {
-    const count = Math.floor(effect.value);
-    return `${label} +${count} (immediate)`;
-  }
-  
-  const durationLabel = formatDurationLabel(effect.durationSeconds);
-
-  switch (effect.type) {
-    case EffectType.Add:
-      return `${label} ${formatSigned(effect.value)}${durationLabel}`;
-    case EffectType.Percent:
-      return `${label} ${formatSigned(effect.value)}%${durationLabel}`;
-    case EffectType.Multiply:
-      return `${label} ×${formatValue(effect.value)}${durationLabel}`;
-    case EffectType.Set:
-      return `${label} = ${formatValue(effect.value)}${durationLabel}`;
-    default:
-      return `${label} ${effect.type} ${formatValue(effect.value)}${durationLabel}`;
-  }
-};
+// describeEffect moved inside component to use hook
 
 const getToneClass = (effect: CampaignEffect): string => {
   switch (effect.type) {
@@ -116,7 +70,7 @@ interface CampaignCardProps {
   onLaunch: (campaignId: string) => void;
 }
 
-function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, onLaunch, metrics }: CampaignCardProps & { metrics: { cash: number; time: number } }) {
+function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, onLaunch, metrics, getDisplayLabel }: CampaignCardProps & { metrics: { cash: number; time: number }; getDisplayLabel: (metric: GameMetric) => string }) {
   const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(campaign.requirements);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
   const needsCash = campaign.cost > 0;
@@ -127,6 +81,31 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, on
   if (needsCash && metrics.cash < campaign.cost) missing.push('Cash');
   if (needsTime && metrics.time < campaign.timeCost!) missing.push('Time');
   const needText = missing.length > 0 ? `Not Enough ${missing.join(' + ')}` : 'Not Enough Cash';
+
+  const describeEffect = (effect: CampaignEffect): string => {
+    const label = getDisplayLabel(effect.metric);
+    
+    // GenerateLeads is an immediate action - duration doesn't apply
+    if (effect.metric === GameMetric.GenerateLeads) {
+      const count = Math.floor(effect.value);
+      return `${label} +${count} (immediate)`;
+    }
+    
+    const durationLabel = formatDurationLabel(effect.durationSeconds);
+
+    switch (effect.type) {
+      case EffectType.Add:
+        return `${label} ${formatSigned(effect.value)}${durationLabel}`;
+      case EffectType.Percent:
+        return `${label} ${formatSigned(effect.value)}%${durationLabel}`;
+      case EffectType.Multiply:
+        return `${label} ×${formatValue(effect.value)}${durationLabel}`;
+      case EffectType.Set:
+        return `${label} = ${formatValue(effect.value)}${durationLabel}`;
+      default:
+        return `${label} ${effect.type} ${formatValue(effect.value)}${durationLabel}`;
+    }
+  };
 
   const descriptions = campaign.effects.map((effect) => ({
     text: describeEffect(effect),
@@ -222,6 +201,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, on
 export function MarketingTab() {
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+  const { getDisplayLabel } = useMetricDisplayConfigs(industryId);
   const availableCampaigns = useConfigStore(
     useCallback(
       (state) => {
@@ -280,6 +260,7 @@ export function MarketingTab() {
               cooldownRemaining={cooldownRemaining}
               onLaunch={handleLaunch}
               metrics={metrics}
+              getDisplayLabel={getDisplayLabel}
             />
           );
         })}

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import type { BusinessMetrics, BusinessStats, MovementConfig } from '@/lib/game/types';
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
+import { getMetricDefinition } from '@/lib/game/metrics/registry';
+import { GameMetric } from '@/lib/game/effectManager';
 
 type UiConfig = {
   eventAutoSelectDurationSeconds?: number;
@@ -115,7 +117,7 @@ export function GlobalConfigTab({
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Starting Freedom Score</label>
+                <label className="block text-xs text-slate-400 mb-1">Starting {getMetricDefinition(GameMetric.FreedomScore).displayLabel}</label>
                 <input
                   type="number"
                   min="0"

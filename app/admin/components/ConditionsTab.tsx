@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import type { GameCondition, ConditionOperator } from '@/lib/types/conditions';
 import { ConditionMetric } from '@/lib/types/conditions';
 import { makeUniqueId, slugify } from './utils';
+import { getMetricDefinition } from '@/lib/game/metrics/registry';
+import { GameMetric } from '@/lib/game/effectManager';
 
 interface ConditionsTabProps {
   industryId: string;
@@ -54,6 +56,26 @@ export function ConditionsTab({
   onReset,
   onUpdateForm,
 }: ConditionsTabProps) {
+  // Helper to get display label for condition metrics
+  const getConditionMetricLabel = (metric: ConditionMetric): string => {
+    switch (metric) {
+      case ConditionMetric.Cash:
+        return getMetricDefinition(GameMetric.Cash).displayLabel;
+      case ConditionMetric.Exp:
+        return getMetricDefinition(GameMetric.Exp).displayLabel;
+      case ConditionMetric.Level:
+        return 'Level'; // Level is calculated, not a direct metric
+      case ConditionMetric.Expenses:
+        return getMetricDefinition(GameMetric.MonthlyExpenses).displayLabel;
+      case ConditionMetric.GameTime:
+        return 'Game Time (seconds)'; // Not a game metric, just game time
+      case ConditionMetric.FreedomScore:
+        return getMetricDefinition(GameMetric.FreedomScore).displayLabel;
+      default:
+        return metric;
+    }
+  };
+
   // Keyboard shortcut for save
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -167,12 +189,12 @@ export function ConditionsTab({
                         onChange={(e) => onUpdateForm({ metric: e.target.value as ConditionMetric })}
                         className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
                       >
-                        <option value={ConditionMetric.Cash}>Cash</option>
-                        <option value={ConditionMetric.Exp}>EXP</option>
-                        <option value={ConditionMetric.Level}>Level</option>
-                        <option value={ConditionMetric.Expenses}>Monthly Expenses</option>
-                        <option value={ConditionMetric.GameTime}>Game Time (seconds)</option>
-                        <option value={ConditionMetric.FreedomScore}>Freedom Score</option>
+                        <option value={ConditionMetric.Cash}>{getConditionMetricLabel(ConditionMetric.Cash)}</option>
+                        <option value={ConditionMetric.Exp}>{getConditionMetricLabel(ConditionMetric.Exp)}</option>
+                        <option value={ConditionMetric.Level}>{getConditionMetricLabel(ConditionMetric.Level)}</option>
+                        <option value={ConditionMetric.Expenses}>{getConditionMetricLabel(ConditionMetric.Expenses)}</option>
+                        <option value={ConditionMetric.GameTime}>{getConditionMetricLabel(ConditionMetric.GameTime)}</option>
+                        <option value={ConditionMetric.FreedomScore}>{getConditionMetricLabel(ConditionMetric.FreedomScore)}</option>
                       </select>
                     </div>
                     <div>

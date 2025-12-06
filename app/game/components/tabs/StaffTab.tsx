@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
 import type { Staff } from '@/lib/features/staff';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
@@ -8,6 +8,9 @@ import { useRequirements } from '@/lib/hooks/useRequirements';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
 import { Modal } from '@/app/components/ui/Modal';
 import GameButton from '@/app/components/ui/GameButton';
+import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
+import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
+import type { IndustryId } from '@/lib/game/types';
 
 // RPG Tier System Colors: Blue (Common) > Purple (Rare) > Orange (Epic) > Red (Legendary)
 const ROLE_STYLE_MAP: Record<
@@ -76,40 +79,15 @@ const FALLBACK_STYLE = {
 
 const getRoleStyles = (role: string) => ROLE_STYLE_MAP[role] ?? FALLBACK_STYLE;
 
-// Format effect for display
-const formatEffect = (effect: { metric: GameMetric; type: EffectType; value: number }) => {
-  const getMetricLabel = (metric: GameMetric) => {
-    switch (metric) {
-      case GameMetric.Cash: return 'Cash';
-      case GameMetric.Time: return 'Available Time';
-      case GameMetric.ServiceSpeedMultiplier: return 'Service Speed';
-      case GameMetric.FreedomScore: return 'Freedom Score';
-      case GameMetric.MonthlyExpenses: return 'Monthly Expenses';
-      case GameMetric.Exp: return 'EXP';
-      case GameMetric.ServiceRevenueMultiplier: return 'Revenue';
-      case GameMetric.ServiceRevenueFlatBonus: return 'Revenue Bonus';
-      default: return metric;
-    }
-  };
-
-  const getTypeSymbol = (type: EffectType, value: number) => {
-    switch (type) {
-      case EffectType.Add: return value >= 0 ? `+${value}` : value.toString();
-      case EffectType.Percent: return `${value >= 0 ? '+' : ''}${value}%`;
-      case EffectType.Multiply: return `×${value}`;
-      default: return value.toString();
-    }
-  };
-
-  return `${getTypeSymbol(effect.type, effect.value)} ${getMetricLabel(effect.metric)}`;
-};
+// formatEffect moved inside component to use hook
 
 interface StaffCandidateCardProps {
   candidate: Staff;
   onHire: (staff: Staff) => void;
+  formatEffect: (effect: { metric: GameMetric; type: EffectType; value: number }) => string;
 }
 
-function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
+function StaffCandidateCard({ candidate, onHire, formatEffect }: StaffCandidateCardProps) {
   const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(candidate.requirements);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
   const styles = getRoleStyles(candidate.role);
@@ -260,9 +238,26 @@ function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
 }
 
 export function StaffTab() {
+  const selectedIndustry = useGameStore((state) => state.selectedIndustry);
+  const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+  const { getDisplayLabel } = useMetricDisplayConfigs(industryId);
   const hiredStaff = useGameStore((state) => state.hiredStaff);
   const availableStaff = useGameStore((state) => state.availableStaff);
   const hireStaff = useGameStore((state) => state.hireStaff);
+
+  const formatEffect = useCallback((effect: { metric: GameMetric; type: EffectType; value: number }) => {
+    const getTypeSymbol = (type: EffectType, value: number) => {
+      switch (type) {
+        case EffectType.Add: return value >= 0 ? `+${value}` : value.toString();
+        case EffectType.Percent: return `${value >= 0 ? '+' : ''}${value}%`;
+        case EffectType.Multiply: return `×${value}`;
+        default: return value.toString();
+      }
+    };
+
+    const label = getDisplayLabel(effect.metric);
+    return `${getTypeSymbol(effect.type, effect.value)} ${label}`;
+  }, [getDisplayLabel]);
 
   const handleHireStaff = (staffToHire: Staff) => {
     hireStaff(staffToHire);
@@ -408,6 +403,7 @@ export function StaffTab() {
                 <StaffCandidateCard
                   candidate={candidate}
                   onHire={handleHireStaff}
+                  formatEffect={formatEffect}
                 />
               </div>
             </div>
