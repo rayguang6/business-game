@@ -10,8 +10,8 @@ export function AdminQueryProvider({ children }: { children: React.ReactNode }) 
       new QueryClient({
         defaultOptions: {
           queries: {
-            // Cache data for 60 seconds - admin needs fresh data but can tolerate some staleness
-            staleTime: 60 * 1000,
+            // Cache data for 30 seconds - faster updates for content management
+            staleTime: 30 * 1000,
             // Keep unused data in cache for 5 minutes
             gcTime: 5 * 60 * 1000,
             // Retry failed requests once

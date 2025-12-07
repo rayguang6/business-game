@@ -1,15 +1,43 @@
 /**
  * Routing utilities for admin panel
- * 
+ *
  * URL builders for navigation. Next.js App Router handles routing automatically.
  */
 
-export type AdminTab = 'services' | 'roles' | 'presets' | 'upgrades' | 'flags' | 'conditions' | 'events' | 'marketing' | 'industry-config' | 'industry-metric-display' | 'global-metric-display' | 'industries' | 'global';
-export type IndustryTab = 'services' | 'roles' | 'presets' | 'upgrades' | 'flags' | 'conditions' | 'events' | 'marketing' | 'industry-config' | 'industry-metric-display';
-export type GlobalTab = 'industries' | 'global' | 'global-metric-display';
+// Enum for all admin tabs - single source of truth
+export const enum AdminTabEnum {
+  Industries = 'industries',
+  Global = 'global',
+  GlobalMetricDisplay = 'global-metric-display',
+  IndustryConfig = 'industry-config',
+  IndustryMetricDisplay = 'industry-metric-display',
+  Services = 'services',
+  Roles = 'roles',
+  Presets = 'presets',
+  Upgrades = 'upgrades',
+  Marketing = 'marketing',
+  Events = 'events',
+  Flags = 'flags',
+  Conditions = 'conditions',
+}
+
+export type AdminTab = `${AdminTabEnum}`;
+export type IndustryTab = AdminTabEnum.Services | AdminTabEnum.Roles | AdminTabEnum.Presets | AdminTabEnum.Upgrades | AdminTabEnum.Flags | AdminTabEnum.Conditions | AdminTabEnum.Events | AdminTabEnum.Marketing | AdminTabEnum.IndustryConfig | AdminTabEnum.IndustryMetricDisplay;
+export type GlobalTab = AdminTabEnum.Industries | AdminTabEnum.Global | AdminTabEnum.GlobalMetricDisplay;
 
 // All valid industry tab routes
-const INDUSTRY_TAB_ROUTES: IndustryTab[] = ['services', 'roles', 'presets', 'upgrades', 'flags', 'conditions', 'events', 'marketing', 'industry-config', 'industry-metric-display'];
+const INDUSTRY_TAB_ROUTES: IndustryTab[] = [
+  AdminTabEnum.Services,
+  AdminTabEnum.Roles,
+  AdminTabEnum.Presets,
+  AdminTabEnum.Upgrades,
+  AdminTabEnum.Flags,
+  AdminTabEnum.Conditions,
+  AdminTabEnum.Events,
+  AdminTabEnum.Marketing,
+  AdminTabEnum.IndustryConfig,
+  AdminTabEnum.IndustryMetricDisplay,
+];
 
 /**
  * Check if a pathname represents a global route (no industry parameter)
@@ -42,9 +70,9 @@ export function getIndustryFromPath(pathname: string): string | null {
  * Handles both list routes (/admin/[industry]/services) and detail routes (/admin/[industry]/services/[id])
  */
 export function getTabFromPath(pathname: string): AdminTab | null {
-  if (pathname === '/admin/industries') return 'industries';
-  if (pathname === '/admin/global') return 'global';
-  if (pathname === '/admin/global-metric-display') return 'global-metric-display';
+  if (pathname === '/admin/industries') return AdminTabEnum.Industries;
+  if (pathname === '/admin/global') return AdminTabEnum.Global;
+  if (pathname === '/admin/global-metric-display') return AdminTabEnum.GlobalMetricDisplay;
   
   // Check for list routes: /admin/[industry]/[tab]
   const listPattern = new RegExp(`^/admin/[^/]+/(${INDUSTRY_TAB_ROUTES.join('|')})$`);

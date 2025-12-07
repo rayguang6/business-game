@@ -1,4 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
+import { AdminTabEnum } from './routing';
 import {
   fetchServices,
   fetchUpgrades,
@@ -71,10 +72,10 @@ export async function prefetchTabData(queryClient: QueryClient, industryId: stri
 export async function prefetchIndustryData(queryClient: QueryClient, industryId: string) {
   // Prefetch the most commonly used tabs in parallel
   await Promise.all([
-    prefetchTabData(queryClient, industryId, 'services'),
-    prefetchTabData(queryClient, industryId, 'upgrades'),
-    prefetchTabData(queryClient, industryId, 'events'),
-    prefetchTabData(queryClient, industryId, 'flags'),
-    prefetchTabData(queryClient, industryId, 'conditions'),
+    prefetchTabData(queryClient, industryId, AdminTabEnum.Services),
+    prefetchTabData(queryClient, industryId, AdminTabEnum.Upgrades),
+    prefetchTabData(queryClient, industryId, AdminTabEnum.Events),
+    prefetchTabData(queryClient, industryId, AdminTabEnum.Flags),
+    prefetchTabData(queryClient, industryId, AdminTabEnum.Conditions),
   ]);
 }

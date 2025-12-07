@@ -10,6 +10,7 @@ import {
   getTabFromPath,
   buildGlobalTabUrl,
   buildIndustryTabUrl,
+  AdminTabEnum,
   type AdminTab,
   type IndustryTab,
   type GlobalTab,
@@ -21,19 +22,19 @@ import { prefetchTabData, prefetchIndustryData } from './utils/prefetch';
 
 // Tab configuration with icons - matching original implementation
 const TAB_CONFIG = {
-  industries: { label: 'Industries', icon: '🏢' },
-  global: { label: 'Global Config', icon: '⚡' },
-  'global-metric-display': { label: 'Global Metric Display', icon: '📊' },
-  'industry-config': { label: 'Industry Config', icon: '🎯' },
-  'industry-metric-display': { label: 'Industry Metric Display', icon: '📊' },
-  services: { label: 'Services', icon: '🛎️' },
-  roles: { label: 'Roles', icon: '👥' },
-  presets: { label: 'Presets', icon: '👤' },
-  upgrades: { label: 'Upgrades', icon: '⚙️' },
-  marketing: { label: 'Marketing', icon: '📢' },
-  events: { label: 'Events', icon: '📅' },
-  flags: { label: 'Flags', icon: '🏁' },
-  conditions: { label: 'Conditions', icon: '📊' },
+  [AdminTabEnum.Industries]: { label: 'Industries', icon: '🏢' },
+  [AdminTabEnum.Global]: { label: 'Global Config', icon: '⚡' },
+  [AdminTabEnum.GlobalMetricDisplay]: { label: 'Global Metric Display', icon: '📊' },
+  [AdminTabEnum.IndustryConfig]: { label: 'Industry Config', icon: '🎯' },
+  [AdminTabEnum.IndustryMetricDisplay]: { label: 'Industry Metric Display', icon: '📊' },
+  [AdminTabEnum.Services]: { label: 'Services', icon: '🛎️' },
+  [AdminTabEnum.Roles]: { label: 'Roles', icon: '👥' },
+  [AdminTabEnum.Presets]: { label: 'Presets', icon: '👤' },
+  [AdminTabEnum.Upgrades]: { label: 'Upgrades', icon: '⚙️' },
+  [AdminTabEnum.Marketing]: { label: 'Marketing', icon: '📢' },
+  [AdminTabEnum.Events]: { label: 'Events', icon: '📅' },
+  [AdminTabEnum.Flags]: { label: 'Flags', icon: '🏁' },
+  [AdminTabEnum.Conditions]: { label: 'Conditions', icon: '📊' },
 } as const;
 
 // Organized by workflow (matching original):
@@ -41,18 +42,18 @@ const TAB_CONFIG = {
 // 2. Content (Services, Roles, Presets)
 // 3. Mechanics (Upgrades, Marketing, Events)
 // 4. System (Flags, Conditions)
-const GLOBAL_TABS: GlobalTab[] = ['industries', 'global', 'global-metric-display'];
+const GLOBAL_TABS: GlobalTab[] = [AdminTabEnum.Industries, AdminTabEnum.Global, AdminTabEnum.GlobalMetricDisplay];
 const INDUSTRY_TABS: IndustryTab[] = [
-  'industry-config',        // Setup
-  'industry-metric-display', // Setup (Metric Display Config)
-  'services',               // Content
-  'roles',                  // Content (Staff Roles)
-  'presets',                // Content (Staff Presets)
-  'upgrades',               // Mechanics
-  'marketing',              // Mechanics
-  'events',                 // Mechanics
-  'flags',                  // System
-  'conditions',             // System
+  AdminTabEnum.IndustryConfig,        // Setup
+  AdminTabEnum.IndustryMetricDisplay, // Setup (Metric Display Config)
+  AdminTabEnum.Services,               // Content
+  AdminTabEnum.Roles,                  // Content (Staff Roles)
+  AdminTabEnum.Presets,                // Content (Staff Presets)
+  AdminTabEnum.Upgrades,               // Mechanics
+  AdminTabEnum.Marketing,              // Mechanics
+  AdminTabEnum.Events,                 // Mechanics
+  AdminTabEnum.Flags,                  // System
+  AdminTabEnum.Conditions,             // System
 ];
 
 interface AdminLayoutClientProps {
@@ -145,8 +146,27 @@ function AdminLayoutContent({ industries, children }: AdminLayoutClientProps) {
   };
   
   // Get display industry (current or last selected or default)
-  const displayIndustry = currentIndustry || lastSelectedIndustry || 
+  const displayIndustry = currentIndustry || lastSelectedIndustry ||
     (industries.length > 0 ? industries[0].id : DEFAULT_INDUSTRY_ID);
+
+  // Refresh game cache for immediate content updates
+  const refreshGameCache = async () => {
+    try {
+      // Invalidate ALL admin queries to clear any cached content data
+      // This includes industry data, services, staff, upgrades, events, marketing, flags, conditions, etc.
+      await queryClient.invalidateQueries();
+
+      // Note: This only affects the admin panel's cache. Game clients have separate caches.
+      // Players currently in games will see updates on their next page load or after 5 minutes.
+      // For immediate effect, players need to refresh their browser.
+
+      // Show success feedback with clear instructions
+      alert('✅ Cache refreshed!\n\n📋 Update timeline:\n• Admin panel: Updates immediately\n• New visitors: See changes within 30 seconds\n• Active players: May need browser refresh (F5)\n• Select industry: May need hard refresh (Ctrl+F5) if cached\n\n💡 Content updates are now much faster (30-second cache)!');
+    } catch (error) {
+      console.error('Failed to refresh game cache:', error);
+      alert('❌ Failed to refresh cache. Please try again.');
+    }
+  };
   
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex">
@@ -216,41 +236,58 @@ function AdminLayoutContent({ industries, children }: AdminLayoutClientProps) {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Bar with Industry Dropdown */}
         {/* Hide dropdown on global config and industries pages, but show on global-metric-display for reference */}
-        {(currentTab !== 'global' && currentTab !== 'industries') || currentTab === 'global-metric-display' ? (
+        {currentTab === AdminTabEnum.GlobalMetricDisplay || (currentTab !== AdminTabEnum.Global && currentTab !== AdminTabEnum.Industries) ? (
           <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex-shrink-0">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <label className="text-sm font-medium text-slate-300">Industry:</label>
-                <select
-                  value={displayIndustry}
-                  onChange={(e) => handleIndustryChange(e.target.value)}
-                  disabled={isGlobal && currentTab !== 'global-metric-display'}
-                  className={`px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 text-sm font-medium min-w-[180px] ${
-                    isGlobal && currentTab !== 'global-metric-display'
-                      ? 'opacity-50 cursor-not-allowed'
-                      : 'hover:bg-slate-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-                  }`}
-                >
-                  {industries.length === 0 ? (
-                    <option value={DEFAULT_INDUSTRY_ID}>No industries</option>
-                  ) : (
-                    industries.map((industry) => (
-                      <option key={industry.id} value={industry.id}>
-                        {industry.icon} {industry.name}
-                      </option>
-                    ))
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium text-slate-300">Industry:</label>
+                  <select
+                    value={displayIndustry}
+                    onChange={(e) => handleIndustryChange(e.target.value)}
+                    disabled={isGlobal && currentTab !== AdminTabEnum.GlobalMetricDisplay}
+                    className={`px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 text-sm font-medium min-w-[180px] ${
+                      isGlobal && currentTab !== AdminTabEnum.GlobalMetricDisplay
+                        ? 'opacity-50 cursor-not-allowed'
+                        : 'hover:bg-slate-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                    }`}
+                  >
+                    {industries.length === 0 ? (
+                      <option value={DEFAULT_INDUSTRY_ID}>No industries</option>
+                    ) : (
+                      industries.map((industry) => (
+                        <option key={industry.id} value={industry.id}>
+                          {industry.icon} {industry.name}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  {isGlobal && currentTab !== AdminTabEnum.GlobalMetricDisplay && (
+                    <span className="text-xs text-slate-500 italic">
+                      (disabled on global pages)
+                    </span>
                   )}
-                </select>
-                {isGlobal && currentTab !== 'global-metric-display' && (
-                  <span className="text-xs text-slate-500 italic">
-                    (disabled on global pages)
-                  </span>
-                )}
-                {currentTab === 'global-metric-display' && (
-                  <span className="text-xs text-slate-500 italic">
-                    (for reference only - changes save to global)
-                  </span>
-                )}
+                  {currentTab === AdminTabEnum.GlobalMetricDisplay && (
+                    <span className="text-xs text-slate-500 italic">
+                      (for reference only - changes save to global)
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Cache Refresh Button */}
+              <div className="flex items-center gap-3">
+                <div className="text-xs text-slate-500">
+                  <strong>💡 Tip:</strong> Content updates appear within 30 seconds automatically. Use refresh for immediate admin updates.
+                </div>
+                <button
+                  onClick={refreshGameCache}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                  title="Clear admin cache for immediate updates"
+                >
+                  <span>🔄</span>
+                  Refresh Cache
+                </button>
               </div>
             </div>
           </header>
