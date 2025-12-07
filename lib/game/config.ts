@@ -22,9 +22,6 @@ import {
 } from '@/lib/store/configStore';
 import type { WinCondition, LoseCondition } from './winConditions';
 
-// Import unified simulation config repository
-import { fetchSimulationConfig as fetchUnifiedSimulationConfig } from '@/lib/data/simulationConfigRepository';
-
 export type {
   BusinessMetrics,
   BusinessStats,

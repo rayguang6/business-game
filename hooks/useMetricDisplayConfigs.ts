@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { fetchMetricDisplayConfigs } from '@/lib/server/actions/adminActions';
 import { getMergedMetricDefinition, getAllMetrics } from '@/lib/game/metrics/registry';
 import type { GameMetric } from '@/lib/game/effectManager';
@@ -11,43 +12,21 @@ import type { MetricDisplayConfig } from '@/lib/data/metricDisplayConfigReposito
 /**
  * Hook to fetch and cache metric display configs for the current industry
  * Returns merged metric definitions (code + database overrides)
+ * Uses React Query for caching and sharing data across components
  */
 export function useMetricDisplayConfigs(industryId: IndustryId) {
-  const [configs, setConfigs] = useState<Record<GameMetric, MetricDisplayConfig | null>>({} as Record<GameMetric, MetricDisplayConfig | null>);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const {
+    data: configs = {} as Record<GameMetric, MetricDisplayConfig | null>,
+    isLoading: loading,
+    error: queryError,
+  } = useQuery({
+    queryKey: ['metricDisplayConfigs', industryId],
+    queryFn: () => fetchMetricDisplayConfigs(industryId),
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+  });
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadConfigs() {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const fetchedConfigs = await fetchMetricDisplayConfigs(industryId);
-        if (!cancelled) {
-          setConfigs(fetchedConfigs);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          const error = err instanceof Error ? err : new Error('Failed to load metric display configs');
-          setError(error);
-          console.error('[useMetricDisplayConfigs] Failed to load configs:', error);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadConfigs();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [industryId]);
+  const error = queryError instanceof Error ? queryError : queryError ? new Error('Failed to load metric display configs') : null;
 
   /**
    * Get merged metric definition (code + database override)

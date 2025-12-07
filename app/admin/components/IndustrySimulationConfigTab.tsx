@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { BusinessMetrics, BusinessStats, GridPosition, AnchorPoint, ServiceRoomConfig } from '@/lib/game/types';
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
 import { getMetricDefinition, calculateCustomersPerMonth } from '@/lib/game/metrics/registry';
@@ -56,6 +56,74 @@ interface IndustrySimulationConfigTabProps {
   onSave: () => Promise<void>;
 }
 
+// Validation helper function
+function validateIndustryConfig(
+  entryPosition: GridPosition | null,
+  waitingPositions: GridPosition[],
+  serviceRooms: ServiceRoomConfig[],
+  staffPositions: GridPosition[],
+): string[] {
+  const errors: string[] = [];
+
+  // Validate entry position
+  if (!entryPosition) {
+    errors.push('Entry position is required');
+  } else {
+    if (typeof entryPosition.x !== 'number' || isNaN(entryPosition.x) || entryPosition.x < 0) {
+      errors.push('Entry position X must be a non-negative number');
+    }
+    if (typeof entryPosition.y !== 'number' || isNaN(entryPosition.y) || entryPosition.y < 0) {
+      errors.push('Entry position Y must be a non-negative number');
+    }
+  }
+
+  // Validate waiting positions
+  waitingPositions.forEach((pos, index) => {
+    if (typeof pos.x !== 'number' || isNaN(pos.x) || pos.x < 0) {
+      errors.push(`Waiting position ${index + 1} X must be a non-negative number`);
+    }
+    if (typeof pos.y !== 'number' || isNaN(pos.y) || pos.y < 0) {
+      errors.push(`Waiting position ${index + 1} Y must be a non-negative number`);
+    }
+  });
+
+  // Validate service rooms
+  serviceRooms.forEach((room, index) => {
+    if (!room.customerPosition) {
+      errors.push(`Service room ${room.roomId || index + 1} is missing customer position`);
+    } else {
+      if (typeof room.customerPosition.x !== 'number' || isNaN(room.customerPosition.x) || room.customerPosition.x < 0) {
+        errors.push(`Service room ${room.roomId || index + 1} customer position X must be a non-negative number`);
+      }
+      if (typeof room.customerPosition.y !== 'number' || isNaN(room.customerPosition.y) || room.customerPosition.y < 0) {
+        errors.push(`Service room ${room.roomId || index + 1} customer position Y must be a non-negative number`);
+      }
+    }
+    if (!room.staffPosition) {
+      errors.push(`Service room ${room.roomId || index + 1} is missing staff position`);
+    } else {
+      if (typeof room.staffPosition.x !== 'number' || isNaN(room.staffPosition.x) || room.staffPosition.x < 0) {
+        errors.push(`Service room ${room.roomId || index + 1} staff position X must be a non-negative number`);
+      }
+      if (typeof room.staffPosition.y !== 'number' || isNaN(room.staffPosition.y) || room.staffPosition.y < 0) {
+        errors.push(`Service room ${room.roomId || index + 1} staff position Y must be a non-negative number`);
+      }
+    }
+  });
+
+  // Validate staff positions
+  staffPositions.forEach((pos, index) => {
+    if (typeof pos.x !== 'number' || isNaN(pos.x) || pos.x < 0) {
+      errors.push(`Staff position ${index + 1} X must be a non-negative number`);
+    }
+    if (typeof pos.y !== 'number' || isNaN(pos.y) || pos.y < 0) {
+      errors.push(`Staff position ${index + 1} Y must be a non-negative number`);
+    }
+  });
+
+  return errors;
+}
+
 export function IndustrySimulationConfigTab({
   industryName,
   loading,
@@ -100,20 +168,33 @@ export function IndustrySimulationConfigTab({
   setEventSequence,
   onSave,
 }: IndustrySimulationConfigTabProps) {
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  // Wrapper for onSave that validates first
+  const handleSave = useCallback(async () => {
+    const errors = validateIndustryConfig(entryPosition, waitingPositions, serviceRooms, staffPositions);
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+    setValidationErrors([]);
+    await onSave();
+  }, [entryPosition, waitingPositions, serviceRooms, staffPositions, onSave]);
+
   // Keyboard shortcut for save
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
         event.preventDefault();
         if (!saving && !loading) {
-          onSave();
+          handleSave();
         }
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [saving, loading, onSave]);
+  }, [saving, loading, handleSave]);
 
   // Helper functions for event sequencing
   const moveEventUp = (index: number) => {
@@ -349,6 +430,18 @@ export function IndustrySimulationConfigTab({
             </span>
           )}
         </div>
+
+        {/* Validation Errors */}
+        {validationErrors.length > 0 && (
+          <div className="bg-rose-900/20 border border-rose-700 rounded-lg p-4">
+            <div className="text-sm font-semibold text-rose-400 mb-2">Validation Errors</div>
+            <ul className="list-disc list-inside space-y-1 text-sm text-rose-300">
+              {validationErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Business Metrics */}
         <div className="space-y-3">
@@ -1164,7 +1257,7 @@ export function IndustrySimulationConfigTab({
 
         {/* Save Button */}
         <div className="flex justify-end pt-4 border-t border-slate-800">
-          <button onClick={onSave} disabled={saving || loading} className={`px-6 py-2 rounded-lg font-medium transition ${saving || loading ? 'bg-slate-700 text-slate-400 cursor-wait' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}>
+          <button onClick={handleSave} disabled={saving || loading || validationErrors.length > 0} className={`px-6 py-2 rounded-lg font-medium transition ${saving || loading || validationErrors.length > 0 ? 'bg-slate-700 text-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}>
             {saving ? 'Saving…' : 'Save Config'}
           </button>
         </div>
@@ -1172,7 +1265,7 @@ export function IndustrySimulationConfigTab({
         {/* Floating Save Button */}
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
           <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-xl px-6 py-3 shadow-2xl">
-            <button onClick={onSave} disabled={saving || loading} className={`px-6 py-2 rounded-lg font-medium transition ${saving || loading ? 'bg-slate-700 text-slate-400 cursor-wait' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}>
+            <button onClick={handleSave} disabled={saving || loading || validationErrors.length > 0} className={`px-6 py-2 rounded-lg font-medium transition ${saving || loading || validationErrors.length > 0 ? 'bg-slate-700 text-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}>
               {saving ? '💾 Saving…' : '💾 Save Config (⌘↵)'}
             </button>
           </div>

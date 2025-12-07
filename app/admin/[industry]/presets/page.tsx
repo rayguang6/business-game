@@ -22,7 +22,7 @@ export default function PresetsPage({
       const firstPreset = presets.presets[0];
       router.replace(buildPresetDetailUrl(industry, firstPreset.id));
     }
-  }, [presets.loading, presets.presets.length, presets.isCreating, presets.selectedId, industry, router]);
+  }, [presets.loading, presets.presets, presets.isCreating, presets.selectedId, industry, router]);
 
   // Handle preset selection - navigate to detail page
   const handleSelectPreset = (preset: import('@/lib/game/staffConfig').StaffPreset) => {

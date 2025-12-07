@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { IndustrySimulationConfigTab } from '../../components/IndustrySimulationConfigTab';
 import { useSimulationConfig } from '../../hooks/useSimulationConfig';
 import type { Industry } from '@/lib/features/industries';
+import type { BusinessMetrics, BusinessStats, GridPosition, ServiceRoomConfig } from '@/lib/game/types';
+import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
 
 interface IndustryConfigPageClientProps {
   industry: string;
@@ -16,21 +18,21 @@ export default function IndustryConfigPageClient({ industry, industries }: Indus
   const [industryName, setIndustryName] = useState<string>('Unknown');
 
   // Adapter functions for IndustrySimulationConfigTab compatibility
-  const setBusinessMetrics = (value: any) => industrySimConfig.updateMetrics(value || {});
-  const setBusinessStats = (value: any) => industrySimConfig.updateStats(value || {});
+  const setBusinessMetrics = (value: BusinessMetrics | null) => industrySimConfig.updateMetrics(value || undefined);
+  const setBusinessStats = (value: BusinessStats | null) => industrySimConfig.updateStats(value || undefined);
   const setMapWidth = (value: number | null) => industrySimConfig.updateMapConfig(value || 10, industrySimConfig.mapHeight || 10, industrySimConfig.mapWalls);
   const setMapHeight = (value: number | null) => industrySimConfig.updateMapConfig(industrySimConfig.mapWidth || 10, value || 10, industrySimConfig.mapWalls);
-  const setMapWalls = (value: any[]) => industrySimConfig.updateMapConfig(industrySimConfig.mapWidth || 10, industrySimConfig.mapHeight || 10, value);
-  const setEntryPosition = (value: any) => industrySimConfig.updateLayoutConfig({ entryPosition: value });
-  const setWaitingPositions = (value: any[]) => industrySimConfig.updateLayoutConfig({ waitingPositions: value });
-  const setServiceRooms = (value: any[]) => industrySimConfig.updateLayoutConfig({ serviceRooms: value });
-  const setStaffPositions = (value: any[]) => industrySimConfig.updateLayoutConfig({ staffPositions: value });
-  const setMainCharacterPosition = (value: any) => industrySimConfig.updateLayoutConfig({ mainCharacterPosition: value });
+  const setMapWalls = (value: GridPosition[]) => industrySimConfig.updateMapConfig(industrySimConfig.mapWidth || 10, industrySimConfig.mapHeight || 10, value);
+  const setEntryPosition = (value: GridPosition | null) => industrySimConfig.updateLayoutConfig({ entryPosition: value });
+  const setWaitingPositions = (value: GridPosition[]) => industrySimConfig.updateLayoutConfig({ waitingPositions: value });
+  const setServiceRooms = (value: ServiceRoomConfig[]) => industrySimConfig.updateLayoutConfig({ serviceRooms: value });
+  const setStaffPositions = (value: GridPosition[]) => industrySimConfig.updateLayoutConfig({ staffPositions: value });
+  const setMainCharacterPosition = (value: GridPosition | null) => industrySimConfig.updateLayoutConfig({ mainCharacterPosition: value });
   const setMainCharacterSpriteImage = (value: string) => industrySimConfig.updateLayoutConfig({ mainCharacterSpriteImage: value });
   const setCapacityImage = (value: string) => industrySimConfig.updateMediaConfig({ capacityImage: value });
   const setLeadDialogues = (value: string[] | null) => industrySimConfig.updateMediaConfig({ leadDialogues: value || [] });
-  const setWinCondition = (value: any) => industrySimConfig.updateWinCondition(value);
-  const setLoseCondition = (value: any) => industrySimConfig.updateLoseCondition(value);
+  const setWinCondition = (value: WinCondition | null) => industrySimConfig.updateWinCondition(value);
+  const setLoseCondition = (value: LoseCondition | null) => industrySimConfig.updateLoseCondition(value);
   const setEventSelectionMode = (value: 'random' | 'sequence') => industrySimConfig.updateEventConfig(value, industrySimConfig.eventSequence);
   const setEventSequence = (value: string[]) => industrySimConfig.updateEventConfig(industrySimConfig.eventSelectionMode, value);
 

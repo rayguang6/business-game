@@ -25,6 +25,7 @@ import GameButton from '@/app/components/ui/GameButton';
 import { useConfigStore } from '@/lib/store/configStore';
 import { ConfigErrorPage } from '@/app/game/components/ui/ConfigErrorPage';
 import { ErrorBoundary } from '@/app/game/components/ui/ErrorBoundary';
+import { GameQueryProvider } from '@/app/game/providers/QueryProvider';
 import type { GlobalSimulationConfigState } from '@/lib/store/config/types';
 import type { IndustryContentLoadResult } from '@/lib/server/loadGameData';
 import type { Industry } from '@/lib/features/industries';
@@ -128,7 +129,8 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
 
   return (
     <ErrorBoundary>
-      <div id="game-shell" className="h-screen relative flex flex-col md:flex-row overflow-hidden">
+      <GameQueryProvider>
+        <div id="game-shell" className="h-screen relative flex flex-col md:flex-row overflow-hidden">
         {/* Mobile: Top Section - Game Canvas Area (flexible height) */}
         {/* Desktop: Left Section - Game Canvas Area (50% width) */}
         <div className="relative md:h-full md:w-1/2 flex items-center justify-center py-4 md:py-0">
@@ -285,6 +287,7 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
           </div>
         )}
       </div>
+      </GameQueryProvider>
     </ErrorBoundary>
   );
 }
