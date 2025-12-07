@@ -3,6 +3,9 @@ import { loadIndustries } from '@/lib/server/loadGameData';
 import IndustryClient from './IndustryClient';
 import GameButton from '@/app/components/ui/GameButton';
 
+// Force dynamic rendering to ensure fresh data from database
+export const dynamic = 'force-dynamic';
+
 interface IndustryPageProps {
   params: Promise<{ 'industry-id': string }>;
 }

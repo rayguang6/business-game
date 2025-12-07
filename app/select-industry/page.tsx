@@ -1,6 +1,9 @@
 import { loadIndustries } from '@/lib/server/loadGameData';
 import SelectIndustryClient from './SelectIndustryClient';
 
+// Force dynamic rendering to ensure fresh data from database
+export const dynamic = 'force-dynamic';
+
 export default async function SelectIndustryPage() {
   const industriesData = await loadIndustries();
   
