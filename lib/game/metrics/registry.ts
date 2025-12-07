@@ -282,9 +282,10 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
       roundToInt: true,
     },
     display: {
-      showOnHUD: false,
+      showOnHUD: true, // Show on HUD when leveraged time exists
       showInDetails: true,
       showInAdmin: true,
+      priority: 3, // Display after MyTime
       unit: 'h',
     },
     canBeModifiedByEffects: true,

@@ -431,6 +431,35 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
       recordEventExpense: store.recordEventExpense,
     });
 
+    // Immediately update leveraged time from effects (don't wait for month transition)
+    // Calculate new capacity from all effects
+    const newLeveragedTimeCapacity = effectManager.calculate(GameMetric.LeveragedTime, 0);
+    const currentCapacity = store.metrics.leveragedTimeCapacity;
+    const capacityDelta = newLeveragedTimeCapacity - currentCapacity;
+    
+    if (capacityDelta !== 0) {
+      set((state) => {
+        let newLeveragedTime = state.metrics.leveragedTime;
+        
+        if (capacityDelta > 0) {
+          // When adding effects: add to both time and capacity
+          newLeveragedTime = state.metrics.leveragedTime + capacityDelta;
+        } else {
+          // When removing effects: decrease both time and capacity
+          // Also clamp time to not exceed the new capacity
+          newLeveragedTime = Math.min(state.metrics.leveragedTime, newLeveragedTimeCapacity);
+        }
+        
+        return {
+          metrics: {
+            ...state.metrics,
+            leveragedTime: Math.max(0, newLeveragedTime),
+            leveragedTimeCapacity: Math.max(0, newLeveragedTimeCapacity),
+          },
+        };
+      });
+    }
+
     // Set flag if upgrade sets one
     if (upgrade.setsFlag) {
       get().setFlag(upgrade.setsFlag, true);

@@ -320,7 +320,9 @@ function processMonthTransition({
     ...metrics,
     cash: monthResult.cash,
     myTime: baseMyTime, // Refresh personal time each month
+    myTimeCapacity: baseMyTime, // Capacity never changes, always equals startingTime
     leveragedTime: leveragedTimeBonus, // Refresh leveraged time from effects
+    leveragedTimeCapacity: leveragedTimeBonus, // Update capacity to match the new leveraged time
     // Only add expenses that were actually deducted at month end
     totalExpenses: metrics.totalExpenses + expensesActuallyDeducted,
   };

@@ -8,7 +8,9 @@ import type { IndustryId } from '@/lib/game/types';
 const SAFE_DEFAULT_METRICS: Metrics = {
   cash: 0,
   myTime: 0,
+  myTimeCapacity: 0,
   leveragedTime: 0,
+  leveragedTimeCapacity: 0,
   totalRevenue: 0,
   totalExpenses: 0,
   exp: 0,
@@ -26,10 +28,13 @@ export const getInitialMetrics = (industryId: IndustryId = DEFAULT_INDUSTRY_ID):
     // Store will be updated when config loads in simulationConfigService
     return { ...SAFE_DEFAULT_METRICS };
   }
+  const startingTime = metrics.startingTime ?? 0;
   return {
     cash: metrics.startingCash,
-    myTime: metrics.startingTime ?? 0, // Personal time, defaults to 0
+    myTime: startingTime, // Personal time, defaults to 0
+    myTimeCapacity: startingTime, // Capacity never changes, equals startingTime
     leveragedTime: 0, // Leveraged time starts at 0 (will be added by upgrades/staff)
+    leveragedTimeCapacity: 0, // Leveraged time capacity starts at 0
     totalRevenue: 0,
     totalExpenses: 0,
     exp: metrics.startingExp ?? 0, // Previously: startingSkillLevel - defaults to 0

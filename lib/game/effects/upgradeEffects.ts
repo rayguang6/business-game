@@ -70,7 +70,11 @@ export const createUpgradeEffects = (
   definition: UpgradeDefinition,
   level: number,
 ): Effect[] => {
-  return definition.effects.map((effect, index) => ({
+  const levelConfig = definition.levels.find(l => l.level === level);
+  if (!levelConfig) {
+    return [];
+  }
+  return levelConfig.effects.map((effect: UpgradeEffect, index: number) => ({
     id: `upgrade_${definition.id}_preview_${index}`,
     source: {
       category: 'upgrade',

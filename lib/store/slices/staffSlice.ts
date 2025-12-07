@@ -8,7 +8,7 @@ import {
   resetUsedStaffNames,
 } from '@/lib/game/staffConfig';
 import { DEFAULT_INDUSTRY_ID, type IndustryId } from '@/lib/game/types';
-import { effectManager } from '@/lib/game/effectManager';
+import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import { checkRequirements } from '@/lib/game/requirementChecker';
 import { OneTimeCostCategory } from '../types';
 import { SourceHelpers } from '@/lib/utils/financialTracking';
@@ -63,6 +63,34 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
         recordEventExpense: store.recordEventExpense,
       });
 
+      // Immediately update leveraged time from effects (don't wait for month transition)
+      const newLeveragedTimeCapacity = effectManager.calculate(GameMetric.LeveragedTime, 0);
+      const currentCapacity = store.metrics.leveragedTimeCapacity;
+      const capacityDelta = newLeveragedTimeCapacity - currentCapacity;
+      
+      if (capacityDelta !== 0) {
+        set((state) => {
+          let newLeveragedTime = state.metrics.leveragedTime;
+          
+          if (capacityDelta > 0) {
+            // When adding effects: add to both time and capacity
+            newLeveragedTime = state.metrics.leveragedTime + capacityDelta;
+          } else {
+            // When removing effects: decrease both time and capacity
+            // Also clamp time to not exceed the new capacity
+            newLeveragedTime = Math.min(state.metrics.leveragedTime, newLeveragedTimeCapacity);
+          }
+          
+          return {
+            metrics: {
+              ...state.metrics,
+              leveragedTime: Math.max(0, newLeveragedTime),
+              leveragedTimeCapacity: Math.max(0, newLeveragedTimeCapacity),
+            },
+          };
+        });
+      }
+
       // Set flag if staff role sets one
       if (candidate.setsFlag) {
         store.setFlag(candidate.setsFlag, true);
@@ -103,6 +131,34 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
 
       // Remove staff effects (including salary expense)
       removeStaffEffects(staffId);
+
+      // Immediately update leveraged time from effects (don't wait for month transition)
+      const newLeveragedTimeCapacity = effectManager.calculate(GameMetric.LeveragedTime, 0);
+      const currentCapacity = store.metrics.leveragedTimeCapacity;
+      const capacityDelta = newLeveragedTimeCapacity - currentCapacity;
+      
+      if (capacityDelta !== 0) {
+        set((state) => {
+          let newLeveragedTime = state.metrics.leveragedTime;
+          
+          if (capacityDelta > 0) {
+            // When adding effects: add to both time and capacity
+            newLeveragedTime = state.metrics.leveragedTime + capacityDelta;
+          } else {
+            // When removing effects: decrease both time and capacity
+            // Also clamp time to not exceed the new capacity
+            newLeveragedTime = Math.min(state.metrics.leveragedTime, newLeveragedTimeCapacity);
+          }
+          
+          return {
+            metrics: {
+              ...state.metrics,
+              leveragedTime: Math.max(0, newLeveragedTime),
+              leveragedTimeCapacity: Math.max(0, newLeveragedTimeCapacity),
+            },
+          };
+        });
+      }
 
       // Record severance as one-time cost for P&L tracking
       if (store.addOneTimeCost) {

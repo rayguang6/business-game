@@ -4,6 +4,8 @@ import { useGameStore } from '@/lib/store/gameStore';
 export interface MetricChange {
   cash?: number;
   time?: number;
+  myTime?: number; // Separate tracking for myTime
+  leveragedTime?: number; // Separate tracking for leveragedTime
   exp?: number; // Previously: skillLevel
   revenue?: number;
   expenses?: number;
@@ -14,6 +16,8 @@ export function useMetricChanges() {
   const prevMetrics = useRef({
     cash: metrics.cash,
     time: metrics.myTime + metrics.leveragedTime,
+    myTime: metrics.myTime,
+    leveragedTime: metrics.leveragedTime,
     exp: metrics.exp,
     revenue: monthlyRevenue,
     expenses: monthlyExpenses,
@@ -28,10 +32,20 @@ export function useMetricChanges() {
       newChanges.cash = metrics.cash - prevMetrics.current.cash;
     }
 
-    // Track time changes
+    // Track time changes (total for backward compatibility)
     const currentTime = metrics.myTime + metrics.leveragedTime;
     if (currentTime !== prevMetrics.current.time) {
       newChanges.time = currentTime - prevMetrics.current.time;
+    }
+
+    // Track myTime changes separately
+    if (metrics.myTime !== prevMetrics.current.myTime) {
+      newChanges.myTime = metrics.myTime - prevMetrics.current.myTime;
+    }
+
+    // Track leveragedTime changes separately
+    if (metrics.leveragedTime !== prevMetrics.current.leveragedTime) {
+      newChanges.leveragedTime = metrics.leveragedTime - prevMetrics.current.leveragedTime;
     }
 
     // Track exp changes (previously skill level)
@@ -53,6 +67,8 @@ export function useMetricChanges() {
     prevMetrics.current = {
       cash: metrics.cash,
       time: metrics.myTime + metrics.leveragedTime,
+      myTime: metrics.myTime,
+      leveragedTime: metrics.leveragedTime,
       exp: metrics.exp,
       revenue: monthlyRevenue,
       expenses: monthlyExpenses,

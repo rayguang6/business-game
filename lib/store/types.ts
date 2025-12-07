@@ -11,7 +11,9 @@ import { SourceType } from '@/lib/config/sourceTypes';
 export interface Metrics {
   cash: number;
   myTime: number; // Personal time (refreshes monthly)
+  myTimeCapacity: number; // Personal time capacity (never changes, equals startingTime)
   leveragedTime: number; // Leveraged time from staff/upgrades (refreshes monthly)
+  leveragedTimeCapacity: number; // Leveraged time capacity (updates when leveraged time is added)
   totalRevenue: number;
   totalExpenses: number;
   exp: number; // Previously: skillLevel (reputation)

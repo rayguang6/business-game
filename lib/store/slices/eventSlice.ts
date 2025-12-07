@@ -314,18 +314,48 @@ const applyEventEffect = (
             recordEventExpense(Math.abs(effect.value), sourceInfo, label);
           }
         } else if (effect.metric === GameMetric.MyTime) {
-          // Use recordTimeSpent for negative values (time spent), applyTimeChange for positive (time gained)
-          if (effect.value < 0 && store.recordTimeSpent) {
-            const sourceInfo = SourceHelpers.fromEvent(event.id, event.title, {
-              choiceId: choice.id,
-              choiceLabel: choice.label,
-              consequenceId: consequence?.id,
-              consequenceLabel: consequence?.label,
-            });
-            const timeLabel = `${event.title} - ${choice.label}`;
-            store.recordTimeSpent(effect.value, sourceInfo, timeLabel);
-          } else if (store.applyTimeChange) {
-            store.applyTimeChange(effect.value);
+          // For MyTime effects, deduct myTime directly (not leveraged time first)
+          // Use applyTimeChange which handles both positive and negative values
+          if (store.applyTimeChange) {
+            // For negative values, we need to deduct myTime directly, not through recordTimeSpent
+            if (effect.value < 0) {
+              const timeToDeduct = Math.abs(effect.value);
+              const sourceInfo = SourceHelpers.fromEvent(event.id, event.title, {
+                choiceId: choice.id,
+                choiceLabel: choice.label,
+                consequenceId: consequence?.id,
+                consequenceLabel: consequence?.label,
+              });
+              const timeLabel = `${event.title} - ${choice.label}`;
+              // Use recordTimeSpent but with a flag to deduct myTime directly
+              // Actually, we need to update metrics directly since recordTimeSpent deducts leveraged time first
+              if ((store as any).updateMetrics) {
+                const currentMetrics = store.metrics;
+                (store as any).updateMetrics({
+                  myTime: Math.max(0, currentMetrics.myTime - timeToDeduct),
+                  totalTimeSpent: currentMetrics.totalTimeSpent + timeToDeduct,
+                });
+                // Also update monthly tracking
+                if ((store as any).monthlyTimeSpent !== undefined) {
+                  (store as any).monthlyTimeSpent = ((store as any).monthlyTimeSpent || 0) + timeToDeduct;
+                  (store as any).monthlyTimeSpentDetails = [
+                    ...((store as any).monthlyTimeSpentDetails || []),
+                    {
+                      amount: timeToDeduct,
+                      label: timeLabel,
+                      sourceId: sourceInfo.id,
+                      sourceType: sourceInfo.type,
+                      sourceName: sourceInfo.name,
+                    },
+                  ];
+                }
+              }
+              if (store.checkGameOver) {
+                store.checkGameOver();
+              }
+            } else {
+              store.applyTimeChange(effect.value);
+            }
           }
         } else if (effect.metric === GameMetric.Exp) {
           store.applyExpChange(effect.value);
@@ -380,14 +410,56 @@ const applyEventEffect = (
         if (effect.metric === GameMetric.MyTime) {
           const currentTime = metrics.myTime;
           const newTime = effectManager.calculate(GameMetric.MyTime, currentTime);
-          store.applyTimeChange(newTime - currentTime);
+          const delta = newTime - currentTime;
+          // For MyTime effects, deduct myTime directly (not leveraged time first)
+          if (delta < 0) {
+            const timeToDeduct = Math.abs(delta);
+            const sourceInfo = SourceHelpers.fromEvent(event.id, event.title, {
+              choiceId: choice.id,
+              choiceLabel: choice.label,
+              consequenceId: consequence?.id,
+              consequenceLabel: consequence?.label,
+            });
+            const timeLabel = `${event.title} - ${choice.label}`;
+            // Use updateMetrics to update myTime directly
+            if ((store as any).updateMetrics) {
+              (store as any).updateMetrics({
+                myTime: Math.max(0, metrics.myTime - timeToDeduct),
+                totalTimeSpent: metrics.totalTimeSpent + timeToDeduct,
+              });
+              // Update monthly tracking through store's internal mechanism
+              // Note: This requires access to the store's set function, which we don't have here
+              // For now, we'll track it through the metrics update
+              // Monthly tracking will be handled by the calling context if needed
+            }
+            if (store.checkGameOver) {
+              store.checkGameOver();
+            }
+          } else {
+            store.applyTimeChange(delta);
+          }
         } else if (effect.metric === GameMetric.LeveragedTime) {
           const currentTime = metrics.leveragedTime;
           const newTime = effectManager.calculate(GameMetric.LeveragedTime, currentTime);
+          const newCapacity = effectManager.calculate(GameMetric.LeveragedTime, 0);
           const delta = newTime - currentTime;
           // Update through metrics slice if available
           if ((store as any).updateMetrics) {
-            (store as any).updateMetrics({ leveragedTime: Math.max(0, Math.round(newTime)) });
+            let newLeveragedTime = metrics.leveragedTime;
+            
+            if (delta > 0) {
+              // When adding effects: add to both time and capacity
+              newLeveragedTime = metrics.leveragedTime + delta;
+            } else {
+              // When removing effects: decrease both time and capacity
+              // Also clamp time to not exceed the new capacity
+              newLeveragedTime = Math.min(metrics.leveragedTime, newCapacity);
+            }
+            
+            (store as any).updateMetrics({ 
+              leveragedTime: Math.max(0, Math.round(newLeveragedTime)),
+              leveragedTimeCapacity: Math.max(0, newCapacity),
+            });
           }
         }
       } else if (effect.metric === GameMetric.Exp) {
@@ -653,7 +725,34 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
               recordEventExpense(Math.abs(resolvedEffect.value), sourceInfo, label);
             }
           } else if (resolvedEffect.metric === GameMetric.MyTime && resolvedEffect.effectType === EffectType.Add) {
-            store.applyTimeChange(resolvedEffect.value);
+            // For MyTime effects, deduct myTime directly (not leveraged time first)
+            if (resolvedEffect.value < 0) {
+              const timeToDeduct = Math.abs(resolvedEffect.value);
+              setState((state) => ({
+                metrics: {
+                  ...state.metrics,
+                  myTime: Math.max(0, state.metrics.myTime - timeToDeduct),
+                  totalTimeSpent: state.metrics.totalTimeSpent + timeToDeduct,
+                },
+                monthlyTimeSpent: state.monthlyTimeSpent + timeToDeduct,
+                monthlyTimeSpentDetails: [
+                  ...state.monthlyTimeSpentDetails,
+                  {
+                    amount: timeToDeduct,
+                    label: resolvedEffect.label ?? `${outcome.eventTitle} - ${outcome.choiceLabel}`,
+                    sourceId: outcome.eventId || 'unknown',
+                    sourceType: SourceType.Event,
+                    sourceName: outcome.eventTitle,
+                  },
+                ],
+              }));
+              const { checkGameOver } = get();
+              if (checkGameOver) {
+                checkGameOver();
+              }
+            } else {
+              store.applyTimeChange(resolvedEffect.value);
+            }
           } else if (resolvedEffect.metric === GameMetric.Exp && resolvedEffect.effectType === EffectType.Add) {
             store.applyExpChange(resolvedEffect.value);
           } else if (resolvedEffect.metric === GameMetric.GenerateLeads && resolvedEffect.effectType === EffectType.Add) {
@@ -696,16 +795,61 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
               if (resolvedEffect.metric === GameMetric.MyTime) {
                 const currentTime = metrics.myTime;
                 const newTime = effectManager.calculate(GameMetric.MyTime, currentTime);
-                store.applyTimeChange(newTime - currentTime);
+                const delta = newTime - currentTime;
+                // For MyTime effects, deduct myTime directly (not leveraged time first)
+                if (delta < 0) {
+                  const timeToDeduct = Math.abs(delta);
+                  set((state) => ({
+                    ...state,
+                    metrics: {
+                      ...state.metrics,
+                      myTime: Math.max(0, state.metrics.myTime - timeToDeduct),
+                      totalTimeSpent: state.metrics.totalTimeSpent + timeToDeduct,
+                    },
+                    monthlyTimeSpent: state.monthlyTimeSpent + timeToDeduct,
+                    monthlyTimeSpentDetails: [
+                      ...state.monthlyTimeSpentDetails,
+                      {
+                        amount: timeToDeduct,
+                        label: resolvedEffect.label ?? `${outcome.eventTitle} - ${outcome.choiceLabel}`,
+                        sourceId: outcome.eventId || 'unknown',
+                        sourceType: SourceType.Event,
+                        sourceName: outcome.eventTitle,
+                      },
+                    ],
+                  }));
+                  const { checkGameOver } = get();
+                  if (checkGameOver) {
+                    checkGameOver();
+                  }
+                } else {
+                  store.applyTimeChange(delta);
+                }
               } else if (resolvedEffect.metric === GameMetric.LeveragedTime) {
                 const currentTime = metrics.leveragedTime;
                 const newTime = effectManager.calculate(GameMetric.LeveragedTime, currentTime);
-                set((state) => ({
-                  metrics: {
-                    ...state.metrics,
-                    leveragedTime: Math.max(0, Math.round(newTime)),
-                  },
-                }));
+                const newCapacity = effectManager.calculate(GameMetric.LeveragedTime, 0);
+                const delta = newTime - currentTime;
+                set((state) => {
+                  let newLeveragedTime = state.metrics.leveragedTime;
+                  
+                  if (delta > 0) {
+                    // When adding effects: add to both time and capacity
+                    newLeveragedTime = state.metrics.leveragedTime + delta;
+                  } else {
+                    // When removing effects: decrease both time and capacity
+                    // Also clamp time to not exceed the new capacity
+                    newLeveragedTime = Math.min(state.metrics.leveragedTime, newCapacity);
+                  }
+                  
+                  return {
+                    metrics: {
+                      ...state.metrics,
+                      leveragedTime: Math.max(0, Math.round(newLeveragedTime)),
+                      leveragedTimeCapacity: Math.max(0, newCapacity),
+                    },
+                  };
+                });
               }
             } else if (resolvedEffect.metric === GameMetric.Exp) {
               const currentExp = metrics.exp;
@@ -825,12 +969,28 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
               } else if (resolvedEffect.metric === GameMetric.LeveragedTime) {
                 const currentTime = metrics.leveragedTime;
                 const newTime = effectManager.calculate(GameMetric.LeveragedTime, currentTime);
-                set((state) => ({
-                  metrics: {
-                    ...state.metrics,
-                    leveragedTime: Math.max(0, Math.round(newTime)),
-                  },
-                }));
+                const newCapacity = effectManager.calculate(GameMetric.LeveragedTime, 0);
+                const delta = newTime - currentTime;
+                set((state) => {
+                  let newLeveragedTime = state.metrics.leveragedTime;
+                  
+                  if (delta > 0) {
+                    // When adding effects: add to both time and capacity
+                    newLeveragedTime = state.metrics.leveragedTime + delta;
+                  } else {
+                    // When removing effects: decrease both time and capacity
+                    // Also clamp time to not exceed the new capacity
+                    newLeveragedTime = Math.min(state.metrics.leveragedTime, newCapacity);
+                  }
+                  
+                  return {
+                    metrics: {
+                      ...state.metrics,
+                      leveragedTime: Math.max(0, Math.round(newLeveragedTime)),
+                      leveragedTimeCapacity: Math.max(0, newCapacity),
+                    },
+                  };
+                });
               }
             } else if (resolvedEffect.metric === GameMetric.Exp) {
               const currentExp = metrics.exp;

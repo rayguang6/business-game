@@ -26,7 +26,8 @@ export function KeyMetrics() {
   // All hooks must be called before any conditional returns
   const [feedbackByMetric, setFeedbackByMetric] = useState<Record<string, FeedbackItem[]>>({
     cash: [],
-    time: [],
+    myTime: [],
+    leveragedTime: [],
     exp: [],
   });
 
@@ -37,7 +38,8 @@ export function KeyMetrics() {
     setFeedbackByMetric((prev) => {
       const newFeedback: Record<string, FeedbackItem[]> = {
         cash: [...prev.cash],
-        time: [...prev.time],
+        myTime: [...prev.myTime],
+        leveragedTime: [...prev.leveragedTime],
         exp: [...prev.exp],
       };
 
@@ -50,12 +52,21 @@ export function KeyMetrics() {
         });
       }
 
-      // Add time change feedback
-      if (changes.time !== undefined && changes.time !== 0) {
-        newFeedback.time.push({
-          id: `time-${Date.now()}`,
-          value: changes.time,
-          color: changes.time > 0 ? 'blue' : 'red', // Blue when gained, red when spent
+      // Add myTime change feedback
+      if (changes.myTime !== undefined && changes.myTime !== 0) {
+        newFeedback.myTime.push({
+          id: `myTime-${Date.now()}`,
+          value: changes.myTime,
+          color: changes.myTime > 0 ? 'blue' : 'red', // Blue when gained, red when spent
+        });
+      }
+
+      // Add leveragedTime change feedback
+      if (changes.leveragedTime !== undefined && changes.leveragedTime !== 0) {
+        newFeedback.leveragedTime.push({
+          id: `leveragedTime-${Date.now()}`,
+          value: changes.leveragedTime,
+          color: changes.leveragedTime > 0 ? 'blue' : 'red', // Blue when gained, red when spent
         });
       }
 
@@ -75,7 +86,7 @@ export function KeyMetrics() {
   const handleFeedbackComplete = (metricKey: string, id: string) => {
     setFeedbackByMetric((prev) => ({
       ...prev,
-      [metricKey]: prev[metricKey].filter((item) => item.id !== id),
+      [metricKey]: (prev[metricKey] || []).filter((item) => item.id !== id),
     }));
   };
 
@@ -109,8 +120,9 @@ export function KeyMetrics() {
 
     return hudMetrics
       .filter(def => {
-        // Filter MyTime metric based on game state
+        // Filter MyTime and LeveragedTime metrics based on game state
         if (def.id === GameMetric.MyTime) return showTime;
+        if (def.id === GameMetric.LeveragedTime) return showTime; // Always show when time is enabled
         return true;
       })
       .map(def => {
@@ -143,22 +155,25 @@ export function KeyMetrics() {
             feedback = feedbackByMetric.exp;
             break;
           case GameMetric.MyTime: {
-            // Calculate max capacities
-            const maxMyTime = startingTime; // MyTime capacity is startingTime
-            const maxLeveragedTime = effectManager.calculate(GameMetric.LeveragedTime, 0); // LeveragedTime capacity from effects
-            const totalTime = metrics.myTime + metrics.leveragedTime;
-            const maxTotalTime = maxMyTime + maxLeveragedTime;
-            
-            // Display format: myTime/maxMyTime + leveragedTime/maxLeveragedTime = total/maxTotal
-            if (metrics.leveragedTime > 0) {
-              value = `${metrics.myTime}/${maxMyTime}+${metrics.leveragedTime}/${maxLeveragedTime}=${totalTime}/${maxTotalTime}${unit}`;
-            } else {
-              value = `${metrics.myTime}/${maxMyTime}${unit}`;
-            }
+            // Use capacity from metrics (never changes for myTime, equals startingTime)
+            const maxMyTime = metrics.myTimeCapacity;
+            // Display format: just show myTime/myTimeCapacity (never show formulas)
+            value = `${metrics.myTime}/${maxMyTime}${unit}`;
             icon = '⏱️';
             image = iconPath || '/images/icons/upgrades.png'; // Use DB iconPath with fallback
             color = 'text-cyan-400';
-            feedback = feedbackByMetric.time;
+            feedback = feedbackByMetric.myTime || [];
+            break;
+          }
+          case GameMetric.LeveragedTime: {
+            // Use capacity from metrics
+            const maxLeveragedTime = metrics.leveragedTimeCapacity;
+            // Display format: leveragedTime/leveragedTimeCapacity (e.g., "0/0", "10/10 h")
+            value = `${metrics.leveragedTime}/${maxLeveragedTime}${unit}`;
+            icon = '⏱️';
+            image = iconPath || '/images/icons/upgrades.png'; // Use DB iconPath with fallback
+            color = 'text-cyan-400';
+            feedback = feedbackByMetric.leveragedTime || [];
             break;
           }
           case GameMetric.ConversionRate:
