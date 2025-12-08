@@ -63,20 +63,29 @@ export function RolesTab({
   onReset,
   onUpdateForm,
 }: RolesTabProps) {
-  // Keyboard shortcut for save
+  // Keyboard shortcuts for save and delete
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Save shortcut (Command/Ctrl + Enter)
       if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
         event.preventDefault();
         if ((selectedId || isCreating) && !saving && !deleting) {
           onSaveRole();
         }
       }
+      // Delete shortcut (Command + Delete/Backspace) - prioritize Mac
+      if (event.metaKey && (event.key === 'Delete' || event.key === 'Backspace') && !isCreating && selectedId) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!saving && !deleting) {
+          onDeleteRole();
+        }
+      }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, isCreating, saving, deleting, onSaveRole]);
+    document.addEventListener('keydown', handleKeyDown, true); // Use capture phase
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [selectedId, isCreating, saving, deleting, onSaveRole, onDeleteRole]);
 
   return (
     <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
@@ -265,22 +274,38 @@ export function RolesTab({
                       )}
                     </div>
 
-                    {/* Floating Save Button */}
+                    {/* Floating Action Buttons */}
                     {(selectedId || isCreating) && (
                       <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
                         <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-xl px-6 py-3 shadow-2xl">
-                          <button
-                            type="button"
-                            onClick={onSaveRole}
-                            disabled={saving || deleting}
-                            className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
-                              saving
-                                ? 'bg-indigo-900 text-indigo-200 cursor-wait'
-                                : 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                            }`}
-                          >
-                            {saving ? '💾 Saving…' : '💾 Save Role (⌘↵)'}
-                          </button>
+                          <div className="flex gap-3">
+                            <button
+                              type="button"
+                              onClick={onSaveRole}
+                              disabled={saving || deleting}
+                              className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
+                                saving
+                                  ? 'bg-indigo-900 text-indigo-200 cursor-wait'
+                                  : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                              }`}
+                            >
+                              {saving ? '💾 Saving…' : '💾 Save (⌘↵)'}
+                            </button>
+                            {!isCreating && selectedId && (
+                              <button
+                                type="button"
+                                onClick={onDeleteRole}
+                                disabled={deleting || saving}
+                                className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
+                                  deleting
+                                    ? 'bg-rose-900 text-rose-200 cursor-wait'
+                                    : 'bg-rose-600 hover:bg-rose-500 text-white'
+                                }`}
+                              >
+                                {deleting ? '🗑️ Deleting…' : '🗑️ Delete (⌘⌫)'}
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}

@@ -49,20 +49,29 @@ export function CategoriesTab({
   onReset,
   onUpdateForm,
 }: CategoriesTabProps) {
-  // Keyboard shortcut for save
+  // Keyboard shortcuts for save and delete
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Save shortcut (Command/Ctrl + Enter)
       if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
         event.preventDefault();
         if ((selectedCategoryId || isCreatingCategory) && !categorySaving && !categoryDeleting) {
           onSaveCategory();
         }
       }
+      // Delete shortcut (Command + Delete/Backspace) - prioritize Mac
+      if (event.metaKey && (event.key === 'Delete' || event.key === 'Backspace') && !isCreatingCategory && selectedCategoryId) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!categorySaving && !categoryDeleting) {
+          onDeleteCategory();
+        }
+      }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedCategoryId, isCreatingCategory, categorySaving, categoryDeleting, onSaveCategory]);
+    document.addEventListener('keydown', handleKeyDown, true); // Use capture phase
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [selectedCategoryId, isCreatingCategory, categorySaving, categoryDeleting, onSaveCategory, onDeleteCategory]);
 
   return (
     <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
@@ -208,22 +217,38 @@ export function CategoriesTab({
                         )}
                       </div>
 
-                      {/* Floating Save Button */}
+                      {/* Floating Action Buttons */}
                       {(selectedCategoryId || isCreatingCategory) && (
                         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
                           <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-xl px-6 py-3 shadow-2xl">
-                            <button
-                              type="button"
-                              onClick={onSaveCategory}
-                              disabled={categorySaving || categoryDeleting}
-                              className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
-                                categorySaving
-                                  ? 'bg-purple-900 text-purple-300 cursor-wait'
-                                  : 'bg-purple-600 hover:bg-purple-500 text-white'
-                              }`}
-                            >
-                              {categorySaving ? '💾 Saving…' : '💾 Save Category (⌘↵)'}
-                            </button>
+                            <div className="flex gap-3">
+                              <button
+                                type="button"
+                                onClick={onSaveCategory}
+                                disabled={categorySaving || categoryDeleting}
+                                className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
+                                  categorySaving
+                                    ? 'bg-purple-900 text-purple-300 cursor-wait'
+                                    : 'bg-purple-600 hover:bg-purple-500 text-white'
+                                }`}
+                              >
+                                {categorySaving ? '💾 Saving…' : '💾 Save (⌘↵)'}
+                              </button>
+                              {!isCreatingCategory && selectedCategoryId && (
+                                <button
+                                  type="button"
+                                  onClick={onDeleteCategory}
+                                  disabled={categoryDeleting || categorySaving}
+                                  className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
+                                    categoryDeleting
+                                      ? 'bg-rose-900 text-rose-200 cursor-wait'
+                                      : 'bg-rose-600 hover:bg-rose-500 text-white'
+                                  }`}
+                                >
+                                  {categoryDeleting ? '🗑️ Deleting…' : '🗑️ Delete (⌘⌫)'}
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}

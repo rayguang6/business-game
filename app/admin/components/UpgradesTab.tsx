@@ -90,20 +90,30 @@ export function UpgradesTab({
   onRemoveLevel,
   onUpdateLevel,
 }: UpgradesTabProps) {
-  // Keyboard shortcut for save
+  // Keyboard shortcuts for save and delete
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Save shortcut (Command/Ctrl + Enter)
       if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
         event.preventDefault();
         if ((selectedUpgradeId || isCreatingUpgrade) && !upgradeSaving && !upgradeDeleting) {
           onSaveUpgrade();
         }
       }
+      // Delete shortcut (Command + Delete/Backspace) - prioritize Mac
+      if (event.metaKey && (event.key === 'Delete' || event.key === 'Backspace') && !isCreatingUpgrade && selectedUpgradeId) {
+        console.log('Delete shortcut triggered:', event.key, 'MetaKey:', event.metaKey);
+        event.preventDefault();
+        event.stopPropagation();
+        if (!upgradeSaving && !upgradeDeleting) {
+          onDeleteUpgrade();
+        }
+      }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedUpgradeId, isCreatingUpgrade, upgradeSaving, upgradeDeleting, onSaveUpgrade]);
+    document.addEventListener('keydown', handleKeyDown, true); // Use capture phase
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [selectedUpgradeId, isCreatingUpgrade, upgradeSaving, upgradeDeleting, onSaveUpgrade, onDeleteUpgrade]);
 
   return (
     <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
@@ -410,22 +420,38 @@ export function UpgradesTab({
                         )}
                       </div>
 
-                      {/* Floating Save Button */}
+                      {/* Floating Action Buttons */}
                       {(selectedUpgradeId || isCreatingUpgrade) && (
                         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
                           <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-xl px-6 py-3 shadow-2xl">
-                            <button
-                              type="button"
-                              onClick={onSaveUpgrade}
-                              disabled={upgradeSaving || upgradeDeleting}
-                              className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
-                                upgradeSaving
-                                  ? 'bg-purple-900 text-purple-200 cursor-wait'
-                                  : 'bg-purple-600 hover:bg-purple-500 text-white'
-                              }`}
-                            >
-                              {upgradeSaving ? '💾 Saving…' : '💾 Save Upgrade (⌘↵)'}
-                            </button>
+                            <div className="flex gap-3">
+                              <button
+                                type="button"
+                                onClick={onSaveUpgrade}
+                                disabled={upgradeSaving || upgradeDeleting}
+                                className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
+                                  upgradeSaving
+                                    ? 'bg-purple-900 text-purple-200 cursor-wait'
+                                    : 'bg-purple-600 hover:bg-purple-500 text-white'
+                                }`}
+                              >
+                                {upgradeSaving ? '💾 Saving…' : '💾 Save (⌘↵)'}
+                              </button>
+                              {!isCreatingUpgrade && selectedUpgradeId && (
+                                <button
+                                  type="button"
+                                  onClick={onDeleteUpgrade}
+                                  disabled={upgradeDeleting || upgradeSaving}
+                                  className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
+                                    upgradeDeleting
+                                      ? 'bg-rose-900 text-rose-200 cursor-wait'
+                                      : 'bg-rose-600 hover:bg-rose-500 text-white'
+                                  }`}
+                                >
+                                  {upgradeDeleting ? '🗑️ Deleting…' : '🗑️ Delete (⌘⌫)'}
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}
