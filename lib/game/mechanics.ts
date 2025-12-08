@@ -499,16 +499,16 @@ function processCustomersForTick({
           continue;
         }
         
-        // Find available staff or main character for this service
-        const currentStaff = hiredStaff.map(s => staffUpdatesMap.get(s.id) || s);
-        const currentMainChar = mainCharacterUpdate || mainCharacter;
-        const availableProvider = findAvailableStaffForService(
-          updatedCustomer.service,
-          currentStaff,
-          currentMainChar
-        );
-        
-        if (availableProvider) {
+        // TEMPORARILY DISABLED: Staff availability check - customers serve immediately when rooms are available
+        // const currentStaff = hiredStaff.map(s => staffUpdatesMap.get(s.id) || s);
+        // const currentMainChar = mainCharacterUpdate || mainCharacter;
+        // const availableProvider = findAvailableStaffForService(
+        //   updatedCustomer.service,
+        //   currentStaff,
+        //   currentMainChar
+        // );
+
+        // if (availableProvider) {
           // Check if there's enough time available for this service
           const serviceTimeCost = updatedCustomer.service.timeCost || 0;
           const totalAvailableTime = metrics.myTime + metrics.leveragedTime;
@@ -517,7 +517,7 @@ function processCustomersForTick({
             continue;
           }
 
-          // Found a room with valid positions, available staff, and sufficient time - assign it
+          // TEMPORARY CHANGE: Found a room with valid positions - assign customer immediately (no staff check)
           // Remove the room from available rooms (safe to remove when iterating backwards)
           roomsRemaining.splice(roomIndex, 1);
           
@@ -536,89 +536,89 @@ function processCustomersForTick({
           );
           customerWithService.path = pathToRoom.length > 0 ? pathToRoom : undefined;
           
-          // Assign provider to service
-          if (availableProvider.id === 'main-character') {
-            // Assign main character
-            // Use current position from availableProvider (before assignment) for pathfinding
-            const currentMainCharPosition = {
-              x: Math.round((availableProvider as MainCharacter).x ?? 0),
-              y: Math.round((availableProvider as MainCharacter).y ?? 0),
-            };
-            
-            const assignedMainChar = assignMainCharacterToService(
-              availableProvider as MainCharacter,
-              potentialRoom,
-              customerWithService.id,
-              staffPosition
-            );
-            // Calculate path for main character to staff position using their current position
-            const mainCharPath = findPath(
-              currentMainCharPosition,
-              staffPosition,
-              { additionalWalls: dynamicWallsForCustomer, industryId }
-            );
-            // Add facing direction to the last waypoint (use staffPosition facing or default to 'down')
-            if (mainCharPath.length > 0) {
-              const lastWaypoint = mainCharPath[mainCharPath.length - 1];
-              lastWaypoint.facingDirection = staffPosition.facingDirection || assignedMainChar.facingDirection || 'down';
-            }
-            mainCharacterUpdate = {
-              ...assignedMainChar,
-              path: mainCharPath.length > 0 ? mainCharPath : undefined,
-            };
-          } else {
-            // Assign staff
-            // Get staff's current position - use their x/y if set, otherwise fall back to their initial staff position
-            const staffProvider = availableProvider as Staff;
-            const staffPositions = getStaffPositions(industryId);
-            const staffIndex = hiredStaff.findIndex(s => s.id === staffProvider.id);
-            const fallbackPosition = staffIndex >= 0 && staffIndex < staffPositions.length 
-              ? staffPositions[staffIndex]
-              : { x: 0, y: 0 };
-            
-            const currentStaffPosition = {
-              x: Math.round(staffProvider.x ?? fallbackPosition.x),
-              y: Math.round(staffProvider.y ?? fallbackPosition.y),
-            };
-            
-            const assignedStaff = assignStaffToService(
-              staffProvider,
-              potentialRoom,
-              customerWithService.id,
-              staffPosition
-            );
-            // Calculate path for staff to staff position using their current position
-            const staffPath = findPath(
-              currentStaffPosition,
-              staffPosition,
-              { additionalWalls: dynamicWallsForCustomer, industryId }
-            );
-            // Add facing direction to the last waypoint (use staffPosition facing or default to 'down')
-            if (staffPath.length > 0) {
-              const lastWaypoint = staffPath[staffPath.length - 1];
-              lastWaypoint.facingDirection = staffPosition.facingDirection || assignedStaff.facingDirection || 'down';
-            }
-            
-            if (staffPath.length === 0) {
-              console.warn('[Staff Assignment] No path found', {
-                staffId: assignedStaff.id,
-                staffName: assignedStaff.name,
-                from: currentStaffPosition,
-                to: staffPosition,
-                roomId: potentialRoom,
-              });
-            }
-            
-            staffUpdatesMap.set(assignedStaff.id, {
-              ...assignedStaff,
-              path: staffPath.length > 0 ? staffPath : undefined,
-            });
-          }
+          // TEMPORARILY DISABLED: Staff assignment - staff will handle their own animations separately
+          // if (availableProvider.id === 'main-character') {
+          //   // Assign main character
+          //   // Use current position from availableProvider (before assignment) for pathfinding
+          //   const currentMainCharPosition = {
+          //     x: Math.round((availableProvider as MainCharacter).x ?? 0),
+          //     y: Math.round((availableProvider as MainCharacter).y ?? 0),
+          //   };
+          //
+          //   const assignedMainChar = assignMainCharacterToService(
+          //     availableProvider as MainCharacter,
+          //     potentialRoom,
+          //     customerWithService.id,
+          //     staffPosition
+          //   );
+          //   // Calculate path for main character to staff position using their current position
+          //   const mainCharPath = findPath(
+          //     currentMainCharPosition,
+          //     staffPosition,
+          //     { additionalWalls: dynamicWallsForCustomer, industryId }
+          //   );
+          //   // Add facing direction to the last waypoint (use staffPosition facing or default to 'down')
+          //   if (mainCharPath.length > 0) {
+          //     const lastWaypoint = mainCharPath[mainCharPath.length - 1];
+          //     lastWaypoint.facingDirection = staffPosition.facingDirection || assignedMainChar.facingDirection || 'down';
+          //   }
+          //   mainCharacterUpdate = {
+          //     ...assignedMainChar,
+          //     path: mainCharPath.length > 0 ? mainCharPath : undefined,
+          //   };
+          // } else {
+          //   // Assign staff
+          //   // Get staff's current position - use their x/y if set, otherwise fall back to their initial staff position
+          //   const staffProvider = availableProvider as Staff;
+          //   const staffPositions = getStaffPositions(industryId);
+          //   const staffIndex = hiredStaff.findIndex(s => s.id === staffProvider.id);
+          //   const fallbackPosition = staffIndex >= 0 && staffIndex < staffPositions.length
+          //     ? staffPositions[staffIndex]
+          //     : { x: 0, y: 0 };
+          //
+          //   const currentStaffPosition = {
+          //     x: Math.round(staffProvider.x ?? fallbackPosition.x),
+          //     y: Math.round(staffProvider.y ?? fallbackPosition.y),
+          //   };
+          //
+          //   const assignedStaff = assignStaffToService(
+          //     staffProvider,
+          //     potentialRoom,
+          //     customerWithService.id,
+          //     staffPosition
+          //   );
+          //   // Calculate path for staff to staff position using their current position
+          //   const staffPath = findPath(
+          //     currentStaffPosition,
+          //     staffPosition,
+          //     { additionalWalls: dynamicWallsForCustomer, industryId }
+          //   );
+          //   // Add facing direction to the last waypoint (use staffPosition facing or default to 'down')
+          //   if (staffPath.length > 0) {
+          //     const lastWaypoint = staffPath[staffPath.length - 1];
+          //     lastWaypoint.facingDirection = staffPosition.facingDirection || assignedStaff.facingDirection || 'down';
+          //   }
+          //
+          //   if (staffPath.length === 0) {
+          //     console.warn('[Staff Assignment] No path found', {
+          //       staffId: assignedStaff.id,
+          //       staffName: assignedStaff.name,
+          //       from: currentStaffPosition,
+          //       to: staffPosition,
+          //       roomId: potentialRoom,
+          //     });
+          //   }
+          //
+          //   staffUpdatesMap.set(assignedStaff.id, {
+          //     ...assignedStaff,
+          //     path: staffPath.length > 0 ? staffPath : undefined,
+          //   });
+          // }
 
           // Deduct time cost when service starts (upfront payment)
           // Deduct leveraged time first, then my time
           if (serviceTimeCost > 0) {
-            let remaining = serviceTimeCost;
+            const remaining = serviceTimeCost;
             const leveragedDeduction = Math.min(remaining, metricsAccumulator.leveragedTime);
             const myTimeDeduction = remaining - leveragedDeduction;
             
@@ -642,8 +642,8 @@ function processCustomersForTick({
           updatedCustomers.push(customerWithService);
           assigned = true;
           break; // Successfully assigned, exit the room loop
-        }
-        // If no provider available for this room, try next room
+        // }
+        // TEMPORARY: Staff check disabled - this code path no longer reached
       }
       
       if (!assigned) {
@@ -1021,8 +1021,8 @@ function processStaffForTick(
         }
         
         // Move towards waypoint
-        let newX = (member.x || 0) + Math.sign(dx) * Math.min(Math.abs(dx), movementSpeed);
-        let newY = (member.y || 0) + Math.sign(dy) * Math.min(Math.abs(dy), movementSpeed);
+        const newX = (member.x || 0) + Math.sign(dx) * Math.min(Math.abs(dx), movementSpeed);
+        const newY = (member.y || 0) + Math.sign(dy) * Math.min(Math.abs(dy), movementSpeed);
         
         let newFacingDirection = member.facingDirection || 'down';
         if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 0) {
@@ -1142,8 +1142,8 @@ function processMainCharacterForTick(
       }
       
       // Move towards waypoint
-      let newX = (mainCharacter.x || 0) + Math.sign(dx) * Math.min(Math.abs(dx), movementSpeed);
-      let newY = (mainCharacter.y || 0) + Math.sign(dy) * Math.min(Math.abs(dy), movementSpeed);
+      const newX = (mainCharacter.x || 0) + Math.sign(dx) * Math.min(Math.abs(dx), movementSpeed);
+      const newY = (mainCharacter.y || 0) + Math.sign(dy) * Math.min(Math.abs(dy), movementSpeed);
       
       let newFacingDirection = mainCharacter.facingDirection || 'down';
       if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 0) {
@@ -1203,7 +1203,7 @@ export function tickOnce(state: TickInput): TickResult {
   let monthlyCustomersLeftImpatient = preparedMonth.monthlyCustomersLeftImpatient;
   let monthlyCustomersServiceFailed = preparedMonth.monthlyCustomersServiceFailed;
   let monthlyTimeSpent = preparedMonth.monthlyTimeSpent;
-  let monthlyTimeSpentDetails = [...preparedMonth.monthlyTimeSpentDetails];
+  const monthlyTimeSpentDetails = [...preparedMonth.monthlyTimeSpentDetails];
   
   // Initialize staff and main character
   let hiredStaff = [...(state.hiredStaff || [])];
