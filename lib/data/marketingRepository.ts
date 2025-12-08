@@ -32,7 +32,7 @@ const parseNumber = (value: number | string | null | undefined, fallback = 0): n
 };
 
 const mapEffects = (raw: unknown): CampaignEffect[] => {
-  // Use centralized validation for CampaignEffect (includes durationSeconds)
+  // Use centralized validation for CampaignEffect (includes durationMonths)
   return validateAndParseCampaignEffects(raw);
 };
 
@@ -215,7 +215,7 @@ export async function upsertMarketingCampaignForIndustry(industryId: string, cam
       : (campaign.timeCost ?? null), // NULL for leveled, optional for unlimited
     cooldown_seconds: campaign.cooldownSeconds,
     effects: campaign.type === 'unlimited' && campaign.effects 
-      ? campaign.effects.map((e) => ({ metric: e.metric, type: e.type, value: e.value, durationSeconds: e.durationSeconds }))
+      ? campaign.effects.map((e) => ({ metric: e.metric, type: e.type, value: e.value, durationMonths: e.durationMonths }))
       : null,
     category_id: campaign.categoryId || null,
     sets_flag: campaign.setsFlag || null,
@@ -273,7 +273,7 @@ export async function upsertMarketingCampaignForIndustry(industryId: string, cam
         metric: effect.metric,
         type: effect.type,
         value: effect.value,
-        durationSeconds: effect.durationSeconds,
+        durationMonths: effect.durationMonths,
       })),
     }));
 

@@ -481,6 +481,15 @@ function processCustomersForTick({
     // If customer is waiting and there are available rooms, assign them to a room
     // Only assign to customers who were ALREADY waiting (not those who just transitioned to waiting)
     if (customer.status === CustomerStatus.Waiting && updatedCustomer.status === CustomerStatus.Waiting && roomsRemaining.length > 0) {
+      // Check if there's enough time available for this service
+      const serviceTimeCost = updatedCustomer.service.timeCost || 0;
+      const totalAvailableTime = metrics.myTime + metrics.leveragedTime;
+      if (serviceTimeCost > 0 && totalAvailableTime < serviceTimeCost) {
+        // Not enough time available for this service - customer remains waiting
+        updatedCustomers.push(updatedCustomer);
+        continue; // Skip to next customer
+      }
+
       // Try each available room until we find one with valid positions and available staff
       let assigned = false;
       // Iterate backwards to avoid index issues when removing rooms
@@ -488,7 +497,7 @@ function processCustomersForTick({
         const potentialRoom = roomsRemaining[roomIndex];
         const servicePosition = getServiceRoomPosition(potentialRoom, industryId);
         const staffPosition = getServiceStaffPosition(potentialRoom, industryId);
-        
+
         // Skip rooms without valid positions
         if (!servicePosition || !staffPosition) {
           console.warn('[Service Room Assignment] Skipping room - missing positions', {
@@ -498,7 +507,7 @@ function processCustomersForTick({
           });
           continue;
         }
-        
+
         // TEMPORARILY DISABLED: Staff availability check - customers serve immediately when rooms are available
         // const currentStaff = hiredStaff.map(s => staffUpdatesMap.get(s.id) || s);
         // const currentMainChar = mainCharacterUpdate || mainCharacter;
@@ -509,13 +518,6 @@ function processCustomersForTick({
         // );
 
         // if (availableProvider) {
-          // Check if there's enough time available for this service
-          const serviceTimeCost = updatedCustomer.service.timeCost || 0;
-          const totalAvailableTime = metrics.myTime + metrics.leveragedTime;
-          if (serviceTimeCost > 0 && totalAvailableTime < serviceTimeCost) {
-            // Not enough time available for this service - skip to next room
-            continue;
-          }
 
           // TEMPORARY CHANGE: Found a room with valid positions - assign customer immediately (no staff check)
           // Remove the room from available rooms (safe to remove when iterating backwards)
@@ -614,30 +616,6 @@ function processCustomersForTick({
           //     path: staffPath.length > 0 ? staffPath : undefined,
           //   });
           // }
-
-          // Deduct time cost when service starts (upfront payment)
-          // Deduct leveraged time first, then my time
-          if (serviceTimeCost > 0) {
-            const remaining = serviceTimeCost;
-            const leveragedDeduction = Math.min(remaining, metricsAccumulator.leveragedTime);
-            const myTimeDeduction = remaining - leveragedDeduction;
-            
-            metricsAccumulator = {
-              ...metricsAccumulator,
-              leveragedTime: Math.max(0, metricsAccumulator.leveragedTime - leveragedDeduction),
-              myTime: Math.max(0, metricsAccumulator.myTime - myTimeDeduction),
-            };
-
-            // Track time spent
-            timeSpentThisTick += serviceTimeCost;
-            timeSpentDetailsThisTick.push({
-              amount: serviceTimeCost,
-              label: `Service: ${updatedCustomer.service.name}`,
-              sourceId: updatedCustomer.service.id,
-              sourceType: SourceType.Other,
-              sourceName: updatedCustomer.service.name,
-            });
-          }
 
           updatedCustomers.push(customerWithService);
           assigned = true;
@@ -794,6 +772,53 @@ function processCustomersForTick({
       // Still leaving - keep in game to show animation
       updatedCustomers.push({ ...updatedCustomer, leavingTicks });
       continue; // Skip to next customer
+    }
+
+    // Check if customer just reached service position and started service
+    if (customer.status === CustomerStatus.WalkingToRoom && updatedCustomer.status === CustomerStatus.InService) {
+      // Check time availability again when customer reaches service position
+      // (in case time was spent elsewhere while they were walking)
+      const serviceTimeCost = updatedCustomer.service.timeCost || 0;
+      const totalAvailableTime = metricsAccumulator.myTime + metricsAccumulator.leveragedTime;
+
+      // for this logic, we might change later because people might unaware of leave enough time for auto-service
+      if (serviceTimeCost > 0 && totalAvailableTime < serviceTimeCost) {
+        // Time ran out while walking - service fails, customer leaves angry
+        console.warn(`Service failed - insufficient time when customer reached position. Required: ${serviceTimeCost}, Available: ${totalAvailableTime}`);
+        updatedCustomer.status = CustomerStatus.LeavingAngry;
+        updatedCustomer.leavingTicks = 0; // Initialize leaving animation
+        customersServiceFailedCount++;
+
+        // Deduct EXP for failed service (same as other failures)
+        const expLoss = gameMetrics.expLossPerAngryCustomer;
+        const oldExp = metricsAccumulator.exp;
+        const newExp = Math.max(0, oldExp - expLoss);
+
+        metricsAccumulator = {
+          ...metricsAccumulator,
+          exp: newExp,
+        };
+      } else {
+        // Sufficient time available - deduct time cost and proceed with service
+        const leveragedDeduction = Math.min(serviceTimeCost, metricsAccumulator.leveragedTime);
+        const myTimeDeduction = serviceTimeCost - leveragedDeduction;
+
+        metricsAccumulator = {
+          ...metricsAccumulator,
+          leveragedTime: Math.max(0, metricsAccumulator.leveragedTime - leveragedDeduction),
+          myTime: Math.max(0, metricsAccumulator.myTime - myTimeDeduction),
+        };
+
+        // Track time spent
+        timeSpentThisTick += serviceTimeCost;
+        timeSpentDetailsThisTick.push({
+          amount: serviceTimeCost,
+          label: `Service: ${updatedCustomer.service.name}`,
+          sourceId: updatedCustomer.service.id,
+          sourceType: SourceType.Other,
+          sourceName: updatedCustomer.service.name,
+        });
+      }
     }
 
     updatedCustomers.push(updatedCustomer);

@@ -39,14 +39,14 @@ const formatEffect = (effect: GameEventEffect) => {
 
 // METRIC_LABELS removed - now using merged definitions from registry + database
 
-const formatDurationLabel = (durationSeconds: number | null | undefined) => {
-  if (durationSeconds === null || durationSeconds === undefined || !Number.isFinite(durationSeconds)) {
+const formatDurationLabel = (durationMonths: number | null | undefined) => {
+  if (durationMonths === null || durationMonths === undefined || !Number.isFinite(durationMonths)) {
     return ' (Permanent)';
   }
-  if (durationSeconds <= 0) {
+  if (durationMonths <= 0) {
     return ' (Instant)';
   }
-  return ` for ${durationSeconds}s`;
+  return ` for ${durationMonths} month${durationMonths === 1 ? '' : 's'}`;
 };
 
 // formatMetricEffect moved inside component to use hook
@@ -65,7 +65,7 @@ const EventPopup: React.FC = () => {
 
   const formatMetricEffect = (effect: GameEventEffect & { type: EventEffectType.Metric }) => {
     const label = getDisplayLabel(effect.metric);
-    const durationLabel = formatDurationLabel(effect.durationSeconds);
+    const durationLabel = formatDurationLabel(effect.durationMonths);
     switch (effect.effectType) {
       case EffectType.Add:
         return `${label}: ${effect.value >= 0 ? '+' : ''}${effect.value}${durationLabel}`;

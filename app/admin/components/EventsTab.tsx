@@ -95,7 +95,7 @@ export function EventsTab({
       | { type: EventEffectType.Cash; amount: string; label?: string }
       | { type: EventEffectType.DynamicCash; expression: string; label?: string }
       | { type: EventEffectType.Exp; amount: string }
-      | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: string; durationSeconds: string; priority?: string }
+      | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: string; durationMonths: string; priority?: string }
     >;
     delayedConsequence?: {
       id: string;
@@ -105,13 +105,13 @@ export function EventsTab({
         | { type: EventEffectType.Cash; amount: string; label?: string }
         | { type: EventEffectType.DynamicCash; expression: string; label?: string }
         | { type: EventEffectType.Exp; amount: string }
-        | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: string; durationSeconds: string; priority?: string }
+        | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: string; durationMonths: string; priority?: string }
       >;
       failureEffects?: Array<
         | { type: EventEffectType.Cash; amount: string; label?: string }
         | { type: EventEffectType.DynamicCash; expression: string; label?: string }
         | { type: EventEffectType.Exp; amount: string }
-        | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: string; durationSeconds: string; priority?: string }
+        | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: string; durationMonths: string; priority?: string }
       >;
       label?: string;
       successDescription?: string;
@@ -149,7 +149,7 @@ export function EventsTab({
           metric: ef.metric,
           effectType: ef.effectType,
           value: String(ef.value || 0),
-          durationSeconds: String(ef.durationSeconds ?? ''),
+          durationMonths: String(ef.durationMonths ?? ''),
           priority: ef.priority !== undefined ? String(ef.priority) : undefined,
         };
       }
@@ -274,7 +274,7 @@ export function EventsTab({
             metric: ef.metric,
             effectType: ef.effectType,
             value: String(ef.value || 0),
-            durationSeconds: String(ef.durationSeconds ?? ''),
+            durationMonths: String(ef.durationMonths ?? ''),
             priority: ef.priority !== undefined ? String(ef.priority) : undefined,
           };
         }
@@ -341,7 +341,7 @@ export function EventsTab({
           metric: ef.metric,
           effectType: ef.effectType,
           value: Number(ef.value) || 0,
-          durationSeconds: ef.durationSeconds === '' ? null : Number(ef.durationSeconds) || null,
+          durationMonths: ef.durationMonths === '' ? null : Number(ef.durationMonths) || null,
           ...(ef.priority !== undefined ? { priority: Number(ef.priority) } : {}),
         };
       }
@@ -382,7 +382,7 @@ export function EventsTab({
             metric: ef.metric,
             effectType: ef.effectType,
             value: Number(ef.value) || 0,
-            durationSeconds: ef.durationSeconds === '' ? null : Number(ef.durationSeconds) || null,
+            durationMonths: ef.durationMonths === '' ? null : Number(ef.durationMonths) || null,
             ...(ef.priority !== undefined ? { priority: Number(ef.priority) } : {}),
           };
         }
@@ -413,7 +413,7 @@ export function EventsTab({
             metric: ef.metric,
             effectType: ef.effectType,
             value: Number(ef.value) || 0,
-            durationSeconds: ef.durationSeconds === '' ? null : Number(ef.durationSeconds) || null,
+            durationMonths: ef.durationMonths === '' ? null : Number(ef.durationMonths) || null,
             ...(ef.priority !== undefined ? { priority: Number(ef.priority) } : {}),
           };
         }
@@ -932,7 +932,7 @@ export function EventsTab({
                                           </button>
                                           <button
                                             type="button"
-                                            onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: EventEffectType.Metric, metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationSeconds: '' }] }))}
+                                            onClick={() => setConsequenceForm((p) => ({ ...p, effects: [...p.effects, { type: EventEffectType.Metric, metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationMonths: '' }] }))}
                                             className="px-2 py-1 text-xs rounded border border-indigo-500 text-indigo-200 hover:bg-indigo-500/10"
                                           >
                                             + Metric Effect
@@ -950,7 +950,7 @@ export function EventsTab({
                                                   const newEffect = e.target.value === EventEffectType.Cash ? { type: EventEffectType.Cash as const, amount: '0', label: '' } :
                                                     e.target.value === EventEffectType.Exp ? { type: EventEffectType.Exp as const, amount: '0' } :
                                                     e.target.value === EventEffectType.DynamicCash ? { type: EventEffectType.DynamicCash as const, expression: 'expenses*1', label: '' } :
-                                                    { type: EventEffectType.Metric as const, metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationSeconds: '', priority: '' };
+                                                    { type: EventEffectType.Metric as const, metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationMonths: '', priority: '' };
                                                   const newEffects = [...consequenceForm.effects];
                                                   newEffects[idx] = newEffect;
                                                   setConsequenceForm((p) => ({ ...p, effects: newEffects }));
@@ -1125,10 +1125,10 @@ export function EventsTab({
                                                     min="0"
                                                     step="1"
                                                     placeholder="Empty = permanent"
-                                                    value={ef.durationSeconds}
+                                                    value={ef.durationMonths}
                                                     onChange={(e) => {
                                                       const newEffects = [...consequenceForm.effects];
-                                                      (newEffects[idx] as any).durationSeconds = e.target.value;
+                                                      (newEffects[idx] as any).durationMonths = e.target.value;
                                                       setConsequenceForm((p) => ({ ...p, effects: newEffects }));
                                                     }}
                                                     className="w-full rounded bg-slate-900 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
@@ -1476,7 +1476,7 @@ export function EventsTab({
                                                         const newEffect = e.target.value === EventEffectType.Cash ? { type: EventEffectType.Cash as const, amount: '0', label: '' } :
                                                           e.target.value === EventEffectType.Exp ? { type: EventEffectType.Exp as const, amount: '0' } :
                                                           e.target.value === EventEffectType.DynamicCash ? { type: EventEffectType.DynamicCash as const, expression: 'expenses*1', label: '' } :
-                                                          { type: EventEffectType.Metric as const, metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationSeconds: '', priority: '' };
+                                                          { type: EventEffectType.Metric as const, metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationMonths: '', priority: '' };
                                                         const newEffects = [...consequenceForm.delayedConsequence!.successEffects];
                                                         newEffects[idx] = newEffect;
                                                         setConsequenceForm((p) => ({
@@ -1655,10 +1655,10 @@ export function EventsTab({
                                                           min="0"
                                                           step="1"
                                                           placeholder="Empty = permanent"
-                                                          value={ef.durationSeconds}
+                                                          value={ef.durationMonths}
                                                           onChange={(e) => {
                                                             const newEffects = [...consequenceForm.delayedConsequence!.successEffects];
-                                                            (newEffects[idx] as any).durationSeconds = e.target.value;
+                                                            (newEffects[idx] as any).durationMonths = e.target.value;
                                                             setConsequenceForm((p) => ({
                                                               ...p,
                                                               delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, successEffects: newEffects } : undefined,
@@ -1814,7 +1814,7 @@ export function EventsTab({
                                                           const newEffect = e.target.value === EventEffectType.Cash ? { type: EventEffectType.Cash as const, amount: '0', label: '' } :
                                                             e.target.value === EventEffectType.Exp ? { type: EventEffectType.Exp as const, amount: '0' } :
                                                             e.target.value === EventEffectType.DynamicCash ? { type: EventEffectType.DynamicCash as const, expression: 'expenses*1', label: '' } :
-                                                            { type: EventEffectType.Metric as const, metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationSeconds: '', priority: '' };
+                                                            { type: EventEffectType.Metric as const, metric: metricOptions[0].value, effectType: effectTypeOptions[0].value, value: '0', durationMonths: '', priority: '' };
                                                           const newEffects = [...consequenceForm.delayedConsequence!.failureEffects!];
                                                           newEffects[idx] = newEffect;
                                                           setConsequenceForm((p) => ({
@@ -1993,10 +1993,10 @@ export function EventsTab({
                                                             min="0"
                                                             step="1"
                                                             placeholder="Empty = permanent"
-                                                            value={ef.durationSeconds}
+                                                            value={ef.durationMonths}
                                                             onChange={(e) => {
                                                               const newEffects = [...consequenceForm.delayedConsequence!.failureEffects!];
-                                                              (newEffects[idx] as any).durationSeconds = e.target.value;
+                                                              (newEffects[idx] as any).durationMonths = e.target.value;
                                                               setConsequenceForm((p) => ({
                                                                 ...p,
                                                                 delayedConsequence: p.delayedConsequence ? { ...p.delayedConsequence, failureEffects: newEffects } : undefined,

@@ -449,7 +449,8 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     const monthJustEnded = currentMonth > previousMonth;
 
     // Handle effect expiration through unified effect manager
-    effectManager.tick(gameTime);
+    const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+    effectManager.tick(gameTime, industryId);
 
     // Check if marketing campaigns have ended
     if (tickMarketing) {
@@ -523,7 +524,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
                 metric: effect.metric!,
                 effectType: effect.effectType!,
                 value: effect.value!,
-                durationSeconds: effect.durationSeconds,
+                durationMonths: effect.durationMonths,
                 priority: effect.priority,
                 label: undefined,
               };

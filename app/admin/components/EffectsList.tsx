@@ -27,7 +27,7 @@ export function EffectsList({
     metric: metricOptions[0]?.value ?? GameMetric.ServiceSpeedMultiplier,
     type: EffectType.Add,
     value: '0',
-    ...(showDuration ? { durationSeconds: '' } : {}),
+    ...(showDuration ? { durationMonths: '' } : {}),
   },
   onEffectsChange,
 }: EffectsListProps) {
@@ -47,7 +47,7 @@ export function EffectsList({
       metric: defaultEffect.metric ?? (metricOptions[0]?.value ?? GameMetric.ServiceSpeedMultiplier),
       type: defaultEffect.type ?? EffectType.Add,
       value: defaultEffect.value ?? '0',
-      ...(showDuration ? { durationSeconds: defaultEffect.durationSeconds ?? '' } : {}),
+      ...(showDuration ? { durationMonths: defaultEffect.durationMonths ?? '' } : {}),
     };
     onEffectsChange([...effects, newEffect]);
   };

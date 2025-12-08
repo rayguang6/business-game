@@ -17,7 +17,7 @@ export interface CampaignEffect {
   metric: GameMetric;
   type: EffectType;
   value: number;
-  durationSeconds?: number | null; // null = permanent, number = expires after seconds
+  durationMonths?: number | null; // null = permanent, number = expires after months
 }
 
 // Level config for leveled marketing campaigns (similar to UpgradeLevelConfig)
@@ -144,7 +144,7 @@ function addMarketingEffects(
       metric: effect.metric,
       type: effect.type,
       value: effect.value,
-      durationSeconds: effect.durationSeconds,
+      durationMonths: effect.durationMonths,
     }, currentGameTime);
     
     // For direct state metrics with non-Add effects, calculate and apply the change

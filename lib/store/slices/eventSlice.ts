@@ -170,7 +170,7 @@ import { generateLeads } from '@/lib/features/leads';
 export type ResolvedEffect =
   | { type: EventEffectType.Cash; amount: number; label: string | undefined }
   | { type: EventEffectType.Exp; amount: number; label: string | undefined }
-  | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: number; durationSeconds?: number | null; priority?: number; label: string | undefined };
+  | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: number; durationMonths?: number | null; priority?: number; label: string | undefined };
 // 🚨 ADD NEW RESOLVED EFFECT TYPES HERE (STEP 2)
 // | { type: 'yourNewEffectType'; amount: number; label: string | undefined }
 
@@ -395,7 +395,7 @@ const applyEventEffect = (
         metric: effect.metric,
         type: effect.effectType,
         value: effect.value,
-        durationSeconds: effect.durationSeconds,
+        durationMonths: effect.durationMonths,
         priority: effect.priority,
       });
       
@@ -614,7 +614,7 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
             metric: effect.metric!,
             effectType: effect.effectType!,
             value: effect.value!,
-            durationSeconds: effect.durationSeconds,
+            durationMonths: effect.durationMonths,
             priority: effect.priority,
             label: undefined,
           };
@@ -781,7 +781,7 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
               metric: resolvedEffect.metric,
               type: resolvedEffect.effectType,
               value: resolvedEffect.value,
-              durationSeconds: resolvedEffect.durationSeconds,
+              durationMonths: resolvedEffect.durationMonths,
               priority: resolvedEffect.priority,
             }, gameTime);
             
@@ -952,7 +952,7 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
               metric: resolvedEffect.metric,
               type: resolvedEffect.effectType,
               value: resolvedEffect.value,
-              durationSeconds: resolvedEffect.durationSeconds,
+              durationMonths: resolvedEffect.durationMonths,
               priority: resolvedEffect.priority,
             }, gameTime);
             

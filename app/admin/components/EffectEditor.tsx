@@ -6,7 +6,7 @@ export interface EffectFormData {
   metric: GameMetric;
   type: EffectType;
   value: string;
-  durationSeconds?: string; // Optional - only for marketing campaigns
+  durationMonths?: string; // Optional - only for marketing campaigns
 }
 
 interface EffectEditorProps {
@@ -86,13 +86,13 @@ export function EffectEditor({
         {/* Duration Input (optional) */}
         {showDuration && (
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Duration (seconds)</label>
+            <label className="block text-xs text-slate-400 mb-1">Duration (months)</label>
             <input
               placeholder="Leave empty for permanent"
               type="number"
               min="0"
-              value={effect.durationSeconds ?? ''}
-              onChange={(e) => onUpdate(index, { durationSeconds: e.target.value })}
+              value={effect.durationMonths ?? ''}
+              onChange={(e) => onUpdate(index, { durationMonths: e.target.value })}
               className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
             />
             <p className="text-xs text-slate-500 mt-1">Empty = permanent effect</p>

@@ -26,7 +26,7 @@ interface CampaignEffectForm {
   metric: GameMetric;
   type: EffectType;
   value: string;
-  durationSeconds: string;
+  durationMonths: string;
 }
 
 interface CampaignLevelForm {
@@ -243,7 +243,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
             metric: e.metric,
             type: e.type,
             value: String(e.value),
-            durationSeconds: String(e.durationSeconds ?? ''),
+            durationMonths: String(e.durationMonths ?? ''),
           })),
         }))
       );
@@ -254,7 +254,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
           metric: e.metric,
           type: e.type,
           value: String(e.value),
-          durationSeconds: String(e.durationSeconds ?? ''),
+          durationMonths: String(e.durationMonths ?? ''),
         }))
       );
       setLevelsForm([]);
@@ -372,7 +372,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
             metric: ef.metric,
             type: ef.type,
             value: Number(ef.value) || 0,
-            durationSeconds: ef.durationSeconds === '' ? null : Number(ef.durationSeconds) || null,
+            durationMonths: ef.durationMonths === '' ? null : Number(ef.durationMonths) || null,
           })),
         })),
       };
@@ -404,7 +404,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
           metric: ef.metric,
           type: ef.type,
           value: Number(ef.value) || 0,
-          durationSeconds: ef.durationSeconds === '' ? null : Number(ef.durationSeconds) || null,
+          durationMonths: ef.durationMonths === '' ? null : Number(ef.durationMonths) || null,
         })),
         categoryId,
         setsFlag,

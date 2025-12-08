@@ -64,6 +64,8 @@ interface UseSimulationConfigReturn {
   // Actions
   updateMetrics: (updates: Partial<BusinessMetrics>) => void;
   updateStats: (updates: Partial<BusinessStats>) => void;
+  setBusinessMetrics: (value: BusinessMetrics | null) => void;
+  setBusinessStats: (value: BusinessStats | null) => void;
   updateMovement: (movement: MovementConfig | null) => void;
   updateMapConfig: (width: number | null, height: number | null, walls: GridPosition[]) => void;
   updateLayoutConfig: (updates: {
@@ -76,6 +78,8 @@ interface UseSimulationConfigReturn {
   }) => void;
   updateWinCondition: (updates: Partial<WinCondition>) => void;
   updateLoseCondition: (updates: Partial<LoseCondition>) => void;
+  setWinCondition: (value: WinCondition | null) => void;
+  setLoseCondition: (value: LoseCondition | null) => void;
   updateUiConfig: (updates: Partial<UiConfig>) => void;
   updateEventConfig: (mode: 'random' | 'sequence', sequence: string[]) => void;
   updateMediaConfig: (updates: {
@@ -172,6 +176,7 @@ export function useSimulationConfig({
 
   // Status
   const [operation, setOperation] = useState<Operation>('idle');
+  const [status, setStatus] = useState<string | null>(null);
   const { success, error, info } = useToastFunctions();
 
   // Load data on mount
@@ -182,6 +187,7 @@ export function useSimulationConfig({
       if (configType === 'industry' && !industryId) return;
 
       setOperation('loading');
+      setStatus(null);
 
       try {
         const result = configType === 'global'
@@ -191,10 +197,11 @@ export function useSimulationConfig({
         if (!isMounted) return;
 
         if (!result) {
-          info(configType === 'global'
+          const message = configType === 'global'
             ? 'No global config found. Using defaults.'
-            : 'No industry config found. Using global defaults.'
-          );
+            : 'No industry config found. Using global defaults.';
+          info(message);
+          setStatus(message);
           setOperation('idle');
           return;
         }
@@ -233,11 +240,14 @@ export function useSimulationConfig({
         if (result.eventSelectionMode) setEventSelectionMode(result.eventSelectionMode);
         if (result.eventSequence) setEventSequence(result.eventSequence);
 
-        success('Config loaded successfully');
+        const successMessage = 'Config loaded successfully';
+        success(successMessage);
+        setStatus(successMessage);
       } catch (err) {
         console.error(`Failed to load ${configType} config`, err);
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load config';
-        error(`Failed to load ${configType} config: ${errorMessage}`);
+        const errorMessage = `Failed to load ${configType} config: ${err instanceof Error ? err.message : 'Unknown error'}`;
+        error(errorMessage);
+        setStatus(errorMessage);
       } finally {
         if (isMounted) {
           setOperation('idle');
@@ -265,6 +275,24 @@ export function useSimulationConfig({
       const current = prev || getDefaultStats();
       return { ...current, ...updates };
     });
+  }, []);
+
+  // Direct setters for BusinessMetrics and BusinessStats (support null for global defaults)
+  const setBusinessMetricsDirect = useCallback((value: BusinessMetrics | null) => {
+    setBusinessMetrics(value);
+  }, []);
+
+  const setBusinessStatsDirect = useCallback((value: BusinessStats | null) => {
+    setBusinessStats(value);
+  }, []);
+
+  // Direct setters for win/lose conditions
+  const setWinConditionDirect = useCallback((value: WinCondition | null) => {
+    setWinCondition(value);
+  }, []);
+
+  const setLoseConditionDirect = useCallback((value: LoseCondition | null) => {
+    setLoseCondition(value);
   }, []);
 
   const updateMovement = useCallback((newMovement: MovementConfig | null) => {
@@ -374,11 +402,14 @@ export function useSimulationConfig({
 
   const save = useCallback(async () => {
     if (configType === 'industry' && !industryId) {
-      error('No industry selected');
+      const errorMessage = 'No industry selected';
+      error(errorMessage);
+      setStatus(errorMessage);
       return;
     }
 
     setOperation('saving');
+    setStatus(null);
 
     try {
       const configData = {
@@ -416,15 +447,20 @@ export function useSimulationConfig({
         : await upsertIndustryConfig(industryId!, configData);
 
       if (!result.success) {
-        error(result.message || `Failed to save ${configType} config`);
+        const errorMessage = result.message || `Failed to save ${configType} config`;
+        error(errorMessage);
+        setStatus(errorMessage);
         return;
       }
 
-      success(`${configType === 'global' ? 'Global' : 'Industry'} config saved successfully`);
+      const successMessage = `${configType === 'global' ? 'Global' : 'Industry'} config saved successfully`;
+      success(successMessage);
+      setStatus(successMessage);
     } catch (err) {
       console.error(`Failed to save ${configType} config`, err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to save config';
-      error(`Failed to save ${configType} config: ${errorMessage}`);
+      const errorMessage = `Failed to save ${configType} config: ${err instanceof Error ? err.message : 'Unknown error'}`;
+      error(errorMessage);
+      setStatus(errorMessage);
     } finally {
       setOperation('idle');
     }
@@ -481,16 +517,21 @@ export function useSimulationConfig({
     // Status
     loading: operation === 'loading',
     saving: operation === 'saving',
+    status: status || null,
 
 
     // Actions
     updateMetrics,
     updateStats,
+    setBusinessMetrics: setBusinessMetricsDirect,
+    setBusinessStats: setBusinessStatsDirect,
     updateMovement,
     updateMapConfig,
     updateLayoutConfig,
     updateWinCondition,
     updateLoseCondition,
+    setWinCondition: setWinConditionDirect,
+    setLoseCondition: setLoseConditionDirect,
     updateUiConfig,
     updateEventConfig,
     updateMediaConfig,

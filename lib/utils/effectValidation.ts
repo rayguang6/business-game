@@ -99,7 +99,7 @@ export function validateAndParseUpgradeEffects(raw: unknown): UpgradeEffect[] {
 
 /**
  * Validates a CampaignEffect (used for Marketing campaigns)
- * Similar to UpgradeEffect but includes durationSeconds
+ * Similar to UpgradeEffect but includes durationMonths
  * All types come from enums - no hardcoded strings
  */
 export function validateCampaignEffect(effect: unknown): boolean {
@@ -124,13 +124,13 @@ export function validateCampaignEffect(effect: unknown): boolean {
     return false;
   }
 
-  // Optional: durationSeconds must be null or a valid number
-  if (e.durationSeconds !== null && e.durationSeconds !== undefined && !isValidNumber(e.durationSeconds)) {
+  // Optional: durationMonths must be null or a valid number
+  if (e.durationMonths !== null && e.durationMonths !== undefined && !isValidNumber(e.durationMonths)) {
     return false;
   }
 
   // Strict validation: reject unknown fields
-  const allowedKeys = ['metric', 'type', 'value', 'durationSeconds'];
+  const allowedKeys = ['metric', 'type', 'value', 'durationMonths'];
   const keys = Object.keys(e);
   if (keys.some(key => !allowedKeys.includes(key))) {
     return false;
@@ -142,13 +142,13 @@ export function validateCampaignEffect(effect: unknown): boolean {
 /**
  * Validates and parses an array of CampaignEffect from database JSON
  * Returns only valid effects, filtering out invalid ones
- * Includes durationSeconds support for marketing campaigns
+ * Includes durationMonths support for marketing campaigns
  */
 export function validateAndParseCampaignEffects(raw: unknown): Array<{
   metric: GameMetric;
   type: EffectType;
   value: number;
-  durationSeconds?: number | null;
+  durationMonths?: number | null;
 }> {
   if (!Array.isArray(raw)) {
     return [];
@@ -162,7 +162,7 @@ export function validateAndParseCampaignEffects(raw: unknown): Array<{
         metric: e.metric as GameMetric,
         type: e.type as EffectType,
         value: e.value as number,
-        durationSeconds: e.durationSeconds as number | null | undefined,
+        durationMonths: e.durationMonths as number | null | undefined,
       };
     });
 }
@@ -171,6 +171,7 @@ export function validateAndParseCampaignEffects(raw: unknown): Array<{
  * Validates a GameEventEffect (used in events)
  * Events have special types: cash, exp, dynamicCash, metric
  * For 'metric' type, uses enums as single source of truth
+ * Metric effects use durationMonths instead of durationSeconds
  */
 export function validateGameEventEffect(effect: unknown): boolean {
   if (!effect || typeof effect !== 'object') {
@@ -228,14 +229,14 @@ export function validateGameEventEffect(effect: unknown): boolean {
     if (!isValidNumber(e.value)) {
       return false;
     }
-    if (e.durationSeconds !== null && e.durationSeconds !== undefined && !isValidNumber(e.durationSeconds)) {
+    if (e.durationMonths !== null && e.durationMonths !== undefined && !isValidNumber(e.durationMonths)) {
       return false;
     }
     if (e.priority !== undefined && !isValidNumber(e.priority)) {
       return false;
     }
-    // Only allow: type, metric, effectType, value, durationSeconds, priority
-    const allowedKeys = ['type', 'metric', 'effectType', 'value', 'durationSeconds', 'priority'];
+    // Only allow: type, metric, effectType, value, durationMonths, priority
+    const allowedKeys = ['type', 'metric', 'effectType', 'value', 'durationMonths', 'priority'];
     return Object.keys(e).every(key => allowedKeys.includes(key));
   }
 

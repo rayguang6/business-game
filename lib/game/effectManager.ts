@@ -63,7 +63,7 @@ export interface Effect {
   type: EffectType;        // How it's applied
   value: number;           // The magnitude (20 = +20% for Percent type)
   priority?: number;       // Optional ordering within same type
-  durationSeconds?: number | null; // null = permanent, number = expires after seconds
+  durationMonths?: number | null; // null = permanent, number = expires after months (converted to seconds internally)
   createdAt: number;       // When effect was added (for expiration calculation)
 }
 
@@ -483,21 +483,27 @@ class EffectManager {
   /**
    * Check if an effect has expired
    */
-  private isEffectExpired(effect: Effect, currentTime: number): boolean {
-    if (effect.durationSeconds === null || effect.durationSeconds === undefined) {
+  private isEffectExpired(effect: Effect, currentTime: number, industryId?: IndustryId): boolean {
+    if (effect.durationMonths === null || effect.durationMonths === undefined) {
       return false; // Permanent effect
     }
-    return currentTime >= effect.createdAt + effect.durationSeconds;
+
+    // Convert months to seconds using industry-specific month duration
+    const stats = industryId ? getBusinessStats(industryId) : null;
+    const monthDurationSeconds = stats?.monthDurationSeconds ?? 60; // fallback to 60 seconds if no industry config
+    const durationSeconds = effect.durationMonths * monthDurationSeconds;
+
+    return currentTime >= effect.createdAt + durationSeconds;
   }
 
   /**
    * Tick the effect manager - remove expired effects
-   * Call this from the game loop with current game time
+   * Call this from the game loop with current game time and industry ID
    */
-  tick(currentTime: number): void {
+  tick(currentTime: number, industryId?: IndustryId): void {
     const toRemove: string[] = [];
     for (const [id, effect] of this.effects.entries()) {
-      if (this.isEffectExpired(effect, currentTime)) {
+      if (this.isEffectExpired(effect, currentTime, industryId)) {
         toRemove.push(id);
       }
     }

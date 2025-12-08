@@ -21,7 +21,7 @@ interface CampaignLevelForm {
     metric: GameMetric;
     type: EffectType;
     value: string;
-    durationSeconds: string;
+    durationMonths: string;
   }>;
 }
 
@@ -48,7 +48,7 @@ interface MarketingTabProps {
     metric: GameMetric;
     type: EffectType;
     value: string;
-    durationSeconds: string;
+    durationMonths: string;
   }>;
   campaignLevelsForm?: CampaignLevelForm[];
   campaignSaving: boolean;
@@ -422,7 +422,7 @@ export function MarketingTab({
                               <EffectsList
                                 effects={level.effects.map(ef => ({
                                   ...ef,
-                                  durationSeconds: ef.durationSeconds ?? '',
+                                  durationMonths: ef.durationMonths ?? '',
                                 }))}
                                 metricOptions={metricOptions}
                                 effectTypeOptions={effectTypeOptions}
@@ -433,12 +433,12 @@ export function MarketingTab({
                                   metric: GameMetric.LeadsPerMonth,
                                   type: EffectType.Add,
                                   value: '0',
-                                  durationSeconds: '',
+                                  durationMonths: '',
                                 }}
                                 onEffectsChange={(newEffects) => {
                                   onUpdateLevel(index, { effects: newEffects.map(ef => ({
                                     ...ef,
-                                    durationSeconds: ef.durationSeconds || '',
+                                    durationMonths: ef.durationMonths || '',
                                   })) });
                                 }}
                               />
@@ -454,7 +454,7 @@ export function MarketingTab({
                   <EffectsList
                     effects={campaignEffectsForm.map(ef => ({
                       ...ef,
-                      durationSeconds: ef.durationSeconds ?? '',
+                      durationMonths: ef.durationMonths ?? '',
                     }))}
                     metricOptions={metricOptions}
                     effectTypeOptions={effectTypeOptions}
@@ -465,12 +465,12 @@ export function MarketingTab({
                       metric: GameMetric.LeadsPerMonth,
                       type: EffectType.Add,
                       value: '0',
-                      durationSeconds: '',
+                      durationMonths: '',
                     }}
                     onEffectsChange={(effects) => {
                       onUpdateEffects(effects.map(ef => ({
                         ...ef,
-                        durationSeconds: ef.durationSeconds || '',
+                        durationMonths: ef.durationMonths || '',
                       })));
                     }}
                   />

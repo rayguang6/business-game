@@ -117,8 +117,8 @@ export function buildMonthlyExpenseBreakdown(
     }
     
     // Filter expired effects if gameTime is provided
-    if (gameTime !== undefined && effect.durationSeconds !== null && effect.durationSeconds !== undefined) {
-      const isExpired = gameTime >= effect.createdAt + effect.durationSeconds;
+    if (gameTime !== undefined && effect.durationMonths !== null && effect.durationMonths !== undefined) {
+      const isExpired = gameTime >= effect.createdAt + effect.durationMonths;
       if (isExpired) {
         return false;
       }

@@ -36,14 +36,14 @@ const formatSigned = (value: number): string => {
   return `${sign}${formatValue(value)}`;
 };
 
-const formatDurationLabel = (durationSeconds: number | null | undefined): string => {
-  if (durationSeconds === null || durationSeconds === undefined || !Number.isFinite(durationSeconds)) {
+const formatDurationLabel = (durationMonths: number | null | undefined): string => {
+  if (durationMonths === null || durationMonths === undefined || !Number.isFinite(durationMonths)) {
     return ' (Permanent)';
   }
-  if (durationSeconds <= 0) {
+  if (durationMonths <= 0) {
     return ' (Instant)';
   }
-  return ` for ${durationSeconds}s`;
+  return ` for ${durationMonths} month${durationMonths === 1 ? '' : 's'}`;
 };
 
 // describeEffect moved inside component to use hook
@@ -131,7 +131,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
       return `${label} +${count} (immediate)`;
     }
     
-    const durationLabel = formatDurationLabel(effect.durationSeconds);
+    const durationLabel = formatDurationLabel(effect.durationMonths);
 
     switch (effect.type) {
       case EffectType.Add:
@@ -205,8 +205,8 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
         {descriptions.every((item) => !item.text) ? (
           <span className="text-muted">No stat changes</span>
         ) : (
-          descriptions.map((item) => (
-            <span key={`${campaign.id}-${item.text}`} className={item.toneClass}>
+          descriptions.map((item, index) => (
+            <span key={`${campaign.id}-effect-${index}`} className={item.toneClass}>
               {item.text}
             </span>
           ))

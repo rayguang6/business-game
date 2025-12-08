@@ -55,7 +55,7 @@ type RawEffect =
   | { type: EventEffectType.Cash; amount: number; label?: string }
   | { type: EventEffectType.Exp; amount: number }
   | { type: EventEffectType.DynamicCash; expression: string; label?: string }
-  | { type: EventEffectType.Metric; metric: string; effectType: string; value: number; durationSeconds?: number | null; priority?: number };
+  | { type: EventEffectType.Metric; metric: string; effectType: string; value: number; durationMonths?: number | null; priority?: number };
 
 const toNumber = (value: unknown, fallback = 0): number => {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -240,7 +240,7 @@ const convertRawEffectToGameEventEffect = (rawEffect: unknown): GameEventEffect 
         metric: e.metric as GameMetric,
         effectType: e.effectType as EffectType,
         value: e.value as number,
-        durationSeconds: e.durationSeconds as number | null | undefined,
+        durationMonths: e.durationMonths as number | null | undefined,
         priority: e.priority as number | undefined,
       };
     default:
@@ -274,7 +274,7 @@ const convertGameEventEffectToRawEffect = (effect: GameEventEffect): RawEffect =
         metric: effect.metric,
         effectType: effect.effectType,
         value: effect.value,
-        durationSeconds: effect.durationSeconds,
+        durationMonths: effect.durationMonths,
         priority: effect.priority,
       };
   }

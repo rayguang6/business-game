@@ -18,7 +18,7 @@ export type GameEventEffect =
   | { type: EventEffectType.Cash; amount: number; label?: string }
   | { type: EventEffectType.DynamicCash; expression: string; label?: string }
   | { type: EventEffectType.Exp; amount: number }
-  | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: number; durationSeconds?: number | null; priority?: number }
+  | { type: EventEffectType.Metric; metric: GameMetric; effectType: EffectType; value: number; durationMonths?: number | null; priority?: number }
 
 export interface DelayedConsequence {
   id: string;
