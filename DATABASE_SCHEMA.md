@@ -194,22 +194,59 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 
 **Primary Key:** `id` (TEXT)
 
+**Unique Constraint:** `(industry_id, id)` - Ensures campaign IDs are unique per industry
+
 **Columns:**
 - `id` (TEXT, PRIMARY KEY) - Campaign identifier
 - `industry_id` (TEXT) - Industry this campaign belongs to
 - `name` (TEXT) - Campaign name
 - `description` (TEXT, optional) - Campaign description
-- `cost` (NUMERIC) - Campaign cost
-- `duration_seconds` (INTEGER) - Campaign duration
-- `effects` (JSONB) - Array of effect objects
+- `campaign_type` (TEXT, NOT NULL) - Campaign type: 'leveled' (level-based like upgrades) or 'unlimited' (unlimited clicks). Defaults to 'unlimited'
+- `max_level` (INTEGER, optional) - Maximum level for leveled campaigns (only used when campaign_type = 'leveled')
+- `cost` (NUMERIC, optional) - Campaign cost (cash). NULL for leveled campaigns (cost is at level level), required for unlimited campaigns
+- `time_cost` (NUMERIC, optional) - Optional time cost (hours). NULL for leveled campaigns, optional for unlimited campaigns
+- `cooldown_seconds` (INTEGER, optional) - How long before this campaign can be run again (same for all levels)
+- `effects` (JSONB, optional) - Campaign effects (JSONB array). NULL for leveled campaigns (effects are at level level), required for unlimited campaigns
 - `category_id` (TEXT, optional) - Reference to categories table
-- `sets_flag` (TEXT, optional) - Flag ID to set
-- `requirements` (JSONB, optional) - Array of requirement objects
+- `sets_flag` (TEXT, optional) - Flag ID to set when campaign is launched
+- `requirements` (JSONB, optional) - Array of requirement objects (all must be met = AND logic)
 - `order` (INTEGER, optional) - Display order (lower = shown first, defaults to 0)
 
 **Indexes:**
 - Index on `(industry_id, order)` for efficient sorting
 - Index on `category_id` for efficient category filtering
+- Unique constraint on `(industry_id, id)` for foreign key relationships
+
+---
+
+### `marketing_campaign_levels`
+**Purpose:** Individual levels for leveled marketing campaigns (similar to upgrade_levels)
+
+**Primary Key:** `id` (TEXT)
+
+**Columns:**
+- `id` (TEXT, PRIMARY KEY) - Level identifier (auto-generated UUID)
+- `campaign_id` (TEXT, NOT NULL) - Parent campaign ID
+- `industry_id` (TEXT, NOT NULL) - Industry this level belongs to
+- `level` (INTEGER, NOT NULL) - Level number (1, 2, 3, ...)
+- `name` (TEXT, NOT NULL) - Level name
+- `description` (TEXT, optional) - Level description
+- `icon` (TEXT, optional) - Icon path
+- `cost` (NUMERIC, NOT NULL, DEFAULT 0) - Cost to purchase this level
+- `time_cost` (NUMERIC, optional) - Optional time cost (hours) for this level
+- `effects` (JSONB, NOT NULL, DEFAULT '[]') - Array of effect objects for this level
+- `created_at` (TIMESTAMPTZ) - Creation timestamp
+- `updated_at` (TIMESTAMPTZ) - Last update timestamp
+
+**Foreign Keys:**
+- `(campaign_id, industry_id)` references `marketing_campaigns(id, industry_id)` ON DELETE CASCADE
+
+**Unique Constraint:**
+- `(campaign_id, industry_id, level)` - Ensures each level number is unique per campaign
+
+**Indexes:**
+- Index on `(campaign_id, industry_id)` for efficient campaign queries
+- Index on `(campaign_id, industry_id, level)` for efficient level lookups
 
 ---
 

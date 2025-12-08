@@ -68,19 +68,58 @@ interface CampaignCardProps {
   canAfford: boolean;
   isOnCooldown: boolean;
   cooldownRemaining: number;
+  currentLevel?: number; // For leveled campaigns
   onLaunch: (campaignId: string) => void;
 }
 
-function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, onLaunch, metrics, getDisplayLabel }: CampaignCardProps & { metrics: { cash: number; time: number }; getDisplayLabel: (metric: GameMetric) => string }) {
+function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, currentLevel, onLaunch, metrics, getDisplayLabel }: CampaignCardProps & { metrics: { cash: number; time: number }; getDisplayLabel: (metric: GameMetric) => string }) {
   const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(campaign.requirements);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
-  const needsCash = campaign.cost > 0;
-  const needsTime = campaign.timeCost !== undefined && campaign.timeCost > 0;
+  
+  // Handle leveled vs unlimited campaigns
+  const isLeveled = campaign.type === 'leveled';
+  const level = currentLevel || 0;
+  const maxLevel = campaign.maxLevel || (campaign.levels?.length || 0);
+  const canUpgradeMore = isLeveled && level < maxLevel;
+  
+  // Get cost and effects based on campaign type
+  let needsCash = false;
+  let needsTime = false;
+  let cost = 0;
+  let timeCost: number | undefined;
+  let effects: CampaignEffect[] = [];
+  
+  if (isLeveled && canUpgradeMore) {
+    // Get next level config
+    const nextLevelNumber = level + 1;
+    const levelConfig = campaign.levels?.find(l => l.level === nextLevelNumber) || campaign.levels?.[nextLevelNumber - 1];
+    if (levelConfig) {
+      needsCash = levelConfig.cost > 0;
+      needsTime = levelConfig.timeCost !== undefined && levelConfig.timeCost > 0;
+      cost = levelConfig.cost;
+      timeCost = levelConfig.timeCost;
+      // Show effects for all levels up to next level (accumulated)
+      effects = [];
+      for (let l = 1; l <= nextLevelNumber; l++) {
+        const lvlCfg = campaign.levels?.find(lev => lev.level === l) || campaign.levels?.[l - 1];
+        if (lvlCfg) {
+          effects.push(...lvlCfg.effects);
+        }
+      }
+    }
+  } else if (!isLeveled) {
+    // Unlimited campaign
+    needsCash = (campaign.cost ?? 0) > 0;
+    needsTime = campaign.timeCost !== undefined && campaign.timeCost > 0;
+    cost = campaign.cost ?? 0;
+    timeCost = campaign.timeCost;
+    effects = campaign.effects || [];
+  }
   
   // Determine what's missing for button text
   const missing: string[] = [];
-  if (needsCash && metrics.cash < campaign.cost) missing.push('Cash');
-  if (needsTime && metrics.time < campaign.timeCost!) missing.push('Time');
+  if (needsCash && metrics.cash < cost) missing.push('Cash');
+  if (needsTime && metrics.time < (timeCost ?? 0)) missing.push('Time');
   const needText = missing.length > 0 ? `Not Enough ${missing.join(' + ')}` : 'Not Enough Cash';
 
   const describeEffect = (effect: CampaignEffect): string => {
@@ -108,7 +147,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, on
     }
   };
 
-  const descriptions = campaign.effects.map((effect) => ({
+  const descriptions = effects.map((effect) => ({
     text: describeEffect(effect),
     toneClass: getToneClass(effect),
   }));
@@ -132,11 +171,16 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, on
           <p className="text-secondary text-caption sm:text-label line-clamp-2 mt-0.5">{campaign.description}</p>
         </div>
         <div className="text-right flex-shrink-0">
+          {isLeveled && (
+            <div className="text-xs text-secondary mb-1">
+              Level {level}/{maxLevel}
+            </div>
+          )}
           <div className="font-semibold text-caption sm:text-label" style={{ color: 'var(--game-secondary)' }}>
             {(() => {
               const costParts: string[] = [];
-              if (needsCash) costParts.push(`$${campaign.cost.toLocaleString()}`);
-              if (needsTime) costParts.push(`${campaign.timeCost}h`);
+              if (needsCash) costParts.push(`$${cost.toLocaleString()}`);
+              if (needsTime) costParts.push(`${timeCost}h`);
               return costParts.join(' + ') || 'Free';
             })()}
           </div>
@@ -181,9 +225,13 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, on
             ? `Cooldown: ${formatSeconds(cooldownRemaining)}`
             : !requirementsMet
               ? 'Requirements Not Met'
-              : canAfford
-                ? 'Launch Campaign'
-                : needText}
+              : isLeveled && !canUpgradeMore
+                ? 'Max Level Reached'
+                : canAfford
+                  ? isLeveled
+                    ? `Purchase Level ${level + 1}`
+                    : 'Launch Campaign'
+                  : needText}
         </GameButton>
         {requirementDescriptions.length > 0 && !requirementsMet && !isOnCooldown && canAfford && (
           <button
@@ -215,6 +263,8 @@ export function MarketingTab() {
     ),
   );
   const campaignCooldowns = useGameStore((state) => state.campaignCooldowns);
+  const campaignLevels = useGameStore((state) => state.campaignLevels);
+  const getCampaignLevel = useGameStore((state) => state.getCampaignLevel);
   const startCampaign = useGameStore((state) => state.startCampaign);
   const metrics = useGameStore((state) => state.metrics);
   const gameTime = useGameStore((state) => state.gameTime);
@@ -278,11 +328,37 @@ export function MarketingTab() {
                   </div>
                   <div className="space-y-2 sm:space-y-3">
                     {sortedCampaigns.map((campaign) => {
-                      const needsCash = campaign.cost > 0;
-                      const needsTime = campaign.timeCost !== undefined && campaign.timeCost > 0;
-                      const hasCash = !needsCash || metrics.cash >= campaign.cost;
-                      const hasTime = !needsTime || (metrics.myTime + metrics.leveragedTime) >= campaign.timeCost!;
-                      const canAfford = hasCash && hasTime;
+                      const isLeveled = campaign.type === 'leveled';
+                      const currentLevel = isLeveled ? getCampaignLevel(campaign.id) : 0;
+                      
+                      // Calculate affordability based on campaign type
+                      let canAfford = true;
+                      if (isLeveled) {
+                        const maxLevel = campaign.maxLevel || (campaign.levels?.length || 0);
+                        if (currentLevel < maxLevel) {
+                          const nextLevelNumber = currentLevel + 1;
+                          const levelConfig = campaign.levels?.find(l => l.level === nextLevelNumber) || campaign.levels?.[nextLevelNumber - 1];
+                          if (levelConfig) {
+                            const needsCash = levelConfig.cost > 0;
+                            const needsTime = levelConfig.timeCost !== undefined && levelConfig.timeCost > 0;
+                            const hasCash = !needsCash || metrics.cash >= levelConfig.cost;
+                            const hasTime = !needsTime || (metrics.myTime + metrics.leveragedTime) >= (levelConfig.timeCost ?? 0);
+                            canAfford = hasCash && hasTime;
+                          } else {
+                            canAfford = false;
+                          }
+                        } else {
+                          canAfford = false; // Max level reached
+                        }
+                      } else {
+                        // Unlimited campaign
+                        const needsCash = (campaign.cost ?? 0) > 0;
+                        const needsTime = campaign.timeCost !== undefined && campaign.timeCost > 0;
+                        const hasCash = !needsCash || metrics.cash >= (campaign.cost ?? 0);
+                        const hasTime = !needsTime || (metrics.myTime + metrics.leveragedTime) >= (campaign.timeCost ?? 0);
+                        canAfford = hasCash && hasTime;
+                      }
+                      
                       const cooldownEnd = campaignCooldowns[campaign.id];
                       const isOnCooldown = !!(cooldownEnd && gameTime < cooldownEnd);
                       const cooldownRemaining = isOnCooldown ? Math.max(0, cooldownEnd - gameTime) : 0;
@@ -294,6 +370,7 @@ export function MarketingTab() {
                           canAfford={canAfford}
                           isOnCooldown={isOnCooldown}
                           cooldownRemaining={cooldownRemaining}
+                          currentLevel={currentLevel}
                           onLaunch={handleLaunch}
                           metrics={{ cash: metrics.cash, time: metrics.myTime + metrics.leveragedTime }}
                           getDisplayLabel={getDisplayLabel}

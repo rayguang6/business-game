@@ -10,6 +10,21 @@ import { RequirementsSelector } from './RequirementsSelector';
 import { EffectsList } from './EffectsList';
 import { makeUniqueId, slugify } from './utils';
 
+interface CampaignLevelForm {
+  level: number;
+  name: string;
+  description?: string;
+  icon?: string;
+  cost: string;
+  timeCost?: string;
+  effects: Array<{
+    metric: GameMetric;
+    type: EffectType;
+    value: string;
+    durationSeconds: string;
+  }>;
+}
+
 interface MarketingTabProps {
   campaigns: MarketingCampaign[];
   campaignsLoading: boolean;
@@ -20,8 +35,10 @@ interface MarketingTabProps {
     id: string;
     name: string;
     description: string;
+    type: 'leveled' | 'unlimited';
     cost: string;
     timeCost?: string;
+    maxLevel?: string;
     cooldownSeconds: string;
     categoryId?: string;
     setsFlag?: string;
@@ -34,6 +51,7 @@ interface MarketingTabProps {
     value: string;
     durationSeconds: string;
   }>;
+  campaignLevelsForm?: CampaignLevelForm[];
   campaignSaving: boolean;
   campaignDeleting: boolean;
   flags: GameFlag[];
@@ -51,6 +69,9 @@ interface MarketingTabProps {
   onReset: () => void;
   onUpdateForm: (updates: Partial<MarketingTabProps['campaignForm']>) => void;
   onUpdateEffects: (effects: MarketingTabProps['campaignEffectsForm']) => void;
+  onAddLevel?: () => void;
+  onRemoveLevel?: (index: number) => void;
+  onUpdateLevel?: (index: number, updates: Partial<CampaignLevelForm>) => void;
 }
 
 export function MarketingTab({
@@ -61,6 +82,7 @@ export function MarketingTab({
   isCreatingCampaign,
   campaignForm,
   campaignEffectsForm,
+  campaignLevelsForm = [],
   campaignSaving,
   campaignDeleting,
   flags,
@@ -78,6 +100,9 @@ export function MarketingTab({
   onReset,
   onUpdateForm,
   onUpdateEffects,
+  onAddLevel,
+  onRemoveLevel,
+  onUpdateLevel,
 }: MarketingTabProps) {
   // Keyboard shortcut for save
   useEffect(() => {
@@ -108,7 +133,17 @@ export function MarketingTab({
           >
             + New Campaign
           </button>
-          {campaignStatus && <span className="text-sm text-slate-300">{campaignStatus}</span>}
+          {campaignStatus && (
+            <div className={`px-4 py-2 rounded-lg text-sm ${
+              campaignStatus.toLowerCase().includes('error') || campaignStatus.toLowerCase().includes('failed')
+                ? 'bg-rose-900/50 text-rose-200 border border-rose-700'
+                : campaignStatus.toLowerCase().includes('saved') || campaignStatus.toLowerCase().includes('success')
+                ? 'bg-green-900/50 text-green-200 border border-green-700'
+                : 'bg-slate-800 text-slate-300 border border-slate-700'
+            }`}>
+              {campaignStatus}
+            </div>
+          )}
         </div>
 
         {campaignsLoading ? (
@@ -175,28 +210,71 @@ export function MarketingTab({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-1">Cost (Cash)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={campaignForm.cost}
-                    onChange={(e) => onUpdateForm({ cost: e.target.value })}
+                  <label className="block text-sm font-semibold text-slate-300 mb-1">Campaign Type</label>
+                  <select
+                    value={campaignForm.type}
+                    onChange={(e) => {
+                      const newType = e.target.value as 'leveled' | 'unlimited';
+                      onUpdateForm({ 
+                        type: newType,
+                        // Reset cost fields when switching types
+                        cost: newType === 'unlimited' ? '0' : '0',
+                        timeCost: newType === 'unlimited' ? '' : '',
+                        maxLevel: newType === 'leveled' ? '1' : undefined,
+                      });
+                    }}
                     className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  />
-                  <p className="text-xs text-slate-400 mt-1">Cash cost (can be combined with time cost)</p>
+                  >
+                    <option value="unlimited">Unlimited (can click multiple times)</option>
+                    <option value="leveled">Leveled (like upgrades, multiple levels)</option>
+                  </select>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {campaignForm.type === 'unlimited' 
+                      ? 'Unlimited campaigns can be launched multiple times (with cooldown)'
+                      : 'Leveled campaigns have multiple levels that can be purchased'}
+                  </p>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-1">Time Cost (Hours, Optional)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={campaignForm.timeCost || ''}
-                    onChange={(e) => onUpdateForm({ timeCost: e.target.value })}
-                    placeholder="Leave empty for cash-only"
-                    className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                  />
-                  <p className="text-xs text-slate-400 mt-1">Time cost (can be combined with cash cost)</p>
-                </div>
+                {campaignForm.type === 'unlimited' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Cost (Cash)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={campaignForm.cost}
+                        onChange={(e) => onUpdateForm({ cost: e.target.value })}
+                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      />
+                      <p className="text-xs text-slate-400 mt-1">Cash cost (can be combined with time cost)</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Time Cost (Hours, Optional)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={campaignForm.timeCost || ''}
+                        onChange={(e) => onUpdateForm({ timeCost: e.target.value })}
+                        placeholder="Leave empty for cash-only"
+                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      />
+                      <p className="text-xs text-slate-400 mt-1">Time cost (can be combined with cash cost)</p>
+                    </div>
+                  </>
+                )}
+                {campaignForm.type === 'leveled' && (
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-300 mb-1">Max Level</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={campaignForm.maxLevel || '1'}
+                      onChange={(e) => onUpdateForm({ maxLevel: e.target.value })}
+                      disabled
+                      className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200 cursor-not-allowed opacity-50"
+                    />
+                    <p className="text-xs text-slate-400 mt-1">Auto-updated based on number of levels</p>
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-semibold text-slate-300 mb-1">Cooldown (seconds)</label>
                   <input
@@ -267,29 +345,140 @@ export function MarketingTab({
                   />
                 </div>
 
-                <EffectsList
-                  effects={campaignEffectsForm.map(ef => ({
-                    ...ef,
-                    durationSeconds: ef.durationSeconds ?? '',
-                  }))}
-                  metricOptions={metricOptions}
-                  effectTypeOptions={effectTypeOptions}
-                  showDuration={true}
-                  title="Effects (temporary)"
-                  description="Add = flat, Percent = +/-%, Multiply = × factor, Set = exact value."
-                  defaultEffect={{
-                    metric: GameMetric.LeadsPerMonth,
-                    type: EffectType.Add,
-                    value: '0',
-                    durationSeconds: '',
-                  }}
-                  onEffectsChange={(effects) => {
-                    onUpdateEffects(effects.map(ef => ({
+                {campaignForm.type === 'leveled' && onAddLevel && onRemoveLevel && onUpdateLevel && (
+                  <div className="md:col-span-2">
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="block text-sm font-semibold text-slate-300">Levels</label>
+                      <button
+                        type="button"
+                        onClick={onAddLevel}
+                        className="px-3 py-1 text-sm rounded-lg border border-pink-500 text-pink-200 hover:bg-pink-500/10"
+                      >
+                        + Add Level
+                      </button>
+                    </div>
+                    <div className="space-y-4">
+                      {campaignLevelsForm.map((level, index) => (
+                        <div key={index} className="border border-slate-700 rounded-lg p-4 bg-slate-800/50">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-sm font-semibold text-slate-200">Level {level.level}</h4>
+                            {campaignLevelsForm.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => onRemoveLevel(index)}
+                                className="px-2 py-1 text-xs rounded border border-rose-500 text-rose-200 hover:bg-rose-500/10"
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-400 mb-1">Level Name</label>
+                              <input
+                                value={level.name}
+                                onChange={(e) => onUpdateLevel(index, { name: e.target.value })}
+                                placeholder="e.g., Basic Campaign"
+                                className="w-full rounded-lg bg-slate-900 border border-slate-600 px-2 py-1.5 text-sm text-slate-200"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-400 mb-1">Icon</label>
+                              <input
+                                value={level.icon || ''}
+                                onChange={(e) => onUpdateLevel(index, { icon: e.target.value })}
+                                placeholder="📢"
+                                className="w-full rounded-lg bg-slate-900 border border-slate-600 px-2 py-1.5 text-sm text-slate-200"
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-xs font-semibold text-slate-400 mb-1">Description</label>
+                              <textarea
+                                rows={2}
+                                value={level.description || ''}
+                                onChange={(e) => onUpdateLevel(index, { description: e.target.value })}
+                                placeholder="Level-specific description"
+                                className="w-full rounded-lg bg-slate-900 border border-slate-600 px-2 py-1.5 text-sm text-slate-200"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-400 mb-1">Cost (Cash)</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={level.cost}
+                                onChange={(e) => onUpdateLevel(index, { cost: e.target.value })}
+                                className="w-full rounded-lg bg-slate-900 border border-slate-600 px-2 py-1.5 text-sm text-slate-200"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-400 mb-1">Time Cost (Optional)</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={level.timeCost || ''}
+                                onChange={(e) => onUpdateLevel(index, { timeCost: e.target.value })}
+                                placeholder="Leave empty"
+                                className="w-full rounded-lg bg-slate-900 border border-slate-600 px-2 py-1.5 text-sm text-slate-200"
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <EffectsList
+                                effects={level.effects.map(ef => ({
+                                  ...ef,
+                                  durationSeconds: ef.durationSeconds ?? '',
+                                }))}
+                                metricOptions={metricOptions}
+                                effectTypeOptions={effectTypeOptions}
+                                showDuration={true}
+                                title={`Level ${level.level} Effects`}
+                                description="Effects for this specific level (can have duration)"
+                                defaultEffect={{
+                                  metric: GameMetric.LeadsPerMonth,
+                                  type: EffectType.Add,
+                                  value: '0',
+                                  durationSeconds: '',
+                                }}
+                                onEffectsChange={(newEffects) => {
+                                  onUpdateLevel(index, { effects: newEffects.map(ef => ({
+                                    ...ef,
+                                    durationSeconds: ef.durationSeconds || '',
+                                  })) });
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {campaignForm.type === 'unlimited' && (
+                  <EffectsList
+                    effects={campaignEffectsForm.map(ef => ({
                       ...ef,
-                      durationSeconds: ef.durationSeconds || '',
-                    })));
-                  }}
-                />
+                      durationSeconds: ef.durationSeconds ?? '',
+                    }))}
+                    metricOptions={metricOptions}
+                    effectTypeOptions={effectTypeOptions}
+                    showDuration={true}
+                    title="Effects (temporary)"
+                    description="Add = flat, Percent = +/-%, Multiply = × factor, Set = exact value."
+                    defaultEffect={{
+                      metric: GameMetric.LeadsPerMonth,
+                      type: EffectType.Add,
+                      value: '0',
+                      durationSeconds: '',
+                    }}
+                    onEffectsChange={(effects) => {
+                      onUpdateEffects(effects.map(ef => ({
+                        ...ef,
+                        durationSeconds: ef.durationSeconds || '',
+                      })));
+                    }}
+                  />
+                )}
 
                 <div className="md:col-span-2 flex flex-wrap gap-3">
                   <button

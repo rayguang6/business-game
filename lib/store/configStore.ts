@@ -8,46 +8,50 @@ const cloneIndustryConfig = (
   config: Omit<IndustryContentConfig, 'industryId'>,
 ): IndustryContentConfig => ({
   industryId,
-  services: config.services.map((service) => ({ ...service })),
-  upgrades: config.upgrades.map((upgrade) => ({
+  services: (config.services || []).map((service) => ({ ...service })),
+  upgrades: (config.upgrades || []).map((upgrade) => ({
     ...upgrade,
-    levels: upgrade.levels.map((level) => ({
+    levels: (upgrade.levels || []).map((level) => ({
       ...level,
-      effects: level.effects.map((effect) => ({ ...effect })),
+      effects: (level.effects || []).map((effect) => ({ ...effect })),
     })),
   })),
-  events: config.events.map((event) => ({
+  events: (config.events || []).map((event) => ({
     ...event,
-    choices: event.choices.map((choice) => ({
+    choices: (event.choices || []).map((choice) => ({
       ...choice,
-      consequences: choice.consequences.map((consequence) => ({
+      consequences: (choice.consequences || []).map((consequence) => ({
         ...consequence,
-        effects: consequence.effects.map((effect) => ({ ...effect })),
+        effects: (consequence.effects || []).map((effect) => ({ ...effect })),
       })),
     })),
   })),
-  marketingCampaigns: config.marketingCampaigns.map((campaign) => ({
+  marketingCampaigns: (config.marketingCampaigns || []).map((campaign) => ({
     ...campaign,
-    effects: campaign.effects.map((effect) => ({ ...effect })),
+    effects: campaign.effects ? campaign.effects.map((effect) => ({ ...effect })) : undefined,
+    levels: campaign.levels ? campaign.levels.map((level) => ({
+      ...level,
+      effects: (level.effects || []).map((effect) => ({ ...effect })),
+    })) : undefined,
   })),
-  staffRoles: config.staffRoles.map((role) => ({
+  staffRoles: (config.staffRoles || []).map((role) => ({
     ...role,
-    effects: role.effects.map((effect) => ({ ...effect })),
+    effects: (role.effects || []).map((effect) => ({ ...effect })),
   })),
-  staffPresets: config.staffPresets.map((preset) => ({ ...preset })),
+  staffPresets: (config.staffPresets || []).map((preset) => ({ ...preset })),
   staffNamePool: config.staffNamePool ? [...config.staffNamePool] : undefined,
-  flags: config.flags.map((flag) => ({ ...flag })),
-  conditions: config.conditions.map((condition) => ({ ...condition })),
+  flags: (config.flags || []).map((flag) => ({ ...flag })),
+  conditions: (config.conditions || []).map((condition) => ({ ...condition })),
   layout: config.layout
     ? {
         entryPosition: { ...config.layout.entryPosition },
-        waitingPositions: config.layout.waitingPositions.map((pos) => ({ ...pos })),
-        serviceRooms: config.layout.serviceRooms.map((room) => ({
+        waitingPositions: (config.layout.waitingPositions || []).map((pos) => ({ ...pos })),
+        serviceRooms: (config.layout.serviceRooms || []).map((room) => ({
           roomId: room.roomId,
           customerPosition: { ...room.customerPosition },
           staffPosition: { ...room.staffPosition },
         })),
-        staffPositions: config.layout.staffPositions.map((pos) => ({ ...pos })),
+        staffPositions: (config.layout.staffPositions || []).map((pos) => ({ ...pos })),
         mainCharacterPosition: config.layout.mainCharacterPosition
           ? { ...config.layout.mainCharacterPosition }
           : undefined,
@@ -58,7 +62,7 @@ const cloneIndustryConfig = (
   businessMetrics: config.businessMetrics ? { ...config.businessMetrics } : undefined,
   businessStats: config.businessStats ? { ...config.businessStats } : undefined,
   movement: config.movement ? { ...config.movement } : undefined,
-  mapConfig: config.mapConfig ? { ...config.mapConfig, walls: [...config.mapConfig.walls] } : undefined,
+  mapConfig: config.mapConfig ? { ...config.mapConfig, walls: config.mapConfig.walls ? [...config.mapConfig.walls] : [] } : undefined,
   capacityImage: config.capacityImage,
   winCondition: config.winCondition ? { ...config.winCondition } : undefined,
   loseCondition: config.loseCondition ? { ...config.loseCondition } : undefined,
@@ -120,19 +124,19 @@ const cloneService = (service: IndustryServiceDefinition): IndustryServiceDefini
 
 const cloneUpgrade = (upgrade: UpgradeDefinition): UpgradeDefinition => ({
   ...upgrade,
-  levels: upgrade.levels.map((level) => ({
+  levels: (upgrade.levels || []).map((level) => ({
     ...level,
-    effects: level.effects.map((effect) => ({ ...effect })),
+    effects: (level.effects || []).map((effect) => ({ ...effect })),
   })),
 });
 
 const cloneEvent = (event: GameEvent): GameEvent => ({
   ...event,
-  choices: event.choices.map((choice) => ({
+  choices: (event.choices || []).map((choice) => ({
     ...choice,
-    consequences: choice.consequences.map((consequence) => ({
+    consequences: (choice.consequences || []).map((consequence) => ({
       ...consequence,
-      effects: consequence.effects.map((effect) => ({ ...effect })),
+      effects: (consequence.effects || []).map((effect) => ({ ...effect })),
     })),
   })),
 });

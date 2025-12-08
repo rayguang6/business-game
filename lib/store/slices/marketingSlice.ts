@@ -20,23 +20,46 @@ export interface CampaignEffect {
   durationSeconds?: number | null; // null = permanent, number = expires after seconds
 }
 
+// Level config for leveled marketing campaigns (similar to UpgradeLevelConfig)
+export interface MarketingCampaignLevelConfig {
+  level: number;
+  name: string;
+  description?: string;
+  icon?: string;
+  cost: number;
+  timeCost?: number;
+  effects: CampaignEffect[];
+}
+
+// Marketing campaign type: 'leveled' = level-based like upgrades, 'unlimited' = unlimited clicks
+export type MarketingCampaignType = 'leveled' | 'unlimited';
+
 export interface MarketingCampaign {
   id: string;
   name: string;
   description: string;
-  cost: number; // Cash cost (or time cost if timeCost is specified)
-  timeCost?: number; // Optional time cost (hours) - if specified, uses time instead of cash
-  cooldownSeconds: number; // How long before this campaign can be run again
-  effects: CampaignEffect[];
+  type: MarketingCampaignType; // 'leveled' or 'unlimited'
+  cooldownSeconds: number; // How long before this campaign can be run again (same for all levels)
   categoryId?: string; // Optional reference to categories table
   setsFlag?: string; // Optional flag to set when campaign is launched
   requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
   order?: number; // Display order (lower = shown first, defaults to 0)
+  
+  // For unlimited campaigns (type === 'unlimited')
+  cost?: number; // Cash cost (or time cost if timeCost is specified)
+  timeCost?: number; // Optional time cost (hours)
+  effects?: CampaignEffect[]; // Effects for unlimited campaigns
+  
+  // For leveled campaigns (type === 'leveled')
+  maxLevel?: number; // Maximum level (required for leveled campaigns)
+  levels?: MarketingCampaignLevelConfig[]; // Level-specific configs (required for leveled campaigns)
 }
 
 export interface MarketingSlice {
   campaignCooldowns: Record<string, number>; // campaignId -> cooldownEndTime
+  campaignLevels: Record<string, number>; // campaignId -> current level (for leveled campaigns)
   startCampaign: (campaignId: string) => { success: boolean; message?: string };
+  getCampaignLevel: (campaignId: string) => number;
   tickMarketing: (currentGameTime: number) => void;
   resetMarketing: () => void;
 }
@@ -45,21 +68,27 @@ export interface MarketingSlice {
  * Add marketing campaign effects to the effect manager
  * For direct state metrics (Cash, Time, SkillLevel, GenerateLeads), apply directly
  */
-function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: number, store?: {
-  applyCashChange?: (amount: number) => void;
-  applyTimeChange?: (amount: number) => void;
-  applyExpChange?: (amount: number) => void;
-  recordEventRevenue?: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => void;
-  recordEventExpense?: (amount: number, labelOrSource: string | SourceInfo, label?: string) => void;
-  recordTimeSpent?: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => void;
-  spawnLead?: () => Lead;
-  updateLeads?: (leads: Lead[]) => void;
-  spawnCustomer?: () => Customer;
-  addCustomers?: (customers: Customer[]) => void;
-  getState?: () => { leads: Lead[]; leadProgress: number; conversionRate: number };
-  updateLeadProgress?: (progress: number) => void;
-}): void {
-  campaign.effects.forEach((effect, index) => {
+function addMarketingEffects(
+  campaign: MarketingCampaign,
+  effects: CampaignEffect[],
+  campaignName: string,
+  currentGameTime: number,
+  store?: {
+    applyCashChange?: (amount: number) => void;
+    applyTimeChange?: (amount: number) => void;
+    applyExpChange?: (amount: number) => void;
+    recordEventRevenue?: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => void;
+    recordEventExpense?: (amount: number, labelOrSource: string | SourceInfo, label?: string) => void;
+    recordTimeSpent?: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => void;
+    spawnLead?: () => Lead;
+    updateLeads?: (leads: Lead[]) => void;
+    spawnCustomer?: () => Customer;
+    addCustomers?: (customers: Customer[]) => void;
+    getState?: () => { leads: Lead[]; leadProgress: number; conversionRate: number };
+    updateLeadProgress?: (progress: number) => void;
+  }
+): void {
+  effects.forEach((effect, index) => {
     // Direct state metrics (Cash, Time, SkillLevel, GenerateLeads) with Add effects are applied directly
     // These are one-time permanent effects (no duration tracking)
     if ((effect.metric === GameMetric.Cash || effect.metric === GameMetric.MyTime ||
@@ -69,11 +98,11 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
       // Apply directly to state
       if (effect.metric === GameMetric.Cash) {
         if (store.recordEventRevenue && store.recordEventExpense) {
-          const sourceInfo: SourceInfo = SourceHelpers.fromMarketing(campaign.id, campaign.name);
+          const sourceInfo: SourceInfo = SourceHelpers.fromMarketing(campaign.id, campaignName);
           if (effect.value >= 0) {
-            store.recordEventRevenue(effect.value, sourceInfo, campaign.name);
+            store.recordEventRevenue(effect.value, sourceInfo, campaignName);
           } else {
-            store.recordEventExpense(Math.abs(effect.value), sourceInfo, campaign.name);
+            store.recordEventExpense(Math.abs(effect.value), sourceInfo, campaignName);
           }
         } else if (store.applyCashChange) {
           store.applyCashChange(effect.value);
@@ -81,8 +110,8 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
       } else if (effect.metric === GameMetric.MyTime) {
         // Use recordTimeSpent for negative values (time spent), applyTimeChange for positive (time gained)
         if (effect.value < 0 && store.recordTimeSpent) {
-          const sourceInfo: SourceInfo = SourceHelpers.fromMarketing(campaign.id, campaign.name);
-          store.recordTimeSpent(effect.value, sourceInfo, campaign.name);
+          const sourceInfo: SourceInfo = SourceHelpers.fromMarketing(campaign.id, campaignName);
+          store.recordTimeSpent(effect.value, sourceInfo, campaignName);
         } else if (store.applyTimeChange) {
           store.applyTimeChange(effect.value);
         }
@@ -106,11 +135,11 @@ function addMarketingEffects(campaign: MarketingCampaign, currentGameTime: numbe
     
     // For other metrics or effect types, use effect manager
     effectManager.add({
-      id: `marketing_${campaign.id}_${index}`,
+      id: `marketing_${campaign.id}_${currentGameTime}_${index}`,
       source: {
         category: 'marketing',
         id: campaign.id,
-        name: campaign.name,
+        name: campaignName,
       },
       metric: effect.metric,
       type: effect.type,
@@ -137,7 +166,11 @@ function removeMarketingEffects(campaignId: string): void {
 
 const cloneCampaign = (campaign: MarketingCampaign): MarketingCampaign => ({
   ...campaign,
-  effects: campaign.effects.map((effect) => ({ ...effect })),
+  effects: campaign.effects ? campaign.effects.map((effect) => ({ ...effect })) : undefined,
+  levels: campaign.levels ? campaign.levels.map((level) => ({
+    ...level,
+    effects: level.effects.map((effect) => ({ ...effect })),
+  })) : undefined,
 });
 
 const resolveCampaignBlueprints = (industryId: IndustryId): MarketingCampaign[] => {
@@ -151,6 +184,11 @@ const resolveCampaignBlueprints = (industryId: IndustryId): MarketingCampaign[] 
 
 export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlice> = (set, get) => ({
   campaignCooldowns: {},
+  campaignLevels: {},
+
+  getCampaignLevel: (campaignId: string) => {
+    return get().campaignLevels[campaignId] || 0;
+  },
 
   startCampaign: (campaignId: string) => {
     const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
@@ -159,7 +197,7 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       return { success: false, message: 'Campaign not found.' };
     }
 
-    const { campaignCooldowns, gameTime } = get();
+    const { campaignCooldowns, campaignLevels, gameTime } = get();
 
     // Check if campaign is on cooldown
     const existingCooldownEnd = campaignCooldowns[campaignId];
@@ -168,97 +206,224 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       return { success: false, message: `${campaign.name} is on cooldown for ${Math.ceil(remainingSeconds / 60)} more minutes.` };
     }
 
-    const { metrics } = get();
-    const needsCash = campaign.cost > 0;
-    const needsTime = campaign.timeCost !== undefined && campaign.timeCost > 0;
-    
-    // Check affordability for both cash and time costs
-    if (needsCash && metrics.cash < campaign.cost) {
-      return { success: false, message: `Need $${campaign.cost} to launch ${campaign.name}.` };
-    }
-    
-    const totalAvailableTime = metrics.myTime + metrics.leveragedTime;
-    if (needsTime && totalAvailableTime < campaign.timeCost!) {
-      return { success: false, message: `Need ${campaign.timeCost}h to launch ${campaign.name}.` };
-    }
-    
-    // If both are needed, check both
-    if (needsCash && needsTime && (metrics.cash < campaign.cost || totalAvailableTime < campaign.timeCost!)) {
-      return { success: false, message: `Need $${campaign.cost} and ${campaign.timeCost}h to launch ${campaign.name}.` };
-    }
+    // Handle leveled campaigns (like upgrades)
+    if (campaign.type === 'leveled') {
+      if (!campaign.levels || campaign.levels.length === 0) {
+        return { success: false, message: `${campaign.name} has no levels configured.` };
+      }
 
-    // Check requirements
-    if (campaign.requirements && campaign.requirements.length > 0) {
+      const currentLevel = campaignLevels[campaignId] || 0;
+      const maxLevel = campaign.maxLevel || campaign.levels.length;
+
+      if (currentLevel >= maxLevel) {
+        return { success: false, message: `${campaign.name} is already at max level.` };
+      }
+
+      // Get next level config
+      const nextLevelNumber = currentLevel + 1;
+      const levelConfig = campaign.levels.find(l => l.level === nextLevelNumber) || campaign.levels[nextLevelNumber - 1];
+
+      if (!levelConfig) {
+        return { success: false, message: `Level ${nextLevelNumber} not found for ${campaign.name}.` };
+      }
+
+      const { metrics } = get();
+      const needsCash = levelConfig.cost > 0;
+      const needsTime = levelConfig.timeCost !== undefined && levelConfig.timeCost > 0;
+
+      // Check affordability
+      if (needsCash && metrics.cash < levelConfig.cost) {
+        return { success: false, message: `Need $${levelConfig.cost} to purchase ${campaign.name} level ${nextLevelNumber}.` };
+      }
+
+      const totalAvailableTime = metrics.myTime + metrics.leveragedTime;
+      if (needsTime && totalAvailableTime < levelConfig.timeCost!) {
+        return { success: false, message: `Need ${levelConfig.timeCost}h to purchase ${campaign.name} level ${nextLevelNumber}.` };
+      }
+
+      // Check requirements
+      if (campaign.requirements && campaign.requirements.length > 0) {
+        const store = get();
+        const requirementsMet = checkRequirements(campaign.requirements, store);
+        if (!requirementsMet) {
+          return { success: false, message: `Requirements not met to purchase ${campaign.name}.` };
+        }
+      }
+
+      // Deduct costs
+      if (needsCash) {
+        const { addOneTimeCost } = get();
+        if (addOneTimeCost) {
+          const sourceInfo = SourceHelpers.fromMarketing(campaign.id, campaign.name);
+          const costEntry: OneTimeCost = {
+            label: `${campaign.name} - ${levelConfig.name}`,
+            amount: levelConfig.cost,
+            category: OneTimeCostCategory.Marketing,
+            sourceId: sourceInfo.id,
+            sourceType: sourceInfo.type,
+            sourceName: sourceInfo.name,
+          };
+          addOneTimeCost(costEntry, { deductNow: true });
+        }
+      }
+
+      if (needsTime) {
+        const { recordTimeSpent } = get();
+        if (recordTimeSpent) {
+          const sourceInfo = SourceHelpers.fromMarketing(campaign.id, campaign.name);
+          recordTimeSpent(-levelConfig.timeCost!, sourceInfo, `${campaign.name} - ${levelConfig.name}`);
+        }
+      }
+
+      // Remove old effects and add new level effects
+      removeMarketingEffects(campaignId);
+      
+      // Add effects for all levels from 1 to newLevel (effects accumulate)
       const store = get();
-      const requirementsMet = checkRequirements(campaign.requirements, store);
-      if (!requirementsMet) {
-        return { success: false, message: `Requirements not met to launch ${campaign.name}.` };
+      const newLevel = nextLevelNumber;
+      for (let level = 1; level <= newLevel; level++) {
+        const levelCfg = campaign.levels.find(l => l.level === level) || campaign.levels[level - 1];
+        if (levelCfg) {
+          const levelName = `${campaign.name} - ${levelCfg.name}`;
+          addMarketingEffects(campaign, levelCfg.effects, levelName, gameTime, {
+            applyCashChange: store.applyCashChange,
+            applyTimeChange: store.applyTimeChange,
+            applyExpChange: store.applyExpChange,
+            recordEventRevenue: store.recordEventRevenue,
+            recordEventExpense: store.recordEventExpense,
+            recordTimeSpent: store.recordTimeSpent,
+            spawnLead: store.spawnLead,
+            updateLeads: store.updateLeads,
+            spawnCustomer: store.spawnCustomer,
+            addCustomers: store.addCustomers,
+            getState: () => get(),
+            updateLeadProgress: (progress: number) => {
+              set((state) => ({
+                leadProgress: progress,
+              }));
+            },
+          });
+        }
       }
-    }
 
-    // Deduct both cash and time if both are required
-    if (needsCash) {
-      const { addOneTimeCost } = get();
-      if (addOneTimeCost) {
-        const sourceInfo = SourceHelpers.fromMarketing(campaign.id, campaign.name);
-        const costEntry: OneTimeCost = {
-          label: campaign.name,
-          amount: campaign.cost,
-          category: OneTimeCostCategory.Marketing,
-          sourceId: sourceInfo.id,
-          sourceType: sourceInfo.type,
-          sourceName: sourceInfo.name,
-        };
-        addOneTimeCost(costEntry, { deductNow: true });
+      // Update level
+      set((state) => ({
+        campaignLevels: {
+          ...state.campaignLevels,
+          [campaignId]: newLevel,
+        },
+      }));
+
+      // Set flag if campaign sets one
+      if (campaign.setsFlag) {
+        get().setFlag(campaign.setsFlag, true);
       }
+
+      // Start cooldown
+      const cooldownEnd = gameTime + campaign.cooldownSeconds;
+      set((state) => ({
+        campaignCooldowns: {
+          ...state.campaignCooldowns,
+          [campaignId]: cooldownEnd,
+        },
+      }));
+
+      return { success: true, message: `${campaign.name} level ${newLevel} purchased!` };
     }
-    
-    if (needsTime) {
-      const { recordTimeSpent } = get();
-      if (recordTimeSpent) {
-        const sourceInfo = SourceHelpers.fromMarketing(campaign.id, campaign.name);
-        recordTimeSpent(-campaign.timeCost!, sourceInfo, campaign.name);
+
+    // Handle unlimited campaigns (original behavior)
+    if (campaign.type === 'unlimited') {
+      if (!campaign.effects || campaign.effects.length === 0) {
+        return { success: false, message: `${campaign.name} has no effects configured.` };
       }
+
+      const { metrics } = get();
+      const needsCash = (campaign.cost ?? 0) > 0;
+      const needsTime = campaign.timeCost !== undefined && campaign.timeCost > 0;
+
+      // Check affordability
+      if (needsCash && metrics.cash < (campaign.cost ?? 0)) {
+        return { success: false, message: `Need $${campaign.cost} to launch ${campaign.name}.` };
+      }
+
+      const totalAvailableTime = metrics.myTime + metrics.leveragedTime;
+      if (needsTime && totalAvailableTime < campaign.timeCost!) {
+        return { success: false, message: `Need ${campaign.timeCost}h to launch ${campaign.name}.` };
+      }
+
+      // Check requirements
+      if (campaign.requirements && campaign.requirements.length > 0) {
+        const store = get();
+        const requirementsMet = checkRequirements(campaign.requirements, store);
+        if (!requirementsMet) {
+          return { success: false, message: `Requirements not met to launch ${campaign.name}.` };
+        }
+      }
+
+      // Deduct costs
+      if (needsCash) {
+        const { addOneTimeCost } = get();
+        if (addOneTimeCost) {
+          const sourceInfo = SourceHelpers.fromMarketing(campaign.id, campaign.name);
+          const costEntry: OneTimeCost = {
+            label: campaign.name,
+            amount: campaign.cost!,
+            category: OneTimeCostCategory.Marketing,
+            sourceId: sourceInfo.id,
+            sourceType: sourceInfo.type,
+            sourceName: sourceInfo.name,
+          };
+          addOneTimeCost(costEntry, { deductNow: true });
+        }
+      }
+
+      if (needsTime) {
+        const { recordTimeSpent } = get();
+        if (recordTimeSpent) {
+          const sourceInfo = SourceHelpers.fromMarketing(campaign.id, campaign.name);
+          recordTimeSpent(-campaign.timeCost!, sourceInfo, campaign.name);
+        }
+      }
+
+      // Register effects (effects from multiple launches will stack)
+      const store = get();
+      addMarketingEffects(campaign, campaign.effects, campaign.name, gameTime, {
+        applyCashChange: store.applyCashChange,
+        applyTimeChange: store.applyTimeChange,
+        applyExpChange: store.applyExpChange,
+        recordEventRevenue: store.recordEventRevenue,
+        recordEventExpense: store.recordEventExpense,
+        recordTimeSpent: store.recordTimeSpent,
+        spawnLead: store.spawnLead,
+        updateLeads: store.updateLeads,
+        spawnCustomer: store.spawnCustomer,
+        addCustomers: store.addCustomers,
+        getState: () => get(),
+        updateLeadProgress: (progress: number) => {
+          set((state) => ({
+            leadProgress: progress,
+          }));
+        },
+      });
+
+      // Set flag if campaign sets one
+      if (campaign.setsFlag) {
+        get().setFlag(campaign.setsFlag, true);
+      }
+
+      // Start cooldown
+      const cooldownEnd = gameTime + campaign.cooldownSeconds;
+      set((state) => ({
+        campaignCooldowns: {
+          ...state.campaignCooldowns,
+          [campaignId]: cooldownEnd,
+        },
+      }));
+
+      return { success: true };
     }
 
-    // Register effects to effectManager (expiration handled automatically)
-    // For direct state metrics, apply them directly
-    const store = get();
-    addMarketingEffects(campaign, gameTime, {
-      applyCashChange: store.applyCashChange,
-      applyTimeChange: store.applyTimeChange,
-      applyExpChange: store.applyExpChange,
-      recordEventRevenue: store.recordEventRevenue,
-      recordEventExpense: store.recordEventExpense,
-      recordTimeSpent: store.recordTimeSpent,
-      spawnLead: store.spawnLead,
-      updateLeads: store.updateLeads,
-      spawnCustomer: store.spawnCustomer,
-      addCustomers: store.addCustomers, // Use store method which properly handles customer tracking
-      getState: () => get(),
-      updateLeadProgress: (progress: number) => {
-        set((state) => ({
-          leadProgress: progress,
-        }));
-      },
-    });
-
-    // Set flag if campaign sets one
-    if (campaign.setsFlag) {
-      get().setFlag(campaign.setsFlag, true);
-    }
-
-    // Start cooldown immediately
-    const cooldownEnd = gameTime + campaign.cooldownSeconds;
-
-    set((state) => ({
-      campaignCooldowns: {
-        ...state.campaignCooldowns,
-        [campaignId]: cooldownEnd,
-      },
-    }));
-
-    return { success: true };
+    return { success: false, message: `Invalid campaign type for ${campaign.name}.` };
   },
 
   tickMarketing: (currentGameTime: number) => {
@@ -283,6 +448,7 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
     effectManager.clearCategory('marketing');
     set({
       campaignCooldowns: {},
+      campaignLevels: {},
     });
   },
 });

@@ -98,6 +98,7 @@ export default function MarketingDetailPage({
         isCreatingCampaign={marketing.isCreating}
         campaignForm={marketing.form}
         campaignEffectsForm={marketing.effectsForm}
+        campaignLevelsForm={marketing.levelsForm}
         campaignSaving={marketing.saving}
         campaignDeleting={marketing.deleting}
         flags={flags.flags}
@@ -115,6 +116,9 @@ export default function MarketingDetailPage({
         onReset={marketing.reset}
         onUpdateForm={marketing.updateForm}
         onUpdateEffects={marketing.updateEffects}
+        onAddLevel={marketing.addLevel}
+        onRemoveLevel={marketing.removeLevel}
+        onUpdateLevel={marketing.updateLevel}
       />
     </SidebarContentLayout>
   );
