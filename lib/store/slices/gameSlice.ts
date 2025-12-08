@@ -445,8 +445,13 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     });
     
     // Check if a new month just started (month transition happened)
-    const { currentMonth, checkGameOver, checkWinConditionAtMonthEnd, tickMarketing, gameTime } = get();
+    const { currentMonth, checkGameOver, checkWinConditionAtMonthEnd, tickMarketing, gameTime, resetMarketingLevels } = get();
     const monthJustEnded = currentMonth > previousMonth;
+
+    // Reset marketing campaign levels at the start of each new month (effects continue until natural expiration)
+    if (monthJustEnded && resetMarketingLevels) {
+      resetMarketingLevels();
+    }
 
     // Handle effect expiration through unified effect manager
     const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;

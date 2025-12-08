@@ -18,6 +18,7 @@ export interface CampaignEffect {
   type: EffectType;
   value: number;
   durationMonths?: number | null; // null = permanent, number = expires after months
+  description?: string; // Optional custom description to override technical effect text
 }
 
 // Level config for leveled marketing campaigns (similar to UpgradeLevelConfig)
@@ -62,6 +63,7 @@ export interface MarketingSlice {
   getCampaignLevel: (campaignId: string) => number;
   tickMarketing: (currentGameTime: number) => void;
   resetMarketing: () => void;
+  resetMarketingLevels: () => void; // Reset levels only, keep effects active
 }
 
 /**
@@ -276,6 +278,7 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       }
 
       // Remove old effects and add new level effects
+      //NOTE: Remove this To change leveled campaigns to stacking:
       removeMarketingEffects(campaignId);
       
       // Add effects for all levels from 1 to newLevel (effects accumulate)
@@ -385,6 +388,9 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
         }
       }
 
+      //To change unlimited campaigns to overriding:
+      //Add before line 391: removeMarketingEffects(campaignId);  
+      
       // Register effects (effects from multiple launches will stack)
       const store = get();
       addMarketingEffects(campaign, campaign.effects, campaign.name, gameTime, {
@@ -448,6 +454,13 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
     effectManager.clearCategory('marketing');
     set({
       campaignCooldowns: {},
+      campaignLevels: {},
+    });
+  },
+
+  resetMarketingLevels: () => {
+    // Reset campaign levels to 0, but keep effects active (they will expire naturally)
+    set({
       campaignLevels: {},
     });
   },

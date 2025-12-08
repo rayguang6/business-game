@@ -346,6 +346,14 @@ class EffectManager {
   }
 
   /**
+   * Get all effects from a specific category
+   */
+  getEffectsByCategory(category: string): Effect[] {
+    return Array.from(this.effects.values())
+      .filter(e => e.source.category === category);
+  }
+
+  /**
    * Calculate the final value of a metric with all effects applied
    * 
    * Order: Add → Percent → Multiply → Set

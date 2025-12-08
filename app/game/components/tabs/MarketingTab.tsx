@@ -3,10 +3,10 @@
 import React, { useCallback, useState, useMemo } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
 import { CampaignEffect, MarketingCampaign } from '@/lib/store/slices/marketingSlice';
-import { GameMetric, EffectType } from '@/lib/game/effectManager';
+import { GameMetric, EffectType, effectManager } from '@/lib/game/effectManager';
 import { useRequirements } from '@/lib/hooks/useRequirements';
 import { useConfigStore } from '@/lib/store/configStore';
-import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getBusinessStats } from '@/lib/game/config';
 import type { IndustryId } from '@/lib/game/types';
 import { Card } from '@/app/components/ui/Card';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
@@ -16,13 +16,7 @@ import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
 import { useCategories } from '../../hooks/useCategories';
 
 const formatSeconds = (seconds: number): string => {
-  const clamped = Math.max(0, Math.floor(seconds));
-  const mins = Math.floor(clamped / 60);
-  const secs = clamped % 60;
-  if (mins <= 0) {
-    return `${secs}s`;
-  }
-  return `${mins}m ${secs}s`;
+  return `${Math.max(0, Math.floor(seconds))}s`;
 };
 
 // METRIC_LABELS removed - now using merged definitions from registry + database
@@ -34,6 +28,56 @@ const formatValue = (value: number): string => {
 const formatSigned = (value: number): string => {
   const sign = value >= 0 ? '+' : '';
   return `${sign}${formatValue(value)}`;
+};
+
+// Simple hook to get active marketing campaigns with countdown timers
+const useActiveMarketingCampaigns = () => {
+  const gameTime = useGameStore(state => state.gameTime);
+  const industryId = (useGameStore(state => state.selectedIndustry?.id) ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+
+  return useMemo(() => {
+    const marketingEffects = effectManager.getEffectsByCategory('marketing');
+    const stats = getBusinessStats(industryId);
+    const monthDurationSeconds = stats?.monthDurationSeconds ?? 60;
+
+    // Group effects by campaign
+    const campaignEffects = new Map<string, any>();
+
+    marketingEffects.forEach(effect => {
+      // Skip permanent effects (durationMonths is null or 0)
+      if (!effect.durationMonths || effect.durationMonths <= 0) {
+        return;
+      }
+
+      const campaignId = effect.source.id;
+      if (!campaignEffects.has(campaignId)) {
+        campaignEffects.set(campaignId, {
+          campaignId,
+          campaignName: effect.source.name,
+          effects: [],
+          earliestExpiration: Infinity,
+        });
+      }
+
+      const totalDuration = effect.durationMonths * monthDurationSeconds;
+      const elapsed = gameTime - effect.createdAt;
+      const timeRemaining = Math.max(0, totalDuration - elapsed);
+
+      const campaign = campaignEffects.get(campaignId)!;
+      campaign.effects.push({
+        ...effect,
+        timeRemaining,
+        formattedTimeRemaining: formatSeconds(timeRemaining),
+        isExpiringSoon: timeRemaining <= monthDurationSeconds * 0.25,
+      });
+
+      campaign.earliestExpiration = Math.min(campaign.earliestExpiration, timeRemaining);
+    });
+
+    // Convert to array and sort by earliest expiration
+    return Array.from(campaignEffects.values())
+      .sort((a, b) => a.earliestExpiration - b.earliestExpiration);
+  }, [gameTime, industryId]);
 };
 
 const formatDurationLabel = (durationMonths: number | null | undefined): string => {
@@ -126,14 +170,20 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
   }, [needsCash, needsTime, metrics.cash, metrics.time, cost, timeCost]);
 
   const describeEffect = (effect: CampaignEffect): string => {
+    // If custom description exists, use it instead of technical details
+    if (effect.description) {
+      const durationLabel = formatDurationLabel(effect.durationMonths);
+      return `${effect.description}${durationLabel}`;
+    }
+
     const label = getDisplayLabel(effect.metric);
-    
+
     // GenerateLeads is an immediate action - duration doesn't apply
     if (effect.metric === GameMetric.GenerateLeads) {
       const count = Math.floor(effect.value);
       return `${label} +${count} (immediate)`;
     }
-    
+
     const durationLabel = formatDurationLabel(effect.durationMonths);
 
     switch (effect.type) {
@@ -178,12 +228,19 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
             </span>
           </div>
           {isLeveled && (
-            <div className={`px-1.5 py-0.5 rounded border text-micro font-bold ${
-              level > 0
-                ? 'bg-green-100 border-green-300 text-green-800 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300'
-                : 'bg-gray-100 border-gray-300 text-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'
-              }`}>
-              {level}/{maxLevel}
+            <div className="flex flex-col items-end gap-0.5">
+              <div className={`px-1.5 py-0.5 rounded border text-micro font-bold ${
+                level > 0
+                  ? 'bg-green-100 border-green-300 text-green-800 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300'
+                  : 'bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300'
+                }`}>
+                {level}/{maxLevel}
+              </div>
+              {level === 0 && (
+                <div className="text-micro text-amber-600 dark:text-amber-400 font-medium">
+                  Effects may be active
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -348,6 +405,7 @@ export function MarketingTab() {
   const metrics = useGameStore((state) => state.metrics);
   const gameTime = useGameStore((state) => state.gameTime);
 
+  const activeCampaigns = useActiveMarketingCampaigns();
   const [message, setMessage] = useState<string | null>(null);
 
   const handleLaunch = (campaignId: string) => {
@@ -364,6 +422,48 @@ export function MarketingTab() {
           Spend cash to run time-limited campaigns that boost demand and reputation.
         </p>
       </div>
+
+      {/* Active Campaigns Section */}
+      {activeCampaigns.length > 0 && (
+        <Card>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-sm">Active Campaigns</span>
+              <span className="text-xs text-secondary">({activeCampaigns.length})</span>
+            </div>
+            <div className="grid gap-2">
+              {activeCampaigns.map((campaign) => (
+                <div key={campaign.campaignId} className="p-3 bg-black/20 rounded">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-primary">{campaign.campaignName}</span>
+                    <span className="text-xs font-mono">
+                      {formatSeconds(campaign.earliestExpiration)}
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    {/* Comment out this to hide effect */}
+                    {campaign.effects.map((effect: any, index: number) => (
+                      <div key={`${effect.id}-${index}`} className="flex items-center justify-between text-xs">
+                        <span className="text-secondary">
+                          {effect.description || getDisplayLabel(effect.metric)}
+                        </span>
+                        {!effect.description && (
+                          <span className="font-medium">
+                            {effect.type === EffectType.Add && formatSigned(effect.value)}
+                            {effect.type === EffectType.Percent && `${formatSigned(effect.value)}%`}
+                            {effect.type === EffectType.Multiply && `×${formatValue(effect.value)}`}
+                            {effect.type === EffectType.Set && `= ${formatValue(effect.value)}`}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+      )}
 
       {message && (
         <Card variant="info" className="border-[var(--info)] bg-[var(--info)]/10">

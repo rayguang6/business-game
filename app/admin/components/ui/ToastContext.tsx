@@ -54,3 +54,4 @@ export const useToastFunctions = () => {
     info: (message: string, duration?: number) => addToast('info', message, duration),
   };
 };
+
