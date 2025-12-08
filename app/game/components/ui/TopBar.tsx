@@ -28,8 +28,8 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
   if (!stats || configStatus !== 'ready') {
     // Config not ready yet - render minimal UI without progress bar
     return (
-      <div className="flex items-center px-0.5 sm:px-1 md:px-4 py-0.5 sm:py-1 md:py-2 h-10 sm:h-12 md:h-16 mt-1 sm:mt-2 md:mt-4">
-        <div className="flex items-center w-[40%] pr-0.5 sm:pr-1 md:pr-2">
+      <div className="flex items-center px-0.5 sm:px-1 md:px-4 py-0.5 sm:py-1 md:py-2 pt-2 sm:pt-3 md:pt-4 h-auto min-h-[2.5rem] sm:min-h-[3rem] md:min-h-[4rem] mt-1 sm:mt-2 md:mt-4">
+        <div className="flex items-center w-[40%] pr-0.5 sm:pr-1 md:pr-2 min-w-0 overflow-hidden">
           <button
             onClick={() => {
               pauseGame();
@@ -51,8 +51,8 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
               )}
             </div>
           </button>
-          <div className="flex flex-col flex-1 min-w-0">
-            <div className="flex items-center bg-gradient-to-r from-blue-600 to-blue-600/40 py-0.5 sm:py-0.5 md:py-1 pl-1.5 sm:pl-2 md:pl-6 pr-0.5 sm:pr-1">
+          <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+            <div className="flex items-center bg-gradient-to-r from-blue-600 to-blue-600/40 py-0.5 sm:py-0.5 md:py-1 pl-1.5 sm:pl-2 md:pl-6 pr-0.5 sm:pr-1 overflow-hidden">
               <div className="text-white mr-0.5 sm:mr-0.5 md:mr-1.5 flex-shrink-0 text-ultra-sm sm:text-caption md:text-sm">{selectedIndustry.icon}</div>
               <span className="text-white font-bold text-ultra-sm sm:text-caption md:text-sm truncate">{selectedIndustry.name}</span>
             </div>
@@ -76,10 +76,10 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
   return (
     <>
       {/* Main TopBar Container */}
-      <div className="flex items-center px-0.5 sm:px-1 md:px-4 py-0.5 sm:py-1 md:py-2 h-10 sm:h-12 md:h-16 mt-1 sm:mt-2 md:mt-4">
+      <div className="flex items-center px-0.5 sm:px-1 md:px-4 py-0.5 sm:py-1 md:py-2 pt-2 sm:pt-3 md:pt-4 h-auto min-h-[2.5rem] sm:min-h-[3rem] md:min-h-[4rem] mt-1 sm:mt-2 md:mt-4">
         
         {/* Left Section: Industry Details and Progress (40% width) */}
-        <div className="flex items-center w-[40%] pr-0.5 sm:pr-1 md:pr-2">
+        <div className="flex items-center w-[40%] pr-0.5 sm:pr-1 md:pr-2 min-w-0 overflow-hidden">
           {/* Circular Industry Image */}
           <button
             onClick={openSettings}
@@ -101,9 +101,9 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
           </button>
 
           {/* Industry Banner and Progress */}
-          <div className="flex flex-col flex-1 min-w-0">
+          <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
             {/* Industry Banner */}
-            <div className="flex items-center bg-gradient-to-r from-blue-600 to-blue-600/40 py-0.5 sm:py-0.5 md:py-1 pl-1.5 sm:pl-2 md:pl-6 pr-0.5 sm:pr-1">
+            <div className="flex items-center bg-gradient-to-r from-blue-600 to-blue-600/40 py-0.5 sm:py-0.5 md:py-1 pl-1.5 sm:pl-2 md:pl-6 pr-0.5 sm:pr-1 overflow-hidden">
               <div className="text-white mr-0.5 sm:mr-0.5 md:mr-1.5 flex-shrink-0 text-ultra-sm sm:text-caption md:text-sm">{selectedIndustry.icon}</div>
               <span className="text-white font-bold text-ultra-sm sm:text-caption md:text-sm truncate">{selectedIndustry.name}</span>
               <span className="text-white/90 font-semibold text-micro sm:text-ultra-sm md:text-xs ml-0.5 sm:ml-1 md:ml-2 flex-shrink-0">(Stage 1)</span>
@@ -111,7 +111,7 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
             
             
             {/* Progress Section */}
-            <div className="flex items-center gap-0.5 sm:gap-0.5 md:gap-1.5 bg-black/45 py-0.5 sm:py-0.5 md:py-1 pl-1.5 sm:pl-2 md:pl-6">
+            <div className="flex items-center gap-0.5 sm:gap-0.5 md:gap-1.5 bg-black/45 py-0.5 sm:py-0.5 md:py-1 pl-1.5 sm:pl-2 md:pl-6 overflow-hidden">
               <span className="text-yellow-400 text-micro sm:text-caption md:text-xs font-bold flex-shrink-0 whitespace-nowrap">Month {currentMonth}</span>
               <div className="w-10 sm:w-16 md:w-28 bg-gray-600 rounded-full h-0.5 sm:h-1 md:h-2 overflow-hidden flex-shrink-0">
                 <div 

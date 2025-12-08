@@ -176,10 +176,9 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
   
   // Determine what's missing for button text
   const needText = useMemo(() => {
-    const missing: string[] = [];
-    if (needsCash && metrics.cash < upgradeCost) missing.push('Cash');
-    if (needsTime && (metrics.myTime + metrics.leveragedTime) < upgradeTimeCost!) missing.push('Time');
-    return missing.length > 0 ? `Need ${missing.join(' + ')}` : 'Need Cash';
+    const hasCash = !needsCash || metrics.cash >= upgradeCost;
+    const hasTime = !needsTime || (metrics.myTime + metrics.leveragedTime) >= upgradeTimeCost!;
+    return (!hasCash || !hasTime) ? 'Need Resources' : '';
   }, [needsCash, needsTime, metrics.cash, metrics.myTime, metrics.leveragedTime, upgradeCost, upgradeTimeCost]);
   
   // Get next level effects for display
@@ -206,106 +205,106 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
   }, []);
 
   return (
-    <Card className="space-y-3">
-      {/* Header: Upgrade Name and Level Badge */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-xs sm:text-sm font-bold text-primary">
-            {upgrade.name}
-          </span>
-        </div>
-        <div className={`px-2 py-1 rounded border text-xs sm:text-sm font-bold ${
-          currentLevel > 0
-            ? 'bg-green-100 border-green-300 text-green-800 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300'
-            : 'bg-gray-100 border-gray-300 text-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'
-        }`}>
-          {currentLevel}/{upgrade.maxLevel}
-        </div>
-      </div>
-
-      {/* What You'll Get (Next Level Info) */}
-      {nextLevelConfig && !isMaxed && (
-        <>
-          <div>
-            <p className="text-sm sm:text-base font-semibold text-primary leading-tight">
-              {nextLevelConfig.name}
-            </p>
+    <Card className="flex flex-col justify-between p-2 sm:p-3 min-h-[200px] overflow-hidden">
+      {/* Top Content Section */}
+      <div className="flex-1 space-y-1">
+        {/* Header: Upgrade Name and Level Badge */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            <span className="text-ultra-sm font-bold text-primary break-words whitespace-normal">
+              {upgrade.name}
+            </span>
           </div>
+          <div className={`px-1.5 py-0.5 rounded border text-micro font-bold ${
+            currentLevel > 0
+              ? 'bg-green-100 border-green-300 text-green-800 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300'
+              : 'bg-gray-100 border-gray-300 text-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'
+          }`}>
+            {currentLevel}/{upgrade.maxLevel}
+          </div>
+        </div>
 
-          {nextLevelConfig.description && (
+        {/* What You'll Get (Next Level Info) */}
+        {nextLevelConfig && !isMaxed && (
+          <>
             <div>
-              <p className="text-xs sm:text-sm text-secondary leading-relaxed">
-                {nextLevelConfig.description}
+              <p className="text-ultra-sm font-semibold text-primary leading-tight break-words whitespace-normal">
+                {nextLevelConfig.name}
               </p>
             </div>
-          )}
 
-          {nextLevelEffects.length > 0 && (
-            <div className="space-y-1.5">
-              <div className="text-xs sm:text-sm font-semibold text-primary uppercase tracking-wide">
-                Effects:
+            {nextLevelConfig.description && (
+              <div>
+                <p className="text-micro text-secondary leading-relaxed break-words whitespace-normal">
+                  {nextLevelConfig.description}
+                </p>
               </div>
-              <ul className="space-y-1">
-                {nextLevelEffects.map((effect, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-xs sm:text-sm text-secondary leading-relaxed">
-                    <span className="text-primary mt-0.5 flex-shrink-0">•</span>
-                    <span>{effect}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+            )}
 
-          {/* Separator */}
-          <div className="border-t border-gray-200 dark:border-gray-700 my-3"></div>
+            {nextLevelEffects.length > 0 && (
+              <div className="space-y-0.5">
+                <div className="text-micro font-semibold text-primary uppercase tracking-wide">
+                  Effects:
+                </div>
+                <ul className="space-y-0.5">
+                  {nextLevelEffects.map((effect, idx) => (
+                    <li key={idx} className="flex items-start gap-1 text-micro text-secondary leading-tight">
+                      <span className="text-primary mt-0.5 flex-shrink-0">•</span>
+                      <span className="flex-1 break-words whitespace-normal">{effect}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
 
-          {/* Cost Section */}
-          <div className="flex items-center gap-3 sm:gap-4">
+        {/* Max Level Message */}
+        {isMaxed && (
+          <div className="p-1 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded">
+            <p className="text-micro text-green-700 dark:text-green-400 font-semibold text-center break-words whitespace-normal">
+              🎉 Max Level
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Section: Cost and Button */}
+      {nextLevelConfig && !isMaxed && (
+        <div className="space-y-1 mt-2">
+          {/* Cost Section - 2 rows */}
+          <div className="space-y-0.5">
             {needsCash && (
-              <div className={`flex items-center gap-1.5 sm:gap-2 ${
-                metrics.cash >= upgradeCost 
-                  ? 'text-green-600 dark:text-green-400' 
+              <div className={`flex items-center gap-1 ${
+                metrics.cash >= upgradeCost
+                  ? 'text-green-600 dark:text-green-400'
                   : 'text-red-600 dark:text-red-400'
               }`}>
-                <span className="text-base sm:text-lg">💎</span>
-                <span className="text-sm sm:text-base font-bold">
+                <span className="text-sm">💎</span>
+                <span className="text-ultra-sm font-bold">
                   ${upgradeCost.toLocaleString()}
                 </span>
               </div>
             )}
-            {needsCash && needsTime && (
-              <span className="text-xs text-secondary">+</span>
-            )}
             {needsTime && (
-              <div className={`flex items-center gap-1.5 sm:gap-2 ${
+              <div className={`flex items-center gap-1 ${
                 (metrics.myTime + metrics.leveragedTime) >= upgradeTimeCost!
                   ? 'text-cyan-600 dark:text-cyan-400'
                   : 'text-red-600 dark:text-red-400'
               }`}>
-                <span className="text-base sm:text-lg">⏱️</span>
-                <span className="text-sm sm:text-base font-bold">
+                <span className="text-sm">⏱️</span>
+                <span className="text-ultra-sm font-bold">
                   {upgradeTimeCost}h
                 </span>
               </div>
             )}
             {!needsCash && !needsTime && (
-              <div className="flex items-center gap-1.5 sm:gap-2 text-green-600 dark:text-green-400">
-                <span className="text-base sm:text-lg">🆓</span>
-                <span className="text-sm sm:text-base font-bold">Free</span>
+              <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                <span className="text-sm">🆓</span>
+                <span className="text-ultra-sm font-bold">Free</span>
               </div>
             )}
           </div>
-        </>
-      )}
-
-      {/* Max Level Message */}
-      {isMaxed && (
-        <div className="p-2 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg">
-          <p className="text-xs sm:text-sm text-green-700 dark:text-green-400 font-semibold text-center">
-            🎉 Maximum Level Reached
-          </p>
-        </div>
-      )}
 
       {/* Requirements Modal */}
       <Modal
@@ -321,34 +320,35 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
         </div>
       </Modal>
 
-      {/* Action Button */}
-      <div className="relative pt-2">
-        <GameButton
-          color={isMaxed ? 'gold' : canAfford && requirementsMet ? 'blue' : 'gold'}
-          fullWidth
-          size="sm"
-          disabled={buttonDisabled}
-          onClick={handlePurchase}
-        >
-          {isMaxed
-            ? 'Max Level'
-            : !requirementsMet
-              ? 'Requirements Not Met'
-              : canAfford
-                ? `Upgrade`
-                // ? `Upgrade to Level ${nextLevelNumber}`
-                : needText}
-        </GameButton>
-        {requirementDescriptions.length > 0 && !requirementsMet && (
-          <button
-            onClick={handleRequirementsClick}
-            className="absolute -top-0.5 sm:-top-1 -right-0.5 sm:-right-1 w-4 h-4 sm:w-5 sm:h-5 bg-[var(--bg-tertiary)] hover:bg-[var(--game-primary)] text-white rounded-full text-micro sm:text-caption font-bold shadow-md transition-colors flex items-center justify-center z-10"
-            title="Click to see requirements"
-          >
-            ?
-          </button>
-        )}
-      </div>
+          {/* Action Button */}
+          <div className="relative">
+            <GameButton
+              color={isMaxed ? 'gold' : canAfford && requirementsMet ? 'blue' : 'gold'}
+              fullWidth
+              size="sm"
+              disabled={buttonDisabled}
+              onClick={handlePurchase}
+            >
+              {isMaxed
+                ? 'Max Level'
+                : !requirementsMet
+                  ? 'Requirements Not Met'
+                  : canAfford
+                    ? `Upgrade`
+                    : needText}
+            </GameButton>
+            {requirementDescriptions.length > 0 && !requirementsMet && (
+              <button
+                onClick={handleRequirementsClick}
+                className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[var(--bg-tertiary)] hover:bg-[var(--game-primary)] text-white rounded-full text-micro font-bold shadow-md transition-colors flex items-center justify-center z-10"
+                title="Click to see requirements"
+              >
+                ?
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
@@ -873,7 +873,7 @@ export function UpgradesTab() {
                         <span className="text-sm text-slate-400">• {category.description}</span>
                       )}
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                       {sortedUpgrades.map((upgrade) => (
                         <UpgradeCard key={upgrade.id} upgrade={upgrade} />
                       ))}

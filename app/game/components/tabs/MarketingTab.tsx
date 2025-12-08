@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
 import { CampaignEffect, MarketingCampaign } from '@/lib/store/slices/marketingSlice';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
@@ -70,6 +70,8 @@ interface CampaignCardProps {
   cooldownRemaining: number;
   currentLevel?: number; // For leveled campaigns
   onLaunch: (campaignId: string) => void;
+  metrics: { cash: number; time: number };
+  getDisplayLabel: (metric: GameMetric) => string;
 }
 
 function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, currentLevel, onLaunch, metrics, getDisplayLabel }: CampaignCardProps & { metrics: { cash: number; time: number }; getDisplayLabel: (metric: GameMetric) => string }) {
@@ -117,10 +119,11 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
   }
   
   // Determine what's missing for button text
-  const missing: string[] = [];
-  if (needsCash && metrics.cash < cost) missing.push('Cash');
-  if (needsTime && metrics.time < (timeCost ?? 0)) missing.push('Time');
-  const needText = missing.length > 0 ? `Not Enough ${missing.join(' + ')}` : 'Not Enough Cash';
+  const needText = useMemo(() => {
+    const hasCash = !needsCash || metrics.cash >= cost;
+    const hasTime = !needsTime || metrics.time >= (timeCost ?? 0);
+    return (!hasCash || !hasTime) ? 'Need Resources' : '';
+  }, [needsCash, needsTime, metrics.cash, metrics.time, cost, timeCost]);
 
   const describeEffect = (effect: CampaignEffect): string => {
     const label = getDisplayLabel(effect.metric);
@@ -164,26 +167,145 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
   }, []);
 
   return (
-    <Card className="space-y-1.5 sm:space-y-2 md:space-y-3">
-      <div className="flex items-center justify-between gap-1.5 sm:gap-2 md:gap-3">
-        <div className="flex-1 min-w-0">
-          <h4 className="text-primary font-semibold text-heading-sm truncate">{campaign.name}</h4>
-          <p className="text-secondary text-caption sm:text-label line-clamp-2 mt-0.5">{campaign.description}</p>
-        </div>
-        <div className="text-right flex-shrink-0">
+    <Card className="flex flex-col justify-between p-2 sm:p-3 min-h-[200px] overflow-hidden">
+      {/* Top Content Section */}
+      <div className="flex-1 space-y-1">
+        {/* Header: Campaign Name and Level Badge */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            <span className="text-ultra-sm font-bold text-primary break-words whitespace-normal">
+              {campaign.name}
+            </span>
+          </div>
           {isLeveled && (
-            <div className="text-xs text-secondary mb-1">
-              Level {level}/{maxLevel}
+            <div className={`px-1.5 py-0.5 rounded border text-micro font-bold ${
+              level > 0
+                ? 'bg-green-100 border-green-300 text-green-800 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300'
+                : 'bg-gray-100 border-gray-300 text-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'
+              }`}>
+              {level}/{maxLevel}
             </div>
           )}
-          <div className="font-semibold text-caption sm:text-label" style={{ color: 'var(--game-secondary)' }}>
-            {(() => {
-              const costParts: string[] = [];
-              if (needsCash) costParts.push(`$${cost.toLocaleString()}`);
-              if (needsTime) costParts.push(`${timeCost}h`);
-              return costParts.join(' + ') || 'Free';
-            })()}
+        </div>
+
+        {/* What You'll Get (Next Level Info) */}
+        {isLeveled && canUpgradeMore && (
+          <>
+            <div>
+              <p className="text-ultra-sm font-semibold text-primary leading-tight break-words whitespace-normal">
+                Level {level + 1}
+              </p>
+            </div>
+
+            <div className="space-y-0.5">
+              <div className="text-micro font-semibold text-primary uppercase tracking-wide">
+                Effects:
+              </div>
+              <ul className="space-y-0.5">
+                {descriptions.map((item, index) => (
+                  <li key={`${campaign.id}-effect-${index}`} className="flex items-start gap-1 text-micro text-secondary leading-tight">
+                    <span className="text-primary mt-0.5 flex-shrink-0">•</span>
+                    <span className={`flex-1 ${item.toneClass} break-words whitespace-normal`}>{item.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </>
+        )}
+
+        {/* For unlimited campaigns or when no upgrade available */}
+        {(!isLeveled || !canUpgradeMore) && (
+          <>
+            <div className="space-y-0.5">
+              <div className="text-micro font-semibold text-primary uppercase tracking-wide">
+                Effects:
+              </div>
+              <ul className="space-y-0.5">
+                {descriptions.map((item, index) => (
+                  <li key={`${campaign.id}-effect-${index}`} className="flex items-start gap-1 text-micro text-secondary leading-tight">
+                    <span className="text-primary mt-0.5 flex-shrink-0">•</span>
+                    <span className={`flex-1 ${item.toneClass} break-words whitespace-normal`}>{item.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </>
+        )}
+
+        {/* Max Level Message */}
+        {isLeveled && !canUpgradeMore && level > 0 && (
+          <div className="p-1 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded">
+            <p className="text-micro text-green-700 dark:text-green-400 font-semibold text-center break-words whitespace-normal">
+              🎉 Max Level
+            </p>
           </div>
+        )}
+      </div>
+
+      {/* Bottom Section: Cost and Button */}
+      <div className="space-y-1 mt-2">
+
+        {/* Cost Section - 2 rows */}
+        <div className="space-y-0.5">
+          {needsCash && (
+            <div className={`flex items-center gap-1 ${
+              metrics.cash >= cost
+                ? 'text-green-600 dark:text-green-400'
+                : 'text-red-600 dark:text-red-400'
+            }`}>
+              <span className="text-sm">💎</span>
+              <span className="text-ultra-sm font-bold">
+                ${cost.toLocaleString()}
+              </span>
+            </div>
+          )}
+          {needsTime && (
+            <div className={`flex items-center gap-1 ${
+              metrics.time >= (timeCost ?? 0)
+                ? 'text-cyan-600 dark:text-cyan-400'
+                : 'text-red-600 dark:text-red-400'
+            }`}>
+              <span className="text-sm">⏱️</span>
+              <span className="text-ultra-sm font-bold">
+                {timeCost}h
+              </span>
+            </div>
+          )}
+          {!needsCash && !needsTime && (
+            <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+              <span className="text-sm">🆓</span>
+              <span className="text-ultra-sm font-bold">Free</span>
+            </div>
+          )}
+        </div>
+
+        {/* Action Button */}
+        <div className="relative">
+          <GameButton
+            onClick={() => onLaunch(campaign.id)}
+            disabled={buttonDisabled}
+            color={buttonDisabled ? 'gold' : 'green'}
+            size="sm"
+          >
+            {isOnCooldown
+              ? `Cooldown: ${formatSeconds(cooldownRemaining)}`
+              : !requirementsMet
+                ? 'Requirements Not Met'
+                : isLeveled && !canUpgradeMore
+                  ? 'Max Level'
+                  : canAfford
+                    ? `Upgrade`
+                    : needText}
+          </GameButton>
+          {requirementDescriptions.length > 0 && !requirementsMet && !isOnCooldown && canAfford && (
+            <button
+              onClick={handleRequirementsClick}
+              className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[var(--bg-tertiary)] hover:bg-[var(--game-primary)] text-white rounded-full text-micro font-bold shadow-md transition-colors flex items-center justify-center z-10"
+              title="Click to see requirements"
+            >
+              ?
+            </button>
+          )}
         </div>
       </div>
 
@@ -200,49 +322,6 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
           ))}
         </div>
       </Modal>
-
-      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:gap-3 text-caption sm:text-label text-secondary">
-        {descriptions.every((item) => !item.text) ? (
-          <span className="text-muted">No stat changes</span>
-        ) : (
-          descriptions.map((item, index) => (
-            <span key={`${campaign.id}-effect-${index}`} className={item.toneClass}>
-              {item.text}
-            </span>
-          ))
-        )}
-      </div>
-
-      <div className="relative">
-        <GameButton
-          onClick={() => onLaunch(campaign.id)}
-          disabled={buttonDisabled}
-          color={buttonDisabled ? 'gold' : 'green'}
-          fullWidth
-          size="sm"
-        >
-          {isOnCooldown
-            ? `Cooldown: ${formatSeconds(cooldownRemaining)}`
-            : !requirementsMet
-              ? 'Requirements Not Met'
-              : isLeveled && !canUpgradeMore
-                ? 'Max Level Reached'
-                : canAfford
-                  ? isLeveled
-                    ? `Purchase Level ${level + 1}`
-                    : 'Launch Campaign'
-                  : needText}
-        </GameButton>
-        {requirementDescriptions.length > 0 && !requirementsMet && !isOnCooldown && canAfford && (
-          <button
-            onClick={handleRequirementsClick}
-            className="absolute -top-0.5 sm:-top-1 -right-0.5 sm:-right-1 w-4 h-4 sm:w-5 sm:h-5 bg-[var(--bg-tertiary)] hover:bg-[var(--game-primary)] text-white rounded-full text-micro sm:text-caption font-bold shadow-md transition-colors flex items-center justify-center z-10"
-            title="Click to see requirements"
-          >
-            ?
-          </button>
-        )}
-      </div>
     </Card>
   );
 }
@@ -326,7 +405,7 @@ export function MarketingTab() {
                       <span className="text-sm text-slate-400">• {category.description}</span>
                     )}
                   </div>
-                  <div className="space-y-2 sm:space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                     {sortedCampaigns.map((campaign) => {
                       const isLeveled = campaign.type === 'leveled';
                       const currentLevel = isLeveled ? getCampaignLevel(campaign.id) : 0;

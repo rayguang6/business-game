@@ -520,8 +520,8 @@ export function GameCanvas() {
         </div>
       )}
 
-      {/* Lead Progress Widget - Bottom Left */}
-      <LeadProgress position="bottom-left" />
+      {/* Lead Progress Widget - Bottom Left - DISABLED FOR NOW */}
+      {/* <LeadProgress position="bottom-left" /> */}
 
       {/* Canvas Container - Responsive with max constraints */}
       <div 

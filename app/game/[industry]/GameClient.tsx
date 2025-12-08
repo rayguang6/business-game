@@ -133,9 +133,9 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
         <div id="game-shell" className="h-screen relative flex flex-col md:flex-row overflow-hidden">
         {/* Mobile: Top Section - Game Canvas Area (flexible height) */}
         {/* Desktop: Left Section - Game Canvas Area (50% width) */}
-        <div className="relative md:h-full md:w-1/2 flex items-center justify-center py-4 md:py-0">
+        <div className="relative md:h-full md:w-1/2 flex items-center justify-center py-4 md:py-0 overflow-hidden">
           {/* TopBar Overlay */}
-          <div className="absolute top-0 left-0 right-0 z-20">
+          <div className="absolute top-0 left-0 right-0 z-20 pt-1 sm:pt-1.5 md:pt-2">
             <TopBar onSettingsOpen={openSettings} />
           </div>
 
