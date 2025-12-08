@@ -172,9 +172,9 @@ function AdminLayoutContent({ industries, children }: AdminLayoutClientProps) {
   };
   
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex">
+    <div className="h-screen bg-slate-950 text-slate-100 flex overflow-hidden">
         {/* Left Sidebar */}
-        <aside className="w-64 bg-slate-900 border-r border-slate-800 p-4 flex-shrink-0">
+        <aside className="w-64 bg-slate-900 border-r border-slate-800 p-4 flex-shrink-0 h-full overflow-y-auto">
         <div className="space-y-6">
           <div>
             <h2 className="text-xl font-bold text-slate-200 mb-1">Admin Panel</h2>
@@ -236,7 +236,7 @@ function AdminLayoutContent({ industries, children }: AdminLayoutClientProps) {
       </aside>
       
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {/* Top Bar with Industry Dropdown */}
         {/* Hide dropdown on global config and industries pages, but show on global-metric-display for reference */}
         {currentTab === AdminTabEnum.GlobalMetricDisplay || (currentTab !== AdminTabEnum.Global && currentTab !== AdminTabEnum.Industries) ? (
@@ -297,7 +297,7 @@ function AdminLayoutContent({ industries, children }: AdminLayoutClientProps) {
         ) : null}
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-y-auto">
           {children}
         </main>
       </div>

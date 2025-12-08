@@ -67,7 +67,7 @@ export default function MetricDisplayPage() {
   });
 
   return (
-    <div className="max-w-6xl">
+    <div className="w-full p-8">
       <MetricDisplayConfigTab
         industryId="global"
         referenceIndustryId={referenceIndustryId}

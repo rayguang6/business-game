@@ -240,9 +240,7 @@ export function useSimulationConfig({
         if (result.eventSelectionMode) setEventSelectionMode(result.eventSelectionMode);
         if (result.eventSequence) setEventSequence(result.eventSequence);
 
-        const successMessage = 'Config loaded successfully';
-        success(successMessage);
-        setStatus(successMessage);
+        // Config loaded successfully - no toast needed
       } catch (err) {
         console.error(`Failed to load ${configType} config`, err);
         const errorMessage = `Failed to load ${configType} config: ${err instanceof Error ? err.message : 'Unknown error'}`;

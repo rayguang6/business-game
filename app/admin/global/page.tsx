@@ -8,7 +8,7 @@ export default function GlobalConfigPage() {
 
 
   return (
-    <div className="max-w-5xl">
+    <div className="w-full p-8">
       <GlobalConfigTab
         globalLoading={globalConfig.loading}
         globalSaving={globalConfig.saving}

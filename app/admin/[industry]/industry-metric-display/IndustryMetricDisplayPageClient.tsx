@@ -23,7 +23,7 @@ export default function IndustryMetricDisplayPageClient({ industry, industries }
   }, [industry, industries]);
 
   return (
-    <div className="max-w-6xl">
+    <div className="w-full p-8">
       <MetricDisplayConfigTab
         industryId={industry}
         industryName={industryName}

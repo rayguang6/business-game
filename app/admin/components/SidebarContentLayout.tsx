@@ -52,22 +52,26 @@ export function SidebarContentLayout({
 
   return (
     <div className="p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg overflow-hidden">
+      <div className="w-full">
+        <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
           <div className="grid grid-cols-1 lg:grid-cols-4 min-h-[600px]">
             {/* Sidebar */}
             <div className="lg:col-span-1 border-r border-slate-800 lg:border-r-slate-700 p-6">
-              <VerticalSidebar
-                title={title}
-                description={description}
-                items={sidebarItems}
-                selectedId={selectedId}
-                onSelect={onSelect}
-                loading={loading}
-                error={error}
-                actionButton={actionButton}
-                width="w-full"
-              />
+              <div className="lg:sticky lg:top-6 lg:self-start">
+                <div className="lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
+                  <VerticalSidebar
+                    title={title}
+                    description={description}
+                    items={sidebarItems}
+                    selectedId={selectedId}
+                    onSelect={onSelect}
+                    loading={loading}
+                    error={error}
+                    actionButton={actionButton}
+                    width="w-full"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Content */}
