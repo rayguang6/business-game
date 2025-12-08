@@ -28,7 +28,6 @@ interface CampaignLevelForm {
 interface MarketingTabProps {
   campaigns: MarketingCampaign[];
   campaignsLoading: boolean;
-  campaignStatus: string | null;
   selectedCampaignId: string;
   isCreatingCampaign: boolean;
   campaignForm: {
@@ -77,7 +76,6 @@ interface MarketingTabProps {
 export function MarketingTab({
   campaigns,
   campaignsLoading,
-  campaignStatus,
   selectedCampaignId,
   isCreatingCampaign,
   campaignForm,
@@ -142,17 +140,6 @@ export function MarketingTab({
           >
             + New Campaign
           </button>
-          {campaignStatus && (
-            <div className={`px-4 py-2 rounded-lg text-sm ${
-              campaignStatus.toLowerCase().includes('error') || campaignStatus.toLowerCase().includes('failed')
-                ? 'bg-rose-900/50 text-rose-200 border border-rose-700'
-                : campaignStatus.toLowerCase().includes('saved') || campaignStatus.toLowerCase().includes('success')
-                ? 'bg-green-900/50 text-green-200 border border-green-700'
-                : 'bg-slate-800 text-slate-300 border border-slate-700'
-            }`}>
-              {campaignStatus}
-            </div>
-          )}
         </div>
 
         {campaignsLoading ? (

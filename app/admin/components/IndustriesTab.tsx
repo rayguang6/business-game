@@ -19,7 +19,6 @@ interface IndustriesTabProps {
   };
   isSaving: boolean;
   isDeleting: boolean;
-  statusMessage: string | null;
   isCreating: boolean;
   onSelectIndustry: (industryId: string) => void;
   onCreateNew: () => void;

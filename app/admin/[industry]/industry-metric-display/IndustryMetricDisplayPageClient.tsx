@@ -29,7 +29,6 @@ export default function IndustryMetricDisplayPageClient({ industry, industries }
         industryName={industryName}
         loading={config.loading}
         saving={config.saving}
-        status={config.status}
         configs={config.configs}
         globalConfigs={config.globalConfigs}
         updateConfig={config.updateConfig}

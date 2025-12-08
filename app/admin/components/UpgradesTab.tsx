@@ -23,7 +23,6 @@ interface UpgradesTabProps {
   industryId: string;
   upgrades: UpgradeDefinition[];
   upgradesLoading: boolean;
-  upgradeStatus: string | null;
   selectedUpgradeId: string;
   isCreatingUpgrade: boolean;
   upgradeForm: {
@@ -65,7 +64,6 @@ export function UpgradesTab({
   industryId,
   upgrades,
   upgradesLoading,
-  upgradeStatus,
   selectedUpgradeId,
   isCreatingUpgrade,
   upgradeForm,
@@ -134,7 +132,6 @@ export function UpgradesTab({
               >
                 + New Upgrade
               </button>
-              {upgradeStatus && <span className="text-sm text-slate-300">{upgradeStatus}</span>}
             </div>
 
             {upgradesLoading ? (

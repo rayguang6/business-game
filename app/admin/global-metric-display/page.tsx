@@ -73,7 +73,6 @@ export default function MetricDisplayPage() {
         referenceIndustryId={referenceIndustryId}
         loading={config.loading}
         saving={config.saving}
-        status={config.status}
         configs={config.configs}
         globalConfigs={config.globalConfigs}
         referenceConfigs={config.referenceConfigs}

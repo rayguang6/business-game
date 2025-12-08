@@ -11,7 +11,7 @@ interface ConditionsTabProps {
   industryId: string;
   conditions: GameCondition[];
   conditionsLoading: boolean;
-  conditionsStatus: string | null;
+  conditionsError: Error | null;
   selectedConditionId: string;
   isCreatingCondition: boolean;
   conditionForm: {
@@ -29,6 +29,7 @@ interface ConditionsTabProps {
   onSaveCondition: () => Promise<void>;
   onDeleteCondition: () => Promise<void>;
   onReset: () => void;
+  onReload: () => void;
   onUpdateForm: (updates: Partial<{
     id: string;
     name: string;
@@ -43,7 +44,7 @@ export function ConditionsTab({
   industryId,
   conditions,
   conditionsLoading,
-  conditionsStatus,
+  conditionsError,
   selectedConditionId,
   isCreatingCondition,
   conditionForm,
@@ -54,6 +55,7 @@ export function ConditionsTab({
   onSaveCondition,
   onDeleteCondition,
   onReset,
+  onReload,
   onUpdateForm,
 }: ConditionsTabProps) {
   // Helper to get display label for condition metrics
@@ -113,7 +115,6 @@ export function ConditionsTab({
           <>
             <div className="flex items-center justify-between gap-3">
               <div>
-                {conditionsStatus && <span className="text-sm text-slate-300">{conditionsStatus}</span>}
               </div>
               <button
                 type="button"
@@ -127,6 +128,18 @@ export function ConditionsTab({
 
             {conditionsLoading ? (
               <div className="text-sm text-slate-400">Loading conditions…</div>
+            ) : conditionsError ? (
+              <div className="space-y-2">
+                <div className="text-sm text-red-400">
+                  Error loading conditions: {conditionsError.message}
+                </div>
+                <button
+                  onClick={onReload}
+                  className="px-3 py-1 text-xs font-medium rounded border border-slate-600 text-slate-300 hover:bg-slate-800"
+                >
+                  Retry
+                </button>
+              </div>
             ) : conditions.length === 0 && !isCreatingCondition ? (
               <div className="text-sm text-slate-400">No conditions configured yet.</div>
             ) : (

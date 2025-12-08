@@ -8,7 +8,6 @@ interface CategoriesTabProps {
   industryId: string;
   categories: Category[];
   categoriesLoading: boolean;
-  categoryStatus: string | null;
   selectedCategoryId: string;
   isCreatingCategory: boolean;
   categoryForm: {
@@ -36,7 +35,6 @@ export function CategoriesTab({
   industryId,
   categories,
   categoriesLoading,
-  categoryStatus,
   selectedCategoryId,
   isCreatingCategory,
   categoryForm,
@@ -94,7 +92,6 @@ export function CategoriesTab({
               >
                 + New Category
               </button>
-              {categoryStatus && <span className="text-sm text-slate-300">{categoryStatus}</span>}
             </div>
 
             {categoriesLoading ? (

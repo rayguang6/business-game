@@ -21,31 +21,44 @@ export async function fetchConditionsForIndustry(
     return null;
   }
 
-  const { data, error } = await supabaseServer
-    .from('conditions')
-    .select('id, industry_id, name, description, metric, operator, value')
-    .eq('industry_id', industryId)
-    .order('name');
+  try {
+    const { data, error } = await supabaseServer
+      .from('conditions')
+      .select('id, industry_id, name, description, metric, operator, value')
+      .eq('industry_id', industryId)
+      .order('name');
 
-  if (error) {
-    console.error(`[Conditions] Failed to fetch conditions for industry "${industryId}":`, error);
-    return null;
+    if (error) {
+      console.error(`[Conditions] Failed to fetch conditions for industry "${industryId}":`, error);
+      // Check if the table exists
+      if (error.code === '42P01') { // PostgreSQL table doesn't exist error
+        console.error('[Conditions] The conditions table does not exist. Please run database migrations.');
+        throw new Error('Database table "conditions" does not exist. Please contact an administrator.');
+      }
+      throw new Error(`Database error: ${error.message}`);
+    }
+
+    if (!data) {
+      return [];
+    }
+
+    return data
+      .filter((row) => Boolean(row.id) && Boolean(row.name) && Boolean(row.metric))
+      .map((row) => ({
+        id: row.id,
+        name: row.name,
+        description: row.description || '',
+        metric: row.metric as any, // Will be validated by GameMetric enum
+        operator: row.operator as any,
+        value: Number(row.value) || 0,
+      }));
+  } catch (error) {
+    console.error(`[Conditions] Unexpected error fetching conditions for industry "${industryId}":`, error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('An unexpected error occurred while fetching conditions.');
   }
-
-  if (!data || data.length === 0) {
-    return [];
-  }
-
-  return data
-    .filter((row) => Boolean(row.id) && Boolean(row.name) && Boolean(row.metric))
-    .map((row) => ({
-      id: row.id,
-      name: row.name,
-      description: row.description || '',
-      metric: row.metric as any, // Will be validated by GameMetric enum
-      operator: row.operator as any,
-      value: Number(row.value) || 0,
-    }));
 }
 
 export async function upsertConditionForIndustry(

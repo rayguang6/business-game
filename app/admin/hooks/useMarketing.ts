@@ -5,6 +5,7 @@ import type { MarketingCampaign } from '@/lib/store/slices/marketingSlice';
 import type { Requirement, Category } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import type { Operation } from './types';
+import { useToastFunctions } from '../components/ui/ToastContext';
 
 interface CampaignForm {
   id: string;
@@ -46,7 +47,7 @@ const categoriesQueryKey = (industryId: string) => ['categories', industryId] as
 
 export function useMarketing(industryId: string, campaignId?: string) {
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState<string | null>(null);
+  const { success, error } = useToastFunctions();
   const [selectedId, setSelectedId] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState<CampaignForm>({
@@ -69,7 +70,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
   const {
     data: campaigns = [],
     isLoading,
-    error,
+    error: queryError,
   } = useQuery({
     queryKey: marketingQueryKey(industryId),
     queryFn: async () => {
@@ -154,10 +155,10 @@ export function useMarketing(industryId: string, campaignId?: string) {
       }
       const errorMessage = err instanceof Error ? err.message : 'Failed to save campaign.';
       console.error('[Marketing] Setting error status:', errorMessage);
-      setStatus(errorMessage);
+      error(errorMessage);
     },
     onSuccess: (savedCampaign) => {
-      setStatus('Campaign saved.');
+      success('Campaign saved.');
       setIsCreating(false);
       setSelectedId(savedCampaign.id);
     },
@@ -190,7 +191,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
       if (context?.previousCampaigns) {
         queryClient.setQueryData(marketingQueryKey(industryId), context.previousCampaigns);
       }
-      setStatus(err instanceof Error ? err.message : 'Failed to delete campaign.');
+      error(err instanceof Error ? err.message : 'Failed to delete campaign.');
     },
     onSuccess: () => {
       setSelectedId('');
@@ -205,7 +206,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
         order: '0',
       });
       setEffectsForm([]);
-      setStatus('Campaign deleted.');
+      success('Campaign deleted.');
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: marketingQueryKey(industryId) });
@@ -258,7 +259,6 @@ export function useMarketing(industryId: string, campaignId?: string) {
       );
       setLevelsForm([]);
     }
-    if (resetMsg) setStatus(null);
   }, []);
 
   // Select campaign when campaignId changes or campaigns are loaded
@@ -289,12 +289,11 @@ export function useMarketing(industryId: string, campaignId?: string) {
     });
     setEffectsForm([]);
     setLevelsForm([]);
-    setStatus(null);
   }, []);
 
   const saveCampaign = useCallback(async () => {
     if (!industryId) {
-      setStatus('Save the industry first.');
+      error('Save the industry first.');
       return;
     }
     const id = form.id.trim();
@@ -306,11 +305,11 @@ export function useMarketing(industryId: string, campaignId?: string) {
     console.log('[Marketing] Saving campaign:', { id, name, campaignType, effectsForm: effectsForm?.length, levelsForm: levelsForm?.length });
     
     if (!id || !name) {
-      setStatus('Campaign id and name are required.');
+      error('Campaign id and name are required.');
       return;
     }
     if (!Number.isFinite(cooldownSeconds) || cooldownSeconds < 0) {
-      setStatus('Cooldown must be >= 0 seconds (recommended: 10-30 seconds).');
+      error('Cooldown must be >= 0 seconds (recommended: 10-30 seconds).');
       return;
     }
 
@@ -325,15 +324,15 @@ export function useMarketing(industryId: string, campaignId?: string) {
       // Validate leveled campaign
       const maxLevel = Number(form.maxLevel);
       if (!Number.isFinite(maxLevel) || maxLevel < 1) {
-        setStatus('Max level must be >= 1 for leveled campaigns.');
+        error('Max level must be >= 1 for leveled campaigns.');
         return;
       }
       if (levelsForm.length === 0) {
-        setStatus('Leveled campaigns must have at least one level.');
+        error('Leveled campaigns must have at least one level.');
         return;
       }
       if (levelsForm.length !== maxLevel) {
-        setStatus(`Number of levels (${levelsForm.length}) must match max level (${maxLevel}).`);
+        error(`Number of levels (${levelsForm.length}) must match max level (${maxLevel}).`);
         return;
       }
 
@@ -342,11 +341,11 @@ export function useMarketing(industryId: string, campaignId?: string) {
         const levelCost = Number(level.cost);
         const levelTimeCost = level.timeCost?.trim() ? Number(level.timeCost) : undefined;
         if (!Number.isFinite(levelCost) || levelCost < 0) {
-          setStatus(`Level ${level.level} cost must be >= 0.`);
+          error(`Level ${level.level} cost must be >= 0.`);
           return;
         }
         if (levelTimeCost !== undefined && (!Number.isFinite(levelTimeCost) || levelTimeCost < 0)) {
-          setStatus(`Level ${level.level} time cost must be >= 0 if specified.`);
+          error(`Level ${level.level} time cost must be >= 0 if specified.`);
           return;
         }
       }
@@ -385,11 +384,11 @@ export function useMarketing(industryId: string, campaignId?: string) {
       const timeCost = timeCostValue ? Number(timeCostValue) : undefined;
       
       if (!Number.isFinite(cost) || cost < 0) {
-        setStatus('Cost must be >= 0 for unlimited campaigns.');
+        error('Cost must be >= 0 for unlimited campaigns.');
         return;
       }
       if (timeCost !== undefined && (!Number.isFinite(timeCost) || timeCost < 0)) {
-        setStatus('Time cost must be >= 0 if specified.');
+        error('Time cost must be >= 0 if specified.');
         return;
       }
 
@@ -445,7 +444,6 @@ export function useMarketing(industryId: string, campaignId?: string) {
       });
       setEffectsForm([]);
     }
-    setStatus(null);
   }, [selectedId, isCreating, campaigns, selectCampaign]);
 
   const updateForm = useCallback((updates: Partial<CampaignForm>) => {
@@ -498,7 +496,6 @@ export function useMarketing(industryId: string, campaignId?: string) {
     campaigns,
     categories,
     loading: isLoading || categoriesLoading,
-    status: status || (error instanceof Error ? error.message : null),
     selectedId,
     isCreating,
     saving: saveMutation.isPending,

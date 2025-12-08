@@ -55,7 +55,12 @@ export async function fetchFlags(industryId: IndustryId) {
 }
 
 export async function fetchConditions(industryId: IndustryId) {
-  return await fetchConditionsForIndustry(industryId);
+  const result = await fetchConditionsForIndustry(industryId);
+  if (result === null) {
+    // fetchConditionsForIndustry returns null only on configuration errors
+    throw new Error('Database configuration error. Unable to fetch conditions.');
+  }
+  return result;
 }
 
 export async function fetchGlobalConfig() {

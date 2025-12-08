@@ -13,7 +13,6 @@ type UiConfig = {
 
 interface GlobalConfigTabProps {
   globalLoading: boolean;
-  globalStatus: string | null;
   globalSaving: boolean;
   metrics: BusinessMetrics | null;
   stats: BusinessStats | null;
@@ -32,7 +31,6 @@ interface GlobalConfigTabProps {
 
 export function GlobalConfigTab({
   globalLoading,
-  globalStatus,
   globalSaving,
   metrics,
   stats,
@@ -80,7 +78,6 @@ export function GlobalConfigTab({
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <span className="text-sm text-slate-400">{globalLoading ? 'Loading…' : ' '}</span>
-          {globalStatus && <span className="text-sm text-slate-300">{globalStatus}</span>}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

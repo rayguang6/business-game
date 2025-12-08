@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchCategories, upsertCategory, deleteCategory } from '@/lib/server/actions/adminActions';
 import type { Category, IndustryId } from '@/lib/game/types';
 import type { Operation } from './types';
+import { useToastFunctions } from '../components/ui/ToastContext';
 
 interface CategoryForm {
   id: string;
@@ -16,7 +17,7 @@ const categoriesQueryKey = (industryId: string) => ['categories', industryId] as
 
 export function useCategories(industryId: string, categoryId?: string) {
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState<string | null>(null);
+  const { success, error } = useToastFunctions();
   const [selectedId, setSelectedId] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState<CategoryForm>({
@@ -30,7 +31,7 @@ export function useCategories(industryId: string, categoryId?: string) {
   const {
     data: categories = [],
     isLoading,
-    error,
+    error: queryError,
   } = useQuery({
     queryKey: categoriesQueryKey(industryId),
     queryFn: async () => {
@@ -88,13 +89,13 @@ export function useCategories(industryId: string, categoryId?: string) {
       }
       const errorMsg = err instanceof Error ? err.message : 'Failed to save category.';
       console.error('[Admin] Save failed:', errorMsg);
-      setStatus(errorMsg);
+      error(errorMsg);
     },
     onSuccess: (savedCategory) => {
       setIsCreating(false);
       setSelectedId(savedCategory.id);
       selectCategory(savedCategory, false);
-      setStatus(`Category saved successfully.`);
+      success(`Category saved successfully.`);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: categoriesQueryKey(industryId) });
@@ -124,7 +125,7 @@ export function useCategories(industryId: string, categoryId?: string) {
       if (context?.previousCategories) {
         queryClient.setQueryData(categoriesQueryKey(industryId), context.previousCategories);
       }
-      setStatus(err instanceof Error ? err.message : 'Failed to delete category.');
+      error(err instanceof Error ? err.message : 'Failed to delete category.');
     },
     onSuccess: () => {
       setSelectedId('');
@@ -134,7 +135,7 @@ export function useCategories(industryId: string, categoryId?: string) {
         orderIndex: '0',
         description: '',
       });
-      setStatus('Category deleted.');
+      success('Category deleted.');
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: categoriesQueryKey(industryId) });
@@ -152,7 +153,6 @@ export function useCategories(industryId: string, categoryId?: string) {
       description: category.description || '',
     });
 
-    if (resetMsg) setStatus(null);
   }, []);
 
   // Select category when categoryId changes or categories are loaded
@@ -169,14 +169,13 @@ export function useCategories(industryId: string, categoryId?: string) {
           orderIndex: String(category.orderIndex ?? 0),
           description: category.description || '',
         });
-        setStatus(null);
       }
     }
   }, [categoryId, categories]);
 
   const createCategory = useCallback(() => {
     if (!industryId) {
-      setStatus('Save the industry first.');
+      error('Save the industry first.');
       return;
     }
     setIsCreating(true);
@@ -187,12 +186,11 @@ export function useCategories(industryId: string, categoryId?: string) {
       orderIndex: '0',
       description: '',
     });
-    setStatus(null);
   }, [industryId]);
 
   const saveCategory = useCallback(async () => {
     if (!industryId) {
-      setStatus('Save the industry first.');
+      error('Save the industry first.');
       return;
     }
     const id = form.id.trim();
@@ -200,13 +198,13 @@ export function useCategories(industryId: string, categoryId?: string) {
     const description = form.description.trim();
 
     if (!id || !name) {
-      setStatus('Category id and name are required.');
+      error('Category id and name are required.');
       return;
     }
 
     const orderIndex = form.orderIndex.trim() ? Number(form.orderIndex.trim()) : 0;
     if (Number.isNaN(orderIndex) || orderIndex < 0) {
-      setStatus('Order index must be a non-negative number.');
+      error('Order index must be a non-negative number.');
       return;
     }
 
@@ -239,10 +237,9 @@ export function useCategories(industryId: string, categoryId?: string) {
         id: '',
         name: '',
         orderIndex: '0',
-        description: '',
-      });
+      description: '',
+    });
     }
-    setStatus(null);
   }, [selectedId, isCreating, categories, selectCategory]);
 
   const updateForm = useCallback((updates: Partial<CategoryForm>) => {
@@ -254,7 +251,6 @@ export function useCategories(industryId: string, categoryId?: string) {
   return {
     categories,
     loading: isLoading,
-    status: status || (error instanceof Error ? error.message : null),
     selectedId,
     isCreating,
     saving: saveMutation.isPending,

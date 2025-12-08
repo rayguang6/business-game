@@ -9,12 +9,12 @@ import type { Requirement, UpgradeDefinition } from '@/lib/game/types';
 import type { StaffRoleConfig } from '@/lib/game/staffConfig';
 import { RequirementsSelector } from './RequirementsSelector';
 import { makeUniqueId, slugify } from './utils';
+import { useToastFunctions } from './ui/ToastContext';
 
 interface EventsTabProps {
   industryId: string;
   events: GameEvent[];
   eventsLoading: boolean;
-  eventStatus: string | null;
   selectedEventId: string;
   isCreatingEvent: boolean;
   eventForm: {
@@ -41,14 +41,12 @@ interface EventsTabProps {
   onUpdateEventForm: (updates: Partial<EventsTabProps['eventForm']>) => void;
   onUpdateEventChoices: (choices: GameEventChoice[]) => void;
   onPersistEventWithChoices: (choices: GameEventChoice[], message?: string) => Promise<void>;
-  onUpdateStatus: (status: string | null) => void;
 }
 
 export function EventsTab({
   industryId,
   events,
   eventsLoading,
-  eventStatus,
   selectedEventId,
   isCreatingEvent,
   eventForm,
@@ -69,8 +67,8 @@ export function EventsTab({
   onUpdateEventForm,
   onUpdateEventChoices,
   onPersistEventWithChoices,
-  onUpdateStatus,
 }: EventsTabProps) {
+  const { success, error } = useToastFunctions();
   const [showLabelTooltip, setShowLabelTooltip] = useState<string | null>(null);
 
   // Choice/consequence state (managed internally)
@@ -179,7 +177,7 @@ export function EventsTab({
 
   const handleCreateChoice = () => {
     if (!selectedEventId && !isCreatingEvent) {
-      onUpdateStatus('Create or select an event first.');
+      error('Create or select an event first.');
       return;
     }
     setIsCreatingChoice(true);
@@ -198,15 +196,15 @@ export function EventsTab({
     const timeCost = choiceForm.timeCost.trim() === '' ? undefined : Number(choiceForm.timeCost);
     const setsFlag = choiceForm.setsFlag?.trim() || undefined;
     if (!id || !label) {
-      onUpdateStatus('Choice id and label are required.');
+      error('Choice id and label are required.');
       return;
     }
     if (cost !== undefined && (!Number.isFinite(cost) || cost < 0)) {
-      onUpdateStatus('Choice cost must be a non-negative number.');
+      error('Choice cost must be a non-negative number.');
       return;
     }
     if (timeCost !== undefined && (!Number.isFinite(timeCost) || timeCost < 0)) {
-      onUpdateStatus('Choice time cost must be a non-negative number.');
+      error('Choice time cost must be a non-negative number.');
       return;
     }
 
@@ -250,7 +248,6 @@ export function EventsTab({
       setSelectedChoiceId('');
       setChoiceForm({ id: '', label: '', description: '', cost: '', timeCost: '', setsFlag: '', requirements: [] });
     }
-    onUpdateStatus(null);
   };
 
   // Consequence handlers
@@ -298,7 +295,7 @@ export function EventsTab({
 
   const handleCreateConsequence = () => {
     if (!selectedChoiceId && !isCreatingChoice) {
-      onUpdateStatus('Create or select a choice first.');
+      error('Create or select a choice first.');
       return;
     }
     setIsCreatingConsequence(true);
@@ -308,7 +305,7 @@ export function EventsTab({
 
   const handleSaveConsequence = () => {
     if (!selectedChoiceId && !isCreatingChoice) {
-      onUpdateStatus('Create or select a choice first.');
+      error('Create or select a choice first.');
       return;
     }
     const id = consequenceForm.id.trim();
@@ -316,7 +313,7 @@ export function EventsTab({
     const description = consequenceForm.description.trim();
     const weightNum = Number(consequenceForm.weight);
     if (!id || !Number.isInteger(weightNum) || weightNum <= 0) {
-      onUpdateStatus('Consequence id and positive integer weight are required.');
+      error('Consequence id and positive integer weight are required.');
       return;
     }
 
@@ -357,7 +354,7 @@ export function EventsTab({
       const delayed = consequenceForm.delayedConsequence;
       const delaySeconds = Number(delayed.delaySeconds);
       if (!delayed.id || delaySeconds <= 0) {
-        onUpdateStatus('Delayed consequence requires id and positive delaySeconds.');
+        error('Delayed consequence requires id and positive delaySeconds.');
         return;
       }
       
@@ -437,7 +434,7 @@ export function EventsTab({
 
     const idx = eventChoices.findIndex((c) => c.id === selectedChoiceId);
     if (idx === -1) {
-      onUpdateStatus('Choice not found.');
+      error('Choice not found.');
       return;
     }
     const currentChoice = eventChoices[idx];
@@ -466,7 +463,7 @@ export function EventsTab({
     if (isCreatingConsequence || !selectedConsequenceId || !selectedChoiceId) return;
     const idx = eventChoices.findIndex((c) => c.id === selectedChoiceId);
     if (idx === -1) {
-      onUpdateStatus('Choice not found.');
+      error('Choice not found.');
       return;
     }
     const currentChoice = eventChoices[idx];
@@ -490,7 +487,6 @@ export function EventsTab({
       setSelectedConsequenceId('');
       setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [], delayedConsequence: undefined });
     }
-    onUpdateStatus(null);
   };
 
 
@@ -531,7 +527,6 @@ export function EventsTab({
                     + New Event
                   </button>
                 </div>
-                {eventStatus && <span className="text-sm text-slate-300">{eventStatus}</span>}
               </div>
 
               {eventsLoading ? (

@@ -11,7 +11,6 @@ export default function GlobalConfigPage() {
     <div className="max-w-5xl">
       <GlobalConfigTab
         globalLoading={globalConfig.loading}
-        globalStatus={globalConfig.status}
         globalSaving={globalConfig.saving}
         metrics={globalConfig.businessMetrics}
         stats={globalConfig.businessStats}

@@ -65,7 +65,6 @@ export default function CategoryDetailPage({
         if (category) handleSelectCategory(category);
       }}
       loading={categories.loading}
-      error={categories.status}
       actionButton={{
         label: '+ New Category',
         onClick: categories.createCategory,
@@ -81,7 +80,6 @@ export default function CategoryDetailPage({
         industryId={industry}
         categories={categories.categories}
         categoriesLoading={categories.loading}
-        categoryStatus={categories.status}
         selectedCategoryId={categories.selectedId}
         isCreatingCategory={categories.isCreating}
         categoryForm={categories.form}

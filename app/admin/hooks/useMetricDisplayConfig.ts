@@ -9,6 +9,7 @@ import {
   deleteMetricDisplayConfigAction,
 } from '@/lib/server/actions/adminActions';
 import type { MetricDisplayConfig } from '@/lib/data/metricDisplayConfigRepository';
+import { useToastFunctions } from '../components/ui/ToastContext';
 
 interface UseMetricDisplayConfigOptions {
   industryId: IndustryId | 'global'; // 'global' = global defaults, industryId = industry-specific
@@ -24,7 +25,6 @@ interface UseMetricDisplayConfigReturn {
   // Status
   loading: boolean;
   saving: boolean;
-  status: { type: 'success' | 'error'; message: string } | null;
   
   // Actions
   updateConfig: (metricId: GameMetric, updates: Partial<Omit<MetricDisplayConfig, 'id' | 'metricId' | 'industryId' | 'createdAt' | 'updatedAt'>>) => void;
@@ -43,7 +43,7 @@ export function useMetricDisplayConfig({
   const [referenceConfigs, setReferenceConfigs] = useState<Record<GameMetric, MetricDisplayConfig | null>>({} as Record<GameMetric, MetricDisplayConfig | null>);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const { success, error } = useToastFunctions();
 
   // Load configs on mount and when industryId or referenceIndustryId changes
   useEffect(() => {
@@ -52,7 +52,7 @@ export function useMetricDisplayConfig({
 
   const loadConfigs = useCallback(async () => {
     setLoading(true);
-    setStatus(null);
+    
 
     try {
       // Always load global configs for reference
@@ -79,7 +79,7 @@ export function useMetricDisplayConfig({
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load metric display configs';
-      setStatus({ type: 'error', message });
+      error(message);
       console.error('[useMetricDisplayConfig] Failed to load configs:', error);
     } finally {
       setLoading(false);
@@ -144,12 +144,12 @@ export function useMetricDisplayConfig({
   const saveConfig = useCallback(async (metricId: GameMetric) => {
     const config = configs[metricId];
     if (!config) {
-      setStatus({ type: 'error', message: `No config found for metric ${metricId}` });
+      error(`No config found for metric ${metricId}`);
       return;
     }
 
     setSaving(true);
-    setStatus(null);
+    
 
     const isGlobalPage = industryId === 'global';
 
@@ -167,15 +167,15 @@ export function useMetricDisplayConfig({
       });
 
       if (result.success) {
-        setStatus({ type: 'success', message: `Saved ${config.displayLabel} configuration` });
+        success(`Saved ${config.displayLabel} configuration`);
         // Reload to get fresh data
         await loadConfigs();
       } else {
-        setStatus({ type: 'error', message: result.message || 'Failed to save config' });
+        error(result.message || 'Failed to save config');
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save config';
-      setStatus({ type: 'error', message });
+      error(message);
       console.error('[useMetricDisplayConfig] Failed to save config:', error);
     } finally {
       setSaving(false);
@@ -184,24 +184,24 @@ export function useMetricDisplayConfig({
 
   const deleteConfig = useCallback(async (metricId: GameMetric) => {
     if (industryId === 'global') {
-      setStatus({ type: 'error', message: 'Cannot delete global configs' });
+      error('Cannot delete global configs');
       return;
     }
 
     setSaving(true);
-    setStatus(null);
+    
 
     try {
       const result = await deleteMetricDisplayConfigAction(industryId, metricId);
       if (result.success) {
-        setStatus({ type: 'success', message: 'Deleted industry-specific config (will use global default)' });
+        success('Deleted industry-specific config (will use global default)');
         await loadConfigs();
       } else {
-        setStatus({ type: 'error', message: result.message || 'Failed to delete config' });
+        error(result.message || 'Failed to delete config');
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to delete config';
-      setStatus({ type: 'error', message });
+      error(message);
       console.error('[useMetricDisplayConfig] Failed to delete config:', error);
     } finally {
       setSaving(false);
@@ -295,12 +295,12 @@ export function useMetricDisplayConfig({
     });
 
     if (changedMetrics.length === 0) {
-      setStatus({ type: 'success', message: 'No changes to save' });
+      success('No changes to save');
       return;
     }
 
     setSaving(true);
-    setStatus(null);
+    
 
     try {
       const results = await Promise.allSettled(
@@ -326,14 +326,14 @@ export function useMetricDisplayConfig({
       const failed = results.length - successful;
 
       if (failed === 0) {
-        setStatus({ type: 'success', message: `Saved ${successful} metric configuration${successful !== 1 ? 's' : ''}` });
+        success(`Saved ${successful} metric configuration${successful !== 1 ? 's' : ''}`);
         await loadConfigs();
       } else {
-        setStatus({ type: 'error', message: `Saved ${successful} of ${results.length} configurations. ${failed} failed.` });
+        error(`Saved ${successful} of ${results.length} configurations. ${failed} failed.`);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save configurations';
-      setStatus({ type: 'error', message });
+      error(message);
       console.error('[useMetricDisplayConfig] Failed to save all configs:', error);
     } finally {
       setSaving(false);
@@ -346,7 +346,6 @@ export function useMetricDisplayConfig({
     referenceConfigs,
     loading,
     saving,
-    status,
     updateConfig,
   saveConfig,
   saveAll,

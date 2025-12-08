@@ -69,7 +69,6 @@ export default function FlagsPage({
           if (flag) handleSelectFlag(flag);
         }}
         loading={flags.loading}
-        error={flags.status}
         actionButton={{
           label: '+ New Flag',
           onClick: handleCreateNew,
@@ -98,7 +97,6 @@ export default function FlagsPage({
         if (flag) handleSelectFlag(flag);
       }}
       loading={flags.loading}
-      error={flags.status}
       actionButton={{
         label: '+ New Flag',
         onClick: handleCreateNew,
@@ -118,7 +116,6 @@ export default function FlagsPage({
           industryId={industry}
           flags={flags.flags}
           flagsLoading={flags.loading}
-          flagStatus={flags.status}
           selectedFlagId={flags.selectedId}
           isCreatingFlag={flags.isCreating}
           flagForm={flags.form}

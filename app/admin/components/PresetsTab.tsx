@@ -9,7 +9,6 @@ interface PresetsTabProps {
   presets: StaffPreset[];
   roles: StaffRoleConfig[];
   loading: boolean;
-  status: string | null;
   selectedId: string;
   isCreating: boolean;
   form: {
@@ -34,7 +33,6 @@ export function PresetsTab({
   presets,
   roles,
   loading,
-  status,
   selectedId,
   isCreating,
   form,
@@ -90,7 +88,6 @@ export function PresetsTab({
               >
                 + New Preset
               </button>
-              {status && <span className="text-sm text-slate-300">{status}</span>}
             </div>
 
             {loading ? (

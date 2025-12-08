@@ -19,6 +19,7 @@ import type { Industry } from '@/lib/features/industries';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/types';
 import { AdminQueryProvider } from './providers/QueryProvider';
 import { prefetchTabData, prefetchIndustryData } from './utils/prefetch';
+import { ToastProvider } from './components/ui/ToastContext';
 
 // Tab configuration with icons - matching original implementation
 const TAB_CONFIG = {
@@ -307,7 +308,9 @@ function AdminLayoutContent({ industries, children }: AdminLayoutClientProps) {
 export default function AdminLayoutClient({ industries, children }: AdminLayoutClientProps) {
   return (
     <AdminQueryProvider>
-      <AdminLayoutContent industries={industries}>{children}</AdminLayoutContent>
+      <ToastProvider>
+        <AdminLayoutContent industries={industries}>{children}</AdminLayoutContent>
+      </ToastProvider>
     </AdminQueryProvider>
   );
 }

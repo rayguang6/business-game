@@ -82,7 +82,6 @@ export default function MarketingPage({
           if (campaign) handleSelectCampaign(campaign);
         }}
         loading={marketing.loading}
-        error={marketing.status}
         actionButton={{
           label: '+ New Campaign',
           onClick: handleCreateNew,
@@ -111,7 +110,6 @@ export default function MarketingPage({
         if (campaign) handleSelectCampaign(campaign);
       }}
       loading={marketing.loading}
-      error={marketing.status}
       actionButton={{
         label: '+ New Campaign',
         onClick: handleCreateNew,
@@ -130,7 +128,6 @@ export default function MarketingPage({
         <MarketingTab
           campaigns={marketing.campaigns}
           campaignsLoading={marketing.loading}
-          campaignStatus={marketing.status}
           selectedCampaignId={marketing.selectedId}
           isCreatingCampaign={marketing.isCreating}
           campaignForm={marketing.form}

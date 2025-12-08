@@ -72,7 +72,6 @@ export default function EventDetailPage({
         if (event) handleSelectEvent(event);
       }}
       loading={events.loading}
-      error={events.status}
       actionButton={{
         label: '+ New Event',
         onClick: events.createEvent,
@@ -88,7 +87,6 @@ export default function EventDetailPage({
         industryId={industry}
         events={events.events}
         eventsLoading={events.loading}
-        eventStatus={events.status}
         selectedEventId={events.selectedId}
         isCreatingEvent={events.isCreating}
         eventForm={events.form}

@@ -74,7 +74,6 @@ export default function PresetsPage({
           if (preset) handleSelectPreset(preset);
         }}
         loading={presets.loading}
-        error={presets.status}
         actionButton={{
           label: '+ New Preset',
           onClick: handleCreateNew,
@@ -103,7 +102,6 @@ export default function PresetsPage({
         if (preset) handleSelectPreset(preset);
       }}
       loading={presets.loading}
-      error={presets.status}
       actionButton={{
         label: '+ New Preset',
         onClick: handleCreateNew,
@@ -125,7 +123,6 @@ export default function PresetsPage({
             presets={presets.presets}
             roles={presets.roles}
             loading={presets.loading}
-            status={presets.status}
             selectedId={presets.selectedId}
             isCreating={presets.isCreating}
             form={presets.form}

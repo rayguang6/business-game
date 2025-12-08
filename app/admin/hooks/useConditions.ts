@@ -4,6 +4,7 @@ import { fetchConditions, upsertCondition, deleteCondition } from '@/lib/server/
 import type { GameCondition, ConditionOperator } from '@/lib/types/conditions';
 import { ConditionMetric } from '@/lib/types/conditions';
 import type { Operation } from './types';
+import { useToastFunctions } from '../components/ui/ToastContext';
 
 interface ConditionForm {
   id: string;
@@ -19,7 +20,7 @@ const conditionsQueryKey = (industryId: string) => ['conditions', industryId] as
 
 export function useConditions(industryId: string, conditionId?: string) {
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState<string | null>(null);
+  const { success, error } = useToastFunctions();
   const [selectedId, setSelectedId] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState<ConditionForm>({
@@ -35,15 +36,27 @@ export function useConditions(industryId: string, conditionId?: string) {
   const {
     data: conditions = [],
     isLoading,
-    error,
+    error: queryError,
   } = useQuery({
     queryKey: conditionsQueryKey(industryId),
     queryFn: async () => {
       if (!industryId) return [];
       const result = await fetchConditions(industryId);
-      return result || [];
+      if (!result) {
+        console.warn(`[Conditions] No conditions found for industry "${industryId}"`);
+        return [];
+      }
+      return result;
     },
     enabled: !!industryId,
+    retry: (failureCount, error) => {
+      // Don't retry if it's a configuration issue
+      if (error instanceof Error && error.message.includes('Supabase client not configured')) {
+        return false;
+      }
+      // Retry once for other errors
+      return failureCount < 1;
+    },
   });
 
   // Save condition mutation with optimistic update
@@ -74,10 +87,10 @@ export function useConditions(industryId: string, conditionId?: string) {
       if (context?.previousConditions) {
         queryClient.setQueryData(conditionsQueryKey(industryId), context.previousConditions);
       }
-      setStatus(err instanceof Error ? err.message : 'Failed to save condition.');
+      error(err instanceof Error ? err.message : 'Failed to save condition.');
     },
     onSuccess: (savedCondition) => {
-      setStatus('Condition saved.');
+      success('Condition saved.');
       setIsCreating(false);
       setSelectedId(savedCondition.id);
       const condition = conditions.find((c) => c.id === savedCondition.id) || conditions[0];
@@ -113,10 +126,10 @@ export function useConditions(industryId: string, conditionId?: string) {
       if (context?.previousConditions) {
         queryClient.setQueryData(conditionsQueryKey(industryId), context.previousConditions);
       }
-      setStatus(err instanceof Error ? err.message : 'Failed to delete condition.');
+      error(err instanceof Error ? err.message : 'Failed to delete condition.');
     },
     onSuccess: () => {
-      setStatus('Condition deleted.');
+      success('Condition deleted.');
       const remaining = queryClient.getQueryData<GameCondition[]>(conditionsQueryKey(industryId)) || [];
       if (remaining.length > 0) {
         selectCondition(remaining[0], false);
@@ -149,7 +162,6 @@ export function useConditions(industryId: string, conditionId?: string) {
       operator: condition.operator,
       value: String(condition.value),
     });
-    if (resetMsg) setStatus(null);
   }, []);
 
   // Select condition when conditionId changes or conditions are loaded
@@ -167,14 +179,14 @@ export function useConditions(industryId: string, conditionId?: string) {
           operator: condition.operator,
           value: String(condition.value),
         });
-        setStatus(null);
+        
       }
     }
   }, [conditionId, conditions]);
 
   const createCondition = useCallback(() => {
     if (!industryId) {
-      setStatus('Save the industry first.');
+      error('Save the industry first.');
       return;
     }
     setIsCreating(true);
@@ -187,12 +199,12 @@ export function useConditions(industryId: string, conditionId?: string) {
       operator: 'greater',
       value: '0',
     });
-    setStatus(null);
+    
   }, [industryId]);
 
   const saveCondition = useCallback(async () => {
     if (!industryId) {
-      setStatus('Save the industry first.');
+      error('Save the industry first.');
       return;
     }
     const id = form.id.trim();
@@ -200,11 +212,11 @@ export function useConditions(industryId: string, conditionId?: string) {
     const description = form.description.trim();
     const value = Number(form.value);
     if (!id || !name) {
-      setStatus('Condition id and name are required.');
+      error('Condition id and name are required.');
       return;
     }
     if (!Number.isFinite(value)) {
-      setStatus('Value must be a valid number.');
+      error('Value must be a valid number.');
       return;
     }
     const payload: GameCondition = {
@@ -241,7 +253,7 @@ export function useConditions(industryId: string, conditionId?: string) {
         value: '0',
       });
     }
-    setStatus(null);
+    
   }, [selectedId, isCreating, conditions, selectCondition]);
 
   const updateForm = useCallback((updates: Partial<ConditionForm>) => {
@@ -253,7 +265,7 @@ export function useConditions(industryId: string, conditionId?: string) {
   return {
     conditions,
     loading: isLoading,
-    status: status || (error instanceof Error ? error.message : null),
+    error: queryError,
     selectedId,
     isCreating,
     saving: saveMutation.isPending,

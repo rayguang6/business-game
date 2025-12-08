@@ -70,7 +70,6 @@ export default function RoleDetailPage({
         if (role) handleSelectRole(role);
       }}
       loading={roles.loading}
-      error={roles.status}
       actionButton={{
         label: '+ New Role',
         onClick: roles.createRole,
@@ -86,7 +85,6 @@ export default function RoleDetailPage({
         industryId={industry}
         roles={roles.roles}
         loading={roles.loading}
-        status={roles.status}
         selectedId={roles.selectedId}
         isCreating={roles.isCreating}
         form={roles.form}

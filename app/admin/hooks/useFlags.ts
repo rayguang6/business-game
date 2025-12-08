@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchFlags, upsertFlag, deleteFlag } from '@/lib/server/actions/adminActions';
 import type { GameFlag } from '@/lib/data/flagRepository';
 import type { Operation } from './types';
+import { useToastFunctions } from '../components/ui/ToastContext';
 
 interface FlagForm {
   id: string;
@@ -15,7 +16,7 @@ const flagsQueryKey = (industryId: string) => ['flags', industryId] as const;
 
 export function useFlags(industryId: string, flagId?: string) {
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState<string | null>(null);
+  const { success, error } = useToastFunctions();
   const [selectedId, setSelectedId] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState<FlagForm>({ id: '', name: '', description: '' });
@@ -24,7 +25,7 @@ export function useFlags(industryId: string, flagId?: string) {
   const {
     data: flags = [],
     isLoading,
-    error,
+    error: queryError,
   } = useQuery({
     queryKey: flagsQueryKey(industryId),
     queryFn: async () => {
@@ -68,10 +69,10 @@ export function useFlags(industryId: string, flagId?: string) {
       if (context?.previousFlags) {
         queryClient.setQueryData(flagsQueryKey(industryId), context.previousFlags);
       }
-      setStatus(err instanceof Error ? err.message : 'Failed to save flag.');
+      error(err instanceof Error ? err.message : 'Failed to save flag.');
     },
     onSuccess: (savedFlag) => {
-      setStatus('Flag saved.');
+      success('Flag saved.');
       setIsCreating(false);
       setSelectedId(savedFlag.id);
       // Select the saved flag
@@ -110,10 +111,10 @@ export function useFlags(industryId: string, flagId?: string) {
       if (context?.previousFlags) {
         queryClient.setQueryData(flagsQueryKey(industryId), context.previousFlags);
       }
-      setStatus(err instanceof Error ? err.message : 'Failed to delete flag.');
+      error(err instanceof Error ? err.message : 'Failed to delete flag.');
     },
     onSuccess: () => {
-      setStatus('Flag deleted.');
+      success('Flag deleted.');
       // Select first flag if available, otherwise clear selection
       const remaining = queryClient.getQueryData<GameFlag[]>(flagsQueryKey(industryId)) || [];
       if (remaining.length > 0) {
@@ -133,7 +134,6 @@ export function useFlags(industryId: string, flagId?: string) {
     setSelectedId(flag.id);
     setIsCreating(false);
     setForm({ id: flag.id, name: flag.name, description: flag.description });
-    if (resetMsg) setStatus(null);
   }, []);
 
   // Select flag when flagId changes or flags are loaded
@@ -144,36 +144,34 @@ export function useFlags(industryId: string, flagId?: string) {
         setSelectedId(flag.id);
         setIsCreating(false);
         setForm({ id: flag.id, name: flag.name, description: flag.description });
-        setStatus(null);
       }
     }
   }, [flagId, flags]);
 
   const createFlag = useCallback(() => {
     if (!industryId) {
-      setStatus('Save the industry first.');
+      error('Save the industry first.');
       return;
     }
     setIsCreating(true);
     setSelectedId('');
     setForm({ id: '', name: '', description: '' });
-    setStatus(null);
-  }, [industryId]);
+  }, [industryId, error]);
 
   const saveFlag = useCallback(async () => {
     if (!industryId) {
-      setStatus('Save the industry first.');
+      error('Save the industry first.');
       return;
     }
     const id = form.id.trim();
     const name = form.name.trim();
     const description = form.description.trim();
     if (!id || !name) {
-      setStatus('Flag id and name are required.');
+      error('Flag id and name are required.');
       return;
     }
     saveMutation.mutate({ id, name, description });
-  }, [industryId, form, saveMutation]);
+  }, [industryId, form, saveMutation, error]);
 
   const deleteFlagHandler = useCallback(async () => {
     if (isCreating || !selectedId) return;
@@ -191,7 +189,6 @@ export function useFlags(industryId: string, flagId?: string) {
       setSelectedId('');
       setForm({ id: '', name: '', description: '' });
     }
-    setStatus(null);
   }, [selectedId, isCreating, flags, selectFlag]);
 
   const updateForm = useCallback((updates: Partial<FlagForm>) => {
@@ -204,7 +201,6 @@ export function useFlags(industryId: string, flagId?: string) {
   return {
     flags,
     loading: isLoading,
-    status: status || (error instanceof Error ? error.message : null),
     selectedId,
     isCreating,
     saving: saveMutation.isPending,

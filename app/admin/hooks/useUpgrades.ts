@@ -5,6 +5,7 @@ import type { UpgradeDefinition, Category } from '@/lib/game/types';
 import type { Requirement } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import type { Operation } from './types';
+import { useToastFunctions } from '../components/ui/ToastContext';
 
 interface UpgradeForm {
   id: string;
@@ -44,7 +45,7 @@ const categoriesQueryKey = (industryId: string) => ['categories', industryId] as
 
 export function useUpgrades(industryId: string, upgradeId?: string) {
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState<string | null>(null);
+  const { success, error } = useToastFunctions();
   const [selectedId, setSelectedId] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState<UpgradeForm>({
@@ -65,7 +66,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
   const {
     data: upgrades = [],
     isLoading,
-    error,
+    error: queryError,
   } = useQuery({
     queryKey: upgradesQueryKey(industryId),
     queryFn: async () => {
@@ -141,13 +142,13 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
       }
       const errorMsg = err instanceof Error ? err.message : 'Failed to save upgrade.';
       console.error('[Admin] Save failed:', errorMsg);
-      setStatus(errorMsg);
+      error(errorMsg);
     },
     onSuccess: (savedUpgrade) => {
       setIsCreating(false);
       setSelectedId(savedUpgrade.id);
       selectUpgrade(savedUpgrade, false);
-      setStatus(`Upgrade saved successfully with ${savedUpgrade.levels?.length || 0} level(s).`);
+      success(`Upgrade saved successfully with ${savedUpgrade.levels?.length || 0} level(s).`);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: upgradesQueryKey(industryId) });
@@ -177,7 +178,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
       if (context?.previousUpgrades) {
         queryClient.setQueryData(upgradesQueryKey(industryId), context.previousUpgrades);
       }
-      setStatus(err instanceof Error ? err.message : 'Failed to delete upgrade.');
+      error(err instanceof Error ? err.message : 'Failed to delete upgrade.');
     },
     onSuccess: () => {
       setSelectedId('');
@@ -192,7 +193,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
         order: '',
       });
       setLevelsForm([]);
-      setStatus('Upgrade deleted.');
+      success('Upgrade deleted.');
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: upgradesQueryKey(industryId) });
@@ -248,8 +249,6 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
         },
       ]);
     }
-
-    if (resetMsg) setStatus(null);
   }, []);
 
   // Select upgrade when upgradeId changes or upgrades are loaded
@@ -303,14 +302,14 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
             },
           ]);
         }
-        setStatus(null);
+        
       }
     }
   }, [upgradeId, upgrades]);
 
   const createUpgrade = useCallback(() => {
     if (!industryId) {
-      setStatus('Save the industry first.');
+      error('Save the industry first.');
       return;
     }
     setIsCreating(true);
@@ -339,12 +338,12 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
         effects: [],
       },
     ]);
-    setStatus(null);
+    
   }, [industryId]);
 
   const saveUpgrade = useCallback(async () => {
     if (!industryId) {
-      setStatus('Save the industry first.');
+      error('Save the industry first.');
       return;
     }
     const id = form.id.trim();
@@ -355,12 +354,12 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
     const requirements = form.requirements;
 
     if (!id || !name) {
-      setStatus('Upgrade id and name are required.');
+      error('Upgrade id and name are required.');
       return;
     }
 
     if (!levelsForm || levelsForm.length === 0) {
-      setStatus('At least one level is required.');
+      error('At least one level is required.');
       return;
     }
 
@@ -408,8 +407,8 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
           effects,
         };
       });
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Invalid level data.');
+    } catch (err) {
+      error(err instanceof Error ? err.message : 'Invalid level data.');
       return;
     }
 
@@ -461,7 +460,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
       });
       setLevelsForm([]);
     }
-    setStatus(null);
+    
   }, [selectedId, isCreating, upgrades, selectUpgrade]);
 
   const updateForm = useCallback((updates: Partial<UpgradeForm>) => {
@@ -492,7 +491,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
   const removeLevel = useCallback(
     (index: number) => {
       if (levelsForm.length <= 1) {
-        setStatus('At least one level is required.');
+        error('At least one level is required.');
         return;
       }
       setLevelsForm((prev) => {
@@ -526,7 +525,6 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
     upgrades,
     categories,
     loading: isLoading || categoriesLoading,
-    status: status || (error instanceof Error ? error.message : null),
     selectedId,
     isCreating,
     saving: saveMutation.isPending,

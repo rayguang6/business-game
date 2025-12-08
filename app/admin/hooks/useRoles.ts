@@ -4,6 +4,7 @@ import type { StaffRoleConfig } from '@/lib/game/staffConfig';
 import type { Requirement } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import type { Operation } from './types';
+import { useToastFunctions } from '../components/ui/ToastContext';
 
 interface RoleForm {
   id: string;
@@ -19,7 +20,7 @@ interface RoleForm {
 export function useRoles(industryId: string, roleId?: string) {
   const [roles, setRoles] = useState<StaffRoleConfig[]>([]);
   const [operation, setOperation] = useState<Operation>('idle');
-  const [status, setStatus] = useState<string | null>(null);
+  const { success, error } = useToastFunctions();
   const [selectedId, setSelectedId] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState<RoleForm>({
@@ -35,7 +36,6 @@ export function useRoles(industryId: string, roleId?: string) {
   const load = useCallback(async () => {
     if (!industryId) return;
     setOperation('loading');
-    setStatus(null);
     const data = await fetchStaffData(industryId);
     setOperation('idle');
     if (!data) {
@@ -49,7 +49,7 @@ export function useRoles(industryId: string, roleId?: string) {
       if (aOrderNull && bOrderNull) return a.name.localeCompare(b.name);
       if (aOrderNull) return 1;
       if (bOrderNull) return -1;
-      if (a.order !== b.order) return a.order - b.order;
+      if (a.order !== b.order) return (a.order ?? 0) - (b.order ?? 0);
       return a.name.localeCompare(b.name);
     });
     setRoles(rolesSorted);
@@ -73,7 +73,6 @@ export function useRoles(industryId: string, roleId?: string) {
       requirements: [],
       order: '',
     });
-    setStatus(null);
   }, [industryId]);
 
   const selectRole = useCallback((role: StaffRoleConfig, resetMsg = true) => {
@@ -88,9 +87,8 @@ export function useRoles(industryId: string, roleId?: string) {
       spriteImage: role.spriteImage || '',
       setsFlag: role.setsFlag,
       requirements: role.requirements || [],
-      order: String(role.order ?? 0),
+      order: role.order != null ? String(role.order) : '',
     });
-    if (resetMsg) setStatus(null);
   }, []);
 
   // Select role when roleId changes or roles are loaded
@@ -109,16 +107,15 @@ export function useRoles(industryId: string, roleId?: string) {
           spriteImage: role.spriteImage || '',
           setsFlag: role.setsFlag,
           requirements: role.requirements || [],
-          order: String(role.order ?? 0),
+          order: role.order != null ? String(role.order) : '',
         });
-        setStatus(null);
       }
     }
   }, [roleId, roles]);
 
   const createRole = useCallback(() => {
     if (!industryId) {
-      setStatus('Save the industry first.');
+      error('Save the industry first.');
       return;
     }
     setIsCreating(true);
@@ -128,25 +125,26 @@ export function useRoles(industryId: string, roleId?: string) {
       name: '',
       salary: '0',
       effects: [],
+      spriteImage: '',
       requirements: [],
+      order: '',
     });
-    setStatus(null);
-  }, [industryId]);
+  }, [industryId, error]);
 
   const saveRole = useCallback(async () => {
     if (!industryId) {
-      setStatus('Save the industry first.');
+      error('Save the industry first.');
       return;
     }
     const id = form.id.trim();
     const name = form.name.trim();
     const salary = Number(form.salary);
     if (!id || !name) {
-      setStatus('Role id and name are required.');
+      error('Role id and name are required.');
       return;
     }
     if (!Number.isFinite(salary) || salary < 0) {
-      setStatus('Salary must be non-negative.');
+      error('Salary must be non-negative.');
       return;
     }
     const effects = form.effects.map(e => ({
@@ -157,7 +155,7 @@ export function useRoles(industryId: string, roleId?: string) {
     const setsFlag = form.setsFlag?.trim() || undefined;
     const requirements = form.requirements;
     setOperation('saving');
-    const order = form.order.trim() ? Number(form.order.trim()) : undefined;
+    const order = form.order?.trim() ? Number(form.order.trim()) : undefined;
 
     const result = await upsertStaffRoleAction({
       id,
@@ -172,7 +170,7 @@ export function useRoles(industryId: string, roleId?: string) {
     });
     setOperation('idle');
     if (!result.success) {
-      setStatus(result.message ?? 'Failed to save role.');
+      error(result.message ?? 'Failed to save role.');
       return;
     }
     setRoles((prev) => {
@@ -194,14 +192,14 @@ export function useRoles(industryId: string, roleId?: string) {
         if (aOrderNull && bOrderNull) return a.name.localeCompare(b.name);
         if (aOrderNull) return 1;
         if (bOrderNull) return -1;
-        if (a.order !== b.order) return a.order - b.order;
+        if (a.order !== b.order) return (a.order ?? 0) - (b.order ?? 0);
         return a.name.localeCompare(b.name);
       });
     });
-    setStatus('Role saved.');
+    success('Role saved.');
     setIsCreating(false);
     setSelectedId(id);
-  }, [industryId, form]);
+  }, [industryId, form, error, success]);
 
   const deleteRole = useCallback(async () => {
     if (isCreating || !selectedId) return;
@@ -211,7 +209,7 @@ export function useRoles(industryId: string, roleId?: string) {
     const result = await deleteStaffRoleAction(selectedId, industryId as any);
     setOperation('idle');
     if (!result.success) {
-      setStatus(result.message ?? 'Failed to delete role.');
+      error(result.message ?? 'Failed to delete role.');
       return;
     }
     setRoles((prev) => prev.filter((r) => r.id !== selectedId));
@@ -221,10 +219,12 @@ export function useRoles(industryId: string, roleId?: string) {
       name: '',
       salary: '0',
       effects: [],
+      spriteImage: '',
       requirements: [],
+      order: '',
     });
-    setStatus('Role deleted.');
-  }, [selectedId, isCreating, roles, industryId]);
+    success('Role deleted.');
+  }, [selectedId, isCreating, roles, industryId, error, success]);
 
   const reset = useCallback(() => {
     if (selectedId && !isCreating) {
@@ -242,7 +242,6 @@ export function useRoles(industryId: string, roleId?: string) {
         order: '',
       });
     }
-    setStatus(null);
   }, [selectedId, isCreating, roles, selectRole]);
 
   const updateForm = useCallback((updates: Partial<RoleForm>) => {
@@ -252,7 +251,6 @@ export function useRoles(industryId: string, roleId?: string) {
   return {
     roles,
     loading: operation === 'loading',
-    status,
     selectedId,
     isCreating,
     saving: operation === 'saving',

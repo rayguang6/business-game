@@ -69,7 +69,6 @@ export default function CategoriesPage({
           if (category) handleSelectCategory(category);
         }}
         loading={categories.loading}
-        error={categories.status}
         actionButton={{
           label: '+ New Category',
           onClick: handleCreateNew,
@@ -98,7 +97,6 @@ export default function CategoriesPage({
         if (category) handleSelectCategory(category);
       }}
       loading={categories.loading}
-      error={categories.status}
       actionButton={{
         label: '+ New Category',
         onClick: handleCreateNew,
@@ -118,7 +116,6 @@ export default function CategoriesPage({
           industryId={industry}
           categories={categories.categories}
           categoriesLoading={categories.loading}
-          categoryStatus={categories.status}
           selectedCategoryId={categories.selectedId}
           isCreatingCategory={categories.isCreating}
           categoryForm={categories.form}

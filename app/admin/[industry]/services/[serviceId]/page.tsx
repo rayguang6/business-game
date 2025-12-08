@@ -73,7 +73,6 @@ export default function ServiceDetailPage({
         if (service) handleSelectService(service);
       }}
       loading={services.loading}
-      error={services.status}
       actionButton={{
         label: '+ New Service',
         onClick: services.createService,
@@ -89,7 +88,6 @@ export default function ServiceDetailPage({
         industryId={industry}
         services={services.services}
         serviceLoading={services.loading}
-        serviceStatus={services.status}
         selectedServiceId={services.selectedId}
         isCreatingService={services.isCreating}
         serviceForm={services.form}

@@ -69,7 +69,6 @@ export default function ConditionsPage({
           if (condition) handleSelectCondition(condition);
         }}
         loading={conditions.loading}
-        error={conditions.status}
         actionButton={{
           label: '+ New Condition',
           onClick: handleCreateNew,
@@ -98,7 +97,6 @@ export default function ConditionsPage({
         if (condition) handleSelectCondition(condition);
       }}
       loading={conditions.loading}
-      error={conditions.status}
       actionButton={{
         label: '+ New Condition',
         onClick: handleCreateNew,
@@ -118,7 +116,7 @@ export default function ConditionsPage({
           industryId={industry}
           conditions={conditions.conditions}
           conditionsLoading={conditions.loading}
-          conditionsStatus={conditions.status}
+          conditionsError={conditions.error}
           selectedConditionId={conditions.selectedId}
           isCreatingCondition={conditions.isCreating}
           conditionForm={conditions.form}
@@ -129,6 +127,7 @@ export default function ConditionsPage({
           onSaveCondition={handleSave}
           onDeleteCondition={handleDelete}
           onReset={conditions.reset}
+          onReload={conditions.load}
           onUpdateForm={conditions.updateForm}
         />
       ) : (

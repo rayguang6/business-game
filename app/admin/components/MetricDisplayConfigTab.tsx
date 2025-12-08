@@ -12,7 +12,6 @@ interface MetricDisplayConfigTabProps {
   referenceIndustryId?: string; // For global page: show this industry's values for reference
   loading: boolean;
   saving: boolean;
-  status: { type: 'success' | 'error'; message: string } | null;
   configs: Record<GameMetric, MetricDisplayConfig | null>;
   globalConfigs: Record<GameMetric, MetricDisplayConfig | null>;
   referenceConfigs?: Record<GameMetric, MetricDisplayConfig | null>; // Industry configs for reference (global page only)
@@ -28,10 +27,9 @@ export function MetricDisplayConfigTab({
   referenceIndustryId,
   loading,
   saving,
-  status,
   configs,
   globalConfigs,
-  referenceConfigs = {},
+  referenceConfigs,
   updateConfig,
   saveAll,
   deleteConfig,
@@ -113,7 +111,7 @@ export function MetricDisplayConfigTab({
 
   // Get reference value (industry-specific value for display on global page)
   const getReferenceValue = (metricId: GameMetric, field: 'displayLabel' | 'description' | 'showOnHUD' | 'showInDetails' | 'unit' | 'priority' | 'iconPath') => {
-    if (!isGlobal || !referenceIndustryId) return null;
+    if (!isGlobal || !referenceIndustryId || !referenceConfigs) return null;
     const refConfig = referenceConfigs[metricId];
     const globalConfig = globalConfigs[metricId];
     const codeDef = getMetricDefinition(metricId);
@@ -195,15 +193,6 @@ export function MetricDisplayConfigTab({
             </p>
           </div>
         </div>
-
-        {/* Status */}
-        {status && (
-          <div className={`p-3 rounded-lg text-sm ${
-            status.type === 'success' ? 'bg-emerald-900/50 text-emerald-300' : 'bg-rose-900/50 text-rose-300'
-          }`}>
-            {status.message}
-          </div>
-        )}
       </div>
 
       {/* Metrics Table */}

@@ -4,6 +4,7 @@ import { fetchEvents, upsertEvent, deleteEvent } from '@/lib/server/actions/admi
 import type { GameEvent, GameEventChoice } from '@/lib/types/gameEvents';
 import type { Operation } from './types';
 import type { Requirement } from '@/lib/game/types';
+import { useToastFunctions } from '../components/ui/ToastContext';
 
 interface EventForm {
   id: string;
@@ -18,7 +19,7 @@ const eventsQueryKey = (industryId: string) => ['events', industryId] as const;
 
 export function useEvents(industryId: string, eventId?: string) {
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState<string | null>(null);
+  const { success, error } = useToastFunctions();
   const [selectedId, setSelectedId] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState<EventForm>({
@@ -33,7 +34,7 @@ export function useEvents(industryId: string, eventId?: string) {
   const {
     data: events = [],
     isLoading,
-    error,
+    error: queryError,
   } = useQuery({
     queryKey: eventsQueryKey(industryId),
     queryFn: async () => {
@@ -71,10 +72,10 @@ export function useEvents(industryId: string, eventId?: string) {
       if (context?.previousEvents) {
         queryClient.setQueryData(eventsQueryKey(industryId), context.previousEvents);
       }
-      setStatus(err instanceof Error ? err.message : 'Failed to save event.');
+      error(err instanceof Error ? err.message : 'Failed to save event.');
     },
     onSuccess: (savedEvent) => {
-      setStatus('Event saved.');
+      success('Event saved.');
       setIsCreating(false);
       setSelectedId(savedEvent.id);
     },
@@ -106,7 +107,7 @@ export function useEvents(industryId: string, eventId?: string) {
       if (context?.previousEvents) {
         queryClient.setQueryData(eventsQueryKey(industryId), context.previousEvents);
       }
-      setStatus(err instanceof Error ? err.message : 'Failed to delete event.');
+      error(err instanceof Error ? err.message : 'Failed to delete event.');
     },
     onSuccess: () => {
       setSelectedId('');
@@ -118,7 +119,7 @@ export function useEvents(industryId: string, eventId?: string) {
         requirements: [],
       });
       setChoices([]);
-      setStatus('Event deleted.');
+      success('Event deleted.');
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: eventsQueryKey(industryId) });
@@ -136,7 +137,6 @@ export function useEvents(industryId: string, eventId?: string) {
       requirements: event.requirements || [],
     });
     setChoices(event.choices || []);
-    if (resetMsg) setStatus(null);
   }, []);
 
   // Select event when eventId changes or events are loaded
@@ -154,14 +154,14 @@ export function useEvents(industryId: string, eventId?: string) {
           requirements: event.requirements || [],
         });
         setChoices(event.choices || []);
-        setStatus(null);
+        
       }
     }
   }, [eventId, events]);
 
   const createEvent = useCallback(() => {
     if (!industryId) {
-      setStatus('Save the industry first.');
+      error('Save the industry first.');
       return;
     }
     setIsCreating(true);
@@ -174,13 +174,13 @@ export function useEvents(industryId: string, eventId?: string) {
       requirements: [],
     });
     setChoices([]);
-    setStatus(null);
+    
   }, [industryId]);
 
   const persistEventWithChoices = useCallback(
     async (nextChoices: GameEventChoice[], successMessage: string = 'Event saved.') => {
       if (!industryId || !form.id) {
-        setStatus('Saved locally. Save Event to persist.');
+        error('Saved locally. Save Event to persist.');
         return;
       }
       const id = form.id.trim();
@@ -195,7 +195,7 @@ export function useEvents(industryId: string, eventId?: string) {
       if (!summary) missingFields.push('Summary');
 
       if (missingFields.length > 0) {
-        setStatus(`Saved locally. Missing required fields: ${missingFields.join(', ')}. Fill them to persist.`);
+        error(`Saved locally. Missing required fields: ${missingFields.join(', ')}. Fill them to persist.`);
         return;
       }
       const payload: GameEvent = {
@@ -208,7 +208,7 @@ export function useEvents(industryId: string, eventId?: string) {
       } as GameEvent;
       saveMutation.mutate(payload, {
         onSuccess: () => {
-          setStatus(successMessage);
+          error(successMessage);
         },
       });
     },
@@ -243,7 +243,7 @@ export function useEvents(industryId: string, eventId?: string) {
       });
       setChoices([]);
     }
-    setStatus(null);
+    
   }, [selectedId, isCreating, events, selectEvent]);
 
   const updateForm = useCallback((updates: Partial<EventForm>) => {
@@ -255,7 +255,7 @@ export function useEvents(industryId: string, eventId?: string) {
   }, []);
 
   const updateStatus = useCallback((newStatus: string | null) => {
-    setStatus(newStatus);
+    error(newStatus);
   }, []);
 
   const operation: Operation = isLoading ? 'loading' : saveMutation.isPending ? 'saving' : deleteMutation.isPending ? 'deleting' : 'idle';
@@ -263,7 +263,6 @@ export function useEvents(industryId: string, eventId?: string) {
   return {
     events,
     loading: isLoading,
-    status: status || (error instanceof Error ? error.message : null),
     selectedId,
     isCreating,
     saving: saveMutation.isPending,

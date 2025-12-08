@@ -9,7 +9,6 @@ import { GameMetric } from '@/lib/game/effectManager';
 interface IndustrySimulationConfigTabProps {
   industryName: string;
   loading: boolean;
-  status: { type: 'success' | 'error'; message: string } | null;
   saving: boolean;
   // Data (nullable - means using global defaults)
   businessMetrics: BusinessMetrics | null;
@@ -127,7 +126,6 @@ function validateIndustryConfig(
 export function IndustrySimulationConfigTab({
   industryName,
   loading,
-  status,
   saving,
   businessMetrics,
   businessStats,
@@ -424,11 +422,6 @@ export function IndustrySimulationConfigTab({
         {/* Status */}
         <div className="flex items-center justify-between">
           <span className="text-sm text-slate-400">{loading ? 'Loading…' : ' '}</span>
-          {status && (
-            <span className={`text-sm ${status.type === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>
-              {status.message}
-            </span>
-          )}
         </div>
 
         {/* Validation Errors */}

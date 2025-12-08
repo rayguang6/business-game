@@ -80,7 +80,6 @@ export default function UpgradesPage({
           if (upgrade) handleSelectUpgrade(upgrade);
         }}
         loading={upgrades.loading}
-        error={upgrades.status}
         actionButton={{
           label: '+ New Upgrade',
           onClick: handleCreateNew,
@@ -109,7 +108,6 @@ export default function UpgradesPage({
         if (upgrade) handleSelectUpgrade(upgrade);
       }}
       loading={upgrades.loading}
-      error={upgrades.status}
       actionButton={{
         label: '+ New Upgrade',
         onClick: handleCreateNew,
@@ -129,7 +127,6 @@ export default function UpgradesPage({
           industryId={industry}
           upgrades={upgrades.upgrades}
           upgradesLoading={upgrades.loading}
-          upgradeStatus={upgrades.status}
           selectedUpgradeId={upgrades.selectedId}
           isCreatingUpgrade={upgrades.isCreating}
           upgradeForm={upgrades.form}

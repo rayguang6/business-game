@@ -4,6 +4,7 @@ import type { BusinessMetrics, BusinessStats, MovementConfig, MapConfig } from '
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
 import { fetchGlobalConfig, fetchIndustryConfig, upsertGlobalConfig, upsertIndustryConfig } from '@/lib/server/actions/adminActions';
 import type { Operation } from './types';
+import { useToastFunctions } from '../components/ui/ToastContext';
 
 type UiConfig = {
   eventAutoSelectDurationSeconds?: number;
@@ -171,7 +172,7 @@ export function useSimulationConfig({
 
   // Status
   const [operation, setOperation] = useState<Operation>('idle');
-  const [status, setStatus] = useState<string | null>(null);
+  const { success, error, info } = useToastFunctions();
 
   // Load data on mount
   useEffect(() => {
@@ -181,7 +182,6 @@ export function useSimulationConfig({
       if (configType === 'industry' && !industryId) return;
 
       setOperation('loading');
-      setStatus(null);
 
       try {
         const result = configType === 'global'
@@ -191,7 +191,7 @@ export function useSimulationConfig({
         if (!isMounted) return;
 
         if (!result) {
-          setStatus(configType === 'global'
+          info(configType === 'global'
             ? 'No global config found. Using defaults.'
             : 'No industry config found. Using global defaults.'
           );
@@ -233,11 +233,11 @@ export function useSimulationConfig({
         if (result.eventSelectionMode) setEventSelectionMode(result.eventSelectionMode);
         if (result.eventSequence) setEventSequence(result.eventSequence);
 
-        setStatus('Config loaded successfully');
+        success('Config loaded successfully');
       } catch (err) {
         console.error(`Failed to load ${configType} config`, err);
         const errorMessage = err instanceof Error ? err.message : 'Failed to load config';
-        setStatus(`Failed to load ${configType} config: ${errorMessage}`);
+        error(`Failed to load ${configType} config: ${errorMessage}`);
       } finally {
         if (isMounted) {
           setOperation('idle');
@@ -374,11 +374,10 @@ export function useSimulationConfig({
 
   const save = useCallback(async () => {
     if (configType === 'industry' && !industryId) {
-      setStatus('No industry selected');
+      error('No industry selected');
       return;
     }
 
-    setStatus(null);
     setOperation('saving');
 
     try {
@@ -417,15 +416,15 @@ export function useSimulationConfig({
         : await upsertIndustryConfig(industryId!, configData);
 
       if (!result.success) {
-        setStatus(result.message || `Failed to save ${configType} config`);
+        error(result.message || `Failed to save ${configType} config`);
         return;
       }
 
-      setStatus(`${configType === 'global' ? 'Global' : 'Industry'} config saved successfully`);
+      success(`${configType === 'global' ? 'Global' : 'Industry'} config saved successfully`);
     } catch (err) {
       console.error(`Failed to save ${configType} config`, err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to save config';
-      setStatus(`Failed to save ${configType} config: ${errorMessage}`);
+      error(`Failed to save ${configType} config: ${errorMessage}`);
     } finally {
       setOperation('idle');
     }
@@ -482,7 +481,6 @@ export function useSimulationConfig({
     // Status
     loading: operation === 'loading',
     saving: operation === 'saving',
-    status,
 
 
     // Actions

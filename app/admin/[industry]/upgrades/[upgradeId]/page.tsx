@@ -76,7 +76,6 @@ export default function UpgradeDetailPage({
         if (upgrade) handleSelectUpgrade(upgrade);
       }}
       loading={upgrades.loading}
-      error={upgrades.status}
       actionButton={{
         label: '+ New Upgrade',
         onClick: upgrades.createUpgrade,
@@ -92,7 +91,6 @@ export default function UpgradeDetailPage({
         industryId={industry}
         upgrades={upgrades.upgrades}
         upgradesLoading={upgrades.loading}
-        upgradeStatus={upgrades.status}
         selectedUpgradeId={upgrades.selectedId}
         isCreatingUpgrade={upgrades.isCreating}
         upgradeForm={upgrades.form}

@@ -65,7 +65,6 @@ export default function ConditionDetailPage({
         if (condition) handleSelectCondition(condition);
       }}
       loading={conditions.loading}
-      error={conditions.status}
       actionButton={{
         label: '+ New Condition',
         onClick: conditions.createCondition,
@@ -81,7 +80,6 @@ export default function ConditionDetailPage({
         industryId={industry}
         conditions={conditions.conditions}
         conditionsLoading={conditions.loading}
-        conditionsStatus={conditions.status}
         selectedConditionId={conditions.selectedId}
         isCreatingCondition={conditions.isCreating}
         conditionForm={conditions.form}

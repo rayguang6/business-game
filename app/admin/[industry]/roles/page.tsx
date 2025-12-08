@@ -74,7 +74,6 @@ export default function RolesPage({
           if (role) handleSelectRole(role);
         }}
         loading={roles.loading}
-        error={roles.status}
         actionButton={{
           label: '+ New Role',
           onClick: handleCreateNew,
@@ -103,7 +102,6 @@ export default function RolesPage({
         if (role) handleSelectRole(role);
       }}
       loading={roles.loading}
-      error={roles.status}
       actionButton={{
         label: '+ New Role',
         onClick: handleCreateNew,
@@ -123,7 +121,6 @@ export default function RolesPage({
           industryId={industry}
           roles={roles.roles}
           loading={roles.loading}
-          status={roles.status}
           selectedId={roles.selectedId}
           isCreating={roles.isCreating}
           form={roles.form}

@@ -11,7 +11,6 @@ interface ServicesTabProps {
   industryId: string;
   services: IndustryServiceDefinition[];
   serviceLoading: boolean;
-  serviceStatus: string | null;
   selectedServiceId: string;
   isCreatingService: boolean;
   serviceForm: { id: string; name: string; duration: string; price: string; tier: string; expGained: string; requirements: Requirement[]; pricingCategory: string; weightage: string; requiredStaffRoleIds: string[]; timeCost: string; order: string };
@@ -33,7 +32,6 @@ export function ServicesTab({
   industryId,
   services,
   serviceLoading,
-  serviceStatus,
   selectedServiceId,
   isCreatingService,
   serviceForm,
@@ -94,7 +92,6 @@ export function ServicesTab({
               >
                 + New Service
               </button>
-              {serviceStatus && <span className="text-sm text-slate-300">{serviceStatus}</span>}
             </div>
 
             {serviceLoading ? (

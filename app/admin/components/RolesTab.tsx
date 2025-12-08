@@ -13,7 +13,6 @@ interface RolesTabProps {
   industryId: string;
   roles: StaffRoleConfig[];
   loading: boolean;
-  status: string | null;
   selectedId: string;
   isCreating: boolean;
   form: {
@@ -45,7 +44,6 @@ export function RolesTab({
   industryId,
   roles,
   loading,
-  status,
   selectedId,
   isCreating,
   form,
@@ -106,7 +104,6 @@ export function RolesTab({
               >
                 + New Role
               </button>
-              {status && <span className="text-sm text-slate-300">{status}</span>}
             </div>
 
             {loading ? (

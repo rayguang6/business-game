@@ -13,6 +13,7 @@ interface RoleForm {
   spriteImage?: string;
   setsFlag?: string;
   requirements: Requirement[];
+  order: string;
 }
 
 interface PresetForm {
@@ -40,6 +41,7 @@ export function useStaff(industryId: string) {
     effects: [],
     spriteImage: '',
     requirements: [],
+    order: '',
   });
 
   // Preset state
@@ -92,6 +94,7 @@ export function useStaff(industryId: string) {
       effects: [],
       spriteImage: '',
       requirements: [],
+      order: '',
     });
     setSelectedPresetId('');
     setIsCreatingPreset(false);
@@ -116,6 +119,7 @@ export function useStaff(industryId: string) {
       spriteImage: role.spriteImage || '',
       setsFlag: role.setsFlag,
       requirements: role.requirements || [],
+      order: role.order != null ? String(role.order) : '',
     });
     if (resetMsg) setStatus(null);
   }, []);
@@ -133,6 +137,7 @@ export function useStaff(industryId: string) {
       salary: '0',
       effects: [],
       requirements: [],
+      order: '',
     });
     setStatus(null);
   }, [industryId]);
@@ -161,6 +166,7 @@ export function useStaff(industryId: string) {
     const setsFlag = roleForm.setsFlag?.trim() || undefined;
     const requirements = roleForm.requirements;
     setRoleOperation('saving');
+    const order = roleForm.order.trim() ? Number(roleForm.order.trim()) : undefined;
     const result = await upsertStaffRoleAction({
       id,
       industryId,
@@ -170,6 +176,7 @@ export function useStaff(industryId: string) {
       spriteImage: roleForm.spriteImage?.trim() || undefined,
       setsFlag,
       requirements,
+      order,
     });
     setRoleOperation('idle');
     if (!result.success) {
@@ -185,9 +192,19 @@ export function useStaff(industryId: string) {
         effects,
         setsFlag,
         requirements,
+        order,
       };
       const next = exists ? prev.map((r) => (r.id === id ? nextItem : r)) : [...prev, nextItem];
-      return next.sort((a, b) => a.name.localeCompare(b.name));
+      return next.sort((a, b) => {
+        // Null/undefined orders go to the end
+        const aOrderNull = a.order == null;
+        const bOrderNull = b.order == null;
+        if (aOrderNull && bOrderNull) return a.name.localeCompare(b.name);
+        if (aOrderNull) return 1;
+        if (bOrderNull) return -1;
+        if (a.order !== b.order) return (a.order ?? 0) - (b.order ?? 0);
+        return a.name.localeCompare(b.name);
+      });
     });
     setStatus('Role saved.');
     setIsCreatingRole(false);
@@ -218,6 +235,7 @@ export function useStaff(industryId: string) {
       salary: '0',
       effects: [],
       requirements: [],
+      order: '',
     });
     setStatus('Role deleted.');
   }, [selectedRoleId, isCreatingRole, presets, roles]);
@@ -340,6 +358,7 @@ export function useStaff(industryId: string) {
         salary: '0',
         effects: [],
         requirements: [],
+        order: '',
       });
     }
     setStatus(null);

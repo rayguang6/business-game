@@ -14,7 +14,6 @@ interface StaffTabProps {
   staffRoles: StaffRoleConfig[];
   staffPresets: StaffPreset[];
   staffLoading: boolean;
-  staffStatus: string | null;
   selectedRoleId: string;
   isCreatingRole: boolean;
   roleForm: {
@@ -63,7 +62,6 @@ export function StaffTab({
   staffRoles,
   staffPresets,
   staffLoading,
-  staffStatus,
   selectedRoleId,
   isCreatingRole,
   roleForm,
@@ -133,7 +131,6 @@ export function StaffTab({
               >
                 + New Role
               </button>
-              {staffStatus && <span className="text-sm text-slate-300">{staffStatus}</span>}
             </div>
 
             {staffLoading ? (

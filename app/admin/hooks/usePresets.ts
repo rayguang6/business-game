@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { fetchStaffData, upsertStaffPresetAction, deleteStaffPresetAction } from '@/lib/server/actions/adminActions';
 import type { StaffPreset, StaffRoleConfig } from '@/lib/game/staffConfig';
 import type { Operation } from './types';
+import { useToastFunctions } from '../components/ui/ToastContext';
 
 interface PresetForm {
   id: string;
@@ -15,7 +16,7 @@ export function usePresets(industryId: string, presetId?: string) {
   const [presets, setPresets] = useState<StaffPreset[]>([]);
   const [roles, setRoles] = useState<StaffRoleConfig[]>([]);
   const [operation, setOperation] = useState<Operation>('idle');
-  const [status, setStatus] = useState<string | null>(null);
+  const { success, error } = useToastFunctions();
   const [selectedId, setSelectedId] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState<PresetForm>({
@@ -27,7 +28,6 @@ export function usePresets(industryId: string, presetId?: string) {
   const load = useCallback(async () => {
     if (!industryId) return;
     setOperation('loading');
-    setStatus(null);
     const data = await fetchStaffData(industryId);
     setOperation('idle');
     if (!data) {
@@ -55,7 +55,6 @@ export function usePresets(industryId: string, presetId?: string) {
       roleId: '',
       name: '',
     });
-    setStatus(null);
   }, [industryId]);
 
   const selectPreset = useCallback((preset: StaffPreset, resetMsg = true) => {
@@ -68,7 +67,6 @@ export function usePresets(industryId: string, presetId?: string) {
       salary: preset.salary !== undefined ? String(preset.salary) : undefined,
       serviceSpeed: preset.serviceSpeed !== undefined ? String(preset.serviceSpeed) : undefined,
     });
-    if (resetMsg) setStatus(null);
   }, []);
 
   // Select preset when presetId changes or presets are loaded
@@ -85,14 +83,13 @@ export function usePresets(industryId: string, presetId?: string) {
           salary: preset.salary !== undefined ? String(preset.salary) : undefined,
           serviceSpeed: preset.serviceSpeed !== undefined ? String(preset.serviceSpeed) : undefined,
         });
-        setStatus(null);
       }
     }
   }, [presetId, presets]);
 
   const createPreset = useCallback(() => {
     if (!industryId) {
-      setStatus('Save the industry first.');
+      error('Save the industry first.');
       return;
     }
     setIsCreating(true);
@@ -102,32 +99,31 @@ export function usePresets(industryId: string, presetId?: string) {
       roleId: roles[0]?.id ?? '',
       name: '',
     });
-    setStatus(null);
-  }, [industryId, roles]);
+  }, [industryId, roles, error]);
 
   const savePreset = useCallback(async () => {
     if (!industryId) {
-      setStatus('Save the industry first.');
+      error('Save the industry first.');
       return;
     }
     const id = form.id.trim();
     const roleId = form.roleId.trim();
     const name = form.name.trim();
     if (!id || !roleId || !name) {
-      setStatus('Preset id, role, and name are required.');
+      error('Preset id, role, and name are required.');
       return;
     }
 
     // Validate that the selected role exists for this industry
     const roleExists = roles.some(role => role.id === roleId);
     if (!roleExists) {
-      setStatus('Selected role does not exist for this industry.');
+      error('Selected role does not exist for this industry.');
       return;
     }
     const salary = form.salary !== undefined && form.salary !== '' ? Number(form.salary) : undefined;
     const serviceSpeed = form.serviceSpeed !== undefined && form.serviceSpeed !== '' ? Number(form.serviceSpeed) : undefined;
     if ((salary !== undefined && (!Number.isFinite(salary) || salary < 0)) || (serviceSpeed !== undefined && (!Number.isFinite(serviceSpeed) || serviceSpeed < 0))) {
-      setStatus('Overrides must be non-negative numbers.');
+      error('Overrides must be non-negative numbers.');
       return;
     }
 
@@ -144,7 +140,7 @@ export function usePresets(industryId: string, presetId?: string) {
     const result = await upsertStaffPresetAction(presetData);
     setOperation('idle');
     if (!result.success) {
-      setStatus(result.message ?? 'Failed to save preset.');
+      error(result.message ?? 'Failed to save preset.');
       return;
     }
     setPresets((prev) => {
@@ -155,7 +151,7 @@ export function usePresets(industryId: string, presetId?: string) {
       const next = exists ? prev.map((p) => (p.id === id ? nextItem : p)) : [...prev, nextItem];
       return next.sort((a, b) => a.name.localeCompare(b.name));
     });
-    setStatus('Preset saved.');
+    success('Preset saved.');
     // Stay in create mode to allow creating another preset
     setSelectedId('');
     setForm({
@@ -163,7 +159,7 @@ export function usePresets(industryId: string, presetId?: string) {
       roleId: roles[0]?.id ?? '',
       name: '',
     });
-  }, [industryId, form, roles]);
+  }, [industryId, form, roles, error]);
 
   const deletePreset = useCallback(async () => {
     if (isCreating || !selectedId) return;
@@ -173,7 +169,7 @@ export function usePresets(industryId: string, presetId?: string) {
     const result = await deleteStaffPresetAction(selectedId, industryId as any);
     setOperation('idle');
     if (!result.success) {
-      setStatus(result.message ?? 'Failed to delete preset.');
+      error(result.message ?? 'Failed to delete preset.');
       return;
     }
     setPresets((prev) => prev.filter((p) => p.id !== selectedId));
@@ -183,8 +179,8 @@ export function usePresets(industryId: string, presetId?: string) {
       roleId: roles[0]?.id ?? '',
       name: '',
     });
-    setStatus('Preset deleted.');
-  }, [selectedId, isCreating, presets, roles, industryId]);
+    success('Preset deleted.');
+  }, [selectedId, isCreating, presets, roles, industryId, error, success]);
 
   const reset = useCallback(() => {
     if (selectedId && !isCreating) {
@@ -199,7 +195,6 @@ export function usePresets(industryId: string, presetId?: string) {
         name: '',
       });
     }
-    setStatus(null);
   }, [selectedId, isCreating, presets, selectPreset, roles]);
 
   const updateForm = useCallback((updates: Partial<PresetForm>) => {
@@ -210,7 +205,6 @@ export function usePresets(industryId: string, presetId?: string) {
     presets,
     roles,
     loading: operation === 'loading',
-    status,
     selectedId,
     isCreating,
     saving: operation === 'saving',

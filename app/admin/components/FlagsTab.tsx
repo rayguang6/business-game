@@ -8,7 +8,6 @@ interface FlagsTabProps {
   industryId: string;
   flags: GameFlag[];
   flagsLoading: boolean;
-  flagStatus: string | null;
   selectedFlagId: string;
   isCreatingFlag: boolean;
   flagForm: { id: string; name: string; description: string };
@@ -26,7 +25,6 @@ export function FlagsTab({
   industryId,
   flags,
   flagsLoading,
-  flagStatus,
   selectedFlagId,
   isCreatingFlag,
   flagForm,
@@ -84,7 +82,6 @@ export function FlagsTab({
               >
                 + New Flag
               </button>
-              {flagStatus && <span className="text-sm text-slate-300">{flagStatus}</span>}
             </div>
 
             {flagsLoading ? (

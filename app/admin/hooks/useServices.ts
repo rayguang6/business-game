@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchServices, upsertService, deleteService } from '@/lib/server/actions/adminActions';
 import type { IndustryServiceDefinition, Requirement, ServicePricingCategory, ServiceTier } from '@/lib/game/types';
 import type { Operation } from './types';
+import { useToastFunctions } from '../components/ui/ToastContext';
 
 interface ServiceForm {
   id: string;
@@ -24,7 +25,7 @@ const servicesQueryKey = (industryId: string) => ['services', industryId] as con
 
 export function useServices(industryId: string, serviceId?: string) {
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState<string | null>(null);
+  const { success, error } = useToastFunctions();
   const [selectedId, setSelectedId] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState<ServiceForm>({
@@ -46,7 +47,7 @@ export function useServices(industryId: string, serviceId?: string) {
   const {
     data: services = [],
     isLoading,
-    error,
+    error: queryError,
   } = useQuery({
     queryKey: servicesQueryKey(industryId),
     queryFn: async () => {
@@ -101,10 +102,10 @@ export function useServices(industryId: string, serviceId?: string) {
       if (context?.previousServices) {
         queryClient.setQueryData(servicesQueryKey(industryId), context.previousServices);
       }
-      setStatus(err instanceof Error ? err.message : 'Failed to save service.');
+      error(err instanceof Error ? err.message : 'Failed to save service.');
     },
     onSuccess: (savedService) => {
-      setStatus('Service saved.');
+      success('Service saved.');
       setIsCreating(false);
       setSelectedId(savedService.id);
     },
@@ -136,7 +137,7 @@ export function useServices(industryId: string, serviceId?: string) {
       if (context?.previousServices) {
         queryClient.setQueryData(servicesQueryKey(industryId), context.previousServices);
       }
-      setStatus(err instanceof Error ? err.message : 'Failed to delete service.');
+      error(err instanceof Error ? err.message : 'Failed to delete service.');
     },
     onSuccess: () => {
       const remaining = queryClient.getQueryData<IndustryServiceDefinition[]>(servicesQueryKey(industryId)) || [];
@@ -160,7 +161,7 @@ export function useServices(industryId: string, serviceId?: string) {
     });
         setIsCreating(false);
       }
-      setStatus('Service deleted.');
+      success('Service deleted.');
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: servicesQueryKey(industryId) });
@@ -184,7 +185,6 @@ export function useServices(industryId: string, serviceId?: string) {
       timeCost: service.timeCost?.toString() || '0',
       order: String(service.order ?? 0),
     });
-    if (resetMsg) setStatus(null);
   }, []);
 
   // Select service when serviceId changes or services are loaded
@@ -208,14 +208,13 @@ export function useServices(industryId: string, serviceId?: string) {
           timeCost: service.timeCost?.toString() || '0',
           order: String(service.order ?? ''),
         });
-        setStatus(null);
       }
     }
   }, [serviceId, services]);
 
   const createService = useCallback(() => {
     if (!industryId) {
-      setStatus('Save the industry first.');
+      error('Save the industry first.');
       return;
     }
     setIsCreating(true);
@@ -234,12 +233,11 @@ export function useServices(industryId: string, serviceId?: string) {
       timeCost: '0',
       order: '',
     });
-    setStatus(null);
   }, [industryId]);
 
   const saveService = useCallback(async () => {
     if (!industryId) {
-      setStatus('Save the industry first.');
+      error('Save the industry first.');
       return;
     }
     const id = form.id.trim();
@@ -250,23 +248,23 @@ export function useServices(industryId: string, serviceId?: string) {
     const weightage = Number(form.weightage);
     const timeCost = Number(form.timeCost);
     if (!id || !name) {
-      setStatus('Service id and name are required.');
+      error('Service id and name are required.');
       return;
     }
     if (!Number.isFinite(duration) || duration < 0 || !Number.isFinite(price) || price < 0) {
-      setStatus('Duration and price must be non-negative numbers.');
+      error('Duration and price must be non-negative numbers.');
       return;
     }
     if (!Number.isFinite(expGained) || expGained < 0) {
-      setStatus('EXP gained must be a non-negative number.');
+      error('EXP gained must be a non-negative number.');
       return;
     }
     if (!Number.isFinite(weightage) || weightage <= 0) {
-      setStatus('Weightage must be a positive number.');
+      error('Weightage must be a positive number.');
       return;
     }
     if (!Number.isFinite(timeCost) || timeCost < 0) {
-      setStatus('Time cost must be a non-negative number.');
+      error('Time cost must be a non-negative number.');
       return;
     }
     const order = form.order.trim() ? Number(form.order.trim()) : undefined;
@@ -318,7 +316,6 @@ export function useServices(industryId: string, serviceId?: string) {
       setIsCreating(false);
       setSelectedId('');
     }
-    setStatus(null);
   }, [selectedId, isCreating, services, selectService]);
 
   const updateForm = useCallback((updates: Partial<ServiceForm>) => {
@@ -330,7 +327,6 @@ export function useServices(industryId: string, serviceId?: string) {
   return {
     services,
     loading: isLoading,
-    status: status || (error instanceof Error ? error.message : null),
     selectedId,
     isCreating,
     saving: saveMutation.isPending,
