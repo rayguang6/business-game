@@ -5,6 +5,7 @@ import { GameMetric } from '@/lib/game/effectManager';
 import { getAllMetrics, getMetricDefinition } from '@/lib/game/metrics/registry';
 import type { IndustryId } from '@/lib/game/types';
 import type { MetricDisplayConfig } from '@/lib/data/metricDisplayConfigRepository';
+import { NumberInput } from './NumberInput';
 
 interface MetricDisplayConfigTabProps {
   industryId: IndustryId | 'global';
@@ -366,8 +367,7 @@ export function MetricDisplayConfigTab({
                       {/* Priority */}
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
-                          <input
-                            type="number"
+                          <NumberInput
                             value={config?.priority ?? priority ?? ''}
                             onChange={(e) => updateConfig(metric.id, { priority: e.target.value === '' ? null : parseInt(e.target.value, 10) })}
                             className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-slate-200 min-w-[80px] focus:outline-none focus:ring-1 focus:ring-blue-500"

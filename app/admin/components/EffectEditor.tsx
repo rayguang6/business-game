@@ -1,6 +1,7 @@
 'use client';
 
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
+import { NumberInput } from './NumberInput';
 
 export interface EffectFormData {
   metric: GameMetric;
@@ -72,9 +73,8 @@ export function EffectEditor({
         {/* Effect Value Input */}
         <div>
           <label className="block text-xs text-slate-400 mb-1">Effect Value</label>
-          <input
+          <NumberInput
             placeholder="e.g. 10, -5, 0.5"
-            type="number"
             step="any"
             value={effect.value}
             onChange={(e) => onUpdate(index, { value: e.target.value })}
@@ -87,9 +87,8 @@ export function EffectEditor({
         {showDuration && (
           <div>
             <label className="block text-xs text-slate-400 mb-1">Duration (months)</label>
-            <input
+            <NumberInput
               placeholder="Leave empty for permanent"
-              type="number"
               min="0"
               value={effect.durationMonths ?? ''}
               onChange={(e) => onUpdate(index, { durationMonths: e.target.value })}

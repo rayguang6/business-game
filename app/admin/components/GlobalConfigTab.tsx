@@ -5,6 +5,7 @@ import type { BusinessMetrics, BusinessStats, MovementConfig } from '@/lib/game/
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
 import { getMetricDefinition, calculateCustomersPerMonth } from '@/lib/game/metrics/registry';
 import { GameMetric } from '@/lib/game/effectManager';
+import { NumberInput } from './NumberInput';
 
 type UiConfig = {
   eventAutoSelectDurationSeconds?: number;
@@ -86,8 +87,7 @@ export function GlobalConfigTab({
             <div className="space-y-3">
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Starting Cash</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(metrics?.startingCash)}
@@ -96,8 +96,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Monthly Expenses</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(metrics?.monthlyExpenses)}
@@ -106,8 +105,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Starting EXP</label>
-                <input
-                  type="number"
+                <NumberInput
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(metrics?.startingExp)}
                   onChange={(e) => onUpdateMetrics({ startingExp: e.target.value === '' ? undefined : Number(e.target.value) })}
@@ -115,8 +113,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Starting Time (Hours)</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(metrics?.startingTime)}
@@ -134,8 +131,7 @@ export function GlobalConfigTab({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Ticks Per Second</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(stats?.ticksPerSecond)}
@@ -144,8 +140,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Month Duration (sec)</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(stats?.monthDurationSeconds)}
@@ -154,8 +149,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Leads Per Month</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="1"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(stats?.leadsPerMonth)}
@@ -169,8 +163,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Customer Patience (sec)</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(stats?.customerPatienceSeconds)}
@@ -179,8 +172,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Leaving Angry Duration (ticks)</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(stats?.leavingAngryDurationTicks)}
@@ -189,8 +181,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Service Capacity</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(stats?.serviceCapacity)}
@@ -199,8 +190,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">EXP Gain per Happy Customer</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(stats?.expGainPerHappyCustomer)}
@@ -209,8 +199,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">EXP Loss per Angry Customer</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(stats?.expLossPerAngryCustomer)}
@@ -219,8 +208,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">EXP Required Per Level</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(stats?.expPerLevel)}
@@ -229,8 +217,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Service Revenue Multiplier</label>
-                <input
-                  type="number"
+                <NumberInput
                   step="0.01"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
@@ -240,8 +227,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Service Revenue Scale</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(stats?.serviceRevenueScale)}
@@ -250,8 +236,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Spawn Position X</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(stats?.customerSpawnPosition?.x)}
@@ -268,8 +253,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Spawn Position Y</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(stats?.customerSpawnPosition?.y)}
@@ -305,8 +289,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Conversion Rate</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   step="0.1"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
@@ -316,8 +299,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Failure Rate (%)</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   max="100"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
@@ -333,8 +315,7 @@ export function GlobalConfigTab({
             <div className="space-y-3">
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Customer Tiles Per Tick</label>
-                <input
-                  type="number"
+                <NumberInput
                   step="0.01"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
@@ -358,8 +339,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Animation Reference Tiles Per Tick</label>
-                <input
-                  type="number"
+                <NumberInput
                   step="0.01"
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
@@ -383,8 +363,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Walk Frame Duration (ms)</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(movement?.walkFrameDurationMs)}
@@ -407,8 +386,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Min Walk Frame Duration (ms)</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(movement?.minWalkFrameDurationMs)}
@@ -431,8 +409,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Max Walk Frame Duration (ms)</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(movement?.maxWalkFrameDurationMs)}
@@ -455,8 +432,7 @@ export function GlobalConfigTab({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Celebration Frame Duration (ms)</label>
-                <input
-                  type="number"
+                <NumberInput
                   min="0"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getValue(movement?.celebrationFrameDurationMs)}
@@ -486,8 +462,7 @@ export function GlobalConfigTab({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-slate-400 mb-1">Event Auto-Select Duration (seconds)</label>
-              <input
-                type="number"
+              <NumberInput
                 min="1"
                 max="60"
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
@@ -498,8 +473,7 @@ export function GlobalConfigTab({
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Outcome Popup Duration (seconds)</label>
-              <input
-                type="number"
+              <NumberInput
                 min="1"
                 max="30"
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
@@ -519,8 +493,7 @@ export function GlobalConfigTab({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-slate-400 mb-1">Cash Target</label>
-              <input
-                type="number"
+              <NumberInput
                 min="0"
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
                 value={getValue(winCondition?.cashTarget)}
@@ -530,8 +503,7 @@ export function GlobalConfigTab({
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Month Target</label>
-              <input
-                type="number"
+              <NumberInput
                 min="0"
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
                 value={getValue(winCondition?.monthTarget)}
@@ -569,8 +541,7 @@ export function GlobalConfigTab({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs text-slate-400 mb-1">Cash Threshold</label>
-              <input
-                type="number"
+              <NumberInput
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
                 value={getValue(loseCondition?.cashThreshold)}
                 onChange={(e) => onUpdateLoseCondition({ cashThreshold: e.target.value === '' ? undefined : Number(e.target.value) })}
@@ -579,8 +550,7 @@ export function GlobalConfigTab({
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Time Threshold</label>
-              <input
-                type="number"
+              <NumberInput
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
                 value={getValue(loseCondition?.timeThreshold)}
                 onChange={(e) => onUpdateLoseCondition({ timeThreshold: e.target.value === '' ? undefined : Number(e.target.value) })}

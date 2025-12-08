@@ -7,6 +7,7 @@ import type { GameFlag } from '@/lib/data/flagRepository';
 import type { GameCondition } from '@/lib/types/conditions';
 import { RequirementsSelector } from './RequirementsSelector';
 import { EffectsList } from './EffectsList';
+import { NumberInput } from './NumberInput';
 import { makeUniqueId, slugify } from './utils';
 
 interface LevelFormData {
@@ -208,8 +209,7 @@ export function UpgradesTab({
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-slate-300 mb-1">Order</label>
-                      <input
-                        type="number"
+                      <NumberInput
                         value={upgradeForm.order}
                         onChange={(e) => onUpdateForm({ order: e.target.value })}
                         placeholder="0"
@@ -294,8 +294,7 @@ export function UpgradesTab({
                               </div>
                               <div>
                                 <label className="block text-xs font-semibold text-slate-400 mb-1">Cost (Cash)</label>
-                                <input
-                                  type="number"
+                                <NumberInput
                                   min="0"
                                   value={level.cost}
                                   onChange={(e) => onUpdateLevel(index, { cost: e.target.value })}
@@ -304,8 +303,7 @@ export function UpgradesTab({
                               </div>
                               <div>
                                 <label className="block text-xs font-semibold text-slate-400 mb-1">Time Cost (Optional)</label>
-                                <input
-                                  type="number"
+                                <NumberInput
                                   min="0"
                                   value={level.timeCost || ''}
                                   onChange={(e) => onUpdateLevel(index, { timeCost: e.target.value })}
@@ -338,8 +336,7 @@ export function UpgradesTab({
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-slate-300 mb-1">Max Level</label>
-                      <input
-                        type="number"
+                      <NumberInput
                         min="1"
                         value={upgradeForm.maxLevel}
                         onChange={(e) => onUpdateForm({ maxLevel: e.target.value })}

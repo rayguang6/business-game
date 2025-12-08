@@ -5,6 +5,7 @@ import type { BusinessMetrics, BusinessStats, GridPosition, AnchorPoint, Service
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
 import { getMetricDefinition, calculateCustomersPerMonth } from '@/lib/game/metrics/registry';
 import { GameMetric } from '@/lib/game/effectManager';
+import { NumberInput } from './NumberInput';
 
 interface IndustrySimulationConfigTabProps {
   industryName: string;
@@ -442,39 +443,35 @@ export function IndustrySimulationConfigTab({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs text-slate-400 mb-1">Starting Cash</label>
-              <input 
-                type="number" 
-                min="0" 
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getValue(businessMetrics?.startingCash)} 
-                onChange={(e) => updateMetrics({ startingCash: e.target.value === '' ? undefined : Number(e.target.value) })} 
+              <NumberInput
+                min="0"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getValue(businessMetrics?.startingCash)}
+                onChange={(e) => updateMetrics({ startingCash: e.target.value === '' ? undefined : Number(e.target.value) })}
               />
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Monthly Expenses</label>
-              <input 
-                type="number" 
-                min="0" 
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getValue(businessMetrics?.monthlyExpenses)} 
-                onChange={(e) => updateMetrics({ monthlyExpenses: e.target.value === '' ? undefined : Number(e.target.value) })} 
+              <NumberInput
+                min="0"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getValue(businessMetrics?.monthlyExpenses)}
+                onChange={(e) => updateMetrics({ monthlyExpenses: e.target.value === '' ? undefined : Number(e.target.value) })}
               />
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Starting EXP</label>
-              <input 
-                type="number" 
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getValue(businessMetrics?.startingExp)} 
-                onChange={(e) => updateMetrics({ startingExp: e.target.value === '' ? undefined : Number(e.target.value) })} 
+              <NumberInput
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getValue(businessMetrics?.startingExp)}
+                onChange={(e) => updateMetrics({ startingExp: e.target.value === '' ? undefined : Number(e.target.value) })}
               />
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-700">
             <div>
               <label className="block text-xs text-slate-400 mb-1">Starting Time (Hours)</label>
-              <input
-                type="number"
+              <NumberInput
                 min="0"
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                 value={getValue(businessMetrics?.startingTime)}
@@ -494,32 +491,29 @@ export function IndustrySimulationConfigTab({
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs text-slate-400 mb-1">Ticks Per Second</label>
-              <input 
-                type="number" 
-                min="1" 
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getValue(businessStats?.ticksPerSecond)} 
-                onChange={(e) => updateStats({ ticksPerSecond: e.target.value === '' ? undefined : Number(e.target.value) })} 
+              <NumberInput
+                min="1"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getValue(businessStats?.ticksPerSecond)}
+                onChange={(e) => updateStats({ ticksPerSecond: e.target.value === '' ? undefined : Number(e.target.value) })}
               />
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Month Duration (sec)</label>
-              <input 
-                type="number" 
-                min="0" 
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getValue(businessStats?.monthDurationSeconds)} 
-                onChange={(e) => updateStats({ monthDurationSeconds: e.target.value === '' ? undefined : Number(e.target.value) })} 
+              <NumberInput
+                min="0"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getValue(businessStats?.monthDurationSeconds)}
+                onChange={(e) => updateStats({ monthDurationSeconds: e.target.value === '' ? undefined : Number(e.target.value) })}
               />
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Leads Per Month</label>
-              <input 
-                type="number" 
-                min="1" 
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getValue(businessStats?.leadsPerMonth)} 
-                onChange={(e) => updateStats({ leadsPerMonth: e.target.value === '' ? undefined : Number(e.target.value) })} 
+              <NumberInput
+                min="1"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getValue(businessStats?.leadsPerMonth)}
+                onChange={(e) => updateStats({ leadsPerMonth: e.target.value === '' ? undefined : Number(e.target.value) })}
               />
               {(businessStats?.leadsPerMonth ?? globalStats?.leadsPerMonth) && 
                (businessStats?.monthDurationSeconds ?? globalStats?.monthDurationSeconds) && (
@@ -533,59 +527,53 @@ export function IndustrySimulationConfigTab({
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Customer Patience (sec)</label>
-              <input 
-                type="number" 
-                min="0" 
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getValue(businessStats?.customerPatienceSeconds)} 
-                onChange={(e) => updateStats({ customerPatienceSeconds: e.target.value === '' ? undefined : Number(e.target.value) })} 
+              <NumberInput
+                min="0"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getValue(businessStats?.customerPatienceSeconds)}
+                onChange={(e) => updateStats({ customerPatienceSeconds: e.target.value === '' ? undefined : Number(e.target.value) })}
               />
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Leaving Angry Duration (ticks)</label>
-              <input 
-                type="number" 
-                min="0" 
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getValue(businessStats?.leavingAngryDurationTicks)} 
-                onChange={(e) => updateStats({ leavingAngryDurationTicks: e.target.value === '' ? undefined : Number(e.target.value) })} 
+              <NumberInput
+                min="0"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getValue(businessStats?.leavingAngryDurationTicks)}
+                onChange={(e) => updateStats({ leavingAngryDurationTicks: e.target.value === '' ? undefined : Number(e.target.value) })}
               />
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Service Capacity</label>
-              <input 
-                type="number" 
-                min="0" 
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getValue(businessStats?.serviceCapacity)} 
-                onChange={(e) => updateStats({ serviceCapacity: e.target.value === '' ? undefined : Number(e.target.value) })} 
+              <NumberInput
+                min="0"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getValue(businessStats?.serviceCapacity)}
+                onChange={(e) => updateStats({ serviceCapacity: e.target.value === '' ? undefined : Number(e.target.value) })}
               />
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Service Revenue Multiplier</label>
-              <input 
-                type="number" 
-                step="0.01" 
-                min="0" 
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getValue(businessStats?.serviceRevenueMultiplier)} 
-                onChange={(e) => updateStats({ serviceRevenueMultiplier: e.target.value === '' ? undefined : Number(e.target.value) })} 
+              <NumberInput
+                step="0.01"
+                min="0"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getValue(businessStats?.serviceRevenueMultiplier)}
+                onChange={(e) => updateStats({ serviceRevenueMultiplier: e.target.value === '' ? undefined : Number(e.target.value) })}
               />
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Service Revenue Scale</label>
-              <input 
-                type="number" 
-                min="0" 
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getValue(businessStats?.serviceRevenueScale)} 
-                onChange={(e) => updateStats({ serviceRevenueScale: e.target.value === '' ? undefined : Number(e.target.value) })} 
+              <NumberInput
+                min="0"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getValue(businessStats?.serviceRevenueScale)}
+                onChange={(e) => updateStats({ serviceRevenueScale: e.target.value === '' ? undefined : Number(e.target.value) })}
               />
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Spawn Position X</label>
-              <input
-                type="number"
+              <NumberInput
                 min="0"
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                 value={getValue(businessStats?.customerSpawnPosition?.x)}
@@ -600,8 +588,7 @@ export function IndustrySimulationConfigTab({
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Spawn Position Y</label>
-              <input
-                type="number"
+              <NumberInput
                 min="0"
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                 value={getValue(businessStats?.customerSpawnPosition?.y)}
@@ -635,18 +622,16 @@ export function IndustrySimulationConfigTab({
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">EXP Gain per Happy Customer</label>
-              <input 
-                type="number" 
-                min="0" 
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getValue(businessStats?.expGainPerHappyCustomer)} 
-                onChange={(e) => updateStats({ expGainPerHappyCustomer: e.target.value === '' ? undefined : Number(e.target.value) })} 
+              <NumberInput
+                min="0"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getValue(businessStats?.expGainPerHappyCustomer)}
+                onChange={(e) => updateStats({ expGainPerHappyCustomer: e.target.value === '' ? undefined : Number(e.target.value) })}
               />
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">EXP Loss per Angry Customer</label>
-              <input
-                type="number"
+              <NumberInput
                 min="0"
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                 value={getValue(businessStats?.expLossPerAngryCustomer)}
@@ -655,8 +640,7 @@ export function IndustrySimulationConfigTab({
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">EXP Required Per Level</label>
-              <input
-                type="number"
+              <NumberInput
                 min="0"
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                 value={getValue(businessStats?.expPerLevel)}
@@ -665,24 +649,22 @@ export function IndustrySimulationConfigTab({
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Conversion Rate</label>
-              <input 
-                type="number" 
+              <NumberInput
                 min="0"
-                step="0.1" 
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getValue(businessStats?.conversionRate)} 
-                onChange={(e) => updateStats({ conversionRate: e.target.value === '' ? undefined : Number(e.target.value) })} 
+                step="0.1"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getValue(businessStats?.conversionRate)}
+                onChange={(e) => updateStats({ conversionRate: e.target.value === '' ? undefined : Number(e.target.value) })}
               />
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Failure Rate (%)</label>
-              <input 
-                type="number" 
-                min="0" 
-                max="100" 
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" 
-                value={getValue(businessStats?.failureRate)} 
-                onChange={(e) => updateStats({ failureRate: e.target.value === '' ? undefined : Number(e.target.value) })} 
+              <NumberInput
+                min="0"
+                max="100"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                value={getValue(businessStats?.failureRate)}
+                onChange={(e) => updateStats({ failureRate: e.target.value === '' ? undefined : Number(e.target.value) })}
               />
               <p className="text-xs text-slate-500 mt-1">Base failure rate percentage (0-100%)</p>
             </div>
@@ -696,12 +678,12 @@ export function IndustrySimulationConfigTab({
             <div className="space-y-3">
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Cash Target</label>
-                <input type="number" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(winCondition?.cashTarget)} onChange={(e) => updateWinCondition({ cashTarget: e.target.value === '' ? undefined : Number(e.target.value) })} />
+                <NumberInput  min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(winCondition?.cashTarget)} onChange={(e) => updateWinCondition({ cashTarget: e.target.value === '' ? undefined : Number(e.target.value) })} />
                 <p className="text-xs text-slate-500 mt-1">Target cash amount to win the game</p>
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Month Target</label>
-                <input type="number" min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(winCondition?.monthTarget)} onChange={(e) => updateWinCondition({ monthTarget: e.target.value === '' ? undefined : Number(e.target.value) })} />
+                <NumberInput  min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(winCondition?.monthTarget)} onChange={(e) => updateWinCondition({ monthTarget: e.target.value === '' ? undefined : Number(e.target.value) })} />
                 <p className="text-xs text-slate-500 mt-1">Win by surviving this many months (alternative to cash target)</p>
               </div>
               <div>
@@ -722,11 +704,11 @@ export function IndustrySimulationConfigTab({
             <div className="space-y-3">
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Cash Threshold</label>
-                <input type="number" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(loseCondition?.cashThreshold)} onChange={(e) => updateLoseCondition({ cashThreshold: e.target.value === '' ? undefined : Number(e.target.value) })} />
+                <NumberInput  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(loseCondition?.cashThreshold)} onChange={(e) => updateLoseCondition({ cashThreshold: e.target.value === '' ? undefined : Number(e.target.value) })} />
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Time Threshold</label>
-                <input type="number" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(loseCondition?.timeThreshold)} onChange={(e) => updateLoseCondition({ timeThreshold: e.target.value === '' ? undefined : Number(e.target.value) })} />
+                <NumberInput  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(loseCondition?.timeThreshold)} onChange={(e) => updateLoseCondition({ timeThreshold: e.target.value === '' ? undefined : Number(e.target.value) })} />
                 <p className="text-xs text-slate-500 mt-1">Game over if available time &lt;= this value (only applies if time system is enabled)</p>
               </div>
             </div>
@@ -791,11 +773,11 @@ export function IndustrySimulationConfigTab({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-slate-400 mb-1">Map Width</label>
-              <input type="number" min="1" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={mapWidth ?? ''} onChange={(e) => setMapWidth(e.target.value ? Number(e.target.value) : null)} placeholder="10" />
+              <NumberInput  min="1" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={mapWidth ?? ''} onChange={(e) => setMapWidth(e.target.value ? Number(e.target.value) : null)} placeholder="10" />
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Map Height</label>
-              <input type="number" min="1" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={mapHeight ?? ''} onChange={(e) => setMapHeight(e.target.value ? Number(e.target.value) : null)} placeholder="10" />
+              <NumberInput  min="1" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={mapHeight ?? ''} onChange={(e) => setMapHeight(e.target.value ? Number(e.target.value) : null)} placeholder="10" />
             </div>
           </div>
 
@@ -808,8 +790,8 @@ export function IndustrySimulationConfigTab({
             <div className="space-y-2">
               {mapWalls.map((wall, idx) => (
                 <div key={idx} className="flex gap-2">
-                  <input type="number" className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="X" value={wall.x} onChange={(e) => updateMapWall(idx, 'x', Number(e.target.value))} />
-                  <input type="number" className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="Y" value={wall.y} onChange={(e) => updateMapWall(idx, 'y', Number(e.target.value))} />
+                  <NumberInput  className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="X" value={wall.x} onChange={(e) => updateMapWall(idx, 'x', Number(e.target.value))} />
+                  <NumberInput  className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="Y" value={wall.y} onChange={(e) => updateMapWall(idx, 'y', Number(e.target.value))} />
                   <button onClick={() => removeMapWall(idx)} className="px-2 py-1 bg-rose-600 hover:bg-rose-700 rounded text-sm">Remove</button>
                 </div>
               ))}
@@ -830,11 +812,11 @@ export function IndustrySimulationConfigTab({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-slate-400 mb-1">X</label>
-                <input type="number" className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200" value={entryPosition?.x ?? 0} onChange={(e) => updateEntryPosition('x', Number(e.target.value))} />
+                <NumberInput  className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200" value={entryPosition?.x ?? 0} onChange={(e) => updateEntryPosition('x', Number(e.target.value))} />
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Y</label>
-                <input type="number" className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200" value={entryPosition?.y ?? 0} onChange={(e) => updateEntryPosition('y', Number(e.target.value))} />
+                <NumberInput  className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200" value={entryPosition?.y ?? 0} onChange={(e) => updateEntryPosition('y', Number(e.target.value))} />
               </div>
             </div>
           </div>
@@ -849,8 +831,8 @@ export function IndustrySimulationConfigTab({
             <div className="space-y-2">
               {waitingPositions.map((pos, idx) => (
                 <div key={idx} className="flex gap-2 items-center">
-                  <input type="number" className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="X" value={pos.x} onChange={(e) => updatePosition('waiting', idx, 'x', Number(e.target.value))} />
-                  <input type="number" className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="Y" value={pos.y} onChange={(e) => updatePosition('waiting', idx, 'y', Number(e.target.value))} />
+                  <NumberInput  className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="X" value={pos.x} onChange={(e) => updatePosition('waiting', idx, 'x', Number(e.target.value))} />
+                  <NumberInput  className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="Y" value={pos.y} onChange={(e) => updatePosition('waiting', idx, 'y', Number(e.target.value))} />
                   <select 
                     className="w-24 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
                     value={pos.facingDirection || 'right'}
@@ -886,19 +868,17 @@ export function IndustrySimulationConfigTab({
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-slate-400">Customer Position</label>
                     <div className="flex gap-2 items-center">
-                      <input 
-                        type="number" 
-                        className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" 
-                        placeholder="X" 
-                        value={room.customerPosition.x} 
-                        onChange={(e) => updateServiceRoomPosition(idx, 'customer', 'x', Number(e.target.value))} 
+                      <NumberInput
+                        className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                        placeholder="X"
+                        value={room.customerPosition.x}
+                        onChange={(e) => updateServiceRoomPosition(idx, 'customer', 'x', Number(e.target.value))}
                       />
-                      <input 
-                        type="number" 
-                        className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" 
-                        placeholder="Y" 
-                        value={room.customerPosition.y} 
-                        onChange={(e) => updateServiceRoomPosition(idx, 'customer', 'y', Number(e.target.value))} 
+                      <NumberInput
+                        className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                        placeholder="Y"
+                        value={room.customerPosition.y}
+                        onChange={(e) => updateServiceRoomPosition(idx, 'customer', 'y', Number(e.target.value))}
                       />
                       <select 
                         className="w-24 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
@@ -914,22 +894,20 @@ export function IndustrySimulationConfigTab({
                     {/* Customer Multi-tile Size (Optional) */}
                     <div className="flex gap-2 items-center text-xs text-slate-400">
                       <span className="w-16">Size:</span>
-                      <input 
-                        type="number" 
+                      <NumberInput
                         min="1"
-                        className="w-16 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs" 
-                        placeholder="W" 
-                        value={room.customerPosition.width ?? ''} 
-                        onChange={(e) => updateServiceRoomPosition(idx, 'customer', 'width', e.target.value ? Number(e.target.value) : null)} 
+                        className="w-16 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs"
+                        placeholder="W"
+                        value={room.customerPosition.width ?? ''}
+                        onChange={(e) => updateServiceRoomPosition(idx, 'customer', 'width', e.target.value ? Number(e.target.value) : null)}
                       />
                       <span className="text-slate-500">×</span>
-                      <input 
-                        type="number" 
+                      <NumberInput
                         min="1"
-                        className="w-16 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs" 
-                        placeholder="H" 
-                        value={room.customerPosition.height ?? ''} 
-                        onChange={(e) => updateServiceRoomPosition(idx, 'customer', 'height', e.target.value ? Number(e.target.value) : null)} 
+                        className="w-16 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs"
+                        placeholder="H"
+                        value={room.customerPosition.height ?? ''}
+                        onChange={(e) => updateServiceRoomPosition(idx, 'customer', 'height', e.target.value ? Number(e.target.value) : null)}
                       />
                       <span className="text-slate-500 ml-2">tiles</span>
                       <select 
@@ -954,19 +932,17 @@ export function IndustrySimulationConfigTab({
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-slate-400">Staff Position</label>
                     <div className="flex gap-2 items-center">
-                      <input 
-                        type="number" 
-                        className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" 
-                        placeholder="X" 
-                        value={room.staffPosition.x} 
-                        onChange={(e) => updateServiceRoomPosition(idx, 'staff', 'x', Number(e.target.value))} 
+                      <NumberInput
+                        className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                        placeholder="X"
+                        value={room.staffPosition.x}
+                        onChange={(e) => updateServiceRoomPosition(idx, 'staff', 'x', Number(e.target.value))}
                       />
-                      <input 
-                        type="number" 
-                        className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" 
-                        placeholder="Y" 
-                        value={room.staffPosition.y} 
-                        onChange={(e) => updateServiceRoomPosition(idx, 'staff', 'y', Number(e.target.value))} 
+                      <NumberInput
+                        className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                        placeholder="Y"
+                        value={room.staffPosition.y}
+                        onChange={(e) => updateServiceRoomPosition(idx, 'staff', 'y', Number(e.target.value))}
                       />
                       <select 
                         className="w-24 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
@@ -982,22 +958,20 @@ export function IndustrySimulationConfigTab({
                     {/* Staff Multi-tile Size (Optional) */}
                     <div className="flex gap-2 items-center text-xs text-slate-400">
                       <span className="w-16">Size:</span>
-                      <input 
-                        type="number" 
+                      <NumberInput
                         min="1"
-                        className="w-16 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs" 
-                        placeholder="W" 
-                        value={room.staffPosition.width ?? ''} 
-                        onChange={(e) => updateServiceRoomPosition(idx, 'staff', 'width', e.target.value ? Number(e.target.value) : null)} 
+                        className="w-16 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs"
+                        placeholder="W"
+                        value={room.staffPosition.width ?? ''}
+                        onChange={(e) => updateServiceRoomPosition(idx, 'staff', 'width', e.target.value ? Number(e.target.value) : null)}
                       />
                       <span className="text-slate-500">×</span>
-                      <input 
-                        type="number" 
+                      <NumberInput
                         min="1"
-                        className="w-16 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs" 
-                        placeholder="H" 
-                        value={room.staffPosition.height ?? ''} 
-                        onChange={(e) => updateServiceRoomPosition(idx, 'staff', 'height', e.target.value ? Number(e.target.value) : null)} 
+                        className="w-16 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-xs"
+                        placeholder="H"
+                        value={room.staffPosition.height ?? ''}
+                        onChange={(e) => updateServiceRoomPosition(idx, 'staff', 'height', e.target.value ? Number(e.target.value) : null)}
                       />
                       <span className="text-slate-500 ml-2">tiles</span>
                       <select 
@@ -1031,8 +1005,8 @@ export function IndustrySimulationConfigTab({
             <div className="space-y-2">
               {staffPositions.map((pos, idx) => (
                 <div key={idx} className="flex gap-2">
-                  <input type="number" className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="X" value={pos.x} onChange={(e) => updatePosition('staff', idx, 'x', Number(e.target.value))} />
-                  <input type="number" className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="Y" value={pos.y} onChange={(e) => updatePosition('staff', idx, 'y', Number(e.target.value))} />
+                  <NumberInput  className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="X" value={pos.x} onChange={(e) => updatePosition('staff', idx, 'x', Number(e.target.value))} />
+                  <NumberInput  className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" placeholder="Y" value={pos.y} onChange={(e) => updatePosition('staff', idx, 'y', Number(e.target.value))} />
                   <button onClick={() => removePosition('staff', idx)} className="px-2 py-1 bg-rose-600 hover:bg-rose-700 rounded text-sm">Remove</button>
                 </div>
               ))}
@@ -1052,19 +1026,17 @@ export function IndustrySimulationConfigTab({
             <p className="text-xs text-slate-400 mb-2">Optional: Position for the main character (founder). If not set, defaults to first staff position.</p>
             {mainCharacterPosition ? (
               <div className="flex gap-2">
-                <input 
-                  type="number" 
-                  className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" 
-                  placeholder="X" 
-                  value={mainCharacterPosition.x} 
-                  onChange={(e) => setMainCharacterPosition({ ...mainCharacterPosition, x: Number(e.target.value) })} 
+                <NumberInput
+                  className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                  placeholder="X"
+                  value={mainCharacterPosition.x}
+                  onChange={(e) => setMainCharacterPosition({ ...mainCharacterPosition, x: Number(e.target.value) })}
                 />
-                <input 
-                  type="number" 
-                  className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm" 
-                  placeholder="Y" 
-                  value={mainCharacterPosition.y} 
-                  onChange={(e) => setMainCharacterPosition({ ...mainCharacterPosition, y: Number(e.target.value) })} 
+                <NumberInput
+                  className="w-20 rounded-lg bg-slate-700 border border-slate-600 px-2 py-1 text-slate-200 text-sm"
+                  placeholder="Y"
+                  value={mainCharacterPosition.y}
+                  onChange={(e) => setMainCharacterPosition({ ...mainCharacterPosition, y: Number(e.target.value) })}
                 />
               </div>
             ) : (

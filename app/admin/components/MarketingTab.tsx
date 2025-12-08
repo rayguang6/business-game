@@ -8,6 +8,7 @@ import type { Requirement, UpgradeDefinition } from '@/lib/game/types';
 import type { StaffRoleConfig } from '@/lib/game/staffConfig';
 import { RequirementsSelector } from './RequirementsSelector';
 import { EffectsList } from './EffectsList';
+import { NumberInput } from './NumberInput';
 import { makeUniqueId, slugify } from './utils';
 
 interface CampaignLevelForm {
@@ -234,8 +235,7 @@ export function MarketingTab({
                   <>
                     <div>
                       <label className="block text-sm font-semibold text-slate-300 mb-1">Cost (Cash)</label>
-                      <input
-                        type="number"
+                      <NumberInput
                         min="0"
                         value={campaignForm.cost}
                         onChange={(e) => onUpdateForm({ cost: e.target.value })}
@@ -245,8 +245,7 @@ export function MarketingTab({
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-slate-300 mb-1">Time Cost (Hours, Optional)</label>
-                      <input
-                        type="number"
+                      <NumberInput
                         min="0"
                         value={campaignForm.timeCost || ''}
                         onChange={(e) => onUpdateForm({ timeCost: e.target.value })}
@@ -260,8 +259,7 @@ export function MarketingTab({
                 {campaignForm.type === 'leveled' && (
                   <div>
                     <label className="block text-sm font-semibold text-slate-300 mb-1">Max Level</label>
-                    <input
-                      type="number"
+                    <NumberInput
                       min="1"
                       value={campaignForm.maxLevel || '1'}
                       onChange={(e) => onUpdateForm({ maxLevel: e.target.value })}
@@ -273,8 +271,7 @@ export function MarketingTab({
                 )}
                 <div>
                   <label className="block text-sm font-semibold text-slate-300 mb-1">Cooldown (seconds)</label>
-                  <input
-                    type="number"
+                  <NumberInput
                     min="0"
                     value={campaignForm.cooldownSeconds}
                     onChange={(e) => onUpdateForm({ cooldownSeconds: e.target.value })}
@@ -283,8 +280,7 @@ export function MarketingTab({
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-300 mb-1">Order</label>
-                  <input
-                    type="number"
+                  <NumberInput
                     value={campaignForm.order}
                     onChange={(e) => onUpdateForm({ order: e.target.value })}
                     placeholder="0"
@@ -399,8 +395,7 @@ export function MarketingTab({
                             </div>
                             <div>
                               <label className="block text-xs font-semibold text-slate-400 mb-1">Cost (Cash)</label>
-                              <input
-                                type="number"
+                              <NumberInput
                                 min="0"
                                 value={level.cost}
                                 onChange={(e) => onUpdateLevel(index, { cost: e.target.value })}
@@ -409,8 +404,7 @@ export function MarketingTab({
                             </div>
                             <div>
                               <label className="block text-xs font-semibold text-slate-400 mb-1">Time Cost (Optional)</label>
-                              <input
-                                type="number"
+                              <NumberInput
                                 min="0"
                                 value={level.timeCost || ''}
                                 onChange={(e) => onUpdateLevel(index, { timeCost: e.target.value })}

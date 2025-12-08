@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import type { GameCondition, ConditionOperator } from '@/lib/types/conditions';
 import { ConditionMetric } from '@/lib/types/conditions';
+import { NumberInput } from './NumberInput';
 import { makeUniqueId, slugify } from './utils';
 import { getMetricDefinition } from '@/lib/game/metrics/registry';
 import { GameMetric } from '@/lib/game/effectManager';
@@ -232,8 +233,7 @@ export function ConditionsTab({
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-slate-300 mb-1">Value</label>
-                      <input
-                        type="number"
+                      <NumberInput
                         step="0.01"
                         value={conditionForm.value}
                         onChange={(e) => onUpdateForm({ value: e.target.value })}

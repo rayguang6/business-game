@@ -6,6 +6,7 @@ import type { Requirement, UpgradeDefinition } from '@/lib/game/types';
 import type { StaffRoleConfig } from '@/lib/game/staffConfig';
 import { getMetricDefinition } from '@/lib/game/metrics/registry';
 import { GameMetric } from '@/lib/game/effectManager';
+import { NumberInput } from './NumberInput';
 
 interface RequirementsSelectorProps {
   flags: GameFlag[];
@@ -254,8 +255,7 @@ export function RequirementsSelector({
                                       <option key={op.value} value={op.value}>{op.label}</option>
                                     ))}
                                   </select>
-                                  <input
-                                    type="number"
+                                  <NumberInput
                                     value={req?.value ?? 1}
                                     onChange={(e) => {
                                       const val = parseInt(e.target.value) || 1;
@@ -345,8 +345,7 @@ export function RequirementsSelector({
                                       <option key={op.value} value={op.value}>{op.label}</option>
                                     ))}
                                   </select>
-                                  <input
-                                    type="number"
+                                  <NumberInput
                                     value={req?.value ?? 0}
                                     onChange={(e) => {
                                       const val = parseFloat(e.target.value) || 0;
@@ -436,8 +435,7 @@ export function RequirementsSelector({
                                       <option key={op.value} value={op.value}>{op.label}</option>
                                     ))}
                                   </select>
-                                  <input
-                                    type="number"
+                                  <NumberInput
                                     value={req?.value ?? 1}
                                     onChange={(e) => {
                                       const val = parseInt(e.target.value) || 1;
@@ -522,8 +520,7 @@ export function RequirementsSelector({
                                       <option key={op.value} value={op.value}>{op.label}</option>
                                     ))}
                                   </select>
-                                  <input
-                                    type="number"
+                                  <NumberInput
                                     value={req?.value ?? 1}
                                     onChange={(e) => {
                                       const val = parseInt(e.target.value) || 1;

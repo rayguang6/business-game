@@ -8,6 +8,7 @@ import { EventEffectType } from '@/lib/types/gameEvents';
 import type { Requirement, UpgradeDefinition } from '@/lib/game/types';
 import type { StaffRoleConfig } from '@/lib/game/staffConfig';
 import { RequirementsSelector } from './RequirementsSelector';
+import { NumberInput } from './NumberInput';
 import { makeUniqueId, slugify } from './utils';
 import { useToastFunctions } from './ui/ToastContext';
 
@@ -584,7 +585,7 @@ export function EventsTab({
                       <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-semibold text-slate-300 mb-1">Event ID</label>
-                          <input
+                          <NumberInput
                             value={eventForm.id}
                             onChange={(e) => onUpdateEventForm({ id: e.target.value })}
                             disabled={!isCreatingEvent && !!selectedEventId}
@@ -610,7 +611,7 @@ export function EventsTab({
                         </div>
                         <div className="md:col-span-2">
                           <label className="block text-sm font-semibold text-slate-300 mb-1">Title</label>
-                          <input
+                          <NumberInput
                             value={eventForm.title}
                             onChange={(e) => {
                               onUpdateEventForm({ title: e.target.value });
@@ -723,7 +724,7 @@ export function EventsTab({
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
                                 <div>
                                   <label className="block text-sm font-semibold text-slate-300 mb-1">Choice ID</label>
-                                  <input
+                                  <NumberInput
                                     value={choiceForm.id}
                                     onChange={(e) => setChoiceForm((p) => ({ ...p, id: e.target.value }))}
                                     disabled={!isCreatingChoice && !!selectedChoiceId}
@@ -734,7 +735,7 @@ export function EventsTab({
                                 </div>
                                 <div>
                                   <label className="block text-sm font-semibold text-slate-300 mb-1">Label</label>
-                                  <input
+                                  <NumberInput
                                     value={choiceForm.label}
                                     onChange={(e) => {
                                       setChoiceForm((p) => ({ ...p, label: e.target.value }));
@@ -759,8 +760,8 @@ export function EventsTab({
                                 </div>
                                 <div>
                                   <label className="block text-sm font-semibold text-slate-300 mb-1">Cost (Cash, Optional)</label>
-                                  <input
-                                    type="number"
+                                  <NumberInput
+                                    
                                     min="0"
                                     value={choiceForm.cost}
                                     onChange={(e) => setChoiceForm((p) => ({ ...p, cost: e.target.value }))}
@@ -770,8 +771,8 @@ export function EventsTab({
                                 </div>
                                 <div>
                                   <label className="block text-sm font-semibold text-slate-300 mb-1">Time Cost (Hours, Optional)</label>
-                                  <input
-                                    type="number"
+                                  <NumberInput
+                                    
                                     min="0"
                                     value={choiceForm.timeCost}
                                     onChange={(e) => setChoiceForm((p) => ({ ...p, timeCost: e.target.value }))}
@@ -858,7 +859,7 @@ export function EventsTab({
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-900/60 rounded-lg border border-slate-700">
                                     <div>
                                       <label className="block text-sm font-semibold text-slate-300 mb-1">Consequence ID</label>
-                                      <input
+                                      <NumberInput
                                         value={consequenceForm.id}
                                         onChange={(e) => setConsequenceForm((p) => ({ ...p, id: e.target.value }))}
                                         disabled={!isCreatingConsequence && !!selectedConsequenceId}
@@ -869,8 +870,8 @@ export function EventsTab({
                                     </div>
                                     <div>
                                       <label className="block text-sm font-semibold text-slate-300 mb-1">Weight</label>
-                                      <input
-                                        type="number"
+                                      <NumberInput
+                                        
                                         min="1"
                                         value={consequenceForm.weight}
                                         onChange={(e) => setConsequenceForm((p) => ({ ...p, weight: e.target.value }))}
@@ -879,7 +880,7 @@ export function EventsTab({
                                     </div>
                                     <div>
                                       <label className="block text-sm font-semibold text-slate-300 mb-1">Label (optional)</label>
-                                      <input
+                                      <NumberInput
                                         value={consequenceForm.label}
                                         onChange={(e) => {
                                           setConsequenceForm((p) => ({ ...p, label: e.target.value }));
@@ -968,8 +969,8 @@ export function EventsTab({
                                               <>
                                                 <div>
                                                   <label className="block text-xs text-slate-400 mb-1">Amount</label>
-                                                  <input
-                                                    type="number"
+                                                  <NumberInput
+                                                    
                                                     value={ef.amount}
                                                     onChange={(e) => {
                                                       const newEffects = [...consequenceForm.effects];
@@ -1005,7 +1006,7 @@ export function EventsTab({
                                                         </div>
                                                       )}
                                                     </label>
-                                                    <input
+                                                    <NumberInput
                                                       placeholder="e.g. Partnership Bonus, Client Payment"
                                                       value={ef.label ?? ''}
                                                       onChange={(e) => {
@@ -1022,7 +1023,7 @@ export function EventsTab({
                                               <>
                                                 <div>
                                                   <label className="block text-xs text-slate-400 mb-1">Expression</label>
-                                                  <input
+                                                  <NumberInput
                                                     type="text"
                                                     value={ef.expression}
                                                     onChange={(e) => {
@@ -1059,7 +1060,7 @@ export function EventsTab({
                                                       </div>
                                                     )}
                                                   </label>
-                                                  <input
+                                                  <NumberInput
                                                     placeholder="e.g. Partnership Bonus, Client Payment"
                                                     value={ef.label ?? ''}
                                                     onChange={(e) => {
@@ -1107,8 +1108,8 @@ export function EventsTab({
                                                 </div>
                                                 <div>
                                                   <label className="block text-xs text-slate-400 mb-1">Value</label>
-                                                  <input
-                                                    type="number"
+                                                  <NumberInput
+                                                    
                                                     value={ef.value}
                                                     onChange={(e) => {
                                                       const newEffects = [...consequenceForm.effects];
@@ -1120,8 +1121,8 @@ export function EventsTab({
                                                 </div>
                                                 <div>
                                                   <label className="block text-xs text-slate-400 mb-1">Duration (s)</label>
-                                                  <input
-                                                    type="number"
+                                                  <NumberInput
+                                                    
                                                     min="0"
                                                     step="1"
                                                     placeholder="Empty = permanent"
@@ -1200,7 +1201,7 @@ export function EventsTab({
                                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                               <label className="block text-sm font-semibold text-slate-300 mb-1">Delayed ID</label>
-                                              <input
+                                              <NumberInput
                                                 value={consequenceForm.delayedConsequence.id}
                                                 onChange={(e) => {
                                                   setConsequenceForm((p) => ({
@@ -1213,8 +1214,8 @@ export function EventsTab({
                                             </div>
                                             <div>
                                               <label className="block text-sm font-semibold text-slate-300 mb-1">Delay (seconds)</label>
-                                              <input
-                                                type="number"
+                                              <NumberInput
+                                                
                                                 min="1"
                                                 value={consequenceForm.delayedConsequence.delaySeconds}
                                                 onChange={(e) => {
@@ -1250,7 +1251,7 @@ export function EventsTab({
                                                   </div>
                                                 )}
                                               </label>
-                                              <input
+                                              <NumberInput
                                                 value={consequenceForm.delayedConsequence.label || ''}
                                                 onChange={(e) => {
                                                   setConsequenceForm((p) => ({
@@ -1497,8 +1498,8 @@ export function EventsTab({
                                                     <>
                                                       <div>
                                                         <label className="block text-xs text-slate-400 mb-1">Amount</label>
-                                                        <input
-                                                          type="number"
+                                                        <NumberInput
+                                                          
                                                           value={ef.amount}
                                                           onChange={(e) => {
                                                             const newEffects = [...consequenceForm.delayedConsequence!.successEffects];
@@ -1517,7 +1518,7 @@ export function EventsTab({
                                                             Label (optional)
                                                             <span className="ml-1 text-slate-500 cursor-help" title="Used in PnL display. Takes priority over choice/consequence names. If empty, shows: '[Event Title] - [choice label]'">ℹ️</span>
                                                           </label>
-                                                          <input
+                                                          <NumberInput
                                                             placeholder="e.g. Partnership Bonus, Client Payment"
                                                             value={ef.label ?? ''}
                                                             onChange={(e) => {
@@ -1537,7 +1538,7 @@ export function EventsTab({
                                                     <>
                                                       <div>
                                                         <label className="block text-xs text-slate-400 mb-1">Expression</label>
-                                                        <input
+                                                        <NumberInput
                                                           type="text"
                                                           value={ef.expression}
                                                           onChange={(e) => {
@@ -1577,7 +1578,7 @@ export function EventsTab({
                                                             </div>
                                                           )}
                                                         </label>
-                                                        <input
+                                                        <NumberInput
                                                           placeholder="e.g. Partnership Bonus, Client Payment"
                                                           value={ef.label ?? ''}
                                                           onChange={(e) => {
@@ -1634,8 +1635,8 @@ export function EventsTab({
                                                       </div>
                                                       <div>
                                                         <label className="block text-xs text-slate-400 mb-1">Value</label>
-                                                        <input
-                                                          type="number"
+                                                        <NumberInput
+                                                          
                                                           value={ef.value}
                                                           onChange={(e) => {
                                                             const newEffects = [...consequenceForm.delayedConsequence!.successEffects];
@@ -1650,8 +1651,8 @@ export function EventsTab({
                                                       </div>
                                                       <div>
                                                         <label className="block text-xs text-slate-400 mb-1">Duration (s)</label>
-                                                        <input
-                                                          type="number"
+                                                        <NumberInput
+                                                          
                                                           min="0"
                                                           step="1"
                                                           placeholder="Empty = permanent"
@@ -1835,8 +1836,8 @@ export function EventsTab({
                                                       <>
                                                         <div>
                                                           <label className="block text-xs text-slate-400 mb-1">Amount</label>
-                                                          <input
-                                                            type="number"
+                                                          <NumberInput
+                                                            
                                                             value={ef.amount}
                                                             onChange={(e) => {
                                                               const newEffects = [...consequenceForm.delayedConsequence!.failureEffects!];
@@ -1855,7 +1856,7 @@ export function EventsTab({
                                                               Label (optional)
                                                               <span className="ml-1 text-slate-500 cursor-help" title="Used in PnL display. Takes priority over choice/consequence names. If empty, shows: '[Event Title] - [choice label]'">ℹ️</span>
                                                             </label>
-                                                            <input
+                                                            <NumberInput
                                                               placeholder="e.g. Partnership Bonus, Client Payment"
                                                               value={ef.label ?? ''}
                                                               onChange={(e) => {
@@ -1875,7 +1876,7 @@ export function EventsTab({
                                                       <>
                                                         <div>
                                                           <label className="block text-xs text-slate-400 mb-1">Expression</label>
-                                                          <input
+                                                          <NumberInput
                                                             type="text"
                                                             value={ef.expression}
                                                             onChange={(e) => {
@@ -1915,7 +1916,7 @@ export function EventsTab({
                                                               </div>
                                                             )}
                                                           </label>
-                                                          <input
+                                                          <NumberInput
                                                             placeholder="e.g. Partnership Bonus, Client Payment"
                                                             value={ef.label ?? ''}
                                                             onChange={(e) => {
@@ -1972,8 +1973,8 @@ export function EventsTab({
                                                         </div>
                                                         <div>
                                                           <label className="block text-xs text-slate-400 mb-1">Value</label>
-                                                          <input
-                                                            type="number"
+                                                          <NumberInput
+                                                            
                                                             value={ef.value}
                                                             onChange={(e) => {
                                                               const newEffects = [...consequenceForm.delayedConsequence!.failureEffects!];
@@ -1988,8 +1989,8 @@ export function EventsTab({
                                                         </div>
                                                         <div>
                                                           <label className="block text-xs text-slate-400 mb-1">Duration (s)</label>
-                                                          <input
-                                                            type="number"
+                                                          <NumberInput
+                                                            
                                                             min="0"
                                                             step="1"
                                                             placeholder="Empty = permanent"

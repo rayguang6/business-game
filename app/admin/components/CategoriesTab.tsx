@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import type { Category } from '@/lib/game/types';
+import { NumberInput } from './NumberInput';
 import { makeUniqueId, slugify } from './utils';
 
 interface CategoriesTabProps {
@@ -133,8 +134,7 @@ export function CategoriesTab({
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-slate-300 mb-1">Order Index</label>
-                        <input
-                          type="number"
+                        <NumberInput
                           min="0"
                           value={categoryForm.orderIndex}
                           onChange={(e) => {

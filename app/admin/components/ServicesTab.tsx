@@ -5,6 +5,7 @@ import type { IndustryServiceDefinition, Requirement, UpgradeDefinition, Service
 import type { GameFlag } from '@/lib/data/flagRepository';
 import type { StaffRoleConfig } from '@/lib/game/staffConfig';
 import { RequirementsSelector } from './RequirementsSelector';
+import { NumberInput } from './NumberInput';
 import { makeUniqueId, slugify } from './utils';
 
 interface ServicesTabProps {
@@ -165,8 +166,7 @@ export function ServicesTab({
 
                     <div>
                       <label className="block text-sm font-semibold text-slate-300 mb-1">Duration (seconds)</label>
-                      <input
-                        type="number"
+                      <NumberInput
                         min="0"
                         value={serviceForm.duration}
                         onChange={(e) => onUpdateForm({ duration: e.target.value })}
@@ -176,8 +176,7 @@ export function ServicesTab({
 
                     <div>
                       <label className="block text-sm font-semibold text-slate-300 mb-1">Price</label>
-                      <input
-                        type="number"
+                      <NumberInput
                         min="0"
                         value={serviceForm.price}
                         onChange={(e) => onUpdateForm({ price: e.target.value })}
@@ -187,8 +186,7 @@ export function ServicesTab({
 
                     <div>
                       <label className="block text-sm font-semibold text-slate-300 mb-1">EXP Gained</label>
-                      <input
-                        type="number"
+                      <NumberInput
                         min="0"
                         value={serviceForm.expGained}
                         onChange={(e) => onUpdateForm({ expGained: e.target.value })}
@@ -213,8 +211,7 @@ export function ServicesTab({
 
                     <div>
                       <label className="block text-sm font-semibold text-slate-300 mb-1">Weightage</label>
-                      <input
-                        type="number"
+                      <NumberInput
                         min="0.1"
                         step="0.1"
                         value={serviceForm.weightage}
@@ -227,8 +224,7 @@ export function ServicesTab({
 
                     <div>
                       <label className="block text-sm font-semibold text-slate-300 mb-1">Time Cost</label>
-                      <input
-                        type="number"
+                      <NumberInput
                         min="0"
                         step="1"
                         value={serviceForm.timeCost}
@@ -240,8 +236,7 @@ export function ServicesTab({
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-slate-300 mb-1">Order</label>
-                      <input
-                        type="number"
+                      <NumberInput
                         value={serviceForm.order}
                         onChange={(e) => onUpdateForm({ order: e.target.value })}
                         placeholder="0"

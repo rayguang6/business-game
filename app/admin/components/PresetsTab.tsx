@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import type { StaffPreset, StaffRoleConfig } from '@/lib/game/staffConfig';
+import { NumberInput } from './NumberInput';
 import { makeUniqueId, slugify } from './utils';
 
 interface PresetsTabProps {
@@ -159,8 +160,7 @@ export function PresetsTab({
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-slate-300 mb-1">Salary Override</label>
-                      <input
-                        type="number"
+                      <NumberInput
                         min="0"
                         value={form.salary ?? ''}
                         onChange={(e) => onUpdateForm({ salary: e.target.value })}
@@ -169,8 +169,7 @@ export function PresetsTab({
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-slate-300 mb-1">Service Speed Override</label>
-                      <input
-                        type="number"
+                      <NumberInput
                         min="0"
                         value={form.serviceSpeed ?? ''}
                         onChange={(e) => onUpdateForm({ serviceSpeed: e.target.value })}

@@ -7,6 +7,7 @@ import type { GameFlag } from '@/lib/data/flagRepository';
 import type { Requirement } from '@/lib/game/types';
 import { RequirementsSelector } from './RequirementsSelector';
 import { EffectsList } from './EffectsList';
+import { NumberInput } from './NumberInput';
 import { makeUniqueId, slugify } from './utils';
 
 interface StaffTabProps {
@@ -187,8 +188,7 @@ export function StaffTab({
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-slate-300 mb-1">Salary</label>
-                        <input
-                          type="number"
+                        <NumberInput
                           min="0"
                           value={roleForm.salary}
                           onChange={(e) => onUpdateRoleForm({ salary: e.target.value })}
@@ -385,8 +385,7 @@ export function StaffTab({
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-slate-300 mb-1">Salary Override</label>
-                        <input
-                          type="number"
+                        <NumberInput
                           min="0"
                           value={presetForm.salary ?? ''}
                           onChange={(e) => onUpdatePresetForm({ salary: e.target.value })}
@@ -395,8 +394,7 @@ export function StaffTab({
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-slate-300 mb-1">Service Speed Override</label>
-                        <input
-                          type="number"
+                        <NumberInput
                           min="0"
                           value={presetForm.serviceSpeed ?? ''}
                           onChange={(e) => onUpdatePresetForm({ serviceSpeed: e.target.value })}
