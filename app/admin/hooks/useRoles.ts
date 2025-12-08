@@ -13,6 +13,7 @@ interface RoleForm {
   spriteImage?: string;
   setsFlag?: string;
   requirements: Requirement[];
+  order: string;
 }
 
 export function useRoles(industryId: string, roleId?: string) {
@@ -28,6 +29,7 @@ export function useRoles(industryId: string, roleId?: string) {
     effects: [],
     spriteImage: '',
     requirements: [],
+    order: '',
   });
 
   const load = useCallback(async () => {
@@ -40,7 +42,16 @@ export function useRoles(industryId: string, roleId?: string) {
       setRoles([]);
       return;
     }
-    const rolesSorted = data.roles.slice().sort((a, b) => a.name.localeCompare(b.name));
+    const rolesSorted = data.roles.slice().sort((a, b) => {
+      // Null/undefined orders go to the end
+      const aOrderNull = a.order == null;
+      const bOrderNull = b.order == null;
+      if (aOrderNull && bOrderNull) return a.name.localeCompare(b.name);
+      if (aOrderNull) return 1;
+      if (bOrderNull) return -1;
+      if (a.order !== b.order) return a.order - b.order;
+      return a.name.localeCompare(b.name);
+    });
     setRoles(rolesSorted);
   }, [industryId]);
 
@@ -60,6 +71,7 @@ export function useRoles(industryId: string, roleId?: string) {
       effects: [],
       spriteImage: '',
       requirements: [],
+      order: '',
     });
     setStatus(null);
   }, [industryId]);
@@ -76,6 +88,7 @@ export function useRoles(industryId: string, roleId?: string) {
       spriteImage: role.spriteImage || '',
       setsFlag: role.setsFlag,
       requirements: role.requirements || [],
+      order: String(role.order ?? 0),
     });
     if (resetMsg) setStatus(null);
   }, []);
@@ -96,6 +109,7 @@ export function useRoles(industryId: string, roleId?: string) {
           spriteImage: role.spriteImage || '',
           setsFlag: role.setsFlag,
           requirements: role.requirements || [],
+          order: String(role.order ?? 0),
         });
         setStatus(null);
       }
@@ -143,6 +157,8 @@ export function useRoles(industryId: string, roleId?: string) {
     const setsFlag = form.setsFlag?.trim() || undefined;
     const requirements = form.requirements;
     setOperation('saving');
+    const order = form.order.trim() ? Number(form.order.trim()) : undefined;
+
     const result = await upsertStaffRoleAction({
       id,
       industryId,
@@ -152,6 +168,7 @@ export function useRoles(industryId: string, roleId?: string) {
       spriteImage: form.spriteImage?.trim() || undefined,
       setsFlag,
       requirements,
+      order,
     });
     setOperation('idle');
     if (!result.success) {
@@ -167,9 +184,19 @@ export function useRoles(industryId: string, roleId?: string) {
         effects,
         setsFlag,
         requirements,
+        order,
       };
       const next = exists ? prev.map((r) => (r.id === id ? nextItem : r)) : [...prev, nextItem];
-      return next.sort((a, b) => a.name.localeCompare(b.name));
+      return next.sort((a, b) => {
+        // Null/undefined orders go to the end
+        const aOrderNull = a.order == null;
+        const bOrderNull = b.order == null;
+        if (aOrderNull && bOrderNull) return a.name.localeCompare(b.name);
+        if (aOrderNull) return 1;
+        if (bOrderNull) return -1;
+        if (a.order !== b.order) return a.order - b.order;
+        return a.name.localeCompare(b.name);
+      });
     });
     setStatus('Role saved.');
     setIsCreating(false);
@@ -212,6 +239,7 @@ export function useRoles(industryId: string, roleId?: string) {
         salary: '0',
         effects: [],
         requirements: [],
+        order: '',
       });
     }
     setStatus(null);

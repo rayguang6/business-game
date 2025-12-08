@@ -24,6 +24,7 @@ interface RolesTabProps {
     spriteImage?: string;
     setsFlag?: string;
     requirements: Requirement[];
+    order: string;
   };
   saving: boolean;
   deleting: boolean;
@@ -158,6 +159,17 @@ export function RolesTab({
                         onChange={(e) => onUpdateForm({ salary: e.target.value })}
                         className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Order</label>
+                      <input
+                        type="number"
+                        value={form.order}
+                        onChange={(e) => onUpdateForm({ order: e.target.value })}
+                        placeholder="0"
+                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      />
+                      <p className="text-xs text-slate-400 mt-1">Lower numbers appear first (default: 0)</p>
                     </div>
 
                     <div>

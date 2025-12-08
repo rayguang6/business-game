@@ -14,6 +14,7 @@ interface ServiceRow {
   weightage?: number | null; // Weight for random selection
   required_staff_role_ids?: string[] | null; // Array of staff role IDs that can perform this service
   time_cost?: number | null; // Amount of time this service costs
+  order?: number | null; // Display order
 }
 
 export async function fetchServicesForIndustry(
@@ -26,8 +27,10 @@ export async function fetchServicesForIndustry(
 
   const { data, error } = await supabaseServer
     .from('services')
-    .select('id, industry_id, name, duration, price, tier, exp_gained, requirements, pricing_category, weightage, required_staff_role_ids, time_cost')
-    .eq('industry_id', industryId);
+    .select('id, industry_id, name, duration, price, tier, exp_gained, requirements, pricing_category, weightage, required_staff_role_ids, time_cost, order')
+    .eq('industry_id', industryId)
+    .order('order', { ascending: true, nullsFirst: false })
+    .order('name', { ascending: true });
 
   if (error) {
     console.error(`[Services] Failed to fetch services for industry "${industryId}":`, error);
@@ -66,6 +69,7 @@ export async function upsertServiceForIndustry(
       ? service.requiredStaffRoleIds
       : null,
     time_cost: service.timeCost ?? null,
+    order: service.order ?? 0,
   };
 
   const { data, error } = await supabaseServer
@@ -177,5 +181,6 @@ function mapRowToService(row: ServiceRow): IndustryServiceDefinition {
     weightage: row.weightage ?? undefined,
     requiredStaffRoleIds,
     timeCost: row.time_cost ?? undefined,
+    order: row.order ?? 0,
   };
 }

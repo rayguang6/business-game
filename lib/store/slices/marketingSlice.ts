@@ -30,6 +30,7 @@ export interface MarketingCampaign {
   effects: CampaignEffect[];
   setsFlag?: string; // Optional flag to set when campaign is launched
   requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
+  order?: number; // Display order (lower = shown first, defaults to 0)
 }
 
 export interface MarketingSlice {

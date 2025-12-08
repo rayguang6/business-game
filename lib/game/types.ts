@@ -97,6 +97,7 @@ export interface UpgradeDefinition {
   setsFlag?: string; // Optional flag to set when this upgrade is purchased
   requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
   levels: UpgradeLevelConfig[]; // Required - level-specific configs
+  order?: number; // Display order (lower = shown first, defaults to 0)
 }
 
 export type UpgradeId = UpgradeDefinition['id'];
@@ -174,6 +175,7 @@ export interface IndustryServiceDefinition {
   weightage?: number; // Weight for random selection (higher = more likely to be selected)
   requiredStaffRoleIds?: string[]; // Array of staff role IDs that can perform this service (if empty/null, any staff can perform)
   timeCost?: number; // Amount of time this service costs (0 = no time cost)
+  order?: number; // Display order (lower = shown first, defaults to 0)
 }
 
 export interface IndustrySimulationConfig {

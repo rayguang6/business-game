@@ -128,6 +128,7 @@ export async function upsertStaffRoleAction(role: {
   spriteImage?: string;
   setsFlag?: string;
   requirements?: any[];
+  order?: number;
 }) {
   return await upsertStaffRole(role);
 }

@@ -16,6 +16,7 @@ interface UpgradeForm {
   maxLevel: string;
   setsFlag?: string;
   requirements: Requirement[];
+  order: string;
 }
 
 interface EffectForm {
@@ -51,6 +52,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
     timeCost: '',
     maxLevel: '1',
     requirements: [],
+    order: '',
   });
   const [levelsForm, setLevelsForm] = useState<LevelForm[]>([]);
 
@@ -65,7 +67,16 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
       if (!industryId) return [];
       const result = await fetchUpgrades(industryId);
       if (!result) return [];
-      return result.slice().sort((a, b) => a.name.localeCompare(b.name));
+      return result.slice().sort((a, b) => {
+        // Null/undefined orders go to the end
+        const aOrderNull = a.order == null;
+        const bOrderNull = b.order == null;
+        if (aOrderNull && bOrderNull) return a.name.localeCompare(b.name);
+        if (aOrderNull) return 1;
+        if (bOrderNull) return -1;
+        if (a.order! !== b.order!) return a.order! - b.order!;
+        return a.name.localeCompare(b.name);
+      });
     },
     enabled: !!industryId,
   });
@@ -87,7 +98,16 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
       queryClient.setQueryData<UpgradeDefinition[]>(upgradesQueryKey(industryId), (old = []) => {
         const exists = old.some((u) => u.id === newUpgrade.id);
         const next = exists ? old.map((u) => (u.id === newUpgrade.id ? newUpgrade : u)) : [...old, newUpgrade];
-        return next.sort((a, b) => a.name.localeCompare(b.name));
+        return next.sort((a, b) => {
+          // Null/undefined orders go to the end
+          const aOrderNull = a.order == null;
+          const bOrderNull = b.order == null;
+          if (aOrderNull && bOrderNull) return a.name.localeCompare(b.name);
+          if (aOrderNull) return 1;
+          if (bOrderNull) return -1;
+          if (a.order! !== b.order!) return a.order! - b.order!;
+          return a.name.localeCompare(b.name);
+        });
       });
 
       return { previousUpgrades };
@@ -146,6 +166,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
         cost: '0',
         maxLevel: '1',
         requirements: [],
+        order: '',
       });
       setLevelsForm([]);
       setStatus('Upgrade deleted.');
@@ -169,6 +190,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
       maxLevel: String(upgrade.maxLevel),
       setsFlag: upgrade.setsFlag,
       requirements: upgrade.requirements || [],
+      order: String(upgrade.order ?? 0),
     });
 
     // Always populate levelsForm from upgrade.levels
@@ -224,6 +246,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
           maxLevel: String(upgrade.maxLevel),
           setsFlag: upgrade.setsFlag,
           requirements: upgrade.requirements || [],
+          order: String(upgrade.order ?? 0),
         });
 
         if (upgrade.levels && upgrade.levels.length > 0) {
@@ -276,6 +299,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
       timeCost: '',
       maxLevel: '1',
       requirements: [],
+      order: '0',
     });
     // Start with one level
     setLevelsForm([
@@ -328,9 +352,6 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
         if (timeCost !== undefined && (!Number.isFinite(timeCost) || timeCost < 0)) {
           throw new Error(`Level ${levelNumber}: Time cost must be >= 0 if specified.`);
         }
-        if (!levelForm.name.trim()) {
-          throw new Error(`Level ${levelNumber}: Name is required.`);
-        }
 
         // Validate and convert effects for this level
         const effects = levelForm.effects
@@ -368,6 +389,8 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
 
     const maxLevel = levels.length;
 
+    const order = form.order.trim() ? Number(form.order.trim()) : undefined;
+
     const payload: UpgradeDefinition = {
       id,
       name,
@@ -377,6 +400,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
       setsFlag,
       requirements,
       levels,
+      order,
     };
 
     saveMutation.mutate(payload);
@@ -404,6 +428,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
         cost: '0',
         maxLevel: '1',
         requirements: [],
+        order: '',
       });
       setLevelsForm([]);
     }

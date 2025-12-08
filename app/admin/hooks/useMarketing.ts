@@ -15,6 +15,7 @@ interface CampaignForm {
   cooldownSeconds: string;
   setsFlag?: string;
   requirements: Requirement[];
+  order: string;
 }
 
 interface CampaignEffectForm {
@@ -40,6 +41,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
     timeCost: '',
     cooldownSeconds: '15',
     requirements: [],
+    order: '',
   });
   const [effectsForm, setEffectsForm] = useState<CampaignEffectForm[]>([]);
 
@@ -54,7 +56,16 @@ export function useMarketing(industryId: string, campaignId?: string) {
       if (!industryId) return [];
       const result = await fetchMarketingCampaigns(industryId);
       if (!result) return [];
-      return result.sort((a, b) => a.name.localeCompare(b.name));
+      return result.sort((a, b) => {
+        // Null/undefined orders go to the end
+        const aOrderNull = a.order == null;
+        const bOrderNull = b.order == null;
+        if (aOrderNull && bOrderNull) return a.name.localeCompare(b.name);
+        if (aOrderNull) return 1;
+        if (bOrderNull) return -1;
+        if (a.order! !== b.order!) return a.order! - b.order!;
+        return a.name.localeCompare(b.name);
+      });
     },
     enabled: !!industryId,
   });
@@ -76,7 +87,16 @@ export function useMarketing(industryId: string, campaignId?: string) {
       queryClient.setQueryData<MarketingCampaign[]>(marketingQueryKey(industryId), (old = []) => {
         const exists = old.some((c) => c.id === newCampaign.id);
         const next = exists ? old.map((c) => (c.id === newCampaign.id ? newCampaign : c)) : [...old, newCampaign];
-        return next.sort((a, b) => a.name.localeCompare(b.name));
+        return next.sort((a, b) => {
+          // Null/undefined orders go to the end
+          const aOrderNull = a.order == null;
+          const bOrderNull = b.order == null;
+          if (aOrderNull && bOrderNull) return a.name.localeCompare(b.name);
+          if (aOrderNull) return 1;
+          if (bOrderNull) return -1;
+          if (a.order! !== b.order!) return a.order! - b.order!;
+          return a.name.localeCompare(b.name);
+        });
       });
 
       return { previousCampaigns };
@@ -132,6 +152,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
         cost: '0',
         cooldownSeconds: '15',
         requirements: [],
+        order: '0',
       });
       setEffectsForm([]);
       setStatus('Campaign deleted.');
@@ -153,6 +174,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
       cooldownSeconds: String(campaign.cooldownSeconds),
       setsFlag: campaign.setsFlag,
       requirements: campaign.requirements || [],
+      order: String(campaign.order ?? 0),
     });
     setEffectsForm(
       campaign.effects.map((e) => ({
@@ -181,6 +203,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
           cooldownSeconds: String(campaign.cooldownSeconds),
           setsFlag: campaign.setsFlag,
           requirements: campaign.requirements || [],
+          order: String(campaign.order ?? 0),
         });
         setEffectsForm(
           campaign.effects.map((e) => ({
@@ -206,6 +229,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
       timeCost: '',
       cooldownSeconds: '15',
       requirements: [],
+      order: '',
     });
     setEffectsForm([]);
     setStatus(null);
@@ -242,6 +266,8 @@ export function useMarketing(industryId: string, campaignId?: string) {
       value: Number(ef.value) || 0,
       durationSeconds: ef.durationSeconds === '' ? null : Number(ef.durationSeconds) || null,
     }));
+    const order = form.order.trim() ? Number(form.order.trim()) : undefined;
+
     const payload: MarketingCampaign = {
       id,
       name,
@@ -252,6 +278,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
       effects,
       setsFlag,
       requirements,
+      order,
     };
     saveMutation.mutate(payload);
   }, [industryId, form, effectsForm, saveMutation]);
@@ -277,6 +304,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
         cost: '0',
         cooldownSeconds: '15',
         requirements: [],
+        order: '',
       });
       setEffectsForm([]);
     }

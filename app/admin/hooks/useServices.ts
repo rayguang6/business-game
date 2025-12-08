@@ -16,6 +16,7 @@ interface ServiceForm {
   weightage: string;
   requiredStaffRoleIds: string[];
   timeCost: string;
+  order: string;
 }
 
 // Query key factory for services
@@ -38,6 +39,7 @@ export function useServices(industryId: string, serviceId?: string) {
     weightage: '1',
     requiredStaffRoleIds: [],
     timeCost: '0',
+    order: '',
   });
 
   // Fetch services using React Query
@@ -51,7 +53,16 @@ export function useServices(industryId: string, serviceId?: string) {
       if (!industryId) return [];
       const result = await fetchServices(industryId);
       if (!result || result.length === 0) return [];
-      return result.slice().sort((a, b) => a.name.localeCompare(b.name));
+      return result.slice().sort((a, b) => {
+        // Null/undefined orders go to the end
+        const aOrderNull = a.order == null;
+        const bOrderNull = b.order == null;
+        if (aOrderNull && bOrderNull) return a.name.localeCompare(b.name);
+        if (aOrderNull) return 1;
+        if (bOrderNull) return -1;
+        if (a.order! !== b.order!) return a.order! - b.order!;
+        return a.name.localeCompare(b.name);
+      });
     },
     enabled: !!industryId,
   });
@@ -72,7 +83,16 @@ export function useServices(industryId: string, serviceId?: string) {
       queryClient.setQueryData<IndustryServiceDefinition[]>(servicesQueryKey(industryId), (old = []) => {
         const exists = old.some((s) => s.id === newService.id);
         const next = exists ? old.map((s) => (s.id === newService.id ? newService : s)) : [...old, newService];
-        return next.sort((a, b) => a.name.localeCompare(b.name));
+        return next.sort((a, b) => {
+          // Null/undefined orders go to the end
+          const aOrderNull = a.order == null;
+          const bOrderNull = b.order == null;
+          if (aOrderNull && bOrderNull) return a.name.localeCompare(b.name);
+          if (aOrderNull) return 1;
+          if (bOrderNull) return -1;
+          if (a.order! !== b.order!) return a.order! - b.order!;
+          return a.name.localeCompare(b.name);
+        });
       });
 
       return { previousServices };
@@ -124,19 +144,20 @@ export function useServices(industryId: string, serviceId?: string) {
         selectService(remaining[0], false);
       } else {
         setSelectedId('');
-        setForm({
-          id: '',
-          name: '',
-          duration: '0',
-          price: '0',
-          tier: '',
-          expGained: '0',
-          requirements: [],
-          pricingCategory: '',
-          weightage: '1',
-          requiredStaffRoleIds: [],
-          timeCost: '0',
-        });
+    setForm({
+      id: '',
+      name: '',
+      duration: '0',
+      price: '0',
+      tier: '',
+      expGained: '0',
+      requirements: [],
+      pricingCategory: '',
+      weightage: '1',
+      requiredStaffRoleIds: [],
+      timeCost: '0',
+      order: '',
+    });
         setIsCreating(false);
       }
       setStatus('Service deleted.');
@@ -161,6 +182,7 @@ export function useServices(industryId: string, serviceId?: string) {
       weightage: service.weightage?.toString() || '1',
       requiredStaffRoleIds: service.requiredStaffRoleIds || [],
       timeCost: service.timeCost?.toString() || '0',
+      order: String(service.order ?? 0),
     });
     if (resetMsg) setStatus(null);
   }, []);
@@ -184,6 +206,7 @@ export function useServices(industryId: string, serviceId?: string) {
           weightage: service.weightage?.toString() || '1',
           requiredStaffRoleIds: service.requiredStaffRoleIds || [],
           timeCost: service.timeCost?.toString() || '0',
+          order: String(service.order ?? ''),
         });
         setStatus(null);
       }
@@ -209,6 +232,7 @@ export function useServices(industryId: string, serviceId?: string) {
       weightage: '1',
       requiredStaffRoleIds: [],
       timeCost: '0',
+      order: '',
     });
     setStatus(null);
   }, [industryId]);
@@ -245,6 +269,8 @@ export function useServices(industryId: string, serviceId?: string) {
       setStatus('Time cost must be a non-negative number.');
       return;
     }
+    const order = form.order.trim() ? Number(form.order.trim()) : undefined;
+
     const payload: IndustryServiceDefinition = {
       id,
       industryId,
@@ -258,6 +284,7 @@ export function useServices(industryId: string, serviceId?: string) {
       weightage,
       requiredStaffRoleIds: form.requiredStaffRoleIds.length > 0 ? form.requiredStaffRoleIds : undefined,
       timeCost: timeCost > 0 ? timeCost : undefined,
+      order,
     };
     saveMutation.mutate(payload);
   }, [industryId, form, saveMutation]);
@@ -286,6 +313,7 @@ export function useServices(industryId: string, serviceId?: string) {
         weightage: '1',
         requiredStaffRoleIds: [],
         timeCost: '0',
+        order: '',
       });
       setIsCreating(false);
       setSelectedId('');

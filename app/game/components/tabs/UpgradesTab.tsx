@@ -334,7 +334,8 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
             : !requirementsMet
               ? 'Requirements Not Met'
               : canAfford
-                ? `Upgrade to Level ${nextLevelNumber}`
+                ? `Upgrade`
+                // ? `Upgrade to Level ${nextLevelNumber}`
                 : needText}
         </GameButton>
         {requirementDescriptions.length > 0 && !requirementsMet && (

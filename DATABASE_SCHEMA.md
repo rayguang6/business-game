@@ -92,8 +92,12 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 - `weightage` (NUMERIC, optional) - Weight for random selection
 - `required_staff_role_ids` (TEXT[], optional) - Staff roles that can perform this service
 - `time_cost` (INTEGER, optional) - Time cost for this service
+- `order` (INTEGER, optional) - Display order (lower = shown first, defaults to 0)
 
 **Required:** Each industry must have at least 1 service
+
+**Indexes:**
+- Index on `(industry_id, order)` for efficient sorting
 
 ---
 
@@ -110,10 +114,14 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 - `icon` (TEXT, optional) - Icon path
 - `category` (TEXT, optional) - Upgrade category
 - `sets_flag` (TEXT, optional) - Flag ID to set when purchased
+- `order` (INTEGER, optional) - Display order (lower = shown first, defaults to 0)
 
 **Related:** `upgrade_levels` table contains the levels for each upgrade
 
 **Required:** Each industry must have at least 1 upgrade
+
+**Indexes:**
+- Index on `(industry_id, order)` for efficient sorting
 
 ---
 
@@ -125,11 +133,16 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 **Columns:**
 - `id` (TEXT, PRIMARY KEY) - Level identifier
 - `upgrade_id` (TEXT) - Parent upgrade ID
+- `industry_id` (TEXT) - Industry this level belongs to
 - `level` (INTEGER) - Level number (1, 2, 3, ...)
+- `name` (TEXT) - Level name
 - `cost` (NUMERIC) - Cost to purchase this level
+- `time_cost` (INTEGER, optional) - Time cost for this level
 - `description` (TEXT, optional) - Level description
 - `icon` (TEXT, optional) - Icon path
 - `effects` (JSONB) - Array of effect objects
+- `created_at` (TIMESTAMPTZ) - Creation timestamp
+- `updated_at` (TIMESTAMPTZ) - Last update timestamp
 
 ---
 
@@ -166,6 +179,10 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 - `effects` (JSONB) - Array of effect objects
 - `sets_flag` (TEXT, optional) - Flag ID to set
 - `requirements` (JSONB, optional) - Array of requirement objects
+- `order` (INTEGER, optional) - Display order (lower = shown first, defaults to 0)
+
+**Indexes:**
+- Index on `(industry_id, order)` for efficient sorting
 
 ---
 
@@ -211,6 +228,10 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 - `sprite_image` (TEXT, optional) - Sprite image path
 - `sets_flag` (TEXT, optional) - Flag ID to set
 - `requirements` (JSONB, optional) - Array of requirement objects
+- `order` (INTEGER, optional) - Display order (lower = shown first, defaults to 0)
+
+**Indexes:**
+- Index on `(industry_id, order)` for efficient sorting
 
 ---
 
@@ -265,6 +286,7 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 3. **008_simplify_metric_display_config.sql** - Simplified metric display config schema
 4. **009_drop_old_simulation_config_tables.sql** - Drops old `global_simulation_config` and `industry_simulation_config` tables (run after migration verification)
 5. **010_convert_spawn_interval_to_leads_per_month.sql** - Converts spawn interval to leads per month in business_stats
+6. **011_add_order_to_collections.sql** - Adds `order` column to `upgrades`, `marketing_campaigns`, `staff_roles`, and `services` tables for display ordering
 
 ---
 

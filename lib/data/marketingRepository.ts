@@ -14,6 +14,7 @@ interface MarketingCampaignRow {
   effects: unknown;
   sets_flag: string | null;
   requirements: unknown;
+  order: number | null;
 }
 
 const parseNumber = (value: number | string | null | undefined, fallback = 0): number => {
@@ -40,8 +41,9 @@ export async function fetchMarketingCampaignsForIndustry(industryId: IndustryId)
 
   const { data, error } = await supabaseServer
     .from('marketing_campaigns')
-    .select('id, industry_id, name, description, cost, time_cost, cooldown_seconds, effects, sets_flag, requirements')
+    .select('id, industry_id, name, description, cost, time_cost, cooldown_seconds, effects, sets_flag, requirements, order')
     .eq('industry_id', industryId)
+    .order('order', { ascending: true, nullsFirst: false })
     .order('name', { ascending: true });
 
   if (error) {
@@ -85,7 +87,6 @@ export async function fetchMarketingCampaignsForIndustry(industryId: IndustryId)
       
       campaigns.push({
         id: row.id,
-        industryId: row.industry_id as any,
         name: row.name,
         description: row.description ?? '',
         cost: parseNumber(row.cost),
@@ -94,6 +95,7 @@ export async function fetchMarketingCampaignsForIndustry(industryId: IndustryId)
         effects,
         setsFlag: row.sets_flag || undefined,
         requirements,
+        order: row.order ?? 0,
       });
     } catch (err) {
       console.error(`[Marketing] Failed to process campaign "${row.id}":`, err);
@@ -121,6 +123,7 @@ export async function upsertMarketingCampaignForIndustry(industryId: string, cam
     effects: campaign.effects.map((e) => ({ metric: e.metric, type: e.type, value: e.value, durationSeconds: e.durationSeconds })),
     sets_flag: campaign.setsFlag || null,
     requirements: campaign.requirements || [],
+    order: campaign.order ?? 0,
   };
 
   const { error } = await supabaseServer

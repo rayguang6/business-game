@@ -18,6 +18,7 @@ interface UpgradeRow {
   max_level: number;
   sets_flag: string | null;
   requirements: unknown;
+  order: number | null;
 }
 
 function parseNumber(value: number | string | null | undefined): number {
@@ -42,8 +43,10 @@ export async function fetchUpgradesForIndustry(
   // Fetch base upgrades
   const { data: upgradesData, error: upgradesError } = await supabaseServer
     .from('upgrades')
-    .select('id, industry_id, name, description, icon, max_level, sets_flag, requirements')
-    .eq('industry_id', industryId);
+    .select('id, industry_id, name, description, icon, max_level, sets_flag, requirements, order')
+    .eq('industry_id', industryId)
+    .order('order', { ascending: true, nullsFirst: false })
+    .order('name', { ascending: true });
 
   if (upgradesError) {
     console.error(`[Upgrades] Failed to fetch upgrades for industry "${industryId}":`, upgradesError);
@@ -150,6 +153,7 @@ export async function fetchUpgradesForIndustry(
       setsFlag: row.sets_flag || undefined,
       requirements: Array.isArray(row.requirements) ? row.requirements as any[] : [],
       levels: levels,
+      order: row.order ?? 0,
     });
   }
   
@@ -179,6 +183,7 @@ export async function upsertUpgradeForIndustry(
     max_level: upgrade.maxLevel,
     sets_flag: upgrade.setsFlag || null,
     requirements: upgrade.requirements || [],
+    order: upgrade.order ?? 0,
   };
 
   // Upsert base upgrade

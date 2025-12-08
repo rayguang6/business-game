@@ -13,6 +13,7 @@ export interface StaffRoleConfig {
   spriteImage?: string;
   setsFlag?: string;
   requirements?: Requirement[];
+  order?: number; // Display order (lower = shown first, defaults to 0)
 }
 
 export interface StaffPreset {

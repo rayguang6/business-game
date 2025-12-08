@@ -13,6 +13,7 @@ interface StaffRoleRow {
   sets_flag: string | null;
   requirements: unknown;
   sprite_image?: string | null; // Path to sprite image (can be local or Supabase Storage URL)
+  order: number | null;
 }
 
 interface StaffPresetRow {
@@ -84,6 +85,7 @@ const mapRoleRows = (rows: StaffRoleRow[] | null | undefined): StaffRoleConfig[]
         spriteImage: row.sprite_image && row.sprite_image.trim() ? row.sprite_image.trim() : undefined,
         setsFlag: row.sets_flag || undefined,
         requirements,
+        order: row.order ?? 0,
       });
     } catch (err) {
       console.error(`[Staff] Failed to process role "${row.id}":`, err);
@@ -124,8 +126,10 @@ export async function fetchStaffDataForIndustry(
   const [rolesResponse, presetsResponse] = await Promise.all([
     supabaseServer
       .from('staff_roles')
-      .select('id, industry_id, name, salary, effects, sets_flag, requirements, sprite_image')
-      .eq('industry_id', industryId),
+      .select('id, industry_id, name, salary, effects, sets_flag, requirements, sprite_image, order')
+      .eq('industry_id', industryId)
+      .order('order', { ascending: true, nullsFirst: false })
+      .order('name', { ascending: true }),
     supabaseServer
       .from('staff_presets')
       .select('id, industry_id, role_id, name, salary_override, service_speed_override, emoji_override')
@@ -165,6 +169,7 @@ export async function upsertStaffRole(role: {
   spriteImage?: string;
   setsFlag?: string;
   requirements?: any[];
+  order?: number;
 }): Promise<{ success: boolean; message?: string }>
 {
   if (!supabaseServer) {
@@ -187,6 +192,7 @@ export async function upsertStaffRole(role: {
     sprite_image: role.spriteImage ?? null,
     sets_flag: role.setsFlag || null,
     requirements: role.requirements || [],
+    order: role.order ?? 0,
   };
 
   const { error } = await supabaseServer
