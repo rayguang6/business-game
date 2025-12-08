@@ -6,6 +6,7 @@ interface SidebarItem {
   icon?: string;
   disabled?: boolean;
   metadata?: string; // e.g., "(locked)" for unavailable industries
+  category?: string; // Optional category for grouping
 }
 
 interface VerticalSidebarProps {
@@ -67,30 +68,86 @@ export function VerticalSidebar({
       ) : items.length === 0 ? (
         <div className="text-sm text-slate-400">No items yet</div>
       ) : (
-        <div className="space-y-1">
-          {items.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => onSelect(item.id)}
-              disabled={item.disabled}
-              className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                selectedId === item.id
-                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
-                  : item.disabled
-                  ? 'text-slate-600 cursor-not-allowed'
-                  : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200'
-              }`}
-            >
-              {item.icon && <span className="mr-2">{item.icon}</span>}
-              <div className="flex flex-col">
-                <span>{item.label}</span>
-                {item.metadata && (
-                  <span className="text-xs opacity-60">{item.metadata}</span>
-                )}
+        (() => {
+          // Check if any items have categories for grouping
+          const hasCategories = items.some(item => item.category);
+
+          if (!hasCategories) {
+            // Render flat list if no categories
+            return (
+              <div className="space-y-1">
+                {items.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => onSelect(item.id)}
+                    disabled={item.disabled}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      selectedId === item.id
+                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
+                        : item.disabled
+                        ? 'text-slate-600 cursor-not-allowed'
+                        : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                    }`}
+                  >
+                    {item.icon && <span className="mr-2">{item.icon}</span>}
+                    <div className="flex flex-col">
+                      <span>{item.label}</span>
+                      {item.metadata && (
+                        <span className="text-xs opacity-60">{item.metadata}</span>
+                      )}
+                    </div>
+                  </button>
+                ))}
               </div>
-            </button>
-          ))}
-        </div>
+            );
+          }
+
+          // Group items by category
+          const groupedItems = items.reduce((acc, item) => {
+            const category = item.category || 'Uncategorized';
+            if (!acc[category]) {
+              acc[category] = [];
+            }
+            acc[category].push(item);
+            return acc;
+          }, {} as Record<string, typeof items>);
+
+          return (
+            <div className="space-y-4">
+              {Object.entries(groupedItems).map(([categoryName, categoryItems]) => (
+                <div key={categoryName} className="space-y-2">
+                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-1">
+                    {categoryName}
+                  </h4>
+                  <div className="space-y-1">
+                    {categoryItems.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => onSelect(item.id)}
+                        disabled={item.disabled}
+                        className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                          selectedId === item.id
+                            ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
+                            : item.disabled
+                            ? 'text-slate-600 cursor-not-allowed'
+                            : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                        }`}
+                      >
+                        {item.icon && <span className="mr-2">{item.icon}</span>}
+                        <div className="flex flex-col">
+                          <span>{item.label}</span>
+                          {item.metadata && (
+                            <span className="text-xs opacity-60">{item.metadata}</span>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()
       )}
     </div>
   );

@@ -56,12 +56,16 @@ export default function MarketingDetailPage({
     router.push(`/admin/${industry}/marketing`);
   };
 
-  const sidebarItems = marketing.campaigns.map((campaign) => ({
-    id: campaign.id,
-    label: campaign.name,
-    icon: '📢',
-    disabled: false,
-  }));
+  const sidebarItems = marketing.campaigns.map((campaign) => {
+    const category = categories.categories.find(c => c.id === campaign.categoryId);
+    return {
+      id: campaign.id,
+      label: campaign.name,
+      icon: '📢',
+      disabled: false,
+      category: category?.name,
+    };
+  });
 
   return (
     <SidebarContentLayout

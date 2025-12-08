@@ -54,12 +54,16 @@ export default function UpgradeDetailPage({
     router.push(`/admin/${industry}/upgrades`);
   };
 
-  const sidebarItems = upgrades.upgrades.map((upgrade) => ({
-    id: upgrade.id,
-    label: upgrade.name,
-    icon: upgrade.icon || '⚙️',
-    disabled: false,
-  }));
+  const sidebarItems = upgrades.upgrades.map((upgrade) => {
+    const category = categories.categories.find(c => c.id === upgrade.categoryId);
+    return {
+      id: upgrade.id,
+      label: upgrade.name,
+      icon: upgrade.icon || '⚙️',
+      disabled: false,
+      category: category?.name,
+    };
+  });
 
   return (
     <SidebarContentLayout

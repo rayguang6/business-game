@@ -58,12 +58,16 @@ export default function MarketingPage({
     await marketing.deleteCampaign();
   };
 
-  const sidebarItems = marketing.campaigns.map((campaign) => ({
-    id: campaign.id,
-    label: campaign.name,
-    icon: '📢',
-    disabled: false,
-  }));
+  const sidebarItems = marketing.campaigns.map((campaign) => {
+    const category = categories.categories.find(c => c.id === campaign.categoryId);
+    return {
+      id: campaign.id,
+      label: campaign.name,
+      icon: '📢',
+      disabled: false,
+      category: category?.name,
+    };
+  });
 
   // Show loading or redirecting state
   if (marketing.loading || (marketing.campaigns.length > 0 && !marketing.isCreating)) {

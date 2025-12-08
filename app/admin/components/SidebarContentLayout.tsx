@@ -9,6 +9,7 @@ interface SidebarItem {
   icon?: string;
   disabled?: boolean;
   metadata?: string;
+  category?: string;
 }
 
 interface SidebarContentLayoutProps {
