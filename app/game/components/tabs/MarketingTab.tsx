@@ -13,6 +13,7 @@ import { SectionHeading } from '@/app/components/ui/SectionHeading';
 import { Modal } from '@/app/components/ui/Modal';
 import GameButton from '@/app/components/ui/GameButton';
 import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
+import { useCategories } from '../../hooks/useCategories';
 
 const formatSeconds = (seconds: number): string => {
   const clamped = Math.max(0, Math.floor(seconds));
@@ -202,6 +203,7 @@ export function MarketingTab() {
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
   const { getDisplayLabel } = useMetricDisplayConfigs(industryId);
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories(industryId);
   const availableCampaigns = useConfigStore(
     useCallback(
       (state) => {
@@ -240,31 +242,71 @@ export function MarketingTab() {
         </Card>
       )}
 
-      <div className="space-y-2 sm:space-y-3">
-        {availableCampaigns.map((campaign) => {
-          const needsCash = campaign.cost > 0;
-          const needsTime = campaign.timeCost !== undefined && campaign.timeCost > 0;
-          const hasCash = !needsCash || metrics.cash >= campaign.cost;
-          const hasTime = !needsTime || (metrics.myTime + metrics.leveragedTime) >= campaign.timeCost!;
-          const canAfford = hasCash && hasTime;
-          const cooldownEnd = campaignCooldowns[campaign.id];
-          const isOnCooldown = !!(cooldownEnd && gameTime < cooldownEnd);
-          const cooldownRemaining = isOnCooldown ? Math.max(0, cooldownEnd - gameTime) : 0;
+      {(() => {
+        // Group campaigns by category and sort
+        const sortedCategories = categories
+          .sort((a, b) => a.orderIndex - b.orderIndex);
 
-          return (
-            <CampaignCard
-              key={campaign.id}
-              campaign={campaign}
-              canAfford={canAfford}
-              isOnCooldown={isOnCooldown}
-              cooldownRemaining={cooldownRemaining}
-              onLaunch={handleLaunch}
-              metrics={{ cash: metrics.cash, time: metrics.myTime + metrics.leveragedTime }}
-              getDisplayLabel={getDisplayLabel}
-            />
-          );
-        })}
-      </div>
+        const campaignsByCategory = new Map<string | undefined, typeof availableCampaigns>();
+
+        // Initialize with uncategorized campaigns
+        campaignsByCategory.set(undefined, availableCampaigns.filter(c => !c.categoryId));
+
+        // Group campaigns by category
+        sortedCategories.forEach(category => {
+          const categoryCampaigns = availableCampaigns.filter(c => c.categoryId === category.id);
+          if (categoryCampaigns.length > 0) {
+            campaignsByCategory.set(category.id, categoryCampaigns);
+          }
+        });
+
+        return (
+          <div className="space-y-6">
+            {Array.from(campaignsByCategory.entries()).map(([categoryId, categoryCampaigns]) => {
+              const category = categoryId ? categories.find(c => c.id === categoryId) : null;
+              const sortedCampaigns = categoryCampaigns.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+              return (
+                <div key={categoryId || 'others'} className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                      <h3 className="text-lg font-semibold text-slate-200">
+                        {category ? category.name : 'Others'}
+                      </h3>
+                    {category?.description && (
+                      <span className="text-sm text-slate-400">• {category.description}</span>
+                    )}
+                  </div>
+                  <div className="space-y-2 sm:space-y-3">
+                    {sortedCampaigns.map((campaign) => {
+                      const needsCash = campaign.cost > 0;
+                      const needsTime = campaign.timeCost !== undefined && campaign.timeCost > 0;
+                      const hasCash = !needsCash || metrics.cash >= campaign.cost;
+                      const hasTime = !needsTime || (metrics.myTime + metrics.leveragedTime) >= campaign.timeCost!;
+                      const canAfford = hasCash && hasTime;
+                      const cooldownEnd = campaignCooldowns[campaign.id];
+                      const isOnCooldown = !!(cooldownEnd && gameTime < cooldownEnd);
+                      const cooldownRemaining = isOnCooldown ? Math.max(0, cooldownEnd - gameTime) : 0;
+
+                      return (
+                        <CampaignCard
+                          key={campaign.id}
+                          campaign={campaign}
+                          canAfford={canAfford}
+                          isOnCooldown={isOnCooldown}
+                          cooldownRemaining={cooldownRemaining}
+                          onLaunch={handleLaunch}
+                          metrics={{ cash: metrics.cash, time: metrics.myTime + metrics.leveragedTime }}
+                          getDisplayLabel={getDisplayLabel}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
     </div>
   );
 }

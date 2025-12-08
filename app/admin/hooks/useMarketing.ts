@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchMarketingCampaigns, upsertMarketingCampaign, deleteMarketingCampaign } from '@/lib/server/actions/adminActions';
+import { fetchMarketingCampaigns, upsertMarketingCampaign, deleteMarketingCampaign, fetchCategories } from '@/lib/server/actions/adminActions';
 import type { MarketingCampaign } from '@/lib/store/slices/marketingSlice';
-import type { Requirement } from '@/lib/game/types';
+import type { Requirement, Category } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import type { Operation } from './types';
 
@@ -13,6 +13,7 @@ interface CampaignForm {
   cost: string;
   timeCost?: string;
   cooldownSeconds: string;
+  categoryId?: string;
   setsFlag?: string;
   requirements: Requirement[];
   order: string;
@@ -28,6 +29,9 @@ interface CampaignEffectForm {
 // Query key factory for marketing campaigns
 const marketingQueryKey = (industryId: string) => ['marketing', industryId] as const;
 
+// Query key factory for categories
+const categoriesQueryKey = (industryId: string) => ['categories', industryId] as const;
+
 export function useMarketing(industryId: string, campaignId?: string) {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<string | null>(null);
@@ -40,6 +44,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
     cost: '0',
     timeCost: '',
     cooldownSeconds: '15',
+    categoryId: '',
     requirements: [],
     order: '',
   });
@@ -64,6 +69,24 @@ export function useMarketing(industryId: string, campaignId?: string) {
         if (aOrderNull) return 1;
         if (bOrderNull) return -1;
         if (a.order! !== b.order!) return a.order! - b.order!;
+        return a.name.localeCompare(b.name);
+      });
+    },
+    enabled: !!industryId,
+  });
+
+  // Fetch categories using React Query
+  const {
+    data: categories = [],
+    isLoading: categoriesLoading,
+  } = useQuery({
+    queryKey: categoriesQueryKey(industryId),
+    queryFn: async () => {
+      if (!industryId) return [];
+      const result = await fetchCategories(industryId);
+      if (!result) return [];
+      return result.slice().sort((a, b) => {
+        if (a.orderIndex !== b.orderIndex) return a.orderIndex - b.orderIndex;
         return a.name.localeCompare(b.name);
       });
     },
@@ -172,6 +195,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
       cost: String(campaign.cost),
       timeCost: campaign.timeCost !== undefined ? String(campaign.timeCost) : '',
       cooldownSeconds: String(campaign.cooldownSeconds),
+      categoryId: campaign.categoryId || '',
       setsFlag: campaign.setsFlag,
       requirements: campaign.requirements || [],
       order: String(campaign.order ?? 0),
@@ -201,6 +225,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
           cost: String(campaign.cost),
           timeCost: campaign.timeCost !== undefined ? String(campaign.timeCost) : '',
           cooldownSeconds: String(campaign.cooldownSeconds),
+          categoryId: campaign.categoryId || '',
           setsFlag: campaign.setsFlag,
           requirements: campaign.requirements || [],
           order: String(campaign.order ?? 0),
@@ -228,6 +253,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
       cost: '0',
       timeCost: '',
       cooldownSeconds: '15',
+      categoryId: '',
       requirements: [],
       order: '',
     });
@@ -267,6 +293,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
       durationSeconds: ef.durationSeconds === '' ? null : Number(ef.durationSeconds) || null,
     }));
     const order = form.order.trim() ? Number(form.order.trim()) : undefined;
+    const categoryId = form.categoryId?.trim() || undefined;
 
     const payload: MarketingCampaign = {
       id,
@@ -276,6 +303,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
       timeCost,
       cooldownSeconds,
       effects,
+      categoryId,
       setsFlag,
       requirements,
       order,
@@ -303,6 +331,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
         description: '',
         cost: '0',
         cooldownSeconds: '15',
+        categoryId: '',
         requirements: [],
         order: '',
       });
@@ -323,7 +352,8 @@ export function useMarketing(industryId: string, campaignId?: string) {
 
   return {
     campaigns,
-    loading: isLoading,
+    categories,
+    loading: isLoading || categoriesLoading,
     status: status || (error instanceof Error ? error.message : null),
     selectedId,
     isCreating,

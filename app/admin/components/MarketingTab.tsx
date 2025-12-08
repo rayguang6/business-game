@@ -23,6 +23,7 @@ interface MarketingTabProps {
     cost: string;
     timeCost?: string;
     cooldownSeconds: string;
+    categoryId?: string;
     setsFlag?: string;
     requirements: Requirement[];
     order: string;
@@ -37,6 +38,8 @@ interface MarketingTabProps {
   campaignDeleting: boolean;
   flags: GameFlag[];
   flagsLoading: boolean;
+  categories: import('@/lib/game/types').Category[];
+  categoriesLoading: boolean;
   upgrades?: UpgradeDefinition[];
   staffRoles?: StaffRoleConfig[];
   metricOptions: Array<{ value: GameMetric; label: string }>;
@@ -62,6 +65,8 @@ export function MarketingTab({
   campaignDeleting,
   flags,
   flagsLoading,
+  categories,
+  categoriesLoading,
   upgrades = [],
   staffRoles = [],
   metricOptions,
@@ -113,19 +118,21 @@ export function MarketingTab({
         ) : (
           <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
-              {campaigns.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => onSelectCampaign(c)}
-                  className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
-                    selectedCampaignId === c.id && !isCreatingCampaign
-                      ? 'border-pink-400 bg-pink-500/10 text-pink-200'
-                      : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
-                  }`}
-                >
-                  {c.name}
-                </button>
-              ))}
+              {campaigns
+                .sort((a, b) => (a.order || 0) - (b.order || 0))
+                .map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => onSelectCampaign(c)}
+                    className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
+                      selectedCampaignId === c.id && !isCreatingCampaign
+                        ? 'border-pink-400 bg-pink-500/10 text-pink-200'
+                        : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
+                    }`}
+                  >
+                    {c.name}
+                  </button>
+                ))}
             </div>
 
             {(selectedCampaignId || isCreatingCampaign) && (
@@ -210,6 +217,24 @@ export function MarketingTab({
                     className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   />
                   <p className="text-xs text-slate-400 mt-1">Lower numbers appear first (default: 0)</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-1">Category</label>
+                  <select
+                    value={campaignForm.categoryId || ''}
+                    onChange={(e) => onUpdateForm({ categoryId: e.target.value })}
+                    disabled={categoriesLoading}
+                    className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200 disabled:opacity-50"
+                  >
+                    <option value="">{categoriesLoading ? 'Loading categories...' : 'None'}</option>
+                    {!categoriesLoading &&
+                      categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                  </select>
+                  <p className="text-xs text-slate-400 mt-1">Optional category for organizing campaigns</p>
                 </div>
 
                 <div>
@@ -326,6 +351,7 @@ export function MarketingTab({
             )}
           </div>
         )}
+
       </div>
     </section>
   );

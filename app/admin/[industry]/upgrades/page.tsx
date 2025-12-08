@@ -7,6 +7,7 @@ import { SidebarContentLayout } from '../../components/SidebarContentLayout';
 import { useUpgrades } from '../../hooks/useUpgrades';
 import { useFlags } from '../../hooks/useFlags';
 import { useRoles } from '../../hooks/useRoles';
+import { useCategories } from '../../hooks/useCategories';
 import { METRIC_OPTIONS, EFFECT_TYPE_OPTIONS } from '../../utils/constants';
 import { buildUpgradeDetailUrl } from '../../utils/routing';
 
@@ -20,6 +21,7 @@ export default function UpgradesPage({
   const upgrades = useUpgrades(industry);
   const flags = useFlags(industry);
   const roles = useRoles(industry);
+  const categories = useCategories(industry);
 
   // Auto-redirect to first upgrade if upgrades are loaded and not creating
   useEffect(() => {
@@ -132,6 +134,8 @@ export default function UpgradesPage({
           upgradeDeleting={upgrades.deleting}
           flags={flags.flags}
           flagsLoading={flags.loading}
+          categories={categories.categories}
+          categoriesLoading={categories.loading}
           staffRoles={roles.roles}
           metricOptions={METRIC_OPTIONS}
           effectTypeOptions={EFFECT_TYPE_OPTIONS}

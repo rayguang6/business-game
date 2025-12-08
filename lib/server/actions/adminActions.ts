@@ -5,6 +5,7 @@ import { fetchServicesForIndustry, upsertServiceForIndustry, deleteServiceById }
 import { fetchUpgradesForIndustry, upsertUpgradeForIndustry, deleteUpgradeById } from '@/lib/data/upgradeRepository';
 import { fetchEventsForIndustry, upsertEventForIndustry, deleteEventById } from '@/lib/data/eventRepository';
 import { fetchMarketingCampaignsForIndustry, upsertMarketingCampaignForIndustry, deleteMarketingCampaignById } from '@/lib/data/marketingRepository';
+import { fetchCategoriesForIndustry, upsertCategoryForIndustry, deleteCategoryById } from '@/lib/data/categoryRepository';
 import { fetchStaffDataForIndustry, upsertStaffRole, deleteStaffRole, upsertStaffPreset, deleteStaffPreset } from '@/lib/data/staffRepository';
 import { fetchFlagsForIndustry, upsertFlagForIndustry, deleteFlagById } from '@/lib/data/flagRepository';
 import { fetchConditionsForIndustry, upsertConditionForIndustry, deleteConditionById } from '@/lib/data/conditionRepository';
@@ -15,7 +16,7 @@ import { seedMetricDisplayConfig } from '@/lib/data/seedMetricDisplayConfig';
 import type { MetricDisplayConfig } from '@/lib/data/metricDisplayConfigRepository';
 import { GameMetric } from '@/lib/game/effectManager';
 import type { Industry } from '@/lib/features/industries';
-import type { IndustryId, IndustryServiceDefinition, UpgradeDefinition } from '@/lib/game/types';
+import type { IndustryId, IndustryServiceDefinition, UpgradeDefinition, Category } from '@/lib/game/types';
 import type { GameEvent } from '@/lib/types/gameEvents';
 import type { MarketingCampaign } from '@/lib/store/slices/marketingSlice';
 import type { GameFlag } from '@/lib/data/flagRepository';
@@ -116,6 +117,19 @@ export async function upsertMarketingCampaign(industryId: string, campaign: Mark
 
 export async function deleteMarketingCampaign(id: string, industryId: IndustryId) {
   return await deleteMarketingCampaignById(id, industryId);
+}
+
+// Category Actions
+export async function fetchCategories(industryId: IndustryId) {
+  return await fetchCategoriesForIndustry(industryId);
+}
+
+export async function upsertCategory(industryId: IndustryId, category: Category) {
+  return await upsertCategoryForIndustry(industryId, category);
+}
+
+export async function deleteCategory(id: string) {
+  return await deleteCategoryById(id);
 }
 
 // Staff Actions

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchUpgrades, upsertUpgrade, deleteUpgrade } from '@/lib/server/actions/adminActions';
-import type { UpgradeDefinition } from '@/lib/game/types';
+import { fetchUpgrades, upsertUpgrade, deleteUpgrade, fetchCategories } from '@/lib/server/actions/adminActions';
+import type { UpgradeDefinition, Category } from '@/lib/game/types';
 import type { Requirement } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import type { Operation } from './types';
@@ -14,6 +14,7 @@ interface UpgradeForm {
   cost: string;
   timeCost?: string;
   maxLevel: string;
+  categoryId?: string;
   setsFlag?: string;
   requirements: Requirement[];
   order: string;
@@ -38,6 +39,9 @@ interface LevelForm {
 // Query key factory for upgrades
 const upgradesQueryKey = (industryId: string) => ['upgrades', industryId] as const;
 
+// Query key factory for categories
+const categoriesQueryKey = (industryId: string) => ['categories', industryId] as const;
+
 export function useUpgrades(industryId: string, upgradeId?: string) {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<string | null>(null);
@@ -51,6 +55,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
     cost: '0',
     timeCost: '',
     maxLevel: '1',
+    categoryId: '',
     requirements: [],
     order: '',
   });
@@ -75,6 +80,24 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
         if (aOrderNull) return 1;
         if (bOrderNull) return -1;
         if (a.order! !== b.order!) return a.order! - b.order!;
+        return a.name.localeCompare(b.name);
+      });
+    },
+    enabled: !!industryId,
+  });
+
+  // Fetch categories using React Query
+  const {
+    data: categories = [],
+    isLoading: categoriesLoading,
+  } = useQuery({
+    queryKey: categoriesQueryKey(industryId),
+    queryFn: async () => {
+      if (!industryId) return [];
+      const result = await fetchCategories(industryId);
+      if (!result) return [];
+      return result.slice().sort((a, b) => {
+        if (a.orderIndex !== b.orderIndex) return a.orderIndex - b.orderIndex;
         return a.name.localeCompare(b.name);
       });
     },
@@ -188,6 +211,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
       cost: String(upgrade.levels?.[0]?.cost ?? 0),
       timeCost: upgrade.levels?.[0]?.timeCost !== undefined ? String(upgrade.levels[0].timeCost) : '',
       maxLevel: String(upgrade.maxLevel),
+      categoryId: upgrade.categoryId || '',
       setsFlag: upgrade.setsFlag,
       requirements: upgrade.requirements || [],
       order: String(upgrade.order ?? 0),
@@ -244,6 +268,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
           cost: String(upgrade.levels?.[0]?.cost ?? 0),
           timeCost: upgrade.levels?.[0]?.timeCost !== undefined ? String(upgrade.levels[0].timeCost) : '',
           maxLevel: String(upgrade.maxLevel),
+          categoryId: upgrade.categoryId || '',
           setsFlag: upgrade.setsFlag,
           requirements: upgrade.requirements || [],
           order: String(upgrade.order ?? 0),
@@ -298,6 +323,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
       cost: '0',
       timeCost: '',
       maxLevel: '1',
+      categoryId: '',
       requirements: [],
       order: '0',
     });
@@ -390,6 +416,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
     const maxLevel = levels.length;
 
     const order = form.order.trim() ? Number(form.order.trim()) : undefined;
+    const categoryId = form.categoryId?.trim() || undefined;
 
     const payload: UpgradeDefinition = {
       id,
@@ -397,6 +424,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
       description,
       icon,
       maxLevel,
+      categoryId,
       setsFlag,
       requirements,
       levels,
@@ -427,6 +455,7 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
         icon: '⚙️',
         cost: '0',
         maxLevel: '1',
+        categoryId: '',
         requirements: [],
         order: '',
       });
@@ -495,7 +524,8 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
 
   return {
     upgrades,
-    loading: isLoading,
+    categories,
+    loading: isLoading || categoriesLoading,
     status: status || (error instanceof Error ? error.message : null),
     selectedId,
     isCreating,

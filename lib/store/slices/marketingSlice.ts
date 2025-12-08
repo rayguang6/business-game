@@ -28,6 +28,7 @@ export interface MarketingCampaign {
   timeCost?: number; // Optional time cost (hours) - if specified, uses time instead of cash
   cooldownSeconds: number; // How long before this campaign can be run again
   effects: CampaignEffect[];
+  categoryId?: string; // Optional reference to categories table
   setsFlag?: string; // Optional flag to set when campaign is launched
   requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
   order?: number; // Display order (lower = shown first, defaults to 0)

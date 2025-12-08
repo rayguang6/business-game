@@ -101,6 +101,30 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 
 ---
 
+### `categories`
+**Purpose:** Category definitions for upgrades and marketing campaigns
+
+**Primary Key:** `id` (TEXT)
+
+**Columns:**
+- `id` (TEXT, PRIMARY KEY) - Category identifier
+- `industry_id` (TEXT) - Industry this category belongs to (required)
+- `name` (TEXT) - Category name
+- `order_index` (INTEGER) - Display order (lower = shown first, defaults to 0)
+- `description` (TEXT, optional) - Category description
+- `created_at` (TIMESTAMPTZ) - Creation timestamp
+- `updated_at` (TIMESTAMPTZ) - Last update timestamp
+
+**Notes:**
+- All categories are industry-specific - each industry maintains its own categories
+- Categories can be used by both upgrades and marketing campaigns within the same industry
+
+**Indexes:**
+- Index on `industry_id` for efficient filtering
+- Index on `(industry_id, order_index)` for efficient sorting
+
+---
+
 ### `upgrades`
 **Purpose:** Upgrade definitions per industry
 
@@ -112,7 +136,7 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 - `name` (TEXT) - Upgrade name
 - `description` (TEXT, optional) - Upgrade description
 - `icon` (TEXT, optional) - Icon path
-- `category` (TEXT, optional) - Upgrade category
+- `category_id` (TEXT, optional) - Reference to categories table
 - `sets_flag` (TEXT, optional) - Flag ID to set when purchased
 - `order` (INTEGER, optional) - Display order (lower = shown first, defaults to 0)
 
@@ -122,6 +146,7 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 
 **Indexes:**
 - Index on `(industry_id, order)` for efficient sorting
+- Index on `category_id` for efficient category filtering
 
 ---
 
@@ -177,12 +202,14 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 - `cost` (NUMERIC) - Campaign cost
 - `duration_seconds` (INTEGER) - Campaign duration
 - `effects` (JSONB) - Array of effect objects
+- `category_id` (TEXT, optional) - Reference to categories table
 - `sets_flag` (TEXT, optional) - Flag ID to set
 - `requirements` (JSONB, optional) - Array of requirement objects
 - `order` (INTEGER, optional) - Display order (lower = shown first, defaults to 0)
 
 **Indexes:**
 - Index on `(industry_id, order)` for efficient sorting
+- Index on `category_id` for efficient category filtering
 
 ---
 
@@ -287,6 +314,7 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 4. **009_drop_old_simulation_config_tables.sql** - Drops old `global_simulation_config` and `industry_simulation_config` tables (run after migration verification)
 5. **010_convert_spawn_interval_to_leads_per_month.sql** - Converts spawn interval to leads per month in business_stats
 6. **011_add_order_to_collections.sql** - Adds `order` column to `upgrades`, `marketing_campaigns`, `staff_roles`, and `services` tables for display ordering
+7. **012_add_categories.sql** - Creates `categories` table and adds `category_id` foreign keys to `upgrades` and `marketing_campaigns` tables
 
 ---
 

@@ -88,12 +88,21 @@ export interface UpgradeLevelConfig {
   effects: UpgradeEffect[];
 }
 
+export interface Category {
+  id: string;
+  industryId?: IndustryId; // Optional - categories are industry-specific
+  name: string;
+  orderIndex: number; // Display order (lower = shown first)
+  description?: string;
+}
+
 export interface UpgradeDefinition {
   id: string;
   name: string;
   description: string;
   icon: string;
   maxLevel: number;
+  categoryId?: string; // Optional reference to categories table
   setsFlag?: string; // Optional flag to set when this upgrade is purchased
   requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
   levels: UpgradeLevelConfig[]; // Required - level-specific configs

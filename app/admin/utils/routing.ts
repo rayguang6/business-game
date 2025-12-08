@@ -14,6 +14,7 @@ export const enum AdminTabEnum {
   Services = 'services',
   Roles = 'roles',
   Presets = 'presets',
+  Categories = 'categories',
   Upgrades = 'upgrades',
   Marketing = 'marketing',
   Events = 'events',
@@ -22,7 +23,7 @@ export const enum AdminTabEnum {
 }
 
 export type AdminTab = `${AdminTabEnum}`;
-export type IndustryTab = AdminTabEnum.Services | AdminTabEnum.Roles | AdminTabEnum.Presets | AdminTabEnum.Upgrades | AdminTabEnum.Flags | AdminTabEnum.Conditions | AdminTabEnum.Events | AdminTabEnum.Marketing | AdminTabEnum.IndustryConfig | AdminTabEnum.IndustryMetricDisplay;
+export type IndustryTab = AdminTabEnum.Services | AdminTabEnum.Roles | AdminTabEnum.Presets | AdminTabEnum.Categories | AdminTabEnum.Upgrades | AdminTabEnum.Flags | AdminTabEnum.Conditions | AdminTabEnum.Events | AdminTabEnum.Marketing | AdminTabEnum.IndustryConfig | AdminTabEnum.IndustryMetricDisplay;
 export type GlobalTab = AdminTabEnum.Industries | AdminTabEnum.Global | AdminTabEnum.GlobalMetricDisplay;
 
 // All valid industry tab routes
@@ -30,6 +31,7 @@ const INDUSTRY_TAB_ROUTES: IndustryTab[] = [
   AdminTabEnum.Services,
   AdminTabEnum.Roles,
   AdminTabEnum.Presets,
+  AdminTabEnum.Categories,
   AdminTabEnum.Upgrades,
   AdminTabEnum.Flags,
   AdminTabEnum.Conditions,
@@ -140,6 +142,10 @@ export function buildRoleDetailUrl(industry: string, roleId: string): string {
 
 export function buildPresetDetailUrl(industry: string, presetId: string): string {
   return `/admin/${industry}/presets/${presetId}`;
+}
+
+export function buildCategoryDetailUrl(industry: string, categoryId: string): string {
+  return `/admin/${industry}/categories/${categoryId}`;
 }
 
 export function buildGlobalMetricDisplayUrl(): string {

@@ -15,6 +15,7 @@ import { Modal } from '@/app/components/ui/Modal';
 import type { Staff } from '@/lib/features/staff';
 import { calculateSeveranceCost, SEVERANCE_MULTIPLIER } from '@/lib/features/staff';
 import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
+import { useCategories } from '../../hooks/useCategories';
 
 // METRIC_LABELS removed - now using merged definitions from registry + database
 
@@ -813,6 +814,7 @@ export function UpgradesTab() {
     [industryId],
   );
   const availableUpgrades = useConfigStore(upgradesSelector);
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories(industryId);
 
   // Staff-related state
   const hiredStaff = useGameStore((state) => state.hiredStaff);
@@ -837,11 +839,51 @@ export function UpgradesTab() {
       {/* Upgrades Section */}
       <section>
         <SectionHeading>Available Upgrades</SectionHeading>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
-          {availableUpgrades.map((upgrade) => (
-            <UpgradeCard key={upgrade.id} upgrade={upgrade} />
-          ))}
-        </div>
+        {(() => {
+          // Group upgrades by category and sort
+          const sortedCategories = categories
+            .sort((a, b) => a.orderIndex - b.orderIndex);
+
+          const upgradesByCategory = new Map<string | undefined, typeof availableUpgrades>();
+
+          // Initialize with uncategorized upgrades
+          upgradesByCategory.set(undefined, availableUpgrades.filter(u => !u.categoryId));
+
+          // Group upgrades by category
+          sortedCategories.forEach(category => {
+            const categoryUpgrades = availableUpgrades.filter(u => u.categoryId === category.id);
+            if (categoryUpgrades.length > 0) {
+              upgradesByCategory.set(category.id, categoryUpgrades);
+            }
+          });
+
+          return (
+            <div className="space-y-6">
+              {Array.from(upgradesByCategory.entries()).map(([categoryId, categoryUpgrades]) => {
+                const category = categoryId ? categories.find(c => c.id === categoryId) : null;
+                const sortedUpgrades = categoryUpgrades.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+                return (
+                  <div key={categoryId || 'others'} className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <h3 className="text-lg font-semibold text-slate-200">
+                        {category ? category.name : 'Others'}
+                      </h3>
+                      {category?.description && (
+                        <span className="text-sm text-slate-400">• {category.description}</span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+                      {sortedUpgrades.map((upgrade) => (
+                        <UpgradeCard key={upgrade.id} upgrade={upgrade} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </section>
 
       {/* Staff Section */}

@@ -8,6 +8,7 @@ import { useMarketing } from '../../hooks/useMarketing';
 import { useFlags } from '../../hooks/useFlags';
 import { useUpgrades } from '../../hooks/useUpgrades';
 import { useRoles } from '../../hooks/useRoles';
+import { useCategories } from '../../hooks/useCategories';
 import { METRIC_OPTIONS, EFFECT_TYPE_OPTIONS } from '../../utils/constants';
 import { buildMarketingDetailUrl } from '../../utils/routing';
 
@@ -22,6 +23,7 @@ export default function MarketingPage({
   const flags = useFlags(industry);
   const upgrades = useUpgrades(industry);
   const roles = useRoles(industry);
+  const categories = useCategories(industry);
 
   // Auto-redirect to first campaign if campaigns are loaded and not creating
   useEffect(() => {
@@ -133,6 +135,8 @@ export default function MarketingPage({
           campaignDeleting={marketing.deleting}
           flags={flags.flags}
           flagsLoading={flags.loading}
+          categories={categories.categories}
+          categoriesLoading={categories.loading}
           upgrades={upgrades.upgrades}
           staffRoles={roles.roles}
           metricOptions={METRIC_OPTIONS}

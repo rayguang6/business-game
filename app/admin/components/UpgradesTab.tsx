@@ -34,6 +34,7 @@ interface UpgradesTabProps {
     cost: string;
     timeCost?: string;
     maxLevel: string;
+    categoryId?: string;
     setsFlag?: string;
     requirements: Requirement[];
     order: string;
@@ -43,6 +44,8 @@ interface UpgradesTabProps {
   upgradeDeleting: boolean;
   flags: GameFlag[];
   flagsLoading: boolean;
+  categories: import('@/lib/game/types').Category[];
+  categoriesLoading: boolean;
   allUpgrades?: UpgradeDefinition[];
   staffRoles?: import('@/lib/game/staffConfig').StaffRoleConfig[];
   metricOptions: Array<{ value: GameMetric; label: string }>;
@@ -71,6 +74,8 @@ export function UpgradesTab({
   upgradeDeleting,
   flags,
   flagsLoading,
+  categories,
+  categoriesLoading,
   allUpgrades = [],
   staffRoles = [],
   metricOptions,
@@ -127,21 +132,23 @@ export function UpgradesTab({
             ) : upgrades.length === 0 && !isCreatingUpgrade ? (
               <div className="text-sm text-slate-400">No upgrades configured yet.</div>
             ) : (
-              <div className="space-y-4">
+              <>
                 <div className="flex flex-wrap gap-2">
-                  {upgrades.map((u) => (
-                    <button
-                      key={u.id}
-                      onClick={() => onSelectUpgrade(u)}
-                      className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
-                        selectedUpgradeId === u.id && !isCreatingUpgrade
-                          ? 'border-purple-400 bg-purple-500/10 text-purple-200'
-                          : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
-                      }`}
-                    >
-                      {u.icon} {u.name}
-                    </button>
-                  ))}
+                  {upgrades
+                    .sort((a, b) => (a.order || 0) - (b.order || 0))
+                    .map((u) => (
+                      <button
+                        key={u.id}
+                        onClick={() => onSelectUpgrade(u)}
+                        className={`px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
+                          selectedUpgradeId === u.id && !isCreatingUpgrade
+                            ? 'border-purple-400 bg-purple-500/10 text-purple-200'
+                            : 'border-slate-700 bg-slate-800 hover:bg-slate-700/60'
+                        }`}
+                      >
+                        {u.icon} {u.name}
+                      </button>
+                    ))}
                 </div>
 
                 {(selectedUpgradeId || isCreatingUpgrade) && (
@@ -202,6 +209,24 @@ export function UpgradesTab({
                         className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                       />
                       <p className="text-xs text-slate-400 mt-1">Lower numbers appear first (default: 0)</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Category</label>
+                      <select
+                        value={upgradeForm.categoryId || ''}
+                        onChange={(e) => onUpdateForm({ categoryId: e.target.value })}
+                        disabled={categoriesLoading}
+                        className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200 disabled:opacity-50"
+                      >
+                        <option value="">{categoriesLoading ? 'Loading categories...' : 'None'}</option>
+                    {!categoriesLoading &&
+                      categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                      </select>
+                      <p className="text-xs text-slate-400 mt-1">Optional category for organizing upgrades</p>
                     </div>
                     
                     {/* Level Management */}
@@ -406,7 +431,7 @@ export function UpgradesTab({
                       )}
                   </form>
                 )}
-              </div>
+              </>
             )}
           </div>
         )}

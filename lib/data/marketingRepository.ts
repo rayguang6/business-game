@@ -12,6 +12,7 @@ interface MarketingCampaignRow {
   time_cost?: number | string | null; // Optional time cost column
   cooldown_seconds: number | null;
   effects: unknown;
+  category_id: string | null;
   sets_flag: string | null;
   requirements: unknown;
   order: number | null;
@@ -41,7 +42,7 @@ export async function fetchMarketingCampaignsForIndustry(industryId: IndustryId)
 
   const { data, error } = await supabaseServer
     .from('marketing_campaigns')
-    .select('id, industry_id, name, description, cost, time_cost, cooldown_seconds, effects, sets_flag, requirements, order')
+    .select('id, industry_id, name, description, cost, time_cost, cooldown_seconds, effects, category_id, sets_flag, requirements, order')
     .eq('industry_id', industryId)
     .order('order', { ascending: true, nullsFirst: false })
     .order('name', { ascending: true });
@@ -93,6 +94,7 @@ export async function fetchMarketingCampaignsForIndustry(industryId: IndustryId)
         timeCost: row.time_cost !== null && row.time_cost !== undefined ? parseNumber(row.time_cost) : undefined,
         cooldownSeconds: parseNumber(row.cooldown_seconds, 60), // Default to 60s if not set
         effects,
+        categoryId: row.category_id || undefined,
         setsFlag: row.sets_flag || undefined,
         requirements,
         order: row.order ?? 0,
@@ -121,6 +123,7 @@ export async function upsertMarketingCampaignForIndustry(industryId: string, cam
     time_cost: campaign.timeCost ?? null,
     cooldown_seconds: campaign.cooldownSeconds,
     effects: campaign.effects.map((e) => ({ metric: e.metric, type: e.type, value: e.value, durationSeconds: e.durationSeconds })),
+    category_id: campaign.categoryId || null,
     sets_flag: campaign.setsFlag || null,
     requirements: campaign.requirements || [],
     order: campaign.order ?? 0,

@@ -16,6 +16,7 @@ interface UpgradeRow {
   description: string;
   icon: string;
   max_level: number;
+  category_id: string | null;
   sets_flag: string | null;
   requirements: unknown;
   order: number | null;
@@ -43,7 +44,7 @@ export async function fetchUpgradesForIndustry(
   // Fetch base upgrades
   const { data: upgradesData, error: upgradesError } = await supabaseServer
     .from('upgrades')
-    .select('id, industry_id, name, description, icon, max_level, sets_flag, requirements, order')
+    .select('id, industry_id, name, description, icon, max_level, category_id, sets_flag, requirements, order')
     .eq('industry_id', industryId)
     .order('order', { ascending: true, nullsFirst: false })
     .order('name', { ascending: true });
@@ -150,6 +151,7 @@ export async function fetchUpgradesForIndustry(
       description: row.description,
       icon: row.icon,
       maxLevel: levels.length, // Use actual number of levels instead of row.max_level
+      categoryId: row.category_id || undefined,
       setsFlag: row.sets_flag || undefined,
       requirements: Array.isArray(row.requirements) ? row.requirements as any[] : [],
       levels: levels,
@@ -181,6 +183,7 @@ export async function upsertUpgradeForIndustry(
     description: upgrade.description,
     icon: upgrade.icon,
     max_level: upgrade.maxLevel,
+    category_id: upgrade.categoryId || null,
     sets_flag: upgrade.setsFlag || null,
     requirements: upgrade.requirements || [],
     order: upgrade.order ?? 0,

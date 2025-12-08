@@ -30,6 +30,7 @@ const TAB_CONFIG = {
   [AdminTabEnum.Services]: { label: 'Services', icon: '🛎️' },
   [AdminTabEnum.Roles]: { label: 'Roles', icon: '👥' },
   [AdminTabEnum.Presets]: { label: 'Presets', icon: '👤' },
+  [AdminTabEnum.Categories]: { label: 'Categories', icon: '📁' },
   [AdminTabEnum.Upgrades]: { label: 'Upgrades', icon: '⚙️' },
   [AdminTabEnum.Marketing]: { label: 'Marketing', icon: '📢' },
   [AdminTabEnum.Events]: { label: 'Events', icon: '📅' },
@@ -49,6 +50,7 @@ const INDUSTRY_TABS: IndustryTab[] = [
   AdminTabEnum.Services,               // Content
   AdminTabEnum.Roles,                  // Content (Staff Roles)
   AdminTabEnum.Presets,                // Content (Staff Presets)
+  AdminTabEnum.Categories,             // Content (Categories)
   AdminTabEnum.Upgrades,               // Mechanics
   AdminTabEnum.Marketing,              // Mechanics
   AdminTabEnum.Events,                 // Mechanics
