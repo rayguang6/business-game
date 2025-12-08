@@ -104,20 +104,29 @@ export function MarketingTab({
   onRemoveLevel,
   onUpdateLevel,
 }: MarketingTabProps) {
-  // Keyboard shortcut for save
+  // Keyboard shortcuts for save and delete
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Save shortcut (Command/Ctrl + Enter)
       if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
         event.preventDefault();
         if ((selectedCampaignId || isCreatingCampaign) && !campaignSaving && !campaignDeleting) {
           onSaveCampaign();
         }
       }
+      // Delete shortcut (Command + Delete/Backspace) - prioritize Mac
+      if (event.metaKey && (event.key === 'Delete' || event.key === 'Backspace') && !isCreatingCampaign && selectedCampaignId) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!campaignSaving && !campaignDeleting) {
+          onDeleteCampaign();
+        }
+      }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedCampaignId, isCreatingCampaign, campaignSaving, campaignDeleting, onSaveCampaign]);
+    document.addEventListener('keydown', handleKeyDown, true); // Use capture phase
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [selectedCampaignId, isCreatingCampaign, campaignSaving, campaignDeleting, onSaveCampaign, onDeleteCampaign]);
 
   return (
     <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
@@ -517,22 +526,38 @@ export function MarketingTab({
                   )}
                 </div>
 
-                {/* Floating Save Button */}
+                {/* Floating Action Buttons */}
                 {(selectedCampaignId || isCreatingCampaign) && (
                   <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
                     <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-xl px-6 py-3 shadow-2xl">
-                      <button
-                        type="button"
-                        onClick={onSaveCampaign}
-                        disabled={campaignSaving || campaignDeleting}
-                        className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
-                          campaignSaving
-                            ? 'bg-pink-900 text-pink-200 cursor-wait'
-                            : 'bg-pink-600 hover:bg-pink-500 text-white'
-                        }`}
-                      >
-                        {campaignSaving ? '💾 Saving…' : '💾 Save Campaign (⌘↵)'}
-                      </button>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={onSaveCampaign}
+                          disabled={campaignSaving || campaignDeleting}
+                          className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
+                            campaignSaving
+                              ? 'bg-pink-900 text-pink-200 cursor-wait'
+                              : 'bg-pink-600 hover:bg-pink-500 text-white'
+                          }`}
+                        >
+                          {campaignSaving ? '💾 Saving…' : '💾 Save (⌘↵)'}
+                        </button>
+                        {!isCreatingCampaign && selectedCampaignId && (
+                          <button
+                            type="button"
+                            onClick={onDeleteCampaign}
+                            disabled={campaignDeleting || campaignSaving}
+                            className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
+                              campaignDeleting
+                                ? 'bg-rose-900 text-rose-200 cursor-wait'
+                                : 'bg-rose-600 hover:bg-rose-500 text-white'
+                            }`}
+                          >
+                            {campaignDeleting ? '🗑️ Deleting…' : '🗑️ Delete (⌘⌫)'}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}

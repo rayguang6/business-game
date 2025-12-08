@@ -74,20 +74,29 @@ export function ConditionsTab({
     }
   };
 
-  // Keyboard shortcut for save
+  // Keyboard shortcuts for save and delete
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Save shortcut (Command/Ctrl + Enter)
       if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
         event.preventDefault();
         if ((selectedConditionId || isCreatingCondition) && !conditionSaving && !conditionDeleting) {
           onSaveCondition();
         }
       }
+      // Delete shortcut (Command + Delete/Backspace) - prioritize Mac
+      if (event.metaKey && (event.key === 'Delete' || event.key === 'Backspace') && !isCreatingCondition && selectedConditionId) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!conditionSaving && !conditionDeleting) {
+          onDeleteCondition();
+        }
+      }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedConditionId, isCreatingCondition, conditionSaving, conditionDeleting, onSaveCondition]);
+    document.addEventListener('keydown', handleKeyDown, true); // Use capture phase
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [selectedConditionId, isCreatingCondition, conditionSaving, conditionDeleting, onSaveCondition, onDeleteCondition]);
 
   return (
     <section className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
@@ -248,18 +257,30 @@ export function ConditionsTab({
                       </button>
                     </div>
 
-                    {/* Floating Save Button */}
+                    {/* Floating Action Buttons */}
                     {(selectedConditionId || isCreatingCondition) && (
                       <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
                         <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-xl px-6 py-3 shadow-2xl">
-                          <button
-                            type="button"
-                            onClick={onSaveCondition}
-                            disabled={conditionSaving || conditionDeleting}
-                            className="px-6 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {conditionSaving ? '💾 Saving…' : '💾 Save Condition (⌘↵)'}
-                          </button>
+                          <div className="flex gap-3">
+                            <button
+                              type="button"
+                              onClick={onSaveCondition}
+                              disabled={conditionSaving || conditionDeleting}
+                              className="px-6 py-2 rounded-lg text-sm font-semibold border border-slate-600 text-slate-200 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {conditionSaving ? '💾 Saving…' : '💾 Save (⌘↵)'}
+                            </button>
+                            {!isCreatingCondition && selectedConditionId && (
+                              <button
+                                type="button"
+                                onClick={onDeleteCondition}
+                                disabled={conditionDeleting || conditionSaving}
+                                className="px-6 py-2 rounded-lg text-sm font-semibold border border-rose-600 text-rose-200 hover:bg-rose-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {conditionDeleting ? '🗑️ Deleting…' : '🗑️ Delete (⌘⌫)'}
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
