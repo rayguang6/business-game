@@ -98,7 +98,7 @@ export interface GameSlice {
   // Username
   username: string | null;
 
-  // Main Character (Founder) - always present
+  // Main Character - always present
   mainCharacter: MainCharacter | null;
 
   // Leads
@@ -251,16 +251,16 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
 
     // Set initial game state (this should be done after resetting slices to ensure clean state)
     const initialState = getInitialGameState(industryId, true); // keepIndustry = true
-    const username = get().username || 'Founder'; // Always have a username (fallback to 'Founder')
-    
+    const username = get().username;
+
     // Get layout configuration
     const layoutConfig = getLayoutConfig(industryId);
-    const mainCharacterPosition = layoutConfig?.mainCharacterPosition 
+    const mainCharacterPosition = layoutConfig?.mainCharacterPosition
       ?? (layoutConfig?.staffPositions?.[0] ?? { x: 4, y: 0 }); // Fallback to first staff position or default
-    
+
     // Create main character with username, sprite, and position
-    // Main character is ALWAYS created (never null) - uses 'Founder' as fallback name
-    const mainCharacter = createMainCharacter(username, {
+    // Main character is ALWAYS created (never null)
+    const mainCharacter = createMainCharacter(username || '', {
       layoutSpriteImage: layoutConfig?.mainCharacterSpriteImage,
       position: mainCharacterPosition,
     });
@@ -863,7 +863,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
   // Username management
   setUsername: (username) => {
     set((state) => {
-      const finalUsername = username || 'Founder'; // Always have a username
+      const finalUsername = username; // Username can be empty
       
       // If main character doesn't exist, create it
       // Otherwise, update the existing one
@@ -875,20 +875,20 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
         const mainCharacterPosition = layoutConfig?.mainCharacterPosition 
           ?? (layoutConfig?.staffPositions?.[0] ?? { x: 4, y: 0 });
         
-        updatedMainCharacter = createMainCharacter(finalUsername, {
+        updatedMainCharacter = createMainCharacter(finalUsername || '', {
           layoutSpriteImage: layoutConfig?.mainCharacterSpriteImage,
           position: mainCharacterPosition,
         });
       } else {
         // Update existing main character name
-        updatedMainCharacter = updateMainCharacterName(state.mainCharacter, finalUsername);
+        updatedMainCharacter = updateMainCharacterName(state.mainCharacter, finalUsername || '');
       }
       
       // Persist username to localStorage
       if (typeof window !== 'undefined') {
         try {
-          if (finalUsername === 'Founder') {
-            localStorage.removeItem('game_username'); // Remove if using default
+          if (!finalUsername) {
+            localStorage.removeItem('game_username'); // Remove if no username
           } else {
             localStorage.setItem('game_username', finalUsername);
           }
@@ -934,12 +934,12 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     set((state) => {
       if (!state.mainCharacter) {
         // If main character doesn't exist, create it (shouldn't happen, but safety check)
-        const username = state.username || 'Founder';
+        const username = state.username;
         const industryId = (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
         const layoutConfig = getLayoutConfig(industryId);
-        const mainCharacterPosition = layoutConfig?.mainCharacterPosition 
+        const mainCharacterPosition = layoutConfig?.mainCharacterPosition
           ?? (layoutConfig?.staffPositions?.[0] ?? { x: 4, y: 0 });
-        const newMainCharacter = createMainCharacter(username, {
+        const newMainCharacter = createMainCharacter(username || '', {
           layoutSpriteImage: layoutConfig?.mainCharacterSpriteImage,
           position: mainCharacterPosition,
         });

@@ -1016,7 +1016,7 @@ export function IndustrySimulationConfigTab({
           {/* Main Character Position */}
           <div className="bg-slate-800 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-slate-300">Main Character Position (Founder)</label>
+              <label className="block text-sm font-medium text-slate-300">Main Character Position</label>
               {mainCharacterPosition ? (
                 <button onClick={() => setMainCharacterPosition(null)} className="text-xs px-2 py-1 bg-rose-600 hover:bg-rose-700 rounded">Clear</button>
               ) : (

@@ -2,8 +2,8 @@ import type { Staff } from './staff';
 import type { GridPosition } from '@/lib/game/types';
 
 /**
- * Main Character (Founder) Interface
- * 
+ * Main Character Interface
+ *
  * The main character is always present in the game and uses the player's username.
  * It follows the same structure as Staff for compatibility with staff logic,
  * but is a separate entity that cannot be hired/fired.
@@ -11,7 +11,7 @@ import type { GridPosition } from '@/lib/game/types';
 export interface MainCharacter extends Omit<Staff, 'salary' | 'effects' | 'setsFlag' | 'requirements'> {
   id: 'main-character'; // Fixed ID
   roleId: 'main-character'; // Fixed role ID
-  role: 'Founder'; // Fixed role name
+  role: string; // Dynamic role name
   // No salary, effects, setsFlag, or requirements - main character is always present
 }
 
@@ -35,11 +35,12 @@ export function getMainCharacterSprite(
 
 /**
  * Create a main character from username
- * @param username - Player's username (will use 'Founder' as fallback)
+ * @param username - Player's username
  * @param options - Optional configuration
  * @param options.spriteImage - Sprite image path (takes precedence)
  * @param options.layoutSpriteImage - Sprite image from layout config (fallback)
  * @param options.position - Initial grid position (x, y, facingDirection)
+ * @param options.role - Role name for the main character
  */
 export function createMainCharacter(
   username: string,
@@ -47,6 +48,7 @@ export function createMainCharacter(
     spriteImage?: string;
     layoutSpriteImage?: string;
     position?: GridPosition;
+    role?: string;
   },
 ): MainCharacter {
   const spriteImage = getMainCharacterSprite(
@@ -56,9 +58,9 @@ export function createMainCharacter(
 
   const mainCharacter: MainCharacter = {
     id: 'main-character',
-    name: username || 'Founder',
+    name: username,
     roleId: 'main-character',
-    role: 'Founder',
+    role: options?.role || 'Main Character',
     spriteImage,
     status: 'idle',
   };
@@ -88,7 +90,7 @@ export function updateMainCharacterName(
 ): MainCharacter {
   return {
     ...mainCharacter,
-    name: username || 'Founder',
+    name: username,
   };
 }
 

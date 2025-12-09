@@ -251,10 +251,10 @@ export function ServicesTab({
                         <p className="text-xs text-slate-400 mb-2">
                           Select which staff roles can perform this service. Leave empty to allow any staff.
                         </p>
-                        {/* Main Character (Founder) - always available */}
+                        {/* Main Character - always available */}
                         <div className="flex flex-wrap gap-2 mb-2">
                           {(() => {
-                            const mainCharacterRole = { id: 'main-character', name: 'Founder' };
+                            const mainCharacterRole = { id: 'main-character', name: 'Main Character' };
                             const isSelected = serviceForm.requiredStaffRoleIds?.includes('main-character') ?? false;
                             return (
                               <button
