@@ -159,9 +159,11 @@ export interface GameState {
 }
 
 // Helper functions for EXP/level system
+// Level 1 is achieved at 0 EXP (starting level)
+// Formula: Math.floor(exp / expPerLevel) + 1
 export function getLevel(exp: number, expPerLevel: number = 200): number {
-  if (!Number.isFinite(exp) || exp < 0) return 0;
-  return Math.floor(exp / expPerLevel);
+  if (!Number.isFinite(exp) || exp < 0) return 1; // Minimum level is 1
+  return Math.floor(exp / expPerLevel) + 1;
 }
 
 export function getLevelProgress(exp: number, expPerLevel: number = 200): number {
