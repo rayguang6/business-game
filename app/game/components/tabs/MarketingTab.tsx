@@ -515,7 +515,7 @@ export function MarketingTab() {
                             const needsCash = levelConfig.cost > 0;
                             const needsTime = levelConfig.timeCost !== undefined && levelConfig.timeCost > 0;
                             const hasCash = !needsCash || metrics.cash >= levelConfig.cost;
-                            const hasTime = !needsTime || (metrics.myTime + metrics.leveragedTime) >= (levelConfig.timeCost ?? 0);
+                            const hasTime = !needsTime || metrics.myTime >= (levelConfig.timeCost ?? 0);
                             canAfford = hasCash && hasTime;
                           } else {
                             canAfford = false;
@@ -528,7 +528,7 @@ export function MarketingTab() {
                         const needsCash = (campaign.cost ?? 0) > 0;
                         const needsTime = campaign.timeCost !== undefined && campaign.timeCost > 0;
                         const hasCash = !needsCash || metrics.cash >= (campaign.cost ?? 0);
-                        const hasTime = !needsTime || (metrics.myTime + metrics.leveragedTime) >= (campaign.timeCost ?? 0);
+                        const hasTime = !needsTime || metrics.myTime >= (campaign.timeCost ?? 0);
                         canAfford = hasCash && hasTime;
                       }
                       
@@ -545,7 +545,7 @@ export function MarketingTab() {
                           cooldownRemaining={cooldownRemaining}
                           currentLevel={currentLevel}
                           onLaunch={handleLaunch}
-                          metrics={{ cash: metrics.cash, time: metrics.myTime + metrics.leveragedTime }}
+                          metrics={{ cash: metrics.cash, time: metrics.myTime }}
                           getDisplayLabel={getDisplayLabel}
                         />
                       );

@@ -327,31 +327,9 @@ const applyEventEffect = (
                 consequenceLabel: consequence?.label,
               });
               const timeLabel = `${event.title} - ${choice.label}`;
-              // Use recordTimeSpent but with a flag to deduct myTime directly
-              // Actually, we need to update metrics directly since recordTimeSpent deducts leveraged time first
-              if ((store as any).updateMetrics) {
-                const currentMetrics = store.metrics;
-                (store as any).updateMetrics({
-                  myTime: Math.max(0, currentMetrics.myTime - timeToDeduct),
-                  totalTimeSpent: currentMetrics.totalTimeSpent + timeToDeduct,
-                });
-                // Also update monthly tracking
-                if ((store as any).monthlyTimeSpent !== undefined) {
-                  (store as any).monthlyTimeSpent = ((store as any).monthlyTimeSpent || 0) + timeToDeduct;
-                  (store as any).monthlyTimeSpentDetails = [
-                    ...((store as any).monthlyTimeSpentDetails || []),
-                    {
-                      amount: timeToDeduct,
-                      label: timeLabel,
-                      sourceId: sourceInfo.id,
-                      sourceType: sourceInfo.type,
-                      sourceName: sourceInfo.name,
-                    },
-                  ];
-                }
-              }
-              if (store.checkGameOver) {
-                store.checkGameOver();
+              // Use recordMyTimeSpent to deduct only myTime (not leveraged time)
+              if (store.recordMyTimeSpent) {
+                store.recordMyTimeSpent(-timeToDeduct, sourceInfo, timeLabel);
               }
             } else {
               store.applyTimeChange(effect.value);
@@ -544,9 +522,9 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
 
     // Validate time cost - prevent negative time (death by time)
     const timeCost = Math.max(0, choice.timeCost ?? 0);
-    const totalAvailableTime = store.metrics.myTime + store.metrics.leveragedTime;
-    if (timeCost > 0 && timeCost > totalAvailableTime) {
-      console.warn(`Cannot resolve event choice: insufficient time. Required: ${timeCost}, Available: ${totalAvailableTime}`);
+    // Check myTime availability (events only use personal time, not leveraged time)
+    if (timeCost > 0 && timeCost > store.metrics.myTime) {
+      console.warn(`Cannot resolve event choice: insufficient personal time. Required: ${timeCost}, Available: ${store.metrics.myTime}`);
       return;
     }
 
@@ -562,13 +540,13 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
     }
 
     // Time cost - deduct time (already validated above)
-    if (timeCost > 0 && store.recordTimeSpent) {
+    if (timeCost > 0 && store.recordMyTimeSpent) {
       const sourceInfo = SourceHelpers.fromEvent(event.id, event.title, {
         choiceId: choice.id,
         choiceLabel: choice.label,
       });
       const timeLabel = `${event.title} - ${choice.label}`;
-      store.recordTimeSpent(-timeCost, sourceInfo, timeLabel);
+      store.recordMyTimeSpent(-timeCost, sourceInfo, timeLabel);
     }
 
     const consequence = pickConsequence(choice);

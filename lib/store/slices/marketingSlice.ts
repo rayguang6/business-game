@@ -238,9 +238,9 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
         return { success: false, message: `Need $${levelConfig.cost} to purchase ${campaign.name} level ${nextLevelNumber}.` };
       }
 
-      const totalAvailableTime = metrics.myTime + metrics.leveragedTime;
-      if (needsTime && totalAvailableTime < levelConfig.timeCost!) {
-        return { success: false, message: `Need ${levelConfig.timeCost}h to purchase ${campaign.name} level ${nextLevelNumber}.` };
+      // Check myTime availability (marketing only uses personal time, not leveraged time)
+      if (needsTime && metrics.myTime < levelConfig.timeCost!) {
+        return { success: false, message: `Need ${levelConfig.timeCost}h personal time to purchase ${campaign.name} level ${nextLevelNumber}.` };
       }
 
       // Check requirements
@@ -270,10 +270,10 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       }
 
       if (needsTime) {
-        const { recordTimeSpent } = get();
-        if (recordTimeSpent) {
+        const { recordMyTimeSpent } = get();
+        if (recordMyTimeSpent) {
           const sourceInfo = SourceHelpers.fromMarketing(campaign.id, campaign.name);
-          recordTimeSpent(-levelConfig.timeCost!, sourceInfo, `${campaign.name} - ${levelConfig.name}`);
+          recordMyTimeSpent(-levelConfig.timeCost!, sourceInfo, `${campaign.name} - ${levelConfig.name}`);
         }
       }
 
@@ -349,9 +349,9 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
         return { success: false, message: `Need $${campaign.cost} to launch ${campaign.name}.` };
       }
 
-      const totalAvailableTime = metrics.myTime + metrics.leveragedTime;
-      if (needsTime && totalAvailableTime < campaign.timeCost!) {
-        return { success: false, message: `Need ${campaign.timeCost}h to launch ${campaign.name}.` };
+      // Check myTime availability (marketing only uses personal time, not leveraged time)
+      if (needsTime && metrics.myTime < campaign.timeCost!) {
+        return { success: false, message: `Need ${campaign.timeCost}h personal time to launch ${campaign.name}.` };
       }
 
       // Check requirements
@@ -381,10 +381,10 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       }
 
       if (needsTime) {
-        const { recordTimeSpent } = get();
-        if (recordTimeSpent) {
+        const { recordMyTimeSpent } = get();
+        if (recordMyTimeSpent) {
           const sourceInfo = SourceHelpers.fromMarketing(campaign.id, campaign.name);
-          recordTimeSpent(-campaign.timeCost!, sourceInfo, campaign.name);
+          recordMyTimeSpent(-campaign.timeCost!, sourceInfo, campaign.name);
         }
       }
 

@@ -167,19 +167,20 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
   const needsCash = upgradeCost > 0;
   const needsTime = upgradeTimeCost !== undefined && upgradeTimeCost > 0;
   // Calculate affordability directly using subscribed metrics to ensure reactivity
+  // Upgrades now only use personal time (myTime), not leveraged time
   const canAfford = useMemo(() => {
     const hasCash = upgradeCost === 0 || metrics.cash >= upgradeCost;
-    const hasTime = upgradeTimeCost === undefined || upgradeTimeCost === 0 || (metrics.myTime + metrics.leveragedTime) >= upgradeTimeCost;
+    const hasTime = upgradeTimeCost === undefined || upgradeTimeCost === 0 || metrics.myTime >= upgradeTimeCost;
     return hasCash && hasTime;
-  }, [metrics.cash, metrics.myTime, metrics.leveragedTime, upgradeCost, upgradeTimeCost]);
+  }, [metrics.cash, metrics.myTime, upgradeCost, upgradeTimeCost]);
   const isMaxed = currentLevel >= upgrade.maxLevel;
   
   // Determine what's missing for button text
   const needText = useMemo(() => {
     const hasCash = !needsCash || metrics.cash >= upgradeCost;
-    const hasTime = !needsTime || (metrics.myTime + metrics.leveragedTime) >= upgradeTimeCost!;
+    const hasTime = !needsTime || metrics.myTime >= upgradeTimeCost!;
     return (!hasCash || !hasTime) ? 'Need Resources' : '';
-  }, [needsCash, needsTime, metrics.cash, metrics.myTime, metrics.leveragedTime, upgradeCost, upgradeTimeCost]);
+  }, [needsCash, needsTime, metrics.cash, metrics.myTime, upgradeCost, upgradeTimeCost]);
   
   // Get next level effects for display
   const nextLevelEffects = useMemo(() => {
@@ -288,7 +289,7 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
             )}
             {needsTime && (
               <div className={`flex items-center gap-1 ${
-                (metrics.myTime + metrics.leveragedTime) >= upgradeTimeCost!
+                metrics.myTime >= upgradeTimeCost!
                   ? 'text-cyan-600 dark:text-cyan-400'
                   : 'text-red-600 dark:text-red-400'
               }`}>

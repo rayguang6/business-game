@@ -262,8 +262,8 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
     const { metrics } = get();
     // Check both cash and time if both are required
     const hasCash = cost === 0 || metrics.cash >= cost;
-    const totalAvailableTime = metrics.myTime + metrics.leveragedTime;
-    const hasTime = timeCost === undefined || timeCost === 0 || totalAvailableTime >= timeCost;
+    // Upgrades now only use myTime, not leveraged time
+    const hasTime = timeCost === undefined || timeCost === 0 || metrics.myTime >= timeCost;
     return hasCash && hasTime;
   },
 
@@ -337,14 +337,14 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
       return { success: false, message: `Need $${upgradeCost} to purchase ${upgrade.name}.` };
     }
     
-    const totalAvailableTime = metrics.myTime + metrics.leveragedTime;
-    if (needsTime && totalAvailableTime < upgradeTimeCost!) {
-      return { success: false, message: `Need ${upgradeTimeCost}h to purchase ${upgrade.name}.` };
+    // Check myTime availability (upgrades only use personal time, not leveraged time)
+    if (needsTime && metrics.myTime < upgradeTimeCost!) {
+      return { success: false, message: `Need ${upgradeTimeCost}h personal time to purchase ${upgrade.name}.` };
     }
-    
+
     // If both are needed, check both
-    if (needsCash && needsTime && (metrics.cash < upgradeCost || totalAvailableTime < upgradeTimeCost!)) {
-      return { success: false, message: `Need $${upgradeCost} and ${upgradeTimeCost}h to purchase ${upgrade.name}.` };
+    if (needsCash && needsTime && (metrics.cash < upgradeCost || metrics.myTime < upgradeTimeCost!)) {
+      return { success: false, message: `Need $${upgradeCost} and ${upgradeTimeCost}h personal time to purchase ${upgrade.name}.` };
     }
 
     // Check requirements
@@ -402,10 +402,10 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
     }
     
     if (needsTime) {
-      const { recordTimeSpent } = get();
-      if (recordTimeSpent) {
+      const { recordMyTimeSpent } = get();
+      if (recordMyTimeSpent) {
         const sourceInfo = SourceHelpers.fromUpgrade(upgrade.id, upgrade.name, newLevel);
-        recordTimeSpent(-upgradeTimeCost!, sourceInfo, upgradeLabel);
+        recordMyTimeSpent(-upgradeTimeCost!, sourceInfo, upgradeLabel);
       }
     }
 

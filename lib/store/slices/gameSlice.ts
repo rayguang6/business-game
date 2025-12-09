@@ -149,6 +149,8 @@ export interface GameSlice {
   // Record time spent with source tracking
   // Supports both: recordTimeSpent(amount, label) and recordTimeSpent(amount, sourceInfo, label?)
   recordTimeSpent: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => void;
+  // Only deducts myTime (preserves leveraged time for services)
+  recordMyTimeSpent: (amount: number, labelOrSource: string | SourceInfo, label?: string) => void;
   checkGameOver: () => void;
   checkWinConditionAtMonthEnd: () => void;
   refreshLeveragedTimeFromEffects: () => void;
@@ -543,9 +545,9 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     const monthJustEnded = currentMonth > previousMonth;
 
     // Reset marketing campaign levels at the start of each new month (effects continue until natural expiration)
-    if (monthJustEnded && resetMarketingLevels) {
-      resetMarketingLevels();
-    }
+    // if (monthJustEnded && resetMarketingLevels) {
+    //   resetMarketingLevels();
+    // }
 
     // Handle effect expiration through unified effect manager
     const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
@@ -880,6 +882,63 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
           ...state.monthlyTimeSpentDetails,
           {
             amount: timeSpent,
+            label: finalLabel,
+            sourceId: sourceInfo.id,
+            sourceType: sourceInfo.type,
+            sourceName: sourceInfo.name,
+          },
+        ],
+      };
+    });
+
+    const { checkGameOver } = get();
+    if (checkGameOver) {
+      checkGameOver();
+    }
+  },
+
+  /**
+   * Records time spent that only deducts from myTime (not leveraged time).
+   * Used for upgrades, marketing, events, etc. that should only cost personal time.
+   */
+  recordMyTimeSpent: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => {
+    if (amount >= 0) {
+      console.warn('[Game] recordMyTimeSpent called with positive amount - this should only deduct time');
+      return;
+    }
+
+    // Handle both old API (label: string) and new API (source: SourceInfo, label?: string)
+    let sourceInfo: SourceInfo;
+    let finalLabel: string;
+
+    if (typeof labelOrSource === 'object' && labelOrSource !== null) {
+      // New API: recordMyTimeSpent(amount, sourceInfo, optionalLabel)
+      sourceInfo = ensureValidSourceInfo(labelOrSource, `mytime_${Date.now()}`, 'MyTime spent');
+      finalLabel = label || sourceInfo.name;
+    } else {
+      // Old API: recordMyTimeSpent(amount, label) - use "Other" source type for unregistered sources
+      finalLabel = labelOrSource || 'MyTime spent';
+      // Create "Other" source info for unregistered time deductions
+      sourceInfo = SourceHelpers.other(`other_mytime_${Date.now()}`, finalLabel);
+    }
+
+    const timeSpent = Math.abs(amount); // Convert to positive for tracking
+
+    set((state) => {
+      // Only deduct from myTime (leveraged time is preserved for services)
+      const myTimeDeduction = Math.min(timeSpent, state.metrics.myTime);
+
+      return {
+        metrics: {
+          ...state.metrics,
+          myTime: state.metrics.myTime - myTimeDeduction,
+          totalTimeSpent: state.metrics.totalTimeSpent + myTimeDeduction,
+        },
+        monthlyTimeSpent: state.monthlyTimeSpent + myTimeDeduction,
+        monthlyTimeSpentDetails: [
+          ...state.monthlyTimeSpentDetails,
+          {
+            amount: myTimeDeduction,
             label: finalLabel,
             sourceId: sourceInfo.id,
             sourceType: sourceInfo.type,
