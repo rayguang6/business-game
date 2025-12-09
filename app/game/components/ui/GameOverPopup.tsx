@@ -4,13 +4,39 @@ import { useGameStore } from "../../../../lib/store/gameStore";
 import { getWinCondition } from "../../../../lib/game/config";
 import { DEFAULT_INDUSTRY_ID, IndustryId } from "../../../../lib/game/types";
 import GameButton from '@/app/components/ui/GameButton';
+import { saveGameResult } from "@/lib/server/actions/gameActions";
 
 const GameOverPopup: React.FC = () => {
   const isGameOver = useGameStore((state) => state.isGameOver);
   const gameOverReason = useGameStore((state) => state.gameOverReason);
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
   const resetAllGame = useGameStore((state) => state.resetAllGame);
+  const metrics = useGameStore((state) => state.metrics);
+  const currentMonth = useGameStore((state) => state.currentMonth);
+  const username = useGameStore((state) => state.username);
   const router = useRouter();
+  const hasSavedResult = useRef(false);
+
+  // Save game result when game ends
+  useEffect(() => {
+    if (isGameOver && !hasSavedResult.current && selectedIndustry && username) {
+      hasSavedResult.current = true;
+      const industryId = selectedIndustry.id as IndustryId;
+      
+      // Save asynchronously - don't block UI
+      saveGameResult(
+        industryId,
+        username,
+        metrics.cash,
+        metrics.leveragedTime,
+        gameOverReason,
+        currentMonth,
+      ).catch((error) => {
+        console.error('[GameOver] Failed to save leaderboard entry:', error);
+        // Silently fail - don't interrupt user experience
+      });
+    }
+  }, [isGameOver, selectedIndustry, username, metrics.cash, metrics.leveragedTime, gameOverReason, currentMonth]);
 
   if (!isGameOver) return null;
 

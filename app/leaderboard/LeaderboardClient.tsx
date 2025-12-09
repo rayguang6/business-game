@@ -1,15 +1,22 @@
-// SelectIndustry.tsx
-import React from 'react';
-import Link from 'next/link';
-import IndustryCard from '../ui/IndustryCard';
-import { Industry } from '@/lib/features/industries';
+'use client';
 
-interface SelectIndustryProps {
+import React from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Industry } from '@/lib/features/industries';
+import IndustryCard from '@/app/components/ui/IndustryCard';
+
+interface LeaderboardClientProps {
   industries: Industry[];
-  onIndustrySelect: (industry: Industry) => void;
 }
 
-export default function SelectIndustry({ industries, onIndustrySelect }: SelectIndustryProps) {
+export default function LeaderboardClient({ industries }: LeaderboardClientProps) {
+  const router = useRouter();
+
+  const handleIndustrySelect = (industry: Industry) => {
+    router.push(`/leaderboard/${industry.id}`);
+  };
+
   return (
     <div 
       className="min-h-screen p-4 sm:p-6 md:p-8 relative overflow-hidden"
@@ -60,29 +67,29 @@ export default function SelectIndustry({ industries, onIndustrySelect }: SelectI
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-4 sm:mb-6 text-white relative inline-block"
             style={{
               textShadow: `
-                0 0 20px rgba(35, 170, 246, 0.5),
+                0 0 20px rgba(255, 215, 0, 0.5),
                 0 4px 20px rgba(0, 0, 0, 0.8),
                 0 2px 8px rgba(0, 0, 0, 0.6),
-                0 0 40px rgba(35, 170, 246, 0.3)
+                0 0 40px rgba(255, 215, 0, 0.3)
               `,
-              WebkitTextStroke: '1px rgba(35, 170, 246, 0.3)'
+              WebkitTextStroke: '1px rgba(255, 215, 0, 0.3)'
             }}
           >
-            Choose Your Industry
+            🏆 Leaderboard
           </h1>
 
           {/* Subtitle with game-style badge */}
-          <div className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-[var(--game-primary)]/20 via-[var(--game-primary-dark)]/20 to-[var(--game-primary)]/20 backdrop-blur-sm rounded-full border border-[var(--game-primary)]/30 mb-6">
+          <div className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-[var(--game-secondary)]/20 via-[var(--game-secondary)]/10 to-[var(--game-secondary)]/20 backdrop-blur-sm rounded-full border border-[var(--game-secondary)]/30 mb-6">
             <span className="text-lg sm:text-xl md:text-2xl text-white/95 font-semibold">
-              Select the type of business empire you want to build
+              View top players by industry
             </span>
           </div>
 
           {/* Decorative line below subtitle */}
           <div className="flex items-center justify-center gap-4">
-            <div className="h-1 w-16 sm:w-24 bg-gradient-to-r from-transparent via-[var(--game-primary)] to-[var(--game-primary)] rounded-full" />
-            <div className="w-3 h-3 bg-[var(--game-primary)] rounded-full shadow-[0_0_10px_rgba(35,170,246,0.5)]" />
-            <div className="h-1 w-16 sm:w-24 bg-gradient-to-l from-transparent via-[var(--game-primary)] to-[var(--game-primary)] rounded-full" />
+            <div className="h-1 w-16 sm:w-24 bg-gradient-to-r from-transparent via-[var(--game-secondary)] to-[var(--game-secondary)] rounded-full" />
+            <div className="w-3 h-3 bg-[var(--game-secondary)] rounded-full shadow-[0_0_10px_rgba(255,215,0,0.5)]" />
+            <div className="h-1 w-16 sm:w-24 bg-gradient-to-l from-transparent via-[var(--game-secondary)] to-[var(--game-secondary)] rounded-full" />
           </div>
         </header>
 
@@ -99,7 +106,7 @@ export default function SelectIndustry({ industries, onIndustrySelect }: SelectI
             >
               <IndustryCard
                 industry={industry}
-                onClick={() => onIndustrySelect(industry)}
+                onClick={() => handleIndustrySelect(industry)}
               />
             </div>
           ))}
@@ -108,24 +115,15 @@ export default function SelectIndustry({ industries, onIndustrySelect }: SelectI
         {/* Navigation Buttons - Game Style */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pb-6 sm:pb-8">
           <Link
-            href="/leaderboard"
-            className="inline-flex items-center gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-[var(--game-secondary)]/80 via-[var(--game-secondary)]/60 to-[var(--game-secondary)]/80 backdrop-blur-md border-2 border-[var(--game-secondary)]/50 hover:border-[var(--game-secondary)] hover:bg-gradient-to-r hover:from-[var(--game-secondary)]/30 hover:via-[var(--game-secondary)]/20 hover:to-[var(--game-secondary)]/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.3)] active:scale-95 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-[var(--game-secondary)]/30"
-            aria-label="View leaderboard"
-          >
-            <span className="text-xl sm:text-2xl">🏆</span>
-            <span className="text-base sm:text-lg">Leaderboard</span>
-          </Link>
-          <Link
-            href="/"
+            href="/select-industry"
             className="inline-flex items-center gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-[var(--bg-secondary)]/80 via-[var(--bg-tertiary)]/80 to-[var(--bg-secondary)]/80 backdrop-blur-md border-2 border-[var(--border-primary)] hover:border-[var(--game-primary)] hover:bg-gradient-to-r hover:from-[var(--game-primary)]/20 hover:via-[var(--game-primary-dark)]/20 hover:to-[var(--game-primary)]/20 hover:shadow-[0_0_20px_rgba(35,170,246,0.3)] active:scale-95 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-[var(--game-primary)]/30"
-            aria-label="Return to home page"
+            aria-label="Back to industries"
           >
             <span className="text-xl sm:text-2xl">←</span>
-            <span className="text-base sm:text-lg">Back to Home</span>
+            <span className="text-base sm:text-lg">Back to Industries</span>
           </Link>
         </div>
       </div>
-
     </div>
   );
 }

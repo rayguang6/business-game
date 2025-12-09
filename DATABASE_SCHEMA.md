@@ -343,6 +343,32 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 
 ---
 
+### `leaderboard_entries`
+**Purpose:** Store game results for leaderboard display, organized by industry
+
+**Primary Key:** `id` (TEXT)
+
+**Columns:**
+- `id` (TEXT, PRIMARY KEY) - UUID (auto-generated)
+- `industry_id` (TEXT, NOT NULL) - Industry identifier (references industries.id)
+- `username` (TEXT, NOT NULL) - Player username
+- `cash` (NUMERIC, NOT NULL) - Final cash amount when game ended
+- `leveraged_time` (NUMERIC, NULL) - Final leveraged time (for future use)
+- `game_over_reason` (TEXT, NULL) - Reason game ended: 'victory', 'cash', 'time', or null
+- `current_month` (INTEGER, NULL) - Month when game ended
+- `created_at` (TIMESTAMPTZ, NOT NULL) - Timestamp of entry (auto-generated)
+
+**Indexes:**
+- Index on `(industry_id, cash DESC)` - For efficient leaderboard queries sorted by cash
+- Index on `(industry_id, created_at DESC)` - For efficient queries sorted by date
+
+**Notes:**
+- Entries are saved when a game ends (victory or loss)
+- Leaderboard is displayed per industry, sorted by cash in descending order
+- Leveraged time column is reserved for future use
+
+---
+
 ## Migration History
 
 1. **006_create_unified_simulation_config.sql** - Created unified `simulation_config` table, migrated data from old tables
@@ -352,6 +378,7 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 5. **010_convert_spawn_interval_to_leads_per_month.sql** - Converts spawn interval to leads per month in business_stats
 6. **011_add_order_to_collections.sql** - Adds `order` column to `upgrades`, `marketing_campaigns`, `staff_roles`, and `services` tables for display ordering
 7. **012_add_categories.sql** - Creates `categories` table and adds `category_id` foreign keys to `upgrades` and `marketing_campaigns` tables
+8. **013_create_leaderboard_entries.sql** - Creates `leaderboard_entries` table for storing game results per industry
 
 ---
 
