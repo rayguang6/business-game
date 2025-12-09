@@ -144,14 +144,8 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
       needsTime = levelConfig.timeCost !== undefined && levelConfig.timeCost > 0;
       cost = levelConfig.cost;
       timeCost = levelConfig.timeCost;
-      // Show effects for all levels up to next level (accumulated)
-      effects = [];
-      for (let l = 1; l <= nextLevelNumber; l++) {
-        const lvlCfg = campaign.levels?.find(lev => lev.level === l) || campaign.levels?.[l - 1];
-        if (lvlCfg) {
-          effects.push(...lvlCfg.effects);
-        }
-      }
+      // Show effects for the next level only
+      effects = levelConfig.effects;
     }
   } else if (!isLeveled) {
     // Unlimited campaign
