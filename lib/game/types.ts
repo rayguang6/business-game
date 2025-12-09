@@ -24,7 +24,12 @@ export interface BusinessStats {
   serviceCapacity: number;
   expGainPerHappyCustomer: number; // Previously: skillLevelGainPerHappyCustomer
   expLossPerAngryCustomer: number; // Previously: skillLevelLossPerAngryCustomer
-  expPerLevel: number; // Experience points required per level
+  expPerLevel: number | number[]; // Experience points required per level
+  // If number: flat EXP requirement for all levels (backward compatible)
+  // If array: EXP required to progress from level N to level N+1
+  //   array[0] = EXP needed to go from level 1 to 2
+  //   array[1] = EXP needed to go from level 2 to 3
+  //   etc.
   // baseHappyProbability removed - customers are happy/angry based on patience, not probability
   eventTriggerSeconds?: number[];
   serviceRevenueMultiplier: number;

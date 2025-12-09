@@ -8,6 +8,7 @@ import {
   fetchFlags,
   fetchConditions,
   fetchStaffData,
+  fetchLevelRewards,
 } from '@/lib/server/actions/adminActions';
 import type { IndustryTab } from './routing';
 
@@ -58,6 +59,12 @@ export async function prefetchTabData(queryClient: QueryClient, industryId: stri
       await queryClient.prefetchQuery({
         queryKey: ['staff', industryId],
         queryFn: () => fetchStaffData(industryId),
+      });
+      break;
+    case 'level-rewards':
+      await queryClient.prefetchQuery({
+        queryKey: ['levelRewards', industryId],
+        queryFn: () => fetchLevelRewards(industryId),
       });
       break;
     case 'industry-config':

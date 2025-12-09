@@ -9,6 +9,7 @@ import { fetchCategoriesForIndustry, upsertCategoryForIndustry, deleteCategoryBy
 import { fetchStaffDataForIndustry, upsertStaffRole, deleteStaffRole, upsertStaffPreset, deleteStaffPreset } from '@/lib/data/staffRepository';
 import { fetchFlagsForIndustry, upsertFlagForIndustry, deleteFlagById } from '@/lib/data/flagRepository';
 import { fetchConditionsForIndustry, upsertConditionForIndustry, deleteConditionById } from '@/lib/data/conditionRepository';
+import { fetchLevelRewardsForIndustry, fetchLevelReward as fetchLevelRewardFromRepo, upsertLevelRewardForIndustry, deleteLevelRewardById, type LevelReward } from '@/lib/data/levelRewardsRepository';
 // Import unified simulation config repository
 import { fetchSimulationConfig, upsertSimulationConfig } from '@/lib/data/simulationConfigRepository';
 import { fetchAllMetricDisplayConfigs, fetchIndustrySpecificMetricDisplayConfigs, upsertMetricDisplayConfig, deleteMetricDisplayConfig } from '@/lib/data/metricDisplayConfigRepository';
@@ -104,6 +105,23 @@ export async function upsertUpgrade(industryId: IndustryId, upgrade: UpgradeDefi
 
 export async function deleteUpgrade(id: string) {
   return await deleteUpgradeById(id);
+}
+
+// Level Rewards Actions
+export async function fetchLevelRewards(industryId: IndustryId) {
+  return await fetchLevelRewardsForIndustry(industryId);
+}
+
+export async function fetchLevelReward(industryId: IndustryId, level: number) {
+  return await fetchLevelRewardFromRepo(industryId, level);
+}
+
+export async function upsertLevelReward(industryId: IndustryId, levelReward: LevelReward) {
+  return await upsertLevelRewardForIndustry(industryId, levelReward);
+}
+
+export async function deleteLevelReward(id: string) {
+  return await deleteLevelRewardById(id);
 }
 
 // Event Actions

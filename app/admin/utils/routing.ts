@@ -20,10 +20,11 @@ export const enum AdminTabEnum {
   Events = 'events',
   Flags = 'flags',
   Conditions = 'conditions',
+  LevelRewards = 'level-rewards',
 }
 
 export type AdminTab = `${AdminTabEnum}`;
-export type IndustryTab = AdminTabEnum.Services | AdminTabEnum.Roles | AdminTabEnum.Presets | AdminTabEnum.Categories | AdminTabEnum.Upgrades | AdminTabEnum.Flags | AdminTabEnum.Conditions | AdminTabEnum.Events | AdminTabEnum.Marketing | AdminTabEnum.IndustryConfig | AdminTabEnum.IndustryMetricDisplay;
+export type IndustryTab = AdminTabEnum.Services | AdminTabEnum.Roles | AdminTabEnum.Presets | AdminTabEnum.Categories | AdminTabEnum.Upgrades | AdminTabEnum.Flags | AdminTabEnum.Conditions | AdminTabEnum.Events | AdminTabEnum.Marketing | AdminTabEnum.IndustryConfig | AdminTabEnum.IndustryMetricDisplay | AdminTabEnum.LevelRewards;
 export type GlobalTab = AdminTabEnum.Industries | AdminTabEnum.Global | AdminTabEnum.GlobalMetricDisplay;
 
 // All valid industry tab routes
@@ -33,10 +34,11 @@ const INDUSTRY_TAB_ROUTES: IndustryTab[] = [
   AdminTabEnum.Presets,
   AdminTabEnum.Categories,
   AdminTabEnum.Upgrades,
+  AdminTabEnum.Marketing,
+  AdminTabEnum.Events,
+  AdminTabEnum.LevelRewards,
   AdminTabEnum.Flags,
   AdminTabEnum.Conditions,
-  AdminTabEnum.Events,
-  AdminTabEnum.Marketing,
   AdminTabEnum.IndustryConfig,
   AdminTabEnum.IndustryMetricDisplay,
 ];

@@ -369,6 +369,38 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 
 ---
 
+### `level_rewards`
+**Purpose:** Store level-up rewards per industry (rewards start at Level 2, Level 1 is starting level)
+
+**Primary Key:** `id` (TEXT)
+
+**Columns:**
+- `id` (TEXT, PRIMARY KEY) - UUID (auto-generated)
+- `industry_id` (TEXT, NOT NULL) - Industry identifier (references industries.id)
+- `level` (INTEGER, NOT NULL) - Level number (2, 3, 4, ...). Level 1 is starting level with no reward
+- `title` (TEXT, NOT NULL) - Level title (e.g., "Early Skill Builder", "Solid Beginner")
+- `narrative` (TEXT, optional) - Narrative description shown to player
+- `effects` (JSONB, NOT NULL, DEFAULT '[]') - Array of effect objects (same format as upgrade_levels.effects)
+- `unlocks_flags` (JSONB, DEFAULT '[]') - Array of flag IDs to set when this level is reached (e.g., ["unlock_medium_jobs"])
+- `created_at` (TIMESTAMPTZ, NOT NULL) - Creation timestamp
+- `updated_at` (TIMESTAMPTZ, NOT NULL) - Last update timestamp
+
+**Unique Constraint:**
+- `(industry_id, level)` - Ensures one reward per level per industry
+
+**Indexes:**
+- Unique index on `(industry_id, level)` for efficient lookups
+- Index on `industry_id` for efficient industry queries
+- Index on `level` for efficient level queries
+
+**Notes:**
+- Rewards start at Level 2 (Level 1 is the starting level with no reward)
+- When a player levels up, the corresponding reward's effects are automatically applied
+- Flags specified in `unlocks_flags` are set when the level is reached
+- Effects use the same format as upgrade levels (see `upgrade_levels.effects`)
+
+---
+
 ## Migration History
 
 1. **006_create_unified_simulation_config.sql** - Created unified `simulation_config` table, migrated data from old tables
@@ -379,6 +411,7 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 6. **011_add_order_to_collections.sql** - Adds `order` column to `upgrades`, `marketing_campaigns`, `staff_roles`, and `services` tables for display ordering
 7. **012_add_categories.sql** - Creates `categories` table and adds `category_id` foreign keys to `upgrades` and `marketing_campaigns` tables
 8. **013_create_leaderboard_entries.sql** - Creates `leaderboard_entries` table for storing game results per industry
+9. **014_create_level_rewards.sql** - Creates `level_rewards` table for storing level-up rewards per industry
 
 ---
 

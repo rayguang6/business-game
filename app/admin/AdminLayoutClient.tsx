@@ -35,6 +35,7 @@ const TAB_CONFIG = {
   [AdminTabEnum.Upgrades]: { label: 'Upgrades', icon: '⚙️' },
   [AdminTabEnum.Marketing]: { label: 'Marketing', icon: '📢' },
   [AdminTabEnum.Events]: { label: 'Events', icon: '📅' },
+  [AdminTabEnum.LevelRewards]: { label: 'Level Rewards', icon: '⭐' },
   [AdminTabEnum.Flags]: { label: 'Flags', icon: '🏁' },
   [AdminTabEnum.Conditions]: { label: 'Conditions', icon: '📊' },
 } as const;
@@ -55,6 +56,7 @@ const INDUSTRY_TABS: IndustryTab[] = [
   AdminTabEnum.Upgrades,               // Mechanics
   AdminTabEnum.Marketing,              // Mechanics
   AdminTabEnum.Events,                 // Mechanics
+  AdminTabEnum.LevelRewards,           // Mechanics
   AdminTabEnum.Flags,                  // System
   AdminTabEnum.Conditions,             // System
 ];

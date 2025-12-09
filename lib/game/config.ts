@@ -436,10 +436,36 @@ export function calculateMonthlyRevenuePotential(
   };
 }
 
-export function getExpPerLevel(industryId: IndustryId = DEFAULT_INDUSTRY_ID): number {
+/**
+ * Get EXP per level configuration for an industry
+ * @param industryId - Industry ID
+ * @returns Either a number (flat EXP per level) or array (EXP per level progression)
+ */
+export function getExpPerLevel(industryId: IndustryId = DEFAULT_INDUSTRY_ID): number | number[] {
   const stats = getBusinessStats(industryId);
-  if (!stats) throw new Error('Business stats not loaded');
+  // Return default value if stats aren't loaded yet (instead of throwing)
+  // This allows components to render safely while config is loading
+  if (!stats) return 200; // Default fallback
   return stats.expPerLevel ?? 200; // Default fallback
+}
+
+/**
+ * Get EXP required for a specific level progression
+ * @param industryId - Industry ID
+ * @param level - Current level (1-indexed)
+ * @returns EXP needed to go from current level to next level
+ */
+export function getExpRequiredForLevel(industryId: IndustryId, level: number): number {
+  const expPerLevel = getExpPerLevel(industryId);
+  if (typeof expPerLevel === 'number') {
+    return expPerLevel;
+  } else {
+    const index = level - 1;
+    if (index >= expPerLevel.length) {
+      return expPerLevel[expPerLevel.length - 1] ?? 200;
+    }
+    return expPerLevel[index] ?? 200;
+  }
 }
 
 export const getUiConfig = () => {

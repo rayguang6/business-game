@@ -236,11 +236,11 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
                 }`}>
                 {level}/{maxLevel}
               </div>
-              {level === 0 && (
+              {/* {level === 0 && (
                 <div className="text-micro text-amber-600 dark:text-amber-400 font-medium">
                   Effects may be active
                 </div>
-              )}
+              )} */}
             </div>
           )}
         </div>
@@ -310,7 +310,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
                 ? 'text-green-600 dark:text-green-400'
                 : 'text-red-600 dark:text-red-400'
             }`}>
-              <span className="text-sm">💎</span>
+              <span className="text-sm">💵</span>
               <span className="text-ultra-sm font-bold">
                 ${cost.toLocaleString()}
               </span>

@@ -10,8 +10,10 @@ import {
   getGlobalMovementConfig,
   secondsToTicks,
   getLeadDialoguesForIndustry,
+  getBusinessStats,
 } from '@/lib/game/config';
 import { IndustryId, GridPosition } from '@/lib/game/types';
+import { effectManager, GameMetric } from '@/lib/game/effectManager';
 
 // Types
 export enum LeadStatus {
@@ -326,6 +328,7 @@ export interface GenerateLeadsOptions {
     leads: Lead[];
     leadProgress: number;
     conversionRate: number;
+    selectedIndustry?: { id: string } | null;
   };
   updateLeadProgress: (progress: number) => void;
 }
@@ -357,8 +360,15 @@ export function generateLeads(
         const currentLeads = currentState.leads || [];
         updateLeads([...currentLeads, lead]);
 
-        // Update conversion progress
-        const conversionRate = currentState.conversionRate || 10;
+        // Calculate conversion rate with effects applied (same as mechanics.ts)
+        // This ensures we use the actual calculated value, not just the base state value
+        const industryId = (currentState.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+        const baseStats = getBusinessStats(industryId);
+        // Use calculated conversion rate with effects, or fall back to state value if baseStats not available
+        // Note: If baseStats.conversionRate is 0, it will use 0 (no fallback to 10)
+        const baseConversionRate = baseStats?.conversionRate ?? currentState.conversionRate ?? 0;
+        const conversionRate = effectManager.calculate(GameMetric.ConversionRate, baseConversionRate);
+        
         const currentProgress = currentState.leadProgress || 0;
         const newProgress = currentProgress + conversionRate;
 

@@ -15,9 +15,11 @@ import {
 } from '@/lib/config/categoryConfig';
 import { getRevenueDisplayLabel, getExpenseDisplayLabel } from '@/lib/utils/financialTracking';
 import { SourceType } from '@/lib/config/sourceTypes';
-import { DEFAULT_INDUSTRY_ID, getStartingTime, getBusinessMetrics } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getStartingTime, getBusinessMetrics, getBusinessStats, getExpPerLevel } from '@/lib/game/config';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import type { IndustryId } from '@/lib/game/types';
+import { LevelCard } from '@/app/game/components/ui/LevelCard';
+import { getLevel } from '@/lib/store/types';
 
 export function HomeTab() {
   const {
@@ -67,6 +69,20 @@ export function HomeTab() {
   } catch (error) {
     // If config access fails, use default
     console.warn('[HomeTab] Error accessing config, using defaults', error);
+  }
+  
+  // Safely get exp per level - handle case when config isn't loaded yet
+  let expPerLevel: number | number[] = 200; // Default fallback
+  try {
+    if (configStatus === 'ready') {
+      const businessStats = getBusinessStats(industryId);
+      if (businessStats) {
+        expPerLevel = getExpPerLevel(industryId);
+      }
+    }
+  } catch (error) {
+    // If config access fails, use default
+    console.warn('[HomeTab] Error accessing expPerLevel config, using default', error);
   }
   
   const totalTime = metrics.myTime + metrics.leveragedTime;
@@ -152,7 +168,7 @@ export function HomeTab() {
     profit: currentMonthProjectedProfit,
     exp: metrics.exp,
     expChange: 0,
-    level: Math.floor(metrics.exp / 100),
+    level: getLevel(metrics.exp, expPerLevel),
     levelChange: 0,
     revenueBreakdown: monthlyRevenueDetails,
     expenseBreakdown: operatingExpenses,
@@ -170,6 +186,9 @@ export function HomeTab() {
 
   return (
     <div className="space-y-4">
+      {/* Level Card - At Very Top */}
+      <LevelCard />
+      
       {/* Lifetime Totals - Leads, Customers, Time - At Top */}
       <div className="grid grid-cols-3 gap-3">
         {/* Total Leads Card */}

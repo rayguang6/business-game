@@ -50,8 +50,8 @@ export enum EffectType {
 
 // Who created this effect (for debugging and removal)
 export interface EffectSource {
-  category: 'upgrade' | 'marketing' | 'staff' | 'event';
-  id: string;      // e.g., "extra_treatment_room" or "staff_123"
+  category: 'upgrade' | 'marketing' | 'staff' | 'event' | 'level';
+  id: string;      // e.g., "extra_treatment_room" or "staff_123" or "level-2"
   name: string;    // e.g., "Extra Treatment Room" (for UI)
 }
 

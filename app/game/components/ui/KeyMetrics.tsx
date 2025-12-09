@@ -9,7 +9,7 @@ import { useConfigStore } from '@/lib/store/configStore';
 import { DEFAULT_INDUSTRY_ID, getStartingTime, getBusinessMetrics, getBusinessStats } from '@/lib/game/config';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import type { IndustryId } from '@/lib/game/types';
-import { getLevel, getLevelProgress } from '@/lib/store/types';
+import { getLevel, getLevelProgress, getExpRequiredForCurrentLevel } from '@/lib/store/types';
 import { getExpPerLevel } from '@/lib/game/config';
 import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
 import Image from 'next/image';
@@ -96,7 +96,7 @@ export function KeyMetrics() {
   
   // Show time metric if startingTime is configured or if time > 0
   let startingTime = 0;
-  let expPerLevel = 200; // Default fallback
+  let expPerLevel: number | number[] = 200; // Default fallback
   if (isConfigReady) {
     try {
       startingTime = getStartingTime(industryId);
@@ -128,7 +128,7 @@ export function KeyMetrics() {
       .map(def => {
         const merged = getMergedDefinition(def.id);
         let value = '';
-        let icon = '💎';
+        let icon = '💵';
         let image: string | null = null;
         let color = 'text-green-400';
         let key = def.id;
@@ -142,18 +142,22 @@ export function KeyMetrics() {
         switch (def.id) {
           case GameMetric.Cash:
             value = `${metrics.cash.toLocaleString()}${unit}`;
-            icon = '💎';
+            icon = '💵';
             image = iconPath || '/images/icons/finance.png'; // Use DB iconPath with fallback
             color = 'text-green-400';
             feedback = feedbackByMetric.cash;
             break;
-          case GameMetric.Exp:
-            value = `Level ${getLevel(metrics.exp, expPerLevel)} (${getLevelProgress(metrics.exp, expPerLevel)}/${expPerLevel}${unit})`;
-            icon = '💎';
+          case GameMetric.Exp: {
+            const currentLevel = getLevel(metrics.exp, expPerLevel);
+            const currentLevelProgress = getLevelProgress(metrics.exp, expPerLevel);
+            const expRequiredForCurrentLevel = getExpRequiredForCurrentLevel(metrics.exp, expPerLevel);
+            value = `Level ${currentLevel} (${currentLevelProgress}/${expRequiredForCurrentLevel}${unit})`;
+            icon = '💵';
             image = iconPath || '/images/icons/marketing.png'; // Use DB iconPath with fallback
             color = 'text-yellow-400';
             feedback = feedbackByMetric.exp;
             break;
+          }
           case GameMetric.MyTime: {
             // Use capacity from metrics (never changes for myTime, equals startingTime)
             const maxMyTime = metrics.myTimeCapacity;
@@ -224,7 +228,7 @@ export function KeyMetrics() {
         <div className="flex items-center bg-black/65 py-0.5 sm:py-0.5 md:py-1 px-0.5 sm:px-0.5 md:px-1.5 rounded relative w-full min-w-0">
           {/* Icon positioned outside from the left with overflow design */}
           <div className="absolute -left-1 sm:-left-1.5 md:-left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 md:w-6 md:h-6 rounded-full flex items-center justify-center z-10 overflow-hidden">
-            <span className="text-white text-micro sm:text-ultra-sm md:text-sm">💎</span>
+            <span className="text-white text-micro sm:text-ultra-sm md:text-sm">💵</span>
           </div>
 
           <div className="flex flex-col min-w-0 flex-1 pl-0.5 sm:pl-1 md:pl-2">

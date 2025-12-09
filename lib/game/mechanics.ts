@@ -328,7 +328,7 @@ function processMonthTransition({
   };
 
   const previousExp = monthlyHistory.length > 0 ? monthlyHistory[monthlyHistory.length - 1].exp : 0;
-  const previousLevel = monthlyHistory.length > 0 ? monthlyHistory[monthlyHistory.length - 1].level : 0;
+  const previousLevel = monthlyHistory.length > 0 ? monthlyHistory[monthlyHistory.length - 1].level : 1; // Level 1 is starting level
   const expPerLevel = getExpPerLevel(industryId);
   const currentLevel = getLevel(updatedMetrics.exp, expPerLevel);
 

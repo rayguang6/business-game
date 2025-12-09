@@ -160,17 +160,110 @@ export interface GameState {
 
 // Helper functions for EXP/level system
 // Level 1 is achieved at 0 EXP (starting level)
-// Formula: Math.floor(exp / expPerLevel) + 1
-export function getLevel(exp: number, expPerLevel: number = 200): number {
+
+/**
+ * Calculate cumulative EXP required to reach a specific level
+ * @param level - Target level (1-indexed)
+ * @param expPerLevel - Either a number (flat EXP per level) or array (EXP per level progression)
+ * @returns Cumulative EXP needed to reach that level
+ */
+function getCumulativeExpForLevel(level: number, expPerLevel: number | number[]): number {
+  if (level <= 1) return 0;
+  
+  if (typeof expPerLevel === 'number') {
+    // Flat EXP per level: Level N requires (N-1) * expPerLevel EXP
+    return (level - 1) * expPerLevel;
+  } else {
+    // Array-based: sum up EXP requirements for each level up to target
+    const cumulativeExp = expPerLevel.slice(0, level - 1).reduce((sum, exp) => sum + exp, 0);
+    return cumulativeExp;
+  }
+}
+
+/**
+ * Get the EXP requirement for progressing from a specific level to the next
+ * @param level - Current level (1-indexed)
+ * @param expPerLevel - Either a number (flat EXP per level) or array (EXP per level progression)
+ * @returns EXP needed to go from current level to next level
+ */
+function getExpForLevelProgression(level: number, expPerLevel: number | number[]): number {
+  if (typeof expPerLevel === 'number') {
+    return expPerLevel;
+  } else {
+    // Level 1 -> 2 uses array[0], Level 2 -> 3 uses array[1], etc.
+    const index = level - 1;
+    // If array doesn't have that index, use the last value in array (repeat for high levels)
+    if (index >= expPerLevel.length) {
+      return expPerLevel[expPerLevel.length - 1] ?? 200; // Fallback to 200 if array is empty
+    }
+    return expPerLevel[index];
+  }
+}
+
+/**
+ * Get the current level based on EXP
+ * @param exp - Current experience points
+ * @param expPerLevel - Either a number (flat EXP per level) or array (EXP per level progression)
+ * @returns Current level (1-indexed, minimum 1)
+ */
+export function getLevel(exp: number, expPerLevel: number | number[] = 200): number {
   if (!Number.isFinite(exp) || exp < 0) return 1; // Minimum level is 1
-  return Math.floor(exp / expPerLevel) + 1;
+  
+  if (typeof expPerLevel === 'number') {
+    // Flat EXP per level: original formula
+    return Math.floor(exp / expPerLevel) + 1;
+  } else {
+    // Array-based: find which level this EXP reaches
+    let cumulativeExp = 0;
+    for (let level = 2; level <= expPerLevel.length + 1; level++) {
+      cumulativeExp += expPerLevel[level - 2] ?? 200; // level-2 because level 2 uses index 0
+      if (exp < cumulativeExp) {
+        return level - 1; // Return previous level
+      }
+    }
+    // EXP exceeds all defined levels - calculate using last value
+    if (expPerLevel.length === 0) return 1;
+    const lastExpPerLevel = expPerLevel[expPerLevel.length - 1];
+    const expForDefinedLevels = cumulativeExp;
+    const remainingExp = exp - expForDefinedLevels;
+    const additionalLevels = Math.floor(remainingExp / lastExpPerLevel);
+    return expPerLevel.length + 1 + additionalLevels;
+  }
 }
 
-export function getLevelProgress(exp: number, expPerLevel: number = 200): number {
+/**
+ * Get progress within current level (EXP in current level, not total EXP)
+ * @param exp - Current experience points
+ * @param expPerLevel - Either a number (flat EXP per level) or array (EXP per level progression)
+ * @returns EXP progress within current level (0 to exp needed for next level)
+ */
+export function getLevelProgress(exp: number, expPerLevel: number | number[] = 200): number {
   if (!Number.isFinite(exp) || exp < 0) return 0;
-  return exp % expPerLevel;
+  
+  const currentLevel = getLevel(exp, expPerLevel);
+  const expRequiredForCurrentLevel = getCumulativeExpForLevel(currentLevel, expPerLevel);
+  return exp - expRequiredForCurrentLevel;
 }
 
-export function getExpToNextLevel(exp: number, expPerLevel: number = 200): number {
-  return expPerLevel - getLevelProgress(exp, expPerLevel);
+/**
+ * Get EXP remaining to reach next level
+ * @param exp - Current experience points
+ * @param expPerLevel - Either a number (flat EXP per level) or array (EXP per level progression)
+ * @returns EXP needed to reach next level
+ */
+export function getExpToNextLevel(exp: number, expPerLevel: number | number[] = 200): number {
+  const currentLevel = getLevel(exp, expPerLevel);
+  const expForNextLevel = getCumulativeExpForLevel(currentLevel + 1, expPerLevel);
+  return Math.max(0, expForNextLevel - exp);
+}
+
+/**
+ * Get the EXP requirement for progressing from current level to next
+ * @param exp - Current experience points
+ * @param expPerLevel - Either a number (flat EXP per level) or array (EXP per level progression)
+ * @returns EXP needed to go from current level to next level
+ */
+export function getExpRequiredForCurrentLevel(exp: number, expPerLevel: number | number[] = 200): number {
+  const currentLevel = getLevel(exp, expPerLevel);
+  return getExpForLevelProgression(currentLevel, expPerLevel);
 }

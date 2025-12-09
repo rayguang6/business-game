@@ -280,7 +280,7 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
                   ? 'text-green-600 dark:text-green-400'
                   : 'text-red-600 dark:text-red-400'
               }`}>
-                <span className="text-sm">💎</span>
+                <span className="text-sm"></span>
                 <span className="text-ultra-sm font-bold">
                   ${upgradeCost.toLocaleString()}
                 </span>

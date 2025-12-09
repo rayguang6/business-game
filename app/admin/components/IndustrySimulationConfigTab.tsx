@@ -6,6 +6,7 @@ import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
 import { getMetricDefinition, calculateCustomersPerMonth } from '@/lib/game/metrics/registry';
 import { GameMetric } from '@/lib/game/effectManager';
 import { NumberInput } from './NumberInput';
+import { ExpPerLevelConfig } from './ExpPerLevelConfig';
 
 interface IndustrySimulationConfigTabProps {
   industryName: string;
@@ -640,11 +641,9 @@ export function IndustrySimulationConfigTab({
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">EXP Required Per Level</label>
-              <NumberInput
-                min="0"
-                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
-                value={getValue(businessStats?.expPerLevel)}
-                onChange={(e) => updateStats({ expPerLevel: e.target.value === '' ? undefined : Number(e.target.value) })}
+              <ExpPerLevelConfig
+                value={businessStats?.expPerLevel}
+                onChange={(value) => updateStats({ expPerLevel: value })}
               />
             </div>
             <div>

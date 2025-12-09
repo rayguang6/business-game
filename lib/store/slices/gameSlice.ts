@@ -6,7 +6,7 @@ import { SourceType, SourceInfo } from '@/lib/config/sourceTypes';
 import { mapSourceTypeToRevenueCategory, mapSourceTypeToOneTimeCostCategory, ensureValidSourceInfo, SourceHelpers } from '@/lib/utils/financialTracking';
 import { Lead } from '@/lib/features/leads';
 import { getInitialMetrics } from './metricsSlice';
-import { DEFAULT_INDUSTRY_ID, getUpgradesForIndustry, getWinCondition, getLoseCondition, getStartingTime, getBusinessStats, getBusinessMetrics } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getUpgradesForIndustry, getWinCondition, getLoseCondition, getStartingTime, getBusinessStats, getBusinessMetrics, getExpPerLevel } from '@/lib/game/config';
 import { GameStore } from '../gameStore';
 import { IndustryId } from '@/lib/game/types';
 import { effectManager } from '@/lib/game/effectManager';
@@ -21,6 +21,8 @@ import { DynamicValueEvaluator } from '@/lib/game/dynamicValueEvaluator';
 import { createMainCharacter, updateMainCharacterName, type MainCharacter } from '@/lib/features/mainCharacter';
 import { getLayoutConfig } from '@/lib/game/config';
 import { getStaffPositions } from '@/lib/game/positioning';
+import { getLevel } from '@/lib/store/types';
+import { checkAndApplyLevelUp } from '@/lib/features/levelRewards';
 
 /**
  * Load username from localStorage (if available)
@@ -82,6 +84,7 @@ const getInitialGameState = (
     eventSequenceIndex: 0,
     username: null,
     mainCharacter: null, // Will be created from username when game starts
+    previousLevel: 1, // Initialize to Level 1 (starting level)
     ...(keepIndustry ? {} : { selectedIndustry: null }),
   };
 };
@@ -126,6 +129,9 @@ export interface GameSlice {
   // Event sequence tracking
   eventSequenceIndex: number;
 
+  // Level tracking
+  previousLevel: number; // Track previous level for level-up detection
+
   startGame: () => void;
   pauseGame: () => void;
   unpauseGame: () => void;
@@ -133,7 +139,7 @@ export interface GameSlice {
   tickGame: () => void;
   applyCashChange: (amount: number) => void;
   applyTimeChange: (amount: number) => void;
-  applyExpChange: (amount: number) => void; // Previously: applySkillLevelChange
+  applyExpChange: (amount: number) => Promise<void>; // Previously: applySkillLevelChange
   // Record revenue with source tracking
   // Supports both: recordEventRevenue(amount, label) and recordEventRevenue(amount, sourceInfo, label?)
   recordEventRevenue: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => void;
@@ -179,6 +185,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     mainCharacter: null, // Will be created when game starts or username is set
     flags: {},
     eventSequenceIndex: 0,
+    previousLevel: 1, // Initialize to Level 1 (starting level)
 
     // Leads
     leads: [],
@@ -289,6 +296,11 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       })),
     });
     
+    // Calculate initial level from starting EXP
+    const initialMetrics = initialState.metrics;
+    const expPerLevel = getExpPerLevel(industryId);
+    const initialLevel = getLevel(initialMetrics.exp, expPerLevel);
+    
     set({
       ...initialState,
       isGameStarted: true, // Override to start the game
@@ -297,6 +309,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       mainCharacter,
       username, // Ensure username is set (even if it's 'Founder')
       hiredStaff: staffWithPositions, // Update staff with initialized positions
+      previousLevel: initialLevel, // Initialize previousLevel based on starting EXP
     });
   },
   
@@ -354,12 +367,20 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     }
     
     // Reset everything to initial state including industry selection
+    const currentState = get();
+    const currentIndustryId = (currentState.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+    const resetState = getInitialGameState(DEFAULT_INDUSTRY_ID, false);
+    const resetMetrics = resetState.metrics;
+    const expPerLevel = getExpPerLevel(DEFAULT_INDUSTRY_ID);
+    const resetLevel = getLevel(resetMetrics.exp, expPerLevel);
+    
     set({
-      ...getInitialGameState(DEFAULT_INDUSTRY_ID, false), // keepIndustry = false
+      ...resetState,
       monthlyExpenses: getMonthlyBaseExpenses(DEFAULT_INDUSTRY_ID),
       monthlyExpenseAdjustments: 0,
       username: null, // Clear username on full reset
-      mainCharacter: null, // Clear main character on full reset
+      mainCharacter: null, // Clear main character on reset
+      previousLevel: resetLevel, // Initialize previousLevel based on starting EXP
     });
   },
   
@@ -609,10 +630,55 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       checkGameOver();
     }
   },
-  applyExpChange: (amount: number) => {
+  applyExpChange: async (amount: number) => {
+    const state = get();
+    const previousExp = state.metrics.exp;
+    const newExp = state.metrics.exp + amount;
+    
     set((state) => ({
-      metrics: { ...state.metrics, exp: state.metrics.exp + amount },
+      metrics: { ...state.metrics, exp: newExp },
     }));
+    
+    // Check for level-up and apply rewards
+    const industryId = (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+    const gameTime = state.gameTime;
+    
+    try {
+      const levelReward = await checkAndApplyLevelUp(
+        newExp,
+        previousExp,
+        industryId,
+        get() as GameStore,
+        gameTime,
+      );
+      
+      // Update previousLevel after checking level-up
+      if (levelReward) {
+        const expPerLevel = getExpPerLevel(industryId);
+        const currentLevel = getLevel(newExp, expPerLevel);
+        set((state) => ({
+          previousLevel: currentLevel,
+        }));
+        
+        // TODO: Show level-up popup/card with levelReward info
+        // This will be implemented in the UI phase
+        console.log(`[LevelUp] Level ${levelReward.level} reached: ${levelReward.title}`);
+      } else {
+        // Still update previousLevel even if no reward (in case level changed but no reward configured)
+        const expPerLevel = getExpPerLevel(industryId);
+        const currentLevel = getLevel(newExp, expPerLevel);
+        const previousLevel = getLevel(previousExp, expPerLevel);
+        if (currentLevel > previousLevel) {
+          set((state) => ({
+            previousLevel: currentLevel,
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('[LevelRewards] Error checking level-up:', error);
+      // Continue game even if level-up check fails
+    }
+    
     const { checkGameOver } = get();
     if (checkGameOver) {
       checkGameOver();
