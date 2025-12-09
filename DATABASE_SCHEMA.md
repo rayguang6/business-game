@@ -353,7 +353,7 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 - `industry_id` (TEXT, NOT NULL) - Industry identifier (references industries.id)
 - `username` (TEXT, NOT NULL) - Player username
 - `cash` (NUMERIC, NOT NULL) - Final cash amount when game ended
-- `leveraged_time` (NUMERIC, NULL) - Final leveraged time (for future use)
+- `leveraged_time` (NUMERIC, NULL) - Final leveraged time capacity (efficiency metric - lower = more efficient)
 - `game_over_reason` (TEXT, NULL) - Reason game ended: 'victory', 'cash', 'time', or null
 - `current_month` (INTEGER, NULL) - Month when game ended
 - `created_at` (TIMESTAMPTZ, NOT NULL) - Timestamp of entry (auto-generated)
@@ -365,7 +365,7 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 **Notes:**
 - Entries are saved when a game ends (victory or loss)
 - Leaderboard is displayed per industry, sorted by cash in descending order
-- Leveraged time column is reserved for future use
+- Leveraged time capacity represents efficiency (lower capacity = more efficient team management)
 
 ---
 

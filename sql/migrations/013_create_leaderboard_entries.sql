@@ -22,6 +22,6 @@ COMMENT ON TABLE leaderboard_entries IS 'Stores game results for leaderboard dis
 COMMENT ON COLUMN leaderboard_entries.industry_id IS 'Industry identifier (references industries.id)';
 COMMENT ON COLUMN leaderboard_entries.username IS 'Player username';
 COMMENT ON COLUMN leaderboard_entries.cash IS 'Final cash amount when game ended';
-COMMENT ON COLUMN leaderboard_entries.leveraged_time IS 'Final leveraged time (for future use)';
+COMMENT ON COLUMN leaderboard_entries.leveraged_time IS 'Final leveraged time capacity (efficiency metric - lower = more efficient team size)';
 COMMENT ON COLUMN leaderboard_entries.game_over_reason IS 'Reason game ended: victory, cash, time, or null';
 COMMENT ON COLUMN leaderboard_entries.current_month IS 'Month when game ended';

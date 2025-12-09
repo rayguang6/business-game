@@ -145,6 +145,7 @@ export interface GameSlice {
   recordTimeSpent: (amount: number, labelOrSource?: string | SourceInfo, label?: string) => void;
   checkGameOver: () => void;
   checkWinConditionAtMonthEnd: () => void;
+  refreshLeveragedTimeFromEffects: () => void;
   
   // Username management
   setUsername: (username: string | null) => void;
@@ -759,16 +760,28 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
   checkGameOver: () => {
     const state = get();
     if (state.isGameOver) return; // Already game over
-    
+
     const { cash } = state.metrics;
     const industryId = (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
     const loseCondition = getLoseCondition(industryId);
     if (!loseCondition) return; // Can't check lose condition if not loaded
-    
+
     // Check lose conditions: **cash only**
     // Time can run out, but it no longer causes game over.
     if (cash <= loseCondition.cashThreshold) {
-      set({ isGameOver: true, gameOverReason: 'cash', isPaused: true });
+      // Refresh leveraged time from effects before ending game
+      const leveragedTimeBonus = effectManager.calculate(GameMetric.LeveragedTime, 0);
+
+      set({
+        metrics: {
+          ...state.metrics,
+          leveragedTime: leveragedTimeBonus, // Refresh to current effects
+          leveragedTimeCapacity: leveragedTimeBonus,
+        },
+        isGameOver: true,
+        gameOverReason: 'cash',
+        isPaused: true
+      });
       return;
     }
   },
@@ -794,6 +807,9 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
         getMonthlyBaseExpenses(industryId)
       );
 
+      // Refresh leveraged time from effects before ending game (matches month transition)
+      const leveragedTimeBonus = effectManager.calculate(GameMetric.LeveragedTime, 0);
+
       // Deduct current month's expenses and update total expenses
       const finalCash = Math.max(0, cash - currentMonthExpenses);
       const updatedTotalExpenses = state.metrics.totalExpenses + currentMonthExpenses;
@@ -803,6 +819,8 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
           ...state.metrics,
           cash: finalCash,
           totalExpenses: updatedTotalExpenses,
+          leveragedTime: leveragedTimeBonus, // Refresh leveraged time to current effects
+          leveragedTimeCapacity: leveragedTimeBonus, // Update capacity to match
         },
         isGameOver: true,
         gameOverReason: 'victory',
@@ -810,8 +828,36 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       });
     } else if (cash >= winCondition.cashTarget) {
       // Cash-based win - no additional expense deduction needed
-      set({ isGameOver: true, gameOverReason: 'victory', isPaused: true });
+      // Still refresh leveraged time from effects
+      const leveragedTimeBonus = effectManager.calculate(GameMetric.LeveragedTime, 0);
+
+      set({
+        metrics: {
+          ...state.metrics,
+          leveragedTime: leveragedTimeBonus, // Refresh leveraged time to current effects
+          leveragedTimeCapacity: leveragedTimeBonus, // Update capacity to match
+        },
+        isGameOver: true,
+        gameOverReason: 'victory',
+        isPaused: true
+      });
     }
+  },
+
+  refreshLeveragedTimeFromEffects: () => {
+    const state = get();
+    const industryId = (state.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+
+    // Calculate current leveraged time from all active effects
+    const leveragedTimeBonus = effectManager.calculate(GameMetric.LeveragedTime, 0);
+
+    set((state) => ({
+      metrics: {
+        ...state.metrics,
+        leveragedTime: leveragedTimeBonus,
+        leveragedTimeCapacity: leveragedTimeBonus,
+      },
+    }));
   },
 
   // Username management

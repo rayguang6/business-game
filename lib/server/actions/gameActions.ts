@@ -7,7 +7,7 @@ export async function saveGameResult(
   industryId: IndustryId,
   username: string,
   cash: number,
-  leveragedTime: number | null,
+  leveragedTimeCapacity: number | null, // Use capacity instead of current time
   gameOverReason: 'victory' | 'cash' | 'time' | null,
   currentMonth: number | null,
 ): Promise<{ success: boolean; message?: string }> {
@@ -15,7 +15,7 @@ export async function saveGameResult(
     industryId,
     username,
     cash,
-    leveragedTime,
+    leveragedTimeCapacity,
     gameOverReason,
     currentMonth,
   );

@@ -87,11 +87,11 @@ export default function SelectIndustry({ industries, onIndustrySelect }: SelectI
         </header>
 
         {/* Industry Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 md:gap-10 mb-12 sm:mb-14 md:mb-16">
+        <div className="flex flex-wrap justify-center gap-6 sm:gap-8 md:gap-10 mb-12 sm:mb-14 md:mb-16">
           {industries.map((industry, index) => (
             <div
               key={industry.id}
-              className="animate-fade-in"
+              className="animate-fade-in flex-shrink-0 w-full sm:w-80 md:w-72 lg:w-80"
               style={{
                 animationDelay: `${index * 100}ms`,
                 animationFillMode: 'both'
@@ -107,14 +107,6 @@ export default function SelectIndustry({ industries, onIndustrySelect }: SelectI
 
         {/* Navigation Buttons - Game Style */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pb-6 sm:pb-8">
-          <Link
-            href="/leaderboard"
-            className="inline-flex items-center gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-[var(--game-secondary)]/80 via-[var(--game-secondary)]/60 to-[var(--game-secondary)]/80 backdrop-blur-md border-2 border-[var(--game-secondary)]/50 hover:border-[var(--game-secondary)] hover:bg-gradient-to-r hover:from-[var(--game-secondary)]/30 hover:via-[var(--game-secondary)]/20 hover:to-[var(--game-secondary)]/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.3)] active:scale-95 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-[var(--game-secondary)]/30"
-            aria-label="View leaderboard"
-          >
-            <span className="text-xl sm:text-2xl">🏆</span>
-            <span className="text-base sm:text-lg">Leaderboard</span>
-          </Link>
           <Link
             href="/"
             className="inline-flex items-center gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-[var(--bg-secondary)]/80 via-[var(--bg-tertiary)]/80 to-[var(--bg-secondary)]/80 backdrop-blur-md border-2 border-[var(--border-primary)] hover:border-[var(--game-primary)] hover:bg-gradient-to-r hover:from-[var(--game-primary)]/20 hover:via-[var(--game-primary-dark)]/20 hover:to-[var(--game-primary)]/20 hover:shadow-[0_0_20px_rgba(35,170,246,0.3)] active:scale-95 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-[var(--game-primary)]/30"

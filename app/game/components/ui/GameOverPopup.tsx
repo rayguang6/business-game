@@ -22,13 +22,13 @@ const GameOverPopup: React.FC = () => {
     if (isGameOver && !hasSavedResult.current && selectedIndustry && username) {
       hasSavedResult.current = true;
       const industryId = selectedIndustry.id as IndustryId;
-      
+
       // Save asynchronously - don't block UI
       saveGameResult(
         industryId,
         username,
         metrics.cash,
-        metrics.leveragedTime,
+        metrics.leveragedTimeCapacity, // Use capacity instead of current time
         gameOverReason,
         currentMonth,
       ).catch((error) => {
@@ -36,7 +36,7 @@ const GameOverPopup: React.FC = () => {
         // Silently fail - don't interrupt user experience
       });
     }
-  }, [isGameOver, selectedIndustry, username, metrics.cash, metrics.leveragedTime, gameOverReason, currentMonth]);
+  }, [isGameOver, selectedIndustry, username, metrics.cash, metrics.leveragedTimeCapacity, gameOverReason, currentMonth]);
 
   if (!isGameOver) return null;
 

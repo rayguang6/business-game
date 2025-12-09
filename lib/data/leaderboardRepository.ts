@@ -6,7 +6,7 @@ export interface LeaderboardEntry {
   industryId: string;
   username: string;
   cash: number;
-  leveragedTime: number | null;
+  leveragedTimeCapacity: number | null; // The maximum leveraged time they had (efficiency metric)
   gameOverReason: 'victory' | 'cash' | 'time' | null;
   currentMonth: number | null;
   createdAt: Date;
@@ -23,11 +23,13 @@ interface LeaderboardRow {
   created_at: string;
 }
 
+export type LeaderboardMetric = 'cash' | 'leveragedTime';
+
 export async function saveLeaderboardEntry(
   industryId: IndustryId,
   username: string,
   cash: number,
-  leveragedTime: number | null,
+  leveragedTimeCapacity: number | null, // Use capacity instead of current time
   gameOverReason: 'victory' | 'cash' | 'time' | null,
   currentMonth: number | null,
 ): Promise<{ success: boolean; message?: string }> {
@@ -43,7 +45,7 @@ export async function saveLeaderboardEntry(
     industry_id: industryId,
     username: username.trim(),
     cash,
-    leveraged_time: leveragedTime,
+    leveraged_time: leveragedTimeCapacity, // Store capacity in the leveraged_time column
     game_over_reason: gameOverReason,
     current_month: currentMonth,
   };
@@ -62,19 +64,30 @@ export async function saveLeaderboardEntry(
 
 export async function fetchLeaderboardForIndustry(
   industryId: IndustryId,
+  metric: LeaderboardMetric = 'cash',
   limit: number = 100,
+  offset: number = 0,
 ): Promise<LeaderboardEntry[] | null> {
   if (!supabaseServer) {
     console.error('Supabase client not configured. Unable to fetch leaderboard.');
     return null;
   }
 
-  const { data, error } = await supabaseServer
+  let query = supabaseServer
     .from('leaderboard_entries')
     .select('id, industry_id, username, cash, leveraged_time, game_over_reason, current_month, created_at')
-    .eq('industry_id', industryId)
-    .order('cash', { ascending: false })
-    .limit(limit);
+    .eq('industry_id', industryId);
+
+  // Sort by the specified metric
+  if (metric === 'cash') {
+    query = query.order('cash', { ascending: false });
+  } else if (metric === 'leveragedTime') {
+    // For leveraged time capacity, we want the highest capacity first (biggest business)
+    // Filter out null values first, then sort descending
+    query = query.not('leveraged_time', 'is', null).order('leveraged_time', { ascending: false });
+  }
+
+  const { data, error } = await query.range(offset, offset + limit - 1);
 
   if (error) {
     console.error(`[Leaderboard] Failed to fetch leaderboard for industry "${industryId}":`, error);
@@ -89,14 +102,27 @@ export async function fetchLeaderboardForIndustry(
 }
 
 function mapRowToEntry(row: LeaderboardRow): LeaderboardEntry {
+  // Safely parse the date, fallback to current date if invalid
+  let createdAt: Date;
+  try {
+    createdAt = row.created_at ? new Date(row.created_at) : new Date();
+    // Check if the date is valid
+    if (isNaN(createdAt.getTime())) {
+      createdAt = new Date();
+    }
+  } catch (error) {
+    console.warn(`[Leaderboard] Invalid date format for entry ${row.id}:`, row.created_at);
+    createdAt = new Date();
+  }
+
   return {
     id: row.id,
     industryId: row.industry_id,
     username: row.username,
     cash: Number(row.cash),
-    leveragedTime: row.leveraged_time ? Number(row.leveraged_time) : null,
+    leveragedTimeCapacity: row.leveraged_time ? Number(row.leveraged_time) : null,
     gameOverReason: (row.game_over_reason as 'victory' | 'cash' | 'time') || null,
     currentMonth: row.current_month,
-    createdAt: new Date(row.created_at),
+    createdAt,
   };
 }

@@ -52,10 +52,13 @@ export default function WelcomePage() {
           </div>
         </div>
         
-        {/* Game Button */}
-        <div className="flex justify-center">
+        {/* Game Buttons */}
+        <div className="flex flex-col items-center justify-center gap-4 sm:gap-6">
           <GameButton color="blue" href={WELCOME_CONFIG.startGameHref}>
-            Start Game
+            🚀 Start Game
+          </GameButton>
+          <GameButton color="gold" href="/leaderboard">
+            🏆 Leaderboard
           </GameButton>
         </div>
       </div>
