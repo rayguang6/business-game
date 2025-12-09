@@ -300,7 +300,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     const initialMetrics = initialState.metrics;
     const expPerLevel = getExpPerLevel(industryId);
     const initialLevel = getLevel(initialMetrics.exp, expPerLevel);
-    
+
     set({
       ...initialState,
       isGameStarted: true, // Override to start the game
@@ -311,6 +311,27 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       hiredStaff: staffWithPositions, // Update staff with initialized positions
       previousLevel: initialLevel, // Initialize previousLevel based on starting EXP
     });
+
+    // Apply level rewards for all levels reached due to high starting EXP
+    // Use async IIFE to handle the async checkAndApplyLevelUp
+    (async () => {
+      try {
+        const levelReward = await checkAndApplyLevelUp(
+          initialMetrics.exp, // currentExp
+          0, // previousExp (starting from level 1 with 0 EXP)
+          industryId,
+          get() as GameStore, // pass the current store state
+          initialState.gameTime,
+        );
+
+        if (levelReward) {
+          console.log(`[LevelUp] Applied rewards for levels 2-${levelReward.level} during game initialization`);
+        }
+      } catch (error) {
+        console.error('[LevelRewards] Error applying level rewards during game initialization:', error);
+        // Continue game even if level-up check fails
+      }
+    })();
   },
   
   pauseGame: () => {
@@ -385,11 +406,14 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
   },
   
   tickGame: () => {
-    const { isPaused, currentMonth: previousMonth } = get();
+    const { isPaused, currentMonth: previousMonth, metrics, previousLevel } = get();
 
     if (isPaused) {
       return;
     }
+
+    // Capture previous exp before tick to detect changes from services
+    const previousExp = metrics.exp;
 
     set((state) => {
       const updated = tickOnce({
@@ -465,6 +489,54 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
         ...customerUpdates 
       };
     });
+    
+    // Check for exp changes from services and trigger level-up checks
+    const currentState = get();
+    const newExp = currentState.metrics.exp;
+    const expChanged = newExp !== previousExp;
+    
+    if (expChanged) {
+      // Exp changed from services - check for level-up and apply rewards
+      const industryId = (currentState.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+      const gameTime = currentState.gameTime;
+      
+      // Use async IIFE to handle the async checkAndApplyLevelUp
+      (async () => {
+        try {
+          const levelReward = await checkAndApplyLevelUp(
+            newExp,
+            previousExp,
+            industryId,
+            currentState,
+            gameTime,
+          );
+          
+          // Update previousLevel after checking level-up
+          if (levelReward) {
+            const expPerLevel = getExpPerLevel(industryId);
+            const currentLevel = getLevel(newExp, expPerLevel);
+            set((state) => ({
+              previousLevel: currentLevel,
+            }));
+            
+            console.log(`[LevelUp] Level ${levelReward.level} reached: ${levelReward.title}`);
+          } else {
+            // Still update previousLevel even if no reward (in case level changed but no reward configured)
+            const expPerLevel = getExpPerLevel(industryId);
+            const currentLevel = getLevel(newExp, expPerLevel);
+            const previousLevelFromExp = getLevel(previousExp, expPerLevel);
+            if (currentLevel > previousLevelFromExp) {
+              set((state) => ({
+                previousLevel: currentLevel,
+              }));
+            }
+          }
+        } catch (error) {
+          console.error('[LevelRewards] Error checking level-up from service exp:', error);
+          // Continue game even if level-up check fails
+        }
+      })();
+    }
     
     // Check if a new month just started (month transition happened)
     const { currentMonth, checkGameOver, checkWinConditionAtMonthEnd, tickMarketing, gameTime, resetMarketingLevels } = get();

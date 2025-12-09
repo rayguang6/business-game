@@ -37,7 +37,7 @@ export const getInitialMetrics = (industryId: IndustryId = DEFAULT_INDUSTRY_ID):
     leveragedTimeCapacity: 0, // Leveraged time capacity starts at 0
     totalRevenue: 0,
     totalExpenses: 0,
-    exp: metrics.startingExp ?? 100, // Previously: startingSkillLevel - defaults to 100 (fallback)
+    exp: metrics.startingExp ?? 1000, // Previously: startingSkillLevel - TEMP: testing level rewards with high starting EXP
     totalLeadsSpawned: 0,
     totalCustomersGenerated: 0,
     totalTimeSpent: 0,
