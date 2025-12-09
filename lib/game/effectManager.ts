@@ -80,41 +80,33 @@ export interface MetricConstraints {
 }
 
 // Constraints definition (optional - metrics without constraints will work fine)
+// Removed min/max constraints to allow full game design flexibility
+// Game logic should handle constraints through win/lose conditions and mechanics
 export const METRIC_CONSTRAINTS: Partial<Record<GameMetric, MetricConstraints>> = {
   // Only add constraints where they're actually needed
   [GameMetric.Cash]: {
-    min: 0,           // Can't have negative cash (game over condition)
     roundToInt: true, // Must be whole number
   },
   [GameMetric.MyTime]: {
-    min: 0,           // Can't have negative time (game over condition)
     roundToInt: true, // Must be whole number
   },
   [GameMetric.LeveragedTime]: {
-    min: 0,           // Can't have negative leveraged time
     roundToInt: true, // Must be whole number
   },
   [GameMetric.ServiceCapacity]: {
-    min: 1,           // Can't have negative capacity
-    // max removed - capacity handled by upgrades
     roundToInt: true, // Must be whole number
   },
-  // [GameMetric.HappyProbability] removed - not used in game mechanics
   [GameMetric.Exp]: {
-    min: 0,           // Can't have negative skill level
     roundToInt: true, // Must be whole number
   },
   [GameMetric.FailureRate]: {
-    min: 0,           // Can't have negative failure rate
-    max: 100,         // Can't exceed 100% failure rate
+    max: 100,         // Can't exceed 100% failure rate (UI constraint only)
     roundToInt: true, // Must be whole number
   },
   [GameMetric.ConversionRate]: {
-    min: 0.1,         // Can't have negative or zero conversion rate
     roundToInt: false, // Can be decimal
   },
   [GameMetric.LeadsPerMonth]: {
-    min: 0,           // Can't have negative leads per month
     roundToInt: true, // Must be whole number
   },
   // Add more constraints here only when needed

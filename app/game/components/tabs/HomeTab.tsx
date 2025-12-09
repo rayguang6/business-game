@@ -296,15 +296,6 @@ export function HomeTab() {
               <div className="text-3xl font-bold" style={{ color: 'var(--error)' }}>
                 ${monthlyExpenses.toLocaleString()}/mo
               </div>
-              {monthlyExpenses > 0 && (
-                <div className="text-xs text-tertiary mt-1">
-                  {metrics.cash > 0 ? (
-                    <>Runway: {Math.floor(metrics.cash / monthlyExpenses)} months</>
-                  ) : (
-                    <>No cash remaining</>
-                  )}
-                </div>
-              )}
             </div>
             <div className="text-lg" style={{ color: 'var(--error)' }}>
               {isMonthlyExpensesExpanded ? '▼' : '▶'}

@@ -811,7 +811,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       const leveragedTimeBonus = effectManager.calculate(GameMetric.LeveragedTime, 0);
 
       // Deduct current month's expenses and update total expenses
-      const finalCash = Math.max(0, cash - currentMonthExpenses);
+      const finalCash = cash - currentMonthExpenses;
       const updatedTotalExpenses = state.metrics.totalExpenses + currentMonthExpenses;
 
       set({
