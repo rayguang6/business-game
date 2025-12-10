@@ -16,7 +16,7 @@ interface EventRow {
   industry_id: string;
   title: string;
   category: string;
-  summary: string;
+  summary?: string;
   choices: unknown;
   requirements: unknown;
 }
@@ -168,7 +168,7 @@ export async function fetchEventsForIndustry(industryId: IndustryId): Promise<Ga
   const mapped: GameEvent[] = [];
   
   for (const row of data) {
-    if (!row.id || !row.title || !row.category || !row.summary) {
+    if (!row.id || !row.title || !row.category) {
       console.warn(`[Events] Skipping event with missing required fields: id=${row.id}, title=${row.title}`);
       continue;
     }

@@ -76,7 +76,7 @@ export interface UpgradeEffect {
  * - value: for numeric types - the value to compare against
  */
 export interface Requirement {
-  type: 'flag' | 'upgrade' | 'metric' | 'staff';
+  type: 'flag' | 'upgrade' | 'metric' | 'staff' | 'marketing';
   id: string;
   expected?: boolean;  // For flag: true = must be met, false = must NOT be met
   operator?: '>=' | '<=' | '>' | '<' | '==';  // For numeric types: comparison operator

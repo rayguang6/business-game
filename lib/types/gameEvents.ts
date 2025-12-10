@@ -54,7 +54,7 @@ export interface GameEvent {
   id: string;
   title: string;
   category: EventCategory;
-  summary: string;
+  summary?: string;
   choices: GameEventChoice[];
   requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
 }

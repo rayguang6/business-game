@@ -18,6 +18,7 @@ export function useRequirements(requirements?: Requirement[]) {
   // Subscribe to primitive values that requirements might check (not entire objects)
   const hiredStaffLength = useGameStore((state) => state.hiredStaff.length);
   const upgradesKeys = useGameStore((state) => Object.keys(state.upgrades).sort().join(','));
+  const marketingLevelsKeys = useGameStore((state) => Object.keys(state.campaignLevels).sort().join(','));
   const cash = useGameStore((state) => state.metrics.cash);
   const exp = useGameStore((state) => state.metrics.exp);
   const totalExpenses = useGameStore((state) => state.metrics.totalExpenses);
@@ -74,6 +75,6 @@ export function useRequirements(requirements?: Requirement[]) {
       descriptions,
       unmetDescriptions: areMet ? [] : descriptions,
     };
-  }, [requirements, flags, availableConditions, availableFlags, hiredStaffLength, upgradesKeys, cash, exp, totalExpenses, gameTime, selectedIndustryId]);
+  }, [requirements, flags, availableConditions, availableFlags, hiredStaffLength, upgradesKeys, marketingLevelsKeys, cash, exp, totalExpenses, gameTime, selectedIndustryId]);
 }
 

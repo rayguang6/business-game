@@ -75,7 +75,7 @@ export function evaluateRequirement(req: Requirement, store: GameStore): boolean
     // Staff requirement: check staff count
     const staff = (store as any).hiredStaff || [];
     let count = 0;
-    
+
     if (id === '*') {
       // Total staff count
       count = staff.length;
@@ -83,12 +83,20 @@ export function evaluateRequirement(req: Requirement, store: GameStore): boolean
       // Specific role count
       count = staff.filter((s: any) => s.roleId === id).length;
     }
-    
+
     const requiredCount = value ?? 1;
     const op = operator ?? '>=';
     return compareNumericValues(count, op, requiredCount);
   }
-  
+
+  if (type === 'marketing') {
+    // Marketing requirement: check marketing campaign level
+    const currentLevel = store.getCampaignLevel(id);
+    const requiredLevel = value ?? 1;
+    const op = operator ?? '>=';
+    return compareNumericValues(currentLevel, op, requiredLevel);
+  }
+
   console.warn(`[Requirements] Unknown requirement type: ${type}`);
   return false;
 }
@@ -184,7 +192,7 @@ export function getRequirementDescription(req: Requirement, store: GameStore): s
     const staff = (store as any).hiredStaff || [];
     let count = 0;
     let label = '';
-    
+
     if (id === '*') {
       count = staff.length;
       const requiredCount = value ?? 1;
@@ -198,6 +206,17 @@ export function getRequirementDescription(req: Requirement, store: GameStore): s
       label = role?.name || id;
       return `${label} ${op} ${requiredCount} (Current: ${count})`;
     }
+  }
+
+  if (type === 'marketing') {
+    // Marketing requirement description
+    const industryId = store.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID;
+    const configCampaigns = (store as any).getAvailableMarketingCampaigns?.()?.find((c: any) => c.id === id);
+    const currentLevel = store.getCampaignLevel(id);
+    const requiredLevel = value ?? 1;
+    const op = operator ?? '>=';
+    const campaignName = configCampaigns?.name || id;
+    return `${campaignName} Level ${op} ${requiredLevel} (Current: ${currentLevel})`;
   }
 
   return `${prefix}${id}`;

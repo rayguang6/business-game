@@ -147,7 +147,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
   
   [GameMetric.ServiceRevenueMultiplier]: {
     id: GameMetric.ServiceRevenueMultiplier,
-    displayLabel: 'Revenue Bonus',
+    displayLabel: 'Revenue Bonus Percentage',
     description: 'Percentage bonus for all service revenue',
     defaultValueSource: 'businessStats',
     defaultValuePath: 'serviceRevenueMultiplier',
@@ -165,7 +165,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
   
   [GameMetric.ServiceRevenueFlatBonus]: {
     id: GameMetric.ServiceRevenueFlatBonus,
-    displayLabel: 'Revenue Bonus',
+    displayLabel: 'Revenue Bonus Flat',
     description: 'Flat bonus added to all service revenue (treated as regular metric, not special buff)',
     defaultValueSource: 'calculated',
     calculatedDefaultValue: 0,

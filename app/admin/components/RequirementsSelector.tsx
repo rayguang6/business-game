@@ -12,6 +12,7 @@ interface RequirementsSelectorProps {
   flags: GameFlag[];
   upgrades?: UpgradeDefinition[];
   staffRoles?: StaffRoleConfig[];
+  marketingCampaigns?: import('@/lib/store/slices/marketingSlice').MarketingCampaign[];
   flagsLoading: boolean;
   requirements?: Requirement[];
   onRequirementsChange?: (requirements: Requirement[]) => void;
@@ -37,6 +38,7 @@ export function RequirementsSelector({
   flags,
   upgrades = [],
   staffRoles = [],
+  marketingCampaigns = [],
   flagsLoading,
   requirements = [],
   onRequirementsChange,
@@ -60,6 +62,12 @@ export function RequirementsSelector({
     (role) =>
       role.name.toLowerCase().includes(search.toLowerCase()) ||
       role.id.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const filteredMarketingCampaigns = (marketingCampaigns || []).filter(
+    (campaign) =>
+      campaign.name.toLowerCase().includes(search.toLowerCase()) ||
+      campaign.id.toLowerCase().includes(search.toLowerCase())
   );
 
   const filteredMetrics = METRIC_OPTIONS.filter(
@@ -90,9 +98,9 @@ export function RequirementsSelector({
       const newReq: Requirement = { type, id: cleanId, onFail: 'lock' };
       if (type === 'flag') {
         newReq.expected = true;
-      } else if (type === 'upgrade' || type === 'metric' || type === 'staff') {
+      } else if (type === 'upgrade' || type === 'metric' || type === 'staff' || type === 'marketing') {
         newReq.operator = (defaultOperator || '>=') as any;
-        newReq.value = defaultValue ?? (type === 'upgrade' ? 1 : type === 'staff' ? 1 : 0);
+        newReq.value = defaultValue ?? (type === 'upgrade' || type === 'staff' || type === 'marketing' ? 1 : 0);
       }
       onRequirementsChange([...requirements, newReq]);
       setEditingRequirement(`${type}-${cleanId}`);
@@ -111,7 +119,7 @@ export function RequirementsSelector({
     onRequirementsChange(updated);
   };
 
-  const handleUpdateNumericRequirement = (cleanId: string, type: 'upgrade' | 'metric' | 'staff', operator: string, value: number) => {
+  const handleUpdateNumericRequirement = (cleanId: string, type: 'upgrade' | 'metric' | 'staff' | 'marketing', operator: string, value: number) => {
     if (!onRequirementsChange) return;
 
     const updated = requirements.map(req => {
@@ -605,6 +613,125 @@ export function RequirementsSelector({
             </div>
           )}
 
+          {/* Marketing Section */}
+          {filteredMarketingCampaigns.length > 0 && (
+            <div>
+              <h4 className="text-sm font-semibold text-slate-300 mb-2 flex items-center gap-2">
+                <span>📢</span> Marketing{' '}
+                <span className="text-xs text-slate-400 font-normal">({filteredMarketingCampaigns.length})</span>
+              </h4>
+              <div className="max-h-48 overflow-y-auto pr-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {filteredMarketingCampaigns.map((campaign) => {
+                    const isSelected = isRequirementSelected(campaign.id, 'marketing');
+                    const req = getRequirement(campaign.id, 'marketing');
+                    const isEditing = editingRequirement === `marketing-${campaign.id}`;
+
+                    return (
+                      <div
+                        key={campaign.id}
+                        className={`px-3 py-2 rounded-lg border transition-colors ${
+                          isSelected
+                            ? 'bg-cyan-500/20 border-cyan-500 text-cyan-200'
+                            : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-slate-500'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggle(campaign.id, 'marketing')}
+                            className="w-4 h-4 rounded border-slate-500 bg-slate-800 text-cyan-600 focus:ring-cyan-500 focus:ring-2"
+                          />
+                          <span className="text-sm flex-1">{campaign.name}</span>
+                        </div>
+                        {isSelected && (
+                          <div className="mt-2 ml-6 space-y-2">
+                            {isEditing ? (
+                              <div className="flex flex-col gap-2">
+                                <div className="flex gap-2">
+                                  <select
+                                    value={req?.operator || '>='}
+                                    onChange={(e) => {
+                                      handleUpdateNumericRequirement(campaign.id, 'marketing', e.target.value, req?.value || 1);
+                                    }}
+                                    className="flex-1 rounded bg-slate-900 border border-slate-600 px-2 py-1 text-xs text-slate-200"
+                                  >
+                                    {OPERATOR_OPTIONS.map(op => (
+                                      <option key={op.value} value={op.value}>{op.label}</option>
+                                    ))}
+                                  </select>
+                                  <NumberInput
+                                    value={req?.value ?? 1}
+                                    onChange={(e) => {
+                                      const val = parseInt(e.target.value) || 1;
+                                      handleUpdateNumericRequirement(campaign.id, 'marketing', req?.operator || '>=', val);
+                                    }}
+                                    className="w-20 rounded bg-slate-900 border border-slate-600 px-2 py-1 text-xs text-slate-200"
+                                    min="0"
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingRequirement(null)}
+                                  className="text-xs text-slate-400 hover:text-slate-300"
+                                >
+                                  Done
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-slate-400">
+                                  Level {req?.operator || '>='} {req?.value ?? 1}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingRequirement(`marketing-${campaign.id}`)}
+                                  className="text-xs text-cyan-400 hover:text-cyan-300 underline"
+                                >
+                                  Edit
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {isSelected && (
+                          <div className="flex items-center gap-2 mt-2 ml-6">
+                            <span className="text-xs text-slate-400">When unmet:</span>
+                            <div className="flex gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleOnFail(campaign.id, 'marketing', 'lock')}
+                                className={`px-2 py-1 text-xs rounded border transition-colors ${
+                                  req?.onFail === 'lock'
+                                    ? 'bg-orange-500/20 border-orange-500 text-orange-200'
+                                    : 'bg-slate-600/50 border-slate-500 text-slate-400 hover:bg-slate-600'
+                                }`}
+                              >
+                                Lock
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleOnFail(campaign.id, 'marketing', 'hide')}
+                                className={`px-2 py-1 text-xs rounded border transition-colors ${
+                                  req?.onFail === 'hide'
+                                    ? 'bg-red-500/20 border-red-500 text-red-200'
+                                    : 'bg-slate-600/50 border-slate-500 text-slate-400 hover:bg-slate-600'
+                                }`}
+                              >
+                                Hide
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Total Staff Option */}
           {filteredStaffRoles.length > 0 && (
             <div>
@@ -723,10 +850,11 @@ export function RequirementsSelector({
 
           {/* Empty State */}
           {(() => {
-            const hasAnyData = (flags || []).length > 0 || (upgrades || []).length > 0 || 
-                              (staffRoles || []).length > 0;
-            const hasFilteredResults = filteredFlags.length > 0 || filteredUpgrades.length > 0 || 
-                                      filteredMetrics.length > 0 || filteredStaffRoles.length > 0;
+            const hasAnyData = (flags || []).length > 0 || (upgrades || []).length > 0 ||
+                              (staffRoles || []).length > 0 || (marketingCampaigns || []).length > 0;
+            const hasFilteredResults = filteredFlags.length > 0 || filteredUpgrades.length > 0 ||
+                                      filteredMetrics.length > 0 || filteredStaffRoles.length > 0 ||
+                                      filteredMarketingCampaigns.length > 0;
 
             if (!hasAnyData) {
               return (

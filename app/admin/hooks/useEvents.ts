@@ -10,7 +10,7 @@ interface EventForm {
   id: string;
   title: string;
   category: 'opportunity' | 'risk';
-  summary: string;
+  summary?: string;
   requirements?: Requirement[];
 }
 
@@ -192,7 +192,6 @@ export function useEvents(industryId: string, eventId?: string) {
       const missingFields: string[] = [];
       if (!id) missingFields.push('ID');
       if (!title) missingFields.push('Title');
-      if (!summary) missingFields.push('Summary');
 
       if (missingFields.length > 0) {
         error(`Saved locally. Missing required fields: ${missingFields.join(', ')}. Fill them to persist.`);
@@ -202,7 +201,7 @@ export function useEvents(industryId: string, eventId?: string) {
         id,
         title,
         category,
-        summary,
+        ...(summary ? { summary } : {}),
         choices: nextChoices,
         requirements: form.requirements && form.requirements.length > 0 ? form.requirements : undefined,
       } as GameEvent;
