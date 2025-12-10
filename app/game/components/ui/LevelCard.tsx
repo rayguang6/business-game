@@ -45,7 +45,7 @@ export function LevelCard() {
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
   const configStatus = useConfigStore((state) => state.configStatus);
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-  const { getDisplayLabel } = useMetricDisplayConfigs(industryId);
+  const { getDisplayLabel, getMergedDefinition } = useMetricDisplayConfigs(industryId);
   const [levelReward, setLevelReward] = useState<LevelReward | null>(null);
   const [allLevelRewards, setAllLevelRewards] = useState<LevelReward[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -114,6 +114,10 @@ export function LevelCard() {
     const sign = value >= 0 ? '+' : '-';
     const absValue = Math.abs(value);
 
+    // Get unit from metric definition
+    const metricDef = getMergedDefinition(metric);
+    const unit = metricDef.display.unit || '';
+
     if (type === EffectType.Add) {
       switch (metric) {
         case GameMetric.Cash:
@@ -127,7 +131,7 @@ export function LevelCard() {
         case GameMetric.ServiceCapacity:
           return `${sign}${formatMagnitude(value)} ${label}`;
         default:
-          return `${sign}${formatMagnitude(value)} ${label}`;
+          return `${sign}${formatMagnitude(value)}${unit} ${label}`;
       }
     }
 
@@ -158,14 +162,18 @@ export function LevelCard() {
       }
     }
 
-    return `${sign}${formatMagnitude(value)} ${label}`;
-  }, [getDisplayLabel]);
+    return `${sign}${formatMagnitude(value)}${unit} ${label}`;
+  }, [getDisplayLabel, getMergedDefinition]);
 
   // Format effect value for display
   const formatEffectValue = useCallback((effect: UpgradeEffect): string => {
     const { metric, type, value } = effect;
     const sign = value >= 0 ? '+' : '-';
     const absValue = Math.abs(value);
+
+    // Get unit from metric definition
+    const metricDef = getMergedDefinition(metric);
+    const unit = metricDef.display.unit || '';
 
     if (type === EffectType.Add) {
       switch (metric) {
@@ -176,7 +184,7 @@ export function LevelCard() {
         case GameMetric.MyTime:
           return `${sign}${formatMagnitude(value)}h`;
         default:
-          return `${sign}${formatMagnitude(value)}`;
+          return `${sign}${formatMagnitude(value)}${unit}`;
       }
     }
 
@@ -187,7 +195,7 @@ export function LevelCard() {
 
     if (type === EffectType.Multiply) {
       const multiplier = Number.isInteger(value) ? value.toString() : value.toFixed(2);
-      return `×${multiplier}`;
+      return `×${multiplier}${unit}`;
     }
 
     if (type === EffectType.Set) {
@@ -200,14 +208,14 @@ export function LevelCard() {
       }
     }
 
-    return `${sign}${formatMagnitude(value)}`;
-  }, []);
+    return `${sign}${formatMagnitude(value)}${unit}`;
+  }, [getMergedDefinition]);
 
-  // Aggregate cumulative effects from all level rewards up to current level
-  const cumulativeEffects = useMemo(() => {
-    // Filter rewards from level 2 up to current level (level 1 has no reward)
+  // Helper function to calculate cumulative effects up to a specific level
+  const calculateCumulativeEffects = useCallback((targetLevel: number): UpgradeEffect[] => {
+    // Filter rewards from level 2 up to target level (level 1 has no reward)
     const applicableRewards = allLevelRewards
-      .filter(reward => reward.level >= 2 && reward.level <= currentLevel)
+      .filter(reward => reward.level >= 2 && reward.level <= targetLevel)
       .sort((a, b) => a.level - b.level);
 
     if (applicableRewards.length === 0) {
@@ -259,7 +267,49 @@ export function LevelCard() {
       type,
       value,
     }));
-  }, [allLevelRewards, currentLevel]);
+  }, [allLevelRewards]);
+
+  // Calculate cumulative effects for current level
+  const currentLevelEffects = useMemo(() => {
+    return calculateCumulativeEffects(currentLevel);
+  }, [calculateCumulativeEffects, currentLevel]);
+
+  // Calculate cumulative effects for next level
+  const nextLevel = currentLevel + 1;
+  const nextLevelEffects = useMemo(() => {
+    return calculateCumulativeEffects(nextLevel);
+  }, [calculateCumulativeEffects, nextLevel]);
+
+  // Get next level reward info
+  const nextLevelReward = useMemo(() => {
+    return allLevelRewards.find(reward => reward.level === nextLevel) || null;
+  }, [allLevelRewards, nextLevel]);
+
+  // Check if there's a next level to show
+  const hasNextLevel = useMemo(() => {
+    return nextLevelReward !== null || nextLevelEffects.length > 0;
+  }, [nextLevelReward, nextLevelEffects]);
+
+
+  // Combine all unique effects from current and next level for comparison
+  const allEffectKeys = useMemo(() => {
+    const keys = new Set<string>();
+    currentLevelEffects.forEach(effect => {
+      keys.add(`${effect.metric}_${effect.type}`);
+    });
+    if (hasNextLevel) {
+      nextLevelEffects.forEach(effect => {
+        keys.add(`${effect.metric}_${effect.type}`);
+      });
+    }
+    return Array.from(keys);
+  }, [currentLevelEffects, nextLevelEffects, hasNextLevel]);
+
+  // Get effect value for a specific level
+  const getEffectValue = useCallback((effects: UpgradeEffect[], metric: GameMetric, type: EffectType): number | null => {
+    const effect = effects.find(e => e.metric === metric && e.type === type);
+    return effect ? effect.value : null;
+  }, []);
 
   // If config not ready, show loading
   if (configStatus !== 'ready') {
@@ -282,63 +332,108 @@ export function LevelCard() {
     );
   }
 
-  // Use cumulative effects if available, otherwise fall back to current level reward effects
-  const displayEffects = cumulativeEffects.length > 0 ? cumulativeEffects : (levelReward?.effects || []);
-  
-  // Determine title - use current level reward title if available, otherwise just show level
-  const cardTitle = levelReward?.title 
+  // Determine titles
+  const currentTitle = levelReward?.title 
     ? `Level ${currentLevel}: ${levelReward.title}` 
     : `Level ${currentLevel}`;
+  const nextTitle = nextLevelReward?.title 
+    ? `Level ${nextLevel}: ${nextLevelReward.title}` 
+    : `Level ${nextLevel}`;
 
   return (
-    <Card className="w-full" variant="info">
-      <div className="p-4">
-        {/* Level and Title */}
-        <div className="mb-3">
-          <div className="text-base font-semibold" style={{ color: 'var(--game-primary)' }}>
-            {cardTitle}
-          </div>
-          {cumulativeEffects.length > 0 && (
-            <div className="text-xs text-tertiary mt-1">
-              Total cumulative effects from levels 2-{currentLevel}
+    <Card className="w-full overflow-hidden" variant="info">
+      <div className="p-5">
+        {/* Header with Current and Next Level Titles */}
+        <div className="mb-4 p-3 bg-primary/5 rounded-olg">
+          {hasNextLevel ? (
+            /* Compact layout when next level exists */
+            <div className="flex items-center justify-center gap-3">
+              {/* Current Level Badge */}
+              <div className="text-sm font-semibold text-primary">
+                {currentTitle}
+              </div>
+
+              {/* Arrow */}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-tertiary flex-shrink-0">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+
+              {/* Next Level Badge */}
+              <div className="text-sm font-semibold text-primary">
+                {nextTitle}
+              </div>
             </div>
-          )}
-          {!levelReward && cumulativeEffects.length === 0 && (
-            <div className="text-xs text-tertiary mt-1">
-              No level reward configured for this level.
+          ) : (
+            /* Centered single level when at max level */
+            <div className="text-center">
+              <div className="text-sm font-semibold text-primary">
+                {currentTitle}
+              </div>
             </div>
           )}
         </div>
-        
-        {/* Level Reward Effects */}
-        {displayEffects.length > 0 ? (
-          <div className="space-y-2">
-            {displayEffects.map((effect, index) => {
-              const label = getDisplayLabel(effect.metric);
-              const valueDisplay = formatEffectValue(effect);
-              
-              // For Percent type, show value with percentage sign
-              let displayValue = valueDisplay;
-              if (effect.type === EffectType.Percent) {
-                // Format: "Current% (+Change%)" or just "Change%"
-                displayValue = valueDisplay;
+
+        {/* Effects Comparison */}
+        {allEffectKeys.length > 0 ? (
+          <div className="space-y-3 p-3 bg-secondary/5 rounded-lg border border-secondary/10">
+            {allEffectKeys.map((key) => {
+              const [metricStr, typeStr] = key.split('_');
+              const metric = metricStr as GameMetric;
+              const type = typeStr as EffectType;
+
+              const currentValue = getEffectValue(currentLevelEffects, metric, type);
+              const nextValue = getEffectValue(nextLevelEffects, metric, type);
+              const label = getDisplayLabel(metric);
+
+              // Only show if there's a current or next value
+              if (currentValue === null && nextValue === null) {
+                return null;
               }
-              
+
               return (
-                <div key={index} className="flex items-center justify-between gap-4 py-1">
-                  <span className="text-sm text-secondary flex-1">
-                    {label}:
-                  </span>
-                  <span className="text-sm font-semibold whitespace-nowrap" style={{ color: 'var(--success)' }}>
-                    {displayValue}
-                  </span>
+                <div key={key} className="grid grid-cols-12 items-center">
+                  {/* Metric Label Box */}
+                  <div className="col-span-5">
+                    <span className="text-sm text-secondary font-medium">
+                      {label}
+                    </span>
+                  </div>
+
+                  {/* Values Box - centered within remaining space */}
+                  <div className="col-span-7 flex items-center justify-center gap-2">
+                    {/* Current Level Value */}
+                    <span className="text-sm font-semibold text-primary">
+                      {currentValue !== null ? formatEffectValue({ metric, type, value: currentValue } as UpgradeEffect) : '0'}
+                    </span>
+
+                    {/* Arrow and Next Value (only if next level exists) */}
+                    {hasNextLevel && (
+                      <>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-tertiary flex-shrink-0">
+                          <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                        <span
+                          className={`text-sm font-semibold ${
+                            nextValue !== null && nextValue !== currentValue ? 'text-green-500' : 'text-primary'
+                          }`}
+                        >
+                          {nextValue !== null ? formatEffectValue({ metric, type, value: nextValue } as UpgradeEffect) : '0'}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="text-sm text-tertiary mt-2">
-            No active effects.
+          <div className="text-center py-8 px-4">
+            <div className="text-2xl mb-2">🏆</div>
+            <div className="text-sm text-tertiary">
+              {hasNextLevel
+                ? 'No level rewards configured yet.'
+                : 'Maximum level reached! All bonuses unlocked.'}
+            </div>
           </div>
         )}
       </div>
