@@ -549,6 +549,16 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     //   resetMarketingLevels();
     // }
 
+    // Reset upgrade activation tracking at the start of each new month
+    if (monthJustEnded && get().resetMonthlyUpgradeTracking) {
+      get().resetMonthlyUpgradeTracking();
+    }
+
+    // Reset marketing activation tracking at the start of each new month
+    if (monthJustEnded && get().resetMonthlyMarketingTracking) {
+      get().resetMonthlyMarketingTracking();
+    }
+
     // Handle effect expiration through unified effect manager
     const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
     effectManager.tick(gameTime, industryId);

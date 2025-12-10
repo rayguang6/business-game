@@ -389,8 +389,8 @@ export function MarketingTab() {
   );
   const campaignCooldowns = useGameStore((state) => state.campaignCooldowns);
   const campaignLevels = useGameStore((state) => state.campaignLevels);
+  const campaignsActivatedThisMonth = useGameStore((state) => state.campaignsActivatedThisMonth);
   const getCampaignLevel = useGameStore((state) => state.getCampaignLevel);
-  const wasCampaignActivatedThisMonth = useGameStore((state) => state.wasCampaignActivatedThisMonth);
   const startCampaign = useGameStore((state) => state.startCampaign);
   const metrics = useGameStore((state) => state.metrics);
   const gameTime = useGameStore((state) => state.gameTime);
@@ -543,7 +543,7 @@ export function MarketingTab() {
                           isOnCooldown={isOnCooldown}
                           cooldownRemaining={cooldownRemaining}
                           currentLevel={currentLevel}
-                          wasActivatedThisMonth={wasCampaignActivatedThisMonth(campaign.id)}
+                          wasActivatedThisMonth={campaignsActivatedThisMonth.has(campaign.id)}
                           onLaunch={handleLaunch}
                           metrics={{ cash: metrics.cash, time: metrics.myTime }}
                           getDisplayLabel={getDisplayLabel}

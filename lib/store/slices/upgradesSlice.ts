@@ -9,11 +9,11 @@ import {
 import { calculateUpgradeMonthlyExpenses, getMonthlyBaseExpenses } from '@/lib/features/economy';
 import { getUpgradeLevel, canUpgradeMore } from '@/lib/features/upgrades';
 import { GameStore } from '../gameStore';
-import type { IndustryId } from '@/lib/game/types';
 import { effectManager, GameMetric, EffectType } from '@/lib/game/effectManager';
 import { checkRequirements } from '@/lib/game/requirementChecker';
 import { SourceType, SourceInfo } from '@/lib/config/sourceTypes';
 import { SourceHelpers } from '@/lib/utils/financialTracking';
+import { IndustryId } from '@/lib/game/types';
 
 const findUpgradeDefinition = (industryId: IndustryId, upgradeId: UpgradeId): UpgradeDefinition | undefined => {
   return getUpgradesForIndustry(industryId).find((upgrade) => upgrade.id === upgradeId);
@@ -31,7 +31,7 @@ const DIRECT_STATE_METRICS = [
  * Check if a metric is a direct state metric
  */
 function isDirectStateMetric(metric: GameMetric): boolean {
-  return DIRECT_STATE_METRICS.includes(metric as any);
+  return (DIRECT_STATE_METRICS as readonly GameMetric[]).includes(metric);
 }
 
 /**
@@ -47,12 +47,15 @@ function calculateDirectStateDelta(effectValue: number, level: number, previousL
 
 export interface UpgradesSlice {
   upgrades: Upgrades;
+  upgradesActivatedThisMonth: Set<string>; // upgradeIds that were purchased this month
   canAffordUpgrade: (cost: number, timeCost?: number) => boolean;
   getUpgradeLevel: (upgradeId: UpgradeId) => number;
   canUpgradeMore: (upgradeId: UpgradeId) => boolean;
   getUpgradeDefinition: (upgradeId: UpgradeId) => UpgradeDefinition | null;
   getAvailableUpgrades: () => UpgradeDefinition[];
   purchaseUpgrade: (upgradeId: UpgradeId) => { success: boolean; message: string };
+  wasUpgradeActivatedThisMonth: (upgradeId: string) => boolean;
+  resetMonthlyUpgradeTracking: () => void;
   resetUpgrades: () => void;
 }
 
@@ -257,6 +260,17 @@ function removeUpgradeEffects(upgradeId: string): void {
 
 export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice> = (set, get) => ({
   upgrades: {},
+  upgradesActivatedThisMonth: new Set<string>(),
+
+  wasUpgradeActivatedThisMonth: (upgradeId: string) => {
+    return get().upgradesActivatedThisMonth.has(upgradeId);
+  },
+
+  resetMonthlyUpgradeTracking: () => {
+    set((state) => ({
+      upgradesActivatedThisMonth: new Set<string>(),
+    }));
+  },
 
   canAffordUpgrade: (cost: number, timeCost?: number) => {
     const { metrics } = get();
@@ -465,6 +479,11 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
       get().setFlag(upgrade.setsFlag, true);
     }
 
+    // Mark upgrade as activated this month
+    set((state) => ({
+      upgradesActivatedThisMonth: new Set([...state.upgradesActivatedThisMonth]).add(upgradeId),
+    }));
+
     const levelText = ` - ${levelName}`;
     const costParts: string[] = [];
     if (needsCash) costParts.push(`$${upgradeCost}`);
@@ -475,15 +494,16 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
 
   resetUpgrades: () => {
     const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-    
+
     // Remove all upgrade effects from effectManager
     const availableUpgrades = getUpgradesForIndustry(industryId);
     availableUpgrades.forEach(upgrade => {
       removeUpgradeEffects(upgrade.id);
     });
-    
+
     set({
       upgrades: {},
+      upgradesActivatedThisMonth: new Set<string>(),
       monthlyExpenses: getMonthlyBaseExpenses(industryId),
       monthlyExpenseAdjustments: 0,
     });

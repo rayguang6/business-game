@@ -17,6 +17,8 @@ import type { Staff } from '@/lib/features/staff';
 import { calculateSeveranceCost, SEVERANCE_MULTIPLIER } from '@/lib/features/staff';
 import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
 import { useCategories } from '../../hooks/useCategories';
+import { getBusinessStats } from '@/lib/game/config';
+import { effectManager } from '@/lib/game/effectManager';
 
 // METRIC_LABELS removed - now using merged definitions from registry + database
 
@@ -82,7 +84,7 @@ function compareEffects(
 }
 
 function UpgradeCard({ upgrade }: UpgradeCardProps) {
-  const { getUpgradeLevel, purchaseUpgrade } = useGameStore();
+  const { getUpgradeLevel, purchaseUpgrade, upgradesActivatedThisMonth } = useGameStore();
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
   const { getDisplayLabel } = useMetricDisplayConfigs(industryId);
@@ -175,7 +177,8 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
     return hasCash && hasTime;
   }, [metrics.cash, metrics.myTime, upgradeCost, upgradeTimeCost]);
   const isMaxed = currentLevel >= upgrade.maxLevel;
-  
+  const wasActivatedThisMonth = useMemo(() => upgradesActivatedThisMonth.has(upgrade.id), [upgradesActivatedThisMonth, upgrade.id]);
+
   // Determine what's missing for button text
   const needText = useMemo(() => {
     const hasCash = !needsCash || metrics.cash >= upgradeCost;
@@ -207,7 +210,13 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
   }, []);
 
   return (
-    <Card className="flex flex-col justify-between p-2 sm:p-3 min-h-[200px] overflow-hidden">
+    <Card className={`flex flex-col justify-between p-2 sm:p-3 min-h-[200px] overflow-hidden ${
+      wasActivatedThisMonth
+        ? '!border-green-500 dark:!border-green-400'
+        : isMaxed
+          ? '!bg-amber-100 dark:!bg-amber-900/50 !border-amber-300 dark:!border-amber-600'
+          : ''
+    }`}>
       {/* Top Content Section */}
       <div className="flex-1 space-y-1">
         {/* Header: Upgrade Name and Level Badge */}
