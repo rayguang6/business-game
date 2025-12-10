@@ -46,3 +46,4 @@ Expected indexes:
 - `idx_level_rewards_industry_level` (UNIQUE on industry_id, level)
 - `idx_level_rewards_industry` (on industry_id)
 - `idx_level_rewards_level` (on level)
+

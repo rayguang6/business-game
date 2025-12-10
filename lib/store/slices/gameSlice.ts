@@ -995,27 +995,14 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     const winCondition = getWinCondition(industryId);
     if (!winCondition) return; // Can't check win condition if not loaded
 
-    // For time-based wins, deduct the current month's expenses before ending the game
+    // For time-based wins, no additional expense deduction needed (already handled in month transition)
     if (winCondition.monthTarget && currentMonth >= winCondition.monthTarget) {
-      // Calculate TOTAL current month's expenses (base + staff + upgrades + events)
-      // This mirrors exactly what happens in normal month transitions
-      const currentMonthExpenses = effectManager.calculate(
-        GameMetric.MonthlyExpenses,
-        getMonthlyBaseExpenses(industryId)
-      );
-
-      // Refresh leveraged time from effects before ending game (matches month transition)
+      // Refresh leveraged time from effects before ending game
       const leveragedTimeBonus = effectManager.calculate(GameMetric.LeveragedTime, 0);
-
-      // Deduct current month's expenses and update total expenses
-      const finalCash = cash - currentMonthExpenses;
-      const updatedTotalExpenses = state.metrics.totalExpenses + currentMonthExpenses;
 
       set({
         metrics: {
           ...state.metrics,
-          cash: finalCash,
-          totalExpenses: updatedTotalExpenses,
           leveragedTime: leveragedTimeBonus, // Refresh leveraged time to current effects
           leveragedTimeCapacity: leveragedTimeBonus, // Update capacity to match
         },
