@@ -13,7 +13,8 @@ import {
   getGlobalMovementConfig,
   secondsToTicks,
 } from '@/lib/game/config';
-import { IndustryId, GridPosition } from '@/lib/game/types';
+import { IndustryId, GridPosition, ServicePricingCategory } from '@/lib/game/types';
+import { effectManager, GameMetric } from '@/lib/game/effectManager';
 
 // Types
 export enum CustomerStatus {
@@ -43,6 +44,7 @@ export interface Customer {
   targetY?: number;
   path?: GridPosition[]; // Current path waypoints (excluding current tile)
   service: Service;
+  finalPrice: number; // Final price customer will pay (calculated at spawn time)
   status: CustomerStatus;
   serviceTimeLeft: number; // ticks remaining for service completion
   patienceLeft: number; // ticks remaining before leaving (while waiting)
@@ -60,6 +62,41 @@ export const CUSTOMER_EMOJIS = ['😊', '😄', '😃', '🙂', '😌', '😋', 
 import { getRandomService } from './services';
 
 /**
+ * Calculates the final price a customer will pay for a service after all multipliers and bonuses
+ * This matches the revenue calculation used in game mechanics
+ */
+export function calculateFinalServicePrice(service: Service, industryId: IndustryId): number {
+  // Get tier revenue multiplier
+  const getTierRevenueMultiplier = (tier?: ServicePricingCategory): number => {
+    switch (tier) {
+      case 'high':
+        return effectManager.calculate(GameMetric.HighTierServiceRevenueMultiplier, 1);
+      case 'mid':
+        return effectManager.calculate(GameMetric.MidTierServiceRevenueMultiplier, 1);
+      case 'low':
+        return effectManager.calculate(GameMetric.LowTierServiceRevenueMultiplier, 1);
+      default:
+        return 1;
+    }
+  };
+
+  // Get current game metrics
+  const serviceRevenueMultiplier = effectManager.calculate(GameMetric.ServiceRevenueMultiplier, 100);
+  const serviceRevenueFlatBonus = effectManager.calculate(GameMetric.ServiceRevenueFlatBonus, 0);
+
+  // Get service revenue scale from business stats (industry config)
+  const businessStats = getBusinessStats(industryId);
+  const serviceRevenueScale = businessStats?.serviceRevenueScale ?? 10;
+
+  const servicePrice = service.price;
+  const tierMultiplier = getTierRevenueMultiplier(service.pricingCategory);
+  const baseServiceValue = (servicePrice * tierMultiplier) + serviceRevenueFlatBonus;
+  const finalPrice = Math.max(0, baseServiceValue) * (serviceRevenueMultiplier / 100) * serviceRevenueScale;
+
+  return Math.round(finalPrice * 100) / 100; // Round to 2 decimal places
+}
+
+/**
  * Creates a new customer with random properties
  */
 export function spawnCustomer(
@@ -75,10 +112,13 @@ export function spawnCustomer(
   if (!stats || !layout) throw new Error('Business config not loaded');
   const patience = secondsToTicks(stats.customerPatienceSeconds, industryId);
   const spawnPosition = stats.customerSpawnPosition ?? (layout ? layout.entryPosition : { x: 4, y: 9 });
-  
+
   // Convert the aggregated speed multiplier into a shorter duration (higher speed = shorter time)
   const effectiveDuration = service.duration / Math.max(serviceSpeedMultiplier, 0.1);
-  
+
+  // Calculate the final price customer will pay (including all current multipliers)
+  const finalPrice = calculateFinalServicePrice(service, industryId);
+
   return {
     id: Math.random().toString(36).substr(2, 9),
     imageSrc,
@@ -86,6 +126,7 @@ export function spawnCustomer(
     y: spawnPosition.y,
     facingDirection: 'down',
     service: service,
+    finalPrice: finalPrice,
     status: CustomerStatus.Spawning, // Start at door!
     serviceTimeLeft: secondsToTicks(effectiveDuration, industryId),
     patienceLeft: patience,

@@ -30,6 +30,7 @@ import {
   tickCustomer,
   startService,
   getAvailableRooms,
+  calculateFinalServicePrice,
 } from '@/lib/features/customers';
 import {
   Lead,
@@ -682,10 +683,9 @@ function processCustomersForTick({
       customersServedCount++;
 
 
-      const servicePrice = updatedCustomer.service.price;
-      const tierMultiplier = getTierRevenueMultiplier(updatedCustomer.service.pricingCategory);
-      const baseServiceValue = (servicePrice * tierMultiplier) + serviceRevenueFlatBonus;
-      const serviceRevenue = Math.max(0, baseServiceValue) * (serviceRevenueMultiplier / 100) * serviceRevenueScale;
+      // Use the final price that was calculated when customer spawned
+      // This ensures UI display matches actual revenue earned
+      const serviceRevenue = updatedCustomer.finalPrice;
 
       // Add revenue
       const oldCash = metricsAccumulator.cash;
@@ -1301,9 +1301,12 @@ export function tickOnce(state: TickInput): TickResult {
 
           // Create customer with the selected service
           const customer = createCustomer(gameMetrics.serviceSpeedMultiplier, industryId);
+          // Calculate the correct final price for the selected service
+          const finalPrice = calculateFinalServicePrice(selectedService, industryId);
           customers = [...customers, {
             ...customer,
             service: selectedService,
+            finalPrice: finalPrice,
           }];
           metrics.totalCustomersGenerated = (metrics.totalCustomersGenerated || 0) + 1;
           monthlyCustomersGenerated += 1;

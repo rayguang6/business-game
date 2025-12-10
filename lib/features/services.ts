@@ -6,6 +6,7 @@
 import { getServicesForIndustry as getServiceDefinitionsForIndustry } from '@/lib/game/config';
 import { IndustryId, IndustryServiceDefinition } from '@/lib/game/types';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
+import { ServicePricingCategory } from '@/lib/game/types';
 
 /**
  * Represents a service with its effective values (after applying tier multipliers)

@@ -218,7 +218,7 @@ export function SpriteCustomer({ customer, scaleFactor }: SpriteCustomerProps) {
 
           {/* Price */}
           <div className="text-green-600">
-            ${customer.service.price}
+            ${customer.finalPrice}
           </div>
 
           {/* Progress Bar */}
