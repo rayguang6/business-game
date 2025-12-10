@@ -47,7 +47,7 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="text-xs sm:text-sm md:text-2xl">{selectedIndustry.icon}</div>
+                <div className="text-sm sm:text-sm md:text-2xl">{selectedIndustry.icon}</div>
               )}
             </div>
           </button>
@@ -95,7 +95,7 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="text-xs sm:text-sm md:text-2xl">{selectedIndustry.icon}</div>
+                <div className="text-sm sm:text-sm md:text-2xl">{selectedIndustry.icon}</div>
               )}
             </div>
           </button>
@@ -106,20 +106,20 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
             <div className="flex items-center bg-gradient-to-r from-blue-600 to-blue-600/40 py-0.5 sm:py-0.5 md:py-1 pl-1.5 sm:pl-2 md:pl-6 pr-0.5 sm:pr-1 overflow-hidden">
               <div className="text-white mr-0.5 sm:mr-0.5 md:mr-1.5 flex-shrink-0 text-ultra-sm sm:text-caption md:text-sm">{selectedIndustry.icon}</div>
               <span className="text-white font-bold text-ultra-sm sm:text-caption md:text-sm truncate">{selectedIndustry.name}</span>
-              <span className="text-white/90 font-semibold text-micro sm:text-ultra-sm md:text-xs ml-0.5 sm:ml-1 md:ml-2 flex-shrink-0">(Stage 1)</span>
+              <span className="text-white/90 font-semibold text-micro sm:text-ultra-sm md:text-sm ml-0.5 sm:ml-1 md:ml-2 flex-shrink-0">(Stage 1)</span>
             </div>
             
             
             {/* Progress Section */}
             <div className="flex items-center gap-0.5 sm:gap-0.5 md:gap-1.5 bg-black/45 py-0.5 sm:py-0.5 md:py-1 pl-1.5 sm:pl-2 md:pl-6 overflow-hidden">
-              <span className="text-yellow-400 text-micro sm:text-caption md:text-xs font-bold flex-shrink-0 whitespace-nowrap">Month {currentMonth}</span>
+              <span className="text-yellow-400 text-micro sm:text-caption md:text-sm font-bold flex-shrink-0 whitespace-nowrap">Month {currentMonth}</span>
               <div className="w-10 sm:w-16 md:w-28 bg-gray-600 rounded-full h-0.5 sm:h-1 md:h-2 overflow-hidden flex-shrink-0">
                 <div 
                   className="bg-green-500 h-full rounded-full transition-all duration-300"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
-              <div className="text-white text-micro sm:text-ultra-sm md:text-xs leading-none font-bold flex-shrink-0 whitespace-nowrap">
+              <div className="text-white text-micro sm:text-ultra-sm md:text-sm leading-none font-bold flex-shrink-0 whitespace-nowrap">
                 {roundDurationSeconds - Math.floor(gameTime % roundDurationSeconds)}s
               </div>
             </div>

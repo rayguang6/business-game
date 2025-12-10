@@ -117,7 +117,7 @@ function StaffCandidateCard({ candidate, onHire, formatEffect }: StaffCandidateC
       <div className={`h-16 bg-gradient-to-r ${styles.cardGradient} relative overflow-hidden border-b-2 ${styles.borderColor}/50`}>
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="absolute top-2 left-3 right-3 flex items-center justify-between z-10">
-          <span className={`text-xs font-bold ${styles.textColor} uppercase tracking-wide`}>
+          <span className={`text-sm font-bold ${styles.textColor} uppercase tracking-wide`}>
             {candidate.role}
           </span>
           {!requirementsMet && (
@@ -152,7 +152,7 @@ function StaffCandidateCard({ candidate, onHire, formatEffect }: StaffCandidateC
         </h5>
         <div className="flex justify-center">
           <div className={`inline-block px-3 py-1 rounded-full ${styles.badgeBg} border ${styles.borderColor}`}>
-            <span className={`${styles.accentText} text-xs font-semibold uppercase whitespace-nowrap`}>
+            <span className={`${styles.accentText} text-sm font-semibold uppercase whitespace-nowrap`}>
               {candidate.role}
             </span>
           </div>
@@ -169,7 +169,7 @@ function StaffCandidateCard({ candidate, onHire, formatEffect }: StaffCandidateC
               const label = effectParts.slice(1).join(' ');
               return (
                 <div key={index} className="flex items-center justify-between gap-2 min-w-0">
-                  <span className="text-white text-xs font-medium flex items-center gap-1.5 min-w-0 flex-1">
+                  <span className="text-white text-sm font-medium flex items-center gap-1.5 min-w-0 flex-1">
                     <span className="flex-shrink-0">{getMetricIcon(effect.metric)}</span>
                     <span className="truncate">{label}</span>
                   </span>
@@ -215,7 +215,7 @@ function StaffCandidateCard({ candidate, onHire, formatEffect }: StaffCandidateC
         {requirementDescriptions.length > 0 && !requirementsMet && (
           <button
             onClick={handleRequirementsClick}
-            className="absolute top-0 right-4 w-6 h-6 bg-black/70 hover:bg-black/90 text-white rounded-full text-xs font-bold shadow-lg transition-colors flex items-center justify-center z-10 border border-white/20"
+            className="absolute top-0 right-4 w-6 h-6 bg-black/70 hover:bg-black/90 text-white rounded-full text-sm font-bold shadow-lg transition-colors flex items-center justify-center z-10 border border-white/20"
             title="Click to see requirements"
           >
             ?
@@ -286,7 +286,7 @@ export function StaffTab() {
                 <div className={`h-16 bg-gradient-to-r ${styles.cardGradient} relative overflow-hidden border-b-2 ${styles.borderColor}/50`}>
                   <div className="absolute inset-0 bg-black/20"></div>
                   <div className="absolute top-2 left-3 right-3 flex items-center z-10">
-                    <span className={`text-xs font-bold ${styles.textColor} uppercase tracking-wide`}>
+                    <span className={`text-sm font-bold ${styles.textColor} uppercase tracking-wide`}>
                       {member.role}
                     </span>
                   </div>
@@ -318,7 +318,7 @@ export function StaffTab() {
                   </h4>
                   <div className="flex justify-center">
                     <div className={`inline-block px-3 py-1 rounded-full ${styles.badgeBg} border ${styles.borderColor}`}>
-                      <span className={`${styles.accentText} text-xs font-semibold uppercase whitespace-nowrap`}>
+                      <span className={`${styles.accentText} text-sm font-semibold uppercase whitespace-nowrap`}>
                         {member.role}
                       </span>
                     </div>
@@ -335,7 +335,7 @@ export function StaffTab() {
                           const label = effectParts.slice(1).join(' ');
                           return (
                             <div key={index} className="flex items-center justify-between gap-2 min-w-0">
-                              <span className="text-white text-xs font-medium flex items-center gap-1.5 min-w-0 flex-1">
+                              <span className="text-white text-sm font-medium flex items-center gap-1.5 min-w-0 flex-1">
                                 <span className="flex-shrink-0">{getMetricIcon(effect.metric)}</span>
                                 <span className="truncate">{label}</span>
                               </span>

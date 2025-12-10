@@ -237,7 +237,7 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
                   <span className="text-sm text-gray-600">Music</span>
                   <button
                     onClick={toggleMute}
-                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                    className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                       audioState.isMuted 
                         ? 'bg-red-100 text-red-700 hover:bg-red-200' 
                         : 'bg-green-100 text-green-700 hover:bg-green-200'
@@ -248,7 +248,7 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">Volume:</span>
+                  <span className="text-sm text-gray-500">Volume:</span>
                   <input
                     type="range"
                     min="0"
@@ -259,7 +259,7 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
                     className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                     disabled={audioState.isMuted}
                   />
-                  <span className="text-xs text-gray-500 w-8">
+                  <span className="text-sm text-gray-500 w-8">
                     {Math.round(audioState.volume * 100)}%
                   </span>
                 </div>

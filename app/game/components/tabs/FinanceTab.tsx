@@ -35,21 +35,21 @@ export function FinanceTab() {
             </div>
             <div>
               <h4 className="text-primary font-bold text-sm sm:text-base">Revenue</h4>
-              <p className="text-secondary text-xs">Total Income</p>
+              <p className="text-secondary text-sm">Total Income</p>
             </div>
           </div>
           <div className="text-center">
             <div className="text-2xl sm:text-3xl font-bold mb-2" style={{ color: 'var(--success)' }}>
               ${metrics.totalRevenue.toLocaleString()}
             </div>
-            <div className="text-secondary text-xs sm:text-sm mb-2">
+            <div className="text-secondary text-sm sm:text-sm mb-2">
               {lastMonth ? `Month ${lastMonth.month}: $${lastMonth.revenue.toLocaleString()}` : 'No data yet'}
             </div>
             <div className="text-sm font-semibold mb-4" style={{ color: 'var(--success)' }}>
               Current monthly: ${monthlyRevenue.toLocaleString()}
             </div>
             {monthlyRevenueBreakdown.length > 0 && (
-              <div className="text-left text-xs sm:text-sm text-secondary mt-4 pt-4 border-t" style={{ borderColor: 'var(--border-primary)' }}>
+              <div className="text-left text-sm sm:text-sm text-secondary mt-4 pt-4 border-t" style={{ borderColor: 'var(--border-primary)' }}>
                 <div className="font-semibold text-primary mb-2">Revenue breakdown</div>
                 <ul className="space-y-1.5">
                   {monthlyRevenueBreakdown.map((entry) => (
@@ -72,21 +72,21 @@ export function FinanceTab() {
             </div>
             <div>
               <h4 className="text-primary font-bold text-sm sm:text-base">Expenses</h4>
-              <p className="text-secondary text-xs">Total Costs</p>
+              <p className="text-secondary text-sm">Total Costs</p>
             </div>
           </div>
           <div className="text-center">
             <div className="text-2xl sm:text-3xl font-bold mb-2" style={{ color: 'var(--error)' }}>
               ${metrics.totalExpenses.toLocaleString()}
             </div>
-            <div className="text-secondary text-xs sm:text-sm mb-2">
+            <div className="text-secondary text-sm sm:text-sm mb-2">
               {lastMonth ? `Month ${lastMonth.month}: $${lastMonth.expenses.toLocaleString()}` : 'No data yet'}
             </div>
             <div className="text-sm font-semibold mb-4" style={{ color: 'var(--error)' }}>
               Current monthly: ${monthlyExpenses.toLocaleString()}
             </div>
             {monthlyExpenseBreakdown.length > 0 && (
-              <div className="text-left text-xs sm:text-sm text-secondary mt-4 pt-4 border-t" style={{ borderColor: 'var(--border-primary)' }}>
+              <div className="text-left text-sm sm:text-sm text-secondary mt-4 pt-4 border-t" style={{ borderColor: 'var(--border-primary)' }}>
                 <div className="font-semibold text-primary mb-2">Expense breakdown</div>
                 <ul className="space-y-1.5">
                   {recurringExpenses.map((entry, index) => (
@@ -130,7 +130,7 @@ export function FinanceTab() {
               </div>
               <div>
                 <h4 className="text-primary font-bold text-sm sm:text-base">Net Profit</h4>
-                <p className="text-secondary text-xs">Total Earnings</p>
+                <p className="text-secondary text-sm">Total Earnings</p>
               </div>
             </div>
             <div className="text-left sm:text-right">
@@ -181,7 +181,7 @@ export function FinanceTab() {
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-sm sm:text-base" style={{ color: 'var(--game-secondary)' }}>Month {w.month}</span>
                       {index === 0 && (
-                        <span className="text-white px-2 py-1 rounded-lg text-xs font-semibold" style={{ backgroundColor: 'var(--success)' }}>Latest</span>
+                        <span className="text-white px-2 py-1 rounded-lg text-sm font-semibold" style={{ backgroundColor: 'var(--success)' }}>Latest</span>
                       )}
                     </div>
                     <div className="font-bold text-sm sm:text-base" style={{ color: w.profit >= 0 ? 'var(--success)' : 'var(--error)' }}>
@@ -196,7 +196,7 @@ export function FinanceTab() {
                         <span style={{ color: 'var(--success)' }}>Revenue</span>
                         <span style={{ color: 'var(--success)' }}>${w.revenue.toLocaleString()}</span>
                       </div>
-                      <div className="pl-3 space-y-1.5 text-xs sm:text-sm text-tertiary border-l-2" style={{ borderColor: 'rgba(16, 185, 129, 0.5)' }}>
+                      <div className="pl-3 space-y-1.5 text-sm sm:text-sm text-tertiary border-l-2" style={{ borderColor: 'rgba(16, 185, 129, 0.5)' }}>
                         {revenueBreakdown.map((entry, rbIndex) => (
                           <div key={rbIndex} className="flex justify-between">
                             <span>{entry.label}</span>
@@ -212,7 +212,7 @@ export function FinanceTab() {
                         <span style={{ color: 'var(--error)' }}>Expenses</span>
                         <span style={{ color: 'var(--error)' }}>${w.expenses.toLocaleString()}</span>
                       </div>
-                      <div className="pl-3 space-y-1.5 text-xs sm:text-sm text-tertiary border-l-2" style={{ borderColor: 'rgba(239, 68, 68, 0.5)' }}>
+                      <div className="pl-3 space-y-1.5 text-sm sm:text-sm text-tertiary border-l-2" style={{ borderColor: 'rgba(239, 68, 68, 0.5)' }}>
                         <div className="flex justify-between">
                           <span>Recurring costs</span>
                           <span className="font-semibold" style={{ color: 'var(--error)' }}>${recurringExpenses.toLocaleString()}</span>

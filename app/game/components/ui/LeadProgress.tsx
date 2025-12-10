@@ -297,7 +297,7 @@ export function LeadProgress({ position = 'bottom-right' }: LeadProgressProps) {
             style={{ zIndex: 50 }}
           >
             <div 
-              className="text-micro sm:text-caption md:text-xs font-bold text-green-300"
+              className="text-micro sm:text-caption md:text-sm font-bold text-green-300"
               style={{
                 textShadow: '0 0 4px rgba(34, 197, 94, 0.8), 0 2px 4px rgba(0,0,0,0.8)',
                 animation: 'float-up 1.5s ease-out forwards',
@@ -313,7 +313,7 @@ export function LeadProgress({ position = 'bottom-right' }: LeadProgressProps) {
           {feedbackItems.map((item, index) => (
             <div
               key={item.id}
-              className="absolute text-micro sm:text-caption md:text-xs font-bold text-blue-300 pointer-events-none"
+              className="absolute text-micro sm:text-caption md:text-sm font-bold text-blue-300 pointer-events-none"
               style={{
                 top: 'calc(50% + 8px)',
                 left: '50%',
@@ -335,7 +335,7 @@ export function LeadProgress({ position = 'bottom-right' }: LeadProgressProps) {
               <div className="drop-shadow-[0_0_4px_rgba(59,130,246,0.6)] flex items-center justify-center flex-shrink-0" style={{ width: '24px', height: '24px' }}>
                 <AnimatedLeadIcon />
               </div>
-              <span className="text-micro sm:text-caption md:text-xs font-bold text-blue-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              <span className="text-micro sm:text-caption md:text-sm font-bold text-blue-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
                 Lead Conversion
               </span>
             </div>
@@ -389,7 +389,7 @@ export function LeadProgress({ position = 'bottom-right' }: LeadProgressProps) {
           {/* Completion indicator */}
           {isComplete && (
             <div className="mt-0.5 sm:mt-0.5 md:mt-2.5 text-center">
-              <div className="text-micro sm:text-ultra-sm md:text-xs text-green-300 font-bold animate-pulse drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]">
+              <div className="text-micro sm:text-ultra-sm md:text-sm text-green-300 font-bold animate-pulse drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]">
                 ✓ Ready to close!
               </div>
             </div>

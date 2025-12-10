@@ -36,7 +36,7 @@ export function MonthProgress() {
             style={{ width: `${progress}%` }}
           />
         </div>
-        <div className="text-xs text-gray-500 mt-2">
+        <div className="text-sm text-gray-500 mt-2">
           {timeIntoMonth}s / {roundDurationSeconds}s (Month {currentMonth})
         </div>
       </div>

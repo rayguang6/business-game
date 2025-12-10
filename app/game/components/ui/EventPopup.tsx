@@ -224,7 +224,7 @@ const EventPopup: React.FC = () => {
           <div className="relative bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-secondary)] rounded-md md:rounded-2xl shadow-xl p-2.5 md:p-6 border-2 border-[var(--border-primary)] max-h-[calc(100vh-5rem)] md:max-h-[70vh] overflow-y-auto">
             <div className="flex items-center gap-1 md:gap-1.5 mb-1.5 md:mb-3">
               <span className="text-[var(--game-primary-light)] text-sm md:text-xl drop-shadow-[0_0_4px_rgba(35,170,246,0.6)]">⏰</span>
-              <h3 className="text-xs md:text-lg font-semibold text-[var(--text-primary)] leading-tight flex-1" style={{
+              <h3 className="text-sm md:text-lg font-semibold text-[var(--text-primary)] leading-tight flex-1" style={{
                 textShadow: '0 1px 2px rgba(0,0,0,0.8)'
               }}>
                 {lastDelayedOutcome.label || 'Additional Event Outcome'}
@@ -234,7 +234,7 @@ const EventPopup: React.FC = () => {
               From <span className="font-semibold text-[var(--game-primary-light)]">{lastDelayedOutcome.eventTitle}</span> - <span className="font-semibold text-[var(--game-primary-light)]">{lastDelayedOutcome.choiceLabel}</span>
             </p>
             {lastDelayedOutcome.description && (
-              <div className={`text-[10px] md:text-xs text-[var(--text-primary)] mb-1 md:mb-2 bg-[var(--bg-tertiary)]/50 rounded p-1.5 md:p-2 border border-[var(--border-secondary)] ${lastDelayedOutcome.success ? 'border-green-500/50' : 'border-red-500/50'}`}>
+              <div className={`text-[10px] md:text-sm text-[var(--text-primary)] mb-1 md:mb-2 bg-[var(--bg-tertiary)]/50 rounded p-1.5 md:p-2 border border-[var(--border-secondary)] ${lastDelayedOutcome.success ? 'border-green-500/50' : 'border-red-500/50'}`}>
                 <div className="text-[var(--text-secondary)]">
                   {lastDelayedOutcome.description}
                 </div>
@@ -242,8 +242,8 @@ const EventPopup: React.FC = () => {
             )}
             {lastDelayedOutcome.appliedEffects.length > 0 && (
               <div className="bg-[var(--bg-tertiary)]/60 rounded p-1.5 md:p-3 mb-1 md:mb-2 border border-[var(--border-secondary)]">
-                <div className="text-[10px] md:text-xs font-semibold text-[var(--text-primary)] mb-0.5 md:mb-1">Effects:</div>
-                <ul className="space-y-0.5 text-[9px] md:text-xs">
+                <div className="text-[10px] md:text-sm font-semibold text-[var(--text-primary)] mb-0.5 md:mb-1">Effects:</div>
+                <ul className="space-y-0.5 text-[9px] md:text-sm">
                   {lastDelayedOutcome.appliedEffects.map((effect, index) => {
                     if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.Exp) {
                       return (
@@ -260,8 +260,8 @@ const EventPopup: React.FC = () => {
             )}
             {lastDelayedOutcome.appliedEffects.some(effect => effect.type === EventEffectType.Metric) && (
               <div className="bg-[var(--game-primary)]/20 rounded p-1.5 md:p-3 mb-1 md:mb-2 border border-[var(--game-primary)]/40">
-                <div className="text-[10px] md:text-xs font-semibold text-[var(--game-primary-light)] mb-0.5">Active:</div>
-                <ul className="space-y-0.5 text-[9px] md:text-xs text-[var(--text-primary)]">
+                <div className="text-[10px] md:text-sm font-semibold text-[var(--game-primary-light)] mb-0.5">Active:</div>
+                <ul className="space-y-0.5 text-[9px] md:text-sm text-[var(--text-primary)]">
                   {lastDelayedOutcome.appliedEffects
                     .filter((effect): effect is Extract<GameEventEffect, { type: EventEffectType.Metric }> => effect.type === EventEffectType.Metric)
                     .map((effect, index) => (
@@ -309,7 +309,7 @@ const EventPopup: React.FC = () => {
           <div className="relative bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-secondary)] rounded-md md:rounded-2xl shadow-xl p-2.5 md:p-6 border-2 border-[var(--border-primary)] max-h-[calc(100vh-5rem)] md:max-h-[70vh] overflow-y-auto">
             <div className="flex items-center gap-1 md:gap-1.5 mb-1.5 md:mb-3">
               <span className="text-[var(--game-primary-light)] text-sm md:text-xl drop-shadow-[0_0_4px_rgba(35,170,246,0.6)]">🎲</span>
-              <h3 className="text-xs md:text-lg font-semibold text-[var(--text-primary)] leading-tight flex-1" style={{
+              <h3 className="text-sm md:text-lg font-semibold text-[var(--text-primary)] leading-tight flex-1" style={{
                 textShadow: '0 1px 2px rgba(0,0,0,0.8)'
               }}>
                 {lastEventOutcome.eventTitle}
@@ -320,7 +320,7 @@ const EventPopup: React.FC = () => {
               {lastEventOutcome.costPaid > 0 && <span className="text-red-400 ml-1">(-${lastEventOutcome.costPaid})</span>}
             </p>
             {lastEventOutcome.consequenceLabel && (
-              <div className="text-[10px] md:text-xs text-[var(--text-primary)] mb-1 md:mb-2 bg-[var(--bg-tertiary)]/50 rounded p-1.5 md:p-2 border border-[var(--border-secondary)]">
+              <div className="text-[10px] md:text-sm text-[var(--text-primary)] mb-1 md:mb-2 bg-[var(--bg-tertiary)]/50 rounded p-1.5 md:p-2 border border-[var(--border-secondary)]">
                 <span className="font-medium">{lastEventOutcome.consequenceLabel}</span>
                 {lastEventOutcome.consequenceDescription && (
                   <span className="text-[var(--text-secondary)] ml-1">• {lastEventOutcome.consequenceDescription}</span>
@@ -329,8 +329,8 @@ const EventPopup: React.FC = () => {
             )}
             {lastEventOutcome.appliedEffects.length > 0 && (
               <div className="bg-[var(--bg-tertiary)]/60 rounded p-1.5 md:p-3 mb-1 md:mb-2 border border-[var(--border-secondary)]">
-                <div className="text-[10px] md:text-xs font-semibold text-[var(--text-primary)] mb-0.5 md:mb-1">Effects:</div>
-                <ul className="space-y-0.5 text-[9px] md:text-xs">
+                <div className="text-[10px] md:text-sm font-semibold text-[var(--text-primary)] mb-0.5 md:mb-1">Effects:</div>
+                <ul className="space-y-0.5 text-[9px] md:text-sm">
                   {lastEventOutcome.appliedEffects.map((effect, index) => {
                     if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.Exp) {
                       return (
@@ -347,8 +347,8 @@ const EventPopup: React.FC = () => {
             )}
             {lastEventOutcome.appliedEffects.some(effect => effect.type === EventEffectType.Metric) && (
               <div className="bg-[var(--game-primary)]/20 rounded p-1.5 md:p-3 mb-1 md:mb-2 border border-[var(--game-primary)]/40">
-                <div className="text-[10px] md:text-xs font-semibold text-[var(--game-primary-light)] mb-0.5">Active:</div>
-                <ul className="space-y-0.5 text-[9px] md:text-xs text-[var(--text-primary)]">
+                <div className="text-[10px] md:text-sm font-semibold text-[var(--game-primary-light)] mb-0.5">Active:</div>
+                <ul className="space-y-0.5 text-[9px] md:text-sm text-[var(--text-primary)]">
                   {lastEventOutcome.appliedEffects
                     .filter((effect): effect is Extract<GameEventEffect, { type: EventEffectType.Metric }> => effect.type === EventEffectType.Metric)
                     .map((effect, index) => (
@@ -428,7 +428,7 @@ const EventPopup: React.FC = () => {
         
         {/* Category badge ribbon */}
         <div className={`absolute top-0 right-4 md:right-6 px-2 md:px-3 py-0.5 md:py-1 bg-gradient-to-r ${categoryGradient} border border-[var(--border-secondary)] rounded-b-md shadow-lg z-20`}>
-          <span className="text-[8px] md:text-xs font-bold uppercase tracking-wide text-white" style={{
+          <span className="text-[8px] md:text-sm font-bold uppercase tracking-wide text-white" style={{
             textShadow: '0 1px 2px rgba(0,0,0,0.8)'
           }}>
             {isOpportunity ? 'Opportunity' : 'Challenge'}
@@ -440,7 +440,7 @@ const EventPopup: React.FC = () => {
           <div className="flex items-center gap-1 md:gap-1 mb-1.5 md:mb-3 pt-1">
             <span className={`text-sm md:text-2xl flex-shrink-0 drop-shadow-[0_0_4px_rgba(0,0,0,0.6)] ${isOpportunity ? 'text-green-400' : 'text-red-400'}`}>{eventIcon}</span>
             <h2 
-              className={`text-xs md:text-2xl font-semibold md:font-bold ${eventTitleColor} leading-tight flex-1 line-clamp-2`}
+              className={`text-sm md:text-2xl font-semibold md:font-bold ${eventTitleColor} leading-tight flex-1 line-clamp-2`}
               style={{
                 textShadow: '0 1px 2px rgba(0,0,0,0.8)'
               }}
@@ -499,23 +499,23 @@ const EventPopup: React.FC = () => {
                       </span>
                     </div>
                     {isDefault && countdown !== null && countdown > 0 && (
-                      <div className="flex-shrink-0 px-1.5 md:px-2 py-0.5 md:py-1 bg-black/60 border border-white/30 rounded text-[9px] md:text-xs font-semibold text-white whitespace-nowrap">
+                      <div className="flex-shrink-0 px-1.5 md:px-2 py-0.5 md:py-1 bg-black/60 border border-white/30 rounded text-[9px] md:text-sm font-semibold text-white whitespace-nowrap">
                         ⏱ {countdown}s
                       </div>
                     )}
                     {hasCost && choice.cost !== undefined && (
-                      <div className="flex-shrink-0 px-1.5 md:px-2 py-0.5 md:py-1 bg-black/40 border border-black/60 rounded text-[9px] md:text-xs font-semibold text-red-300 whitespace-nowrap">
+                      <div className="flex-shrink-0 px-1.5 md:px-2 py-0.5 md:py-1 bg-black/40 border border-black/60 rounded text-[9px] md:text-sm font-semibold text-red-300 whitespace-nowrap">
                         ${choice.cost.toLocaleString()}
                       </div>
                     )}
                     {hasTimeCost && choice.timeCost !== undefined && (
-                      <div className="flex-shrink-0 px-1.5 md:px-2 py-0.5 md:py-1 bg-black/40 border border-black/60 rounded text-[9px] md:text-xs font-semibold text-blue-300 whitespace-nowrap">
+                      <div className="flex-shrink-0 px-1.5 md:px-2 py-0.5 md:py-1 bg-black/40 border border-black/60 rounded text-[9px] md:text-sm font-semibold text-blue-300 whitespace-nowrap">
                         ⏱ {choice.timeCost.toLocaleString()}h
                       </div>
                     )}
                   </div>
                   {choice.description && (
-                    <span className="relative z-10 text-white/80 text-[9px] md:text-xs leading-tight line-clamp-1 mt-0.5 pl-4 md:pl-5" style={{
+                    <span className="relative z-10 text-white/80 text-[9px] md:text-sm leading-tight line-clamp-1 mt-0.5 pl-4 md:pl-5" style={{
                       textShadow: '0 1px 1px rgba(0,0,0,0.5)'
                     }}>
                       {choice.description}

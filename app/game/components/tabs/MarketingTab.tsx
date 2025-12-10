@@ -231,13 +231,13 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
         {/* Header: Campaign Name and Level Badge */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
-            <span className="text-ultra-sm font-bold text-primary break-words whitespace-normal">
+            <span className="text-sm font-bold text-primary break-words whitespace-normal">
               {campaign.name}
             </span>
           </div>
           {isLeveled && (
             <div className="flex flex-col items-end gap-0.5">
-              <div className={`px-1.5 py-0.5 rounded border text-micro font-bold ${
+              <div className={`px-1.5 py-0.5 rounded border text-sm font-bold ${
                 level > 0
                   ? 'bg-green-100 border-green-300 text-green-800 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300'
                   : 'bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300'
@@ -257,7 +257,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
         {isLeveled && canUpgradeMore && (
           <>
             <div>
-              <p className="text-ultra-sm font-semibold text-primary leading-tight break-words whitespace-normal">
+              <p className="text-sm font-semibold text-primary leading-tight break-words whitespace-normal">
                 Level {level + 1}
               </p>
             </div>
@@ -265,7 +265,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
             <div className="space-y-0.5">
               <ul className="space-y-0.5">
                 {descriptions.map((item, index) => (
-                  <li key={`${campaign.id}-effect-${index}`} className="flex items-start gap-1 text-micro text-secondary leading-tight">
+                  <li key={`${campaign.id}-effect-${index}`} className="flex items-start gap-1 text-sm text-secondary leading-tight">
                     <span className="text-primary mt-0.5 flex-shrink-0">•</span>
                     <span className={`flex-1 ${item.toneClass} break-words whitespace-normal`}>{item.text}</span>
                   </li>
@@ -281,7 +281,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
             <div className="space-y-0.5">
               <ul className="space-y-0.5">
                 {descriptions.map((item, index) => (
-                  <li key={`${campaign.id}-effect-${index}`} className="flex items-start gap-1 text-micro text-secondary leading-tight">
+                  <li key={`${campaign.id}-effect-${index}`} className="flex items-start gap-1 text-sm text-secondary leading-tight">
                     <span className="text-primary mt-0.5 flex-shrink-0">•</span>
                     <span className={`flex-1 ${item.toneClass} break-words whitespace-normal`}>{item.text}</span>
                   </li>
@@ -305,7 +305,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
                 : 'text-red-600 dark:text-red-400'
             }`}>
               <span className="text-sm">💵</span>
-              <span className="text-ultra-sm font-bold">
+              <span className="text-sm font-bold">
                 ${cost.toLocaleString()}
               </span>
             </div>
@@ -317,7 +317,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
                 : 'text-red-600 dark:text-red-400'
             }`}>
               <span className="text-sm">⏱️</span>
-              <span className="text-ultra-sm font-bold">
+              <span className="text-sm font-bold">
                 {timeCost}h
               </span>
             </div>
@@ -325,7 +325,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
           {!needsCash && !needsTime && !isMaxLevel && (
             <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
               <span className="text-sm">🆓</span>
-              <span className="text-ultra-sm font-bold">Free</span>
+              <span className="text-sm font-bold">Free</span>
             </div>
           )}
         </div>
@@ -413,7 +413,7 @@ export function MarketingTab() {
     <div className="space-y-3 sm:space-y-4 md:space-y-6">
       <div>
         <SectionHeading>Marketing Campaigns</SectionHeading>
-        <p className="text-secondary text-xs sm:text-sm">
+        <p className="text-secondary text-sm sm:text-sm">
           Spend cash to run time-limited campaigns that boost demand and reputation.
         </p>
       </div>
@@ -424,21 +424,21 @@ export function MarketingTab() {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-sm">Active Campaigns</span>
-              <span className="text-xs text-secondary">({activeCampaigns.length})</span>
+              <span className="text-sm text-secondary">({activeCampaigns.length})</span>
             </div>
             <div className="grid gap-2">
               {activeCampaigns.map((campaign) => (
                 <div key={campaign.campaignId} className="p-3 bg-black/20 rounded">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-primary">{campaign.campaignName}</span>
-                    <span className="text-xs font-mono">
+                    <span className="text-sm font-mono">
                       {formatSeconds(campaign.earliestExpiration)}
                     </span>
                   </div>
                   <div className="space-y-1">
                     {/* Comment out this to hide effect */}
                     {campaign.effects.map((effect: any, index: number) => (
-                      <div key={`${effect.id}-${index}`} className="flex items-center justify-between text-xs">
+                      <div key={`${effect.id}-${index}`} className="flex items-center justify-between text-sm">
                         <span className="text-secondary">
                           {effect.description || getDisplayLabel(effect.metric)}
                         </span>
@@ -462,7 +462,7 @@ export function MarketingTab() {
 
       {message && (
         <Card variant="info" className="border-[var(--info)] bg-[var(--info)]/10">
-          <p className="text-secondary text-xs sm:text-sm">{message}</p>
+          <p className="text-secondary text-sm sm:text-sm">{message}</p>
         </Card>
       )}
 

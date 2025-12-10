@@ -61,7 +61,7 @@ function FeedbackAnimation({ item, onComplete }: FeedbackAnimationProps) {
     <div
       className={`
         absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
-        text-xs md:text-sm font-bold
+        text-sm md:text-sm font-bold
         ${colorClasses[item.color]}
         transition-all duration-1500 ease-out
         ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}

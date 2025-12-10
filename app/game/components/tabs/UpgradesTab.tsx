@@ -227,11 +227,11 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
         {/* Header: Upgrade Name and Level Badge */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
-            <span className="text-ultra-sm font-bold text-primary break-words whitespace-normal">
+            <span className="text-sm font-bold text-primary break-words whitespace-normal">
               {upgrade.name}
             </span>
           </div>
-          <div className={`px-1.5 py-0.5 rounded border text-micro font-bold ${
+          <div className={`px-1.5 py-0.5 rounded border text-sm font-bold ${
             currentLevel > 0
               ? 'bg-green-100 border-green-300 text-green-800 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300'
               : 'bg-gray-100 border-gray-300 text-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'
@@ -244,14 +244,14 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
         {nextLevelConfig && !isMaxed && (
           <>
             <div>
-              <p className="text-ultra-sm font-semibold text-primary leading-tight break-words whitespace-normal">
+              <p className="text-sm font-semibold text-primary leading-tight break-words whitespace-normal">
                 {nextLevelConfig.name}
               </p>
             </div>
 
             {nextLevelConfig.description && (
               <div>
-                <p className="text-micro text-secondary leading-relaxed break-words whitespace-normal">
+                <p className="text-sm text-secondary leading-relaxed break-words whitespace-normal">
                   {nextLevelConfig.description}
                 </p>
               </div>
@@ -259,7 +259,7 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
 
             {nextLevelEffects.length > 0 && (
               <div className="space-y-0.5">
-                <div className="text-micro font-semibold text-primary uppercase tracking-wide">
+                <div className="text-sm font-semibold text-primary uppercase tracking-wide">
                   Effects:
                 </div>
                 <ul className="space-y-0.5">
@@ -267,7 +267,7 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
                     const effectData = nextLevelConfig?.effects[idx];
                     const icon = effectData ? getMetricIcon(effectData.metric) : '•';
                     return (
-                      <li key={idx} className="flex items-start gap-1 text-micro text-secondary leading-tight">
+                      <li key={idx} className="flex items-start gap-1 text-sm text-secondary leading-tight">
                         <span className="text-primary mt-0.5 flex-shrink-0">{icon}</span>
                         <span className="flex-1 break-words whitespace-normal">{effect}</span>
                       </li>
@@ -282,7 +282,7 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
         {/* Max Level Message */}
         {isMaxed && (
           <div className="p-1 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded">
-            <p className="text-micro text-green-700 dark:text-green-400 font-semibold text-center break-words whitespace-normal">
+            <p className="text-sm text-green-700 dark:text-green-400 font-semibold text-center break-words whitespace-normal">
               🎉 Max Level
             </p>
           </div>
@@ -301,7 +301,7 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
                   : 'text-red-600 dark:text-red-400'
               }`}>
                 <span className="text-sm">{getMetricIcon(GameMetric.Cash)}</span>
-                <span className="text-ultra-sm font-bold">
+                <span className="text-sm font-bold">
                   ${upgradeCost.toLocaleString()}
                 </span>
               </div>
@@ -313,7 +313,7 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
                   : 'text-red-600 dark:text-red-400'
               }`}>
                 <span className="text-sm">⏱️</span>
-                <span className="text-ultra-sm font-bold">
+                <span className="text-sm font-bold">
                   {upgradeTimeCost}h
                 </span>
               </div>
@@ -321,7 +321,7 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
             {!needsCash && !needsTime && (
               <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
                 <span className="text-sm">🆓</span>
-                <span className="text-ultra-sm font-bold">Free</span>
+                <span className="text-sm font-bold">Free</span>
               </div>
             )}
           </div>
@@ -499,11 +499,11 @@ function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
       <div className={`h-10 sm:h-12 md:h-16 bg-gradient-to-r ${styles.cardGradient} relative overflow-hidden border-b-2 ${styles.borderColor}/50`}>
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="absolute top-1 sm:top-1.5 md:top-2 left-2 sm:left-2.5 md:left-3 right-2 sm:right-2.5 md:right-3 flex items-center justify-between z-10">
-          <span className={`text-micro sm:text-ultra-sm md:text-xs font-bold ${styles.textColor} uppercase tracking-wide`}>
+          <span className={`text-micro sm:text-ultra-sm md:text-sm font-bold ${styles.textColor} uppercase tracking-wide`}>
             {candidate.role}
           </span>
           {availability === 'locked' && (
-            <span className="text-white/70 text-xs sm:text-sm md:text-base">🔒</span>
+            <span className="text-white/70 text-sm sm:text-sm md:text-base">🔒</span>
           )}
         </div>
       </div>
@@ -534,7 +534,7 @@ function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
         </h5>
         <div className="flex justify-center">
           <div className={`inline-block px-2 sm:px-2.5 md:px-3 py-0.5 sm:py-0.5 md:py-1 rounded-full ${styles.badgeBg} border ${styles.borderColor}`}>
-            <span className={`${styles.accentText} text-micro sm:text-caption md:text-xs font-semibold uppercase whitespace-nowrap`}>
+            <span className={`${styles.accentText} text-micro sm:text-caption md:text-sm font-semibold uppercase whitespace-nowrap`}>
               {candidate.role}
             </span>
           </div>
@@ -596,7 +596,7 @@ function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
         {requirementDescriptions.length > 0 && availability === 'locked' && (
           <button
             onClick={handleRequirementsClick}
-            className="absolute top-0 right-2 sm:right-3 md:right-4 w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 bg-black/70 hover:bg-black/90 text-white rounded-full text-micro sm:text-caption md:text-xs font-bold shadow-lg transition-colors flex items-center justify-center z-10 border border-white/20"
+            className="absolute top-0 right-2 sm:right-3 md:right-4 w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 bg-black/70 hover:bg-black/90 text-white rounded-full text-micro sm:text-caption md:text-sm font-bold shadow-lg transition-colors flex items-center justify-center z-10 border border-white/20"
             title="Click to see requirements"
           >
             ?
@@ -660,7 +660,7 @@ function HiredStaffCard({ member, onFire }: HiredStaffCardProps) {
       <div className={`h-10 sm:h-12 md:h-16 bg-gradient-to-r ${styles.cardGradient} relative overflow-hidden border-b-2 ${styles.borderColor}/50`}>
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="absolute top-1 sm:top-1.5 md:top-2 left-2 sm:left-2.5 md:left-3 right-2 sm:right-2.5 md:right-3 flex items-center z-10">
-          <span className={`text-micro sm:text-ultra-sm md:text-xs font-bold ${styles.textColor} uppercase tracking-wide`}>
+          <span className={`text-micro sm:text-ultra-sm md:text-sm font-bold ${styles.textColor} uppercase tracking-wide`}>
             {member.role}
           </span>
         </div>
@@ -692,7 +692,7 @@ function HiredStaffCard({ member, onFire }: HiredStaffCardProps) {
         </h4>
         <div className="flex justify-center">
           <div className={`inline-block px-2 sm:px-2.5 md:px-3 py-0.5 sm:py-0.5 md:py-1 rounded-full ${styles.badgeBg} border ${styles.borderColor}`}>
-            <span className={`${styles.accentText} text-micro sm:text-caption md:text-xs font-semibold uppercase whitespace-nowrap`}>
+            <span className={`${styles.accentText} text-micro sm:text-caption md:text-sm font-semibold uppercase whitespace-nowrap`}>
               {member.role}
             </span>
           </div>
@@ -908,7 +908,7 @@ export function UpgradesTab() {
       <section className="space-y-3 sm:space-y-4 md:space-y-6">
         <div className="text-center">
           <SectionHeading>Staff Management</SectionHeading>
-          <p className="text-xs sm:text-sm md:text-base lg:text-lg text-secondary mb-3 sm:mb-4 md:mb-6 lg:mb-8 text-center px-2">
+          <p className="text-sm sm:text-sm md:text-base lg:text-lg text-secondary mb-3 sm:mb-4 md:mb-6 lg:mb-8 text-center px-2">
             Oversee your talented team. Happy staff, happy customers!
           </p>
         </div>
@@ -917,7 +917,7 @@ export function UpgradesTab() {
         <div className="space-y-2 sm:space-y-3 md:space-y-4 lg:space-y-6">
           <div className="text-center">
             <h4 className="text-base sm:text-lg md:text-xl font-bold text-primary mb-1 sm:mb-2">Our Staff</h4>
-            <p className="text-xs sm:text-sm md:text-base text-secondary">
+            <p className="text-sm sm:text-sm md:text-base text-secondary">
               Meet the team running your business every day.
             </p>
           </div>
@@ -930,7 +930,7 @@ export function UpgradesTab() {
               </div>
             ))}
             {hiredStaff.length === 0 && (
-              <div className="text-center text-muted text-xs sm:text-sm md:text-base py-6 sm:py-8 md:py-10 w-full">
+              <div className="text-center text-muted text-sm sm:text-sm md:text-base py-6 sm:py-8 md:py-10 w-full">
                 You haven&apos;t hired anyone yet. Pick a candidate below to build your team.
               </div>
             )}
@@ -941,7 +941,7 @@ export function UpgradesTab() {
         <div className="space-y-2 sm:space-y-3 md:space-y-4 lg:space-y-6">
           <div className="text-center">
             <h4 className="text-base sm:text-lg md:text-xl font-bold text-primary mb-1 sm:mb-2">Available Staff</h4>
-            <p className="text-xs sm:text-sm md:text-base text-secondary">
+            <p className="text-sm sm:text-sm md:text-base text-secondary">
               Choose who joins your business next. Hiring is instant and only adds their salary.
             </p>
           </div>
@@ -957,7 +957,7 @@ export function UpgradesTab() {
               </div>
             ))}
             {availableStaff.length === 0 && (
-              <div className="text-center text-muted text-xs sm:text-sm md:text-base py-6 sm:py-8 md:py-10 w-full">
+              <div className="text-center text-muted text-sm sm:text-sm md:text-base py-6 sm:py-8 md:py-10 w-full">
                 All available staff have joined your team. Check back later!
               </div>
             )}
