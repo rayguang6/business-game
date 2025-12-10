@@ -81,6 +81,7 @@ export interface Requirement {
   expected?: boolean;  // For flag: true = must be met, false = must NOT be met
   operator?: '>=' | '<=' | '>' | '<' | '==';  // For numeric types: comparison operator
   value?: number;      // For numeric types: value to compare against
+  onFail?: 'lock' | 'hide';  // What to do when requirement is NOT met (default: 'lock')
 }
 
 export interface UpgradeLevelConfig {

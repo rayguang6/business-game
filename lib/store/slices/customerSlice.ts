@@ -4,7 +4,7 @@ import { GameState } from '../types';
 import { DEFAULT_INDUSTRY_ID, getServicesForIndustry } from '@/lib/game/config';
 import type { IndustryId } from '@/lib/game/types';
 import { GameStore } from '../gameStore';
-import { checkRequirements } from '@/lib/game/requirementChecker';
+import { getAvailability } from '@/lib/game/requirementChecker';
 import { getWeightedRandomService } from '@/lib/features/services';
 import { getServicesFromStore } from '@/lib/store/configStore';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
@@ -33,12 +33,13 @@ export const createCustomerSlice: StateCreator<GameState, [], [], CustomerSlice>
       servicesFromStore.length > 0 ? servicesFromStore : getServicesForIndustry(industryId);
     const store = get() as GameStore;
 
-    // Filter services that meet requirements
+    // Filter services by availability (hide if requirements not met with onFail: 'hide')
     const availableServices = allServices.filter((service) => {
       if (!service.requirements || service.requirements.length === 0) {
         return true; // No requirements means always available
       }
-      return checkRequirements(service.requirements, store);
+      const availability = getAvailability(service.requirements, store);
+      return availability !== 'hidden'; // Include if not hidden
     });
 
     // If no services available, fall back to all services (shouldn't happen, but safety check)

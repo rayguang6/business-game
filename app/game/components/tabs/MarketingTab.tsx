@@ -120,7 +120,7 @@ interface CampaignCardProps {
 }
 
 function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, currentLevel, wasActivatedThisMonth, onLaunch, metrics, getDisplayLabel }: CampaignCardProps & { metrics: { cash: number; time: number }; getDisplayLabel: (metric: GameMetric) => string }) {
-  const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(campaign.requirements);
+  const { availability, descriptions: requirementDescriptions } = useRequirements(campaign.requirements);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
   
   // Handle leveled vs unlimited campaigns
@@ -200,7 +200,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
     toneClass: getToneClass(effect),
   }));
 
-  const buttonDisabled = isOnCooldown || !canAfford || !requirementsMet;
+  const buttonDisabled = isOnCooldown || !canAfford || availability === 'locked';
 
   const handleRequirementsClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -212,6 +212,11 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
   }, []);
 
   const isMaxLevel = isLeveled && !canUpgradeMore && level > 0;
+
+  // Hide card if requirements are not met and should be hidden
+  if (availability === 'hidden') {
+    return null;
+  }
 
   return (
     <Card className={`flex flex-col justify-between p-2 sm:p-3 min-h-[200px] overflow-hidden ${
@@ -335,7 +340,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
           >
             {isOnCooldown
               ? `Cooldown: ${formatSeconds(cooldownRemaining)}`
-              : !requirementsMet
+              : availability === 'locked'
                 ? 'Requirements Not Met'
                 : isLeveled && !canUpgradeMore
                   ? 'Max Level'
@@ -343,7 +348,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
                     ? `Upgrade`
                     : needText}
           </GameButton>
-          {requirementDescriptions.length > 0 && !requirementsMet && !isOnCooldown && canAfford && (
+          {requirementDescriptions.length > 0 && availability === 'locked' && !isOnCooldown && canAfford && (
             <button
               onClick={handleRequirementsClick}
               className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[var(--bg-tertiary)] hover:bg-[var(--game-primary)] text-white rounded-full text-micro font-bold shadow-md transition-colors flex items-center justify-center z-10"

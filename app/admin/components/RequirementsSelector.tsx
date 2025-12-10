@@ -86,8 +86,8 @@ export function RequirementsSelector({
       onRequirementsChange(requirements.filter((_, index) => index !== existingIndex));
       setEditingRequirement(null);
     } else {
-      // Add with defaults
-      const newReq: Requirement = { type, id: cleanId };
+      // Add with defaults, including default onFail = 'lock'
+      const newReq: Requirement = { type, id: cleanId, onFail: 'lock' };
       if (type === 'flag') {
         newReq.expected = true;
       } else if (type === 'upgrade' || type === 'metric' || type === 'staff') {
@@ -117,6 +117,18 @@ export function RequirementsSelector({
     const updated = requirements.map(req => {
       if (req.id === cleanId && req.type === type) {
         return { ...req, operator: operator as any, value };
+      }
+      return req;
+    });
+    onRequirementsChange(updated);
+  };
+
+  const handleToggleOnFail = (cleanId: string, type: Requirement['type'], onFail: 'lock' | 'hide') => {
+    if (!onRequirementsChange) return;
+
+    const updated = requirements.map(req => {
+      if (req.id === cleanId && req.type === type) {
+        return { ...req, onFail: req.onFail === onFail ? undefined : onFail };
       }
       return req;
     });
@@ -184,19 +196,48 @@ export function RequirementsSelector({
                           )}
                         </div>
                         {isSelected && (
-                          <div className="flex items-center gap-2 mt-2 ml-6">
-                            <span className="text-xs text-slate-400">Must be:</span>
-                            <button
-                              type="button"
-                              onClick={() => handleToggleExpected(flag.id, 'flag')}
-                              className={`px-2 py-1 text-xs rounded border transition-colors ${
-                                expected === false
-                                  ? 'bg-red-500/20 border-red-500 text-red-200'
-                                  : 'bg-green-500/20 border-green-500 text-green-200'
-                              }`}
-                            >
-                              {expected === false ? 'NO' : 'YES'}
-                            </button>
+                          <div className="space-y-2 mt-2 ml-6">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-slate-400">Must be:</span>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleExpected(flag.id, 'flag')}
+                                className={`px-2 py-1 text-xs rounded border transition-colors ${
+                                  expected === false
+                                    ? 'bg-red-500/20 border-red-500 text-red-200'
+                                    : 'bg-green-500/20 border-green-500 text-green-200'
+                                }`}
+                              >
+                                {expected === false ? 'NO' : 'YES'}
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-slate-400">When unmet:</span>
+                              <div className="flex gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleOnFail(flag.id, 'flag', 'lock')}
+                                  className={`px-2 py-1 text-xs rounded border transition-colors ${
+                                    req?.onFail === 'lock'
+                                      ? 'bg-orange-500/20 border-orange-500 text-orange-200'
+                                      : 'bg-slate-600/50 border-slate-500 text-slate-400 hover:bg-slate-600'
+                                  }`}
+                                >
+                                  Lock
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleOnFail(flag.id, 'flag', 'hide')}
+                                  className={`px-2 py-1 text-xs rounded border transition-colors ${
+                                    req?.onFail === 'hide'
+                                      ? 'bg-red-500/20 border-red-500 text-red-200'
+                                      : 'bg-slate-600/50 border-slate-500 text-slate-400 hover:bg-slate-600'
+                                  }`}
+                                >
+                                  Hide
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -289,6 +330,35 @@ export function RequirementsSelector({
                             )}
                           </div>
                         )}
+                        {isSelected && (
+                          <div className="flex items-center gap-2 mt-2 ml-6">
+                            <span className="text-xs text-slate-400">When unmet:</span>
+                            <div className="flex gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleOnFail(upgrade.id, 'upgrade', 'lock')}
+                                className={`px-2 py-1 text-xs rounded border transition-colors ${
+                                  req?.onFail === 'lock'
+                                    ? 'bg-orange-500/20 border-orange-500 text-orange-200'
+                                    : 'bg-slate-600/50 border-slate-500 text-slate-400 hover:bg-slate-600'
+                                }`}
+                              >
+                                Lock
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleOnFail(upgrade.id, 'upgrade', 'hide')}
+                                className={`px-2 py-1 text-xs rounded border transition-colors ${
+                                  req?.onFail === 'hide'
+                                    ? 'bg-red-500/20 border-red-500 text-red-200'
+                                    : 'bg-slate-600/50 border-slate-500 text-slate-400 hover:bg-slate-600'
+                                }`}
+                              >
+                                Hide
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -377,6 +447,35 @@ export function RequirementsSelector({
                                 </button>
                               </div>
                             )}
+                          </div>
+                        )}
+                        {isSelected && (
+                          <div className="flex items-center gap-2 mt-2 ml-6">
+                            <span className="text-xs text-slate-400">When unmet:</span>
+                            <div className="flex gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleOnFail(metric.id, 'metric', 'lock')}
+                                className={`px-2 py-1 text-xs rounded border transition-colors ${
+                                  req?.onFail === 'lock'
+                                    ? 'bg-orange-500/20 border-orange-500 text-orange-200'
+                                    : 'bg-slate-600/50 border-slate-500 text-slate-400 hover:bg-slate-600'
+                                }`}
+                              >
+                                Lock
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleOnFail(metric.id, 'metric', 'hide')}
+                                className={`px-2 py-1 text-xs rounded border transition-colors ${
+                                  req?.onFail === 'hide'
+                                    ? 'bg-red-500/20 border-red-500 text-red-200'
+                                    : 'bg-slate-600/50 border-slate-500 text-slate-400 hover:bg-slate-600'
+                                }`}
+                              >
+                                Hide
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -469,6 +568,35 @@ export function RequirementsSelector({
                             )}
                           </div>
                         )}
+                        {isSelected && (
+                          <div className="flex items-center gap-2 mt-2 ml-6">
+                            <span className="text-xs text-slate-400">When unmet:</span>
+                            <div className="flex gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleOnFail(role.id, 'staff', 'lock')}
+                                className={`px-2 py-1 text-xs rounded border transition-colors ${
+                                  req?.onFail === 'lock'
+                                    ? 'bg-orange-500/20 border-orange-500 text-orange-200'
+                                    : 'bg-slate-600/50 border-slate-500 text-slate-400 hover:bg-slate-600'
+                                }`}
+                              >
+                                Lock
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleOnFail(role.id, 'staff', 'hide')}
+                                className={`px-2 py-1 text-xs rounded border transition-colors ${
+                                  req?.onFail === 'hide'
+                                    ? 'bg-red-500/20 border-red-500 text-red-200'
+                                    : 'bg-slate-600/50 border-slate-500 text-slate-400 hover:bg-slate-600'
+                                }`}
+                              >
+                                Hide
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -504,56 +632,87 @@ export function RequirementsSelector({
                           />
                           <span className="text-sm flex-1">Total Staff (Any Role)</span>
                         </div>
-                        {isSelected && (
-                          <div className="mt-2 ml-6 space-y-2">
-                            {isEditing ? (
-                              <div className="flex flex-col gap-2">
-                                <div className="flex gap-2">
-                                  <select
-                                    value={req?.operator || '>='}
-                                    onChange={(e) => {
-                                      handleUpdateNumericRequirement('*', 'staff', e.target.value, req?.value || 1);
-                                    }}
-                                    className="flex-1 rounded bg-slate-900 border border-slate-600 px-2 py-1 text-xs text-slate-200"
+                        <>
+                          {isSelected && (
+                            <div className="mt-2 ml-6 space-y-2">
+                              {isEditing ? (
+                                <div className="flex flex-col gap-2">
+                                  <div className="flex gap-2">
+                                    <select
+                                      value={req?.operator || '>='}
+                                      onChange={(e) => {
+                                        handleUpdateNumericRequirement('*', 'staff', e.target.value, req?.value || 1);
+                                      }}
+                                      className="flex-1 rounded bg-slate-900 border border-slate-600 px-2 py-1 text-xs text-slate-200"
+                                    >
+                                      {OPERATOR_OPTIONS.map(op => (
+                                        <option key={op.value} value={op.value}>{op.label}</option>
+                                      ))}
+                                    </select>
+                                    <NumberInput
+                                      value={req?.value ?? 1}
+                                      onChange={(e) => {
+                                        const val = parseInt(e.target.value) || 1;
+                                        handleUpdateNumericRequirement('*', 'staff', req?.operator || '>=', val);
+                                      }}
+                                      className="w-20 rounded bg-slate-900 border border-slate-600 px-2 py-1 text-xs text-slate-200"
+                                      min="0"
+                                    />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingRequirement(null)}
+                                    className="text-xs text-slate-400 hover:text-slate-300"
                                   >
-                                    {OPERATOR_OPTIONS.map(op => (
-                                      <option key={op.value} value={op.value}>{op.label}</option>
-                                    ))}
-                                  </select>
-                                  <NumberInput
-                                    value={req?.value ?? 1}
-                                    onChange={(e) => {
-                                      const val = parseInt(e.target.value) || 1;
-                                      handleUpdateNumericRequirement('*', 'staff', req?.operator || '>=', val);
-                                    }}
-                                    className="w-20 rounded bg-slate-900 border border-slate-600 px-2 py-1 text-xs text-slate-200"
-                                    min="0"
-                                  />
+                                    Done
+                                  </button>
                                 </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-slate-400">
+                                    Count {req?.operator || '>='} {req?.value ?? 1}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingRequirement('staff-*')}
+                                    className="text-xs text-orange-400 hover:text-orange-300 underline"
+                                  >
+                                    Edit
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {isSelected && (
+                            <div className="flex items-center gap-2 mt-2 ml-6">
+                              <span className="text-xs text-slate-400">When unmet:</span>
+                              <div className="flex gap-1">
                                 <button
                                   type="button"
-                                  onClick={() => setEditingRequirement(null)}
-                                  className="text-xs text-slate-400 hover:text-slate-300"
+                                  onClick={() => handleToggleOnFail('*', 'staff', 'lock')}
+                                  className={`px-2 py-1 text-xs rounded border transition-colors ${
+                                    req?.onFail === 'lock'
+                                      ? 'bg-orange-500/20 border-orange-500 text-orange-200'
+                                      : 'bg-slate-600/50 border-slate-500 text-slate-400 hover:bg-slate-600'
+                                  }`}
                                 >
-                                  Done
+                                  Lock
                                 </button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-slate-400">
-                                  Count {req?.operator || '>='} {req?.value ?? 1}
-                                </span>
                                 <button
                                   type="button"
-                                  onClick={() => setEditingRequirement('staff-*')}
-                                  className="text-xs text-orange-400 hover:text-orange-300 underline"
+                                  onClick={() => handleToggleOnFail('*', 'staff', 'hide')}
+                                  className={`px-2 py-1 text-xs rounded border transition-colors ${
+                                    req?.onFail === 'hide'
+                                      ? 'bg-red-500/20 border-red-500 text-red-200'
+                                      : 'bg-slate-600/50 border-slate-500 text-slate-400 hover:bg-slate-600'
+                                  }`}
                                 >
-                                  Edit
+                                  Hide
                                 </button>
                               </div>
-                            )}
-                          </div>
-                        )}
+                            </div>
+                          )}
+                        </>
                       </div>
                     );
                   })()}

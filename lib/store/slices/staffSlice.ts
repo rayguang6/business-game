@@ -9,7 +9,7 @@ import {
 } from '@/lib/game/staffConfig';
 import { DEFAULT_INDUSTRY_ID, type IndustryId } from '@/lib/game/types';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
-import { checkRequirements } from '@/lib/game/requirementChecker';
+import { getAvailability } from '@/lib/game/requirementChecker';
 import { OneTimeCostCategory } from '../types';
 import { SourceHelpers } from '@/lib/utils/financialTracking';
 import { getStaffPositions } from '@/lib/game/positioning';
@@ -47,8 +47,12 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
 
       // Check requirements
       if (candidate.requirements && candidate.requirements.length > 0) {
-        const requirementsMet = checkRequirements(candidate.requirements, store);
-        if (!requirementsMet) {
+        const availability = getAvailability(candidate.requirements, store);
+        if (availability === 'hidden') {
+          console.warn(`[Requirements] Cannot hire ${candidate.name}: staff is hidden due to requirements`);
+          return;
+        }
+        if (availability === 'locked') {
           console.warn(`[Requirements] Cannot hire ${candidate.name}: requirements not met`);
           return;
         }

@@ -157,7 +157,6 @@ import { effectManager } from '@/lib/game/effectManager';
 import { getMonthlyBaseExpenses } from '@/lib/features/economy';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import { DynamicValueEvaluator } from '@/lib/game/dynamicValueEvaluator';
-import { checkRequirements } from '@/lib/game/requirementChecker';
 import { SourceType } from '@/lib/config/sourceTypes';
 import { SourceHelpers } from '@/lib/utils/financialTracking';
 import { generateLeads } from '@/lib/features/leads';

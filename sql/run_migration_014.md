@@ -47,3 +47,4 @@ Expected indexes:
 - `idx_level_rewards_industry` (on industry_id)
 - `idx_level_rewards_level` (on level)
 
+

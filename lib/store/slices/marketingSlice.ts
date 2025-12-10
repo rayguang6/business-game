@@ -2,7 +2,7 @@ import { StateCreator } from 'zustand';
 import { GameStore } from '../gameStore';
 import { OneTimeCost, OneTimeCostCategory } from '../types';
 import { effectManager, GameMetric, EffectType } from '@/lib/game/effectManager';
-import { checkRequirements } from '@/lib/game/requirementChecker';
+import { getAvailability } from '@/lib/game/requirementChecker';
 import type { Requirement, IndustryId } from '@/lib/game/types';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import { useConfigStore } from '@/lib/store/configStore';
@@ -260,8 +260,11 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       // Check requirements
       if (campaign.requirements && campaign.requirements.length > 0) {
         const store = get();
-        const requirementsMet = checkRequirements(campaign.requirements, store);
-        if (!requirementsMet) {
+        const availability = getAvailability(campaign.requirements, store);
+        if (availability === 'hidden') {
+          return { success: false, message: `${campaign.name} is not available due to requirements.` };
+        }
+        if (availability === 'locked') {
           return { success: false, message: `Requirements not met to purchase ${campaign.name}.` };
         }
       }
@@ -387,8 +390,11 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       // Check requirements
       if (campaign.requirements && campaign.requirements.length > 0) {
         const store = get();
-        const requirementsMet = checkRequirements(campaign.requirements, store);
-        if (!requirementsMet) {
+        const availability = getAvailability(campaign.requirements, store);
+        if (availability === 'hidden') {
+          return { success: false, message: `${campaign.name} is not available due to requirements.` };
+        }
+        if (availability === 'locked') {
           return { success: false, message: `Requirements not met to launch ${campaign.name}.` };
         }
       }

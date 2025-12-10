@@ -45,7 +45,7 @@ function getMetricValueById(metricId: string, store: GameStore): number {
  * @param store - The current game store state
  * @returns true if the requirement is met
  */
-function evaluateRequirement(req: Requirement, store: GameStore): boolean {
+export function evaluateRequirement(req: Requirement, store: GameStore): boolean {
   const { type, id, expected, operator, value } = req;
 
   if (type === 'flag') {
@@ -101,6 +101,43 @@ function evaluateRequirement(req: Requirement, store: GameStore): boolean {
  */
 export function checkRequirements(requirements: Requirement[], store: GameStore): boolean {
   return requirements.every(req => evaluateRequirement(req, store));
+}
+
+/**
+ * Computes the availability state for a set of requirements
+ * @param requirements - Array of requirements to check
+ * @param store - The current game store state
+ * @returns Availability state: "hidden" | "locked" | "available"
+ */
+export function getAvailability(requirements: Requirement[], store: GameStore): 'hidden' | 'locked' | 'available' {
+  if (!requirements || requirements.length === 0) {
+    return 'available';
+  }
+
+  // Check each requirement individually to determine availability
+  let hasHiddenRequirement = false;
+  let hasUnmetRequirement = false;
+
+  for (const req of requirements) {
+    const isMet = evaluateRequirement(req, store);
+
+    if (!isMet) {
+      // Check if this unmet requirement should hide the element
+      if (req.onFail === 'hide') {
+        hasHiddenRequirement = true;
+      }
+      hasUnmetRequirement = true;
+    }
+  }
+
+  // Determine availability state
+  if (hasHiddenRequirement) {
+    return 'hidden';
+  } else if (hasUnmetRequirement) {
+    return 'locked';
+  } else {
+    return 'available';
+  }
 }
 
 /**

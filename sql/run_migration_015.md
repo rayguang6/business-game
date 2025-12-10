@@ -93,3 +93,4 @@ After migration, test the marketing campaigns in the game:
 - Time costs are in seconds (10s or 20s per click as specified)
 - Cooldown times converted from hours to seconds
 - Effects use null durationMonths for permanent effects, 1 for monthly effects, null for instant effects
+

@@ -39,7 +39,7 @@ import {
 } from '@/lib/features/leads';
 import { getServicesForIndustry } from '@/lib/game/config';
 import { getServicesFromStore } from '@/lib/store/configStore';
-import { checkRequirements } from '@/lib/game/requirementChecker';
+import { getAvailability } from '@/lib/game/requirementChecker';
 import type { GameStore } from '@/lib/store/gameStore';
 import { getWeightedRandomService } from '@/lib/features/services';
 import {
@@ -1287,12 +1287,13 @@ export function tickOnce(state: TickInput): TickResult {
           upgrades: state.upgrades,
         };
 
-        // Filter services that meet requirements
+        // Filter services by availability (hide if requirements not met with onFail: 'hide')
         const availableServices = allServices.filter((service) => {
           if (!service.requirements || service.requirements.length === 0) {
             return true; // No requirements means always available
           }
-          return checkRequirements(service.requirements, storeContext as GameStore);
+          const availability = getAvailability(service.requirements, storeContext as GameStore);
+          return availability !== 'hidden'; // Include if not hidden
         });
 
         if (availableServices.length > 0) {

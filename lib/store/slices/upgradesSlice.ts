@@ -10,7 +10,7 @@ import { calculateUpgradeMonthlyExpenses, getMonthlyBaseExpenses } from '@/lib/f
 import { getUpgradeLevel, canUpgradeMore } from '@/lib/features/upgrades';
 import { GameStore } from '../gameStore';
 import { effectManager, GameMetric, EffectType } from '@/lib/game/effectManager';
-import { checkRequirements } from '@/lib/game/requirementChecker';
+import { getAvailability } from '@/lib/game/requirementChecker';
 import { SourceType, SourceInfo } from '@/lib/config/sourceTypes';
 import { SourceHelpers } from '@/lib/utils/financialTracking';
 import { IndustryId } from '@/lib/game/types';
@@ -363,8 +363,11 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
 
     // Check requirements
     if (upgrade.requirements && upgrade.requirements.length > 0) {
-      const requirementsMet = checkRequirements(upgrade.requirements, get() as GameStore);
-      if (!requirementsMet) {
+      const availability = getAvailability(upgrade.requirements, get() as GameStore);
+      if (availability === 'hidden') {
+        return { success: false, message: `${upgrade.name} is not available due to requirements.` };
+      }
+      if (availability === 'locked') {
         return { success: false, message: `Requirements not met to purchase ${upgrade.name}.` };
       }
     }

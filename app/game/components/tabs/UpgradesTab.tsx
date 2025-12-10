@@ -92,7 +92,7 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
   const upgrades = useGameStore((state) => state.upgrades);
   // Subscribe to metrics with selector to ensure re-renders when metrics change
   const metrics = useGameStore((state) => state.metrics);
-  const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(upgrade.requirements);
+  const { availability, descriptions: requirementDescriptions } = useRequirements(upgrade.requirements);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
 
   const formatEffect = useCallback((effect: UpgradeEffect): string => {
@@ -192,7 +192,7 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
     return nextLevelConfig.effects.map(effect => formatEffect(effect));
   }, [nextLevelConfig, formatEffect]);
 
-  const buttonDisabled = isMaxed || !canAfford || !requirementsMet;
+  const buttonDisabled = isMaxed || !canAfford || availability === 'locked';
 
   const handlePurchase = useCallback(() => {
     if (!buttonDisabled) {
@@ -208,6 +208,11 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
   const handleCloseModal = useCallback(() => {
     setShowRequirementsModal(false);
   }, []);
+
+  // Hide card if requirements are not met and should be hidden
+  if (availability === 'hidden') {
+    return null;
+  }
 
   return (
     <Card className={`flex flex-col justify-between p-2 sm:p-3 min-h-[200px] overflow-hidden ${
@@ -338,7 +343,7 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
           {/* Action Button */}
           <div className="relative">
             <GameButton
-              color={isMaxed ? 'gold' : canAfford && requirementsMet ? 'blue' : 'gold'}
+              color={isMaxed ? 'gold' : canAfford && availability === 'available' ? 'blue' : 'gold'}
               fullWidth
               size="sm"
               disabled={buttonDisabled}
@@ -346,13 +351,13 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
             >
               {isMaxed
                 ? 'Max Level'
-                : !requirementsMet
+                : availability === 'locked'
                   ? 'Requirements Not Met'
                   : canAfford
                     ? `Upgrade`
                     : needText}
             </GameButton>
-            {requirementDescriptions.length > 0 && !requirementsMet && (
+            {requirementDescriptions.length > 0 && availability === 'locked' && (
               <button
                 onClick={handleRequirementsClick}
                 className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[var(--bg-tertiary)] hover:bg-[var(--game-primary)] text-white rounded-full text-micro font-bold shadow-md transition-colors flex items-center justify-center z-10"
@@ -446,7 +451,7 @@ function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
   const { getDisplayLabel } = useMetricDisplayConfigs(industryId);
-  const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(candidate.requirements);
+  const { availability, descriptions: requirementDescriptions } = useRequirements(candidate.requirements);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
   const styles = useMemo(() => getRoleStyles(candidate.role), [candidate.role]);
   const metrics = useGameStore((state) => state.metrics);
@@ -467,10 +472,10 @@ function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
   }, [getDisplayLabel]);
 
   const handleHire = useCallback(() => {
-    if (requirementsMet && canAfford) {
+    if (availability === 'available' && canAfford) {
       onHire(candidate);
     }
-  }, [requirementsMet, canAfford, onHire, candidate]);
+  }, [availability, canAfford, onHire, candidate]);
 
   const handleRequirementsClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -480,6 +485,11 @@ function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
   const handleCloseModal = useCallback(() => {
     setShowRequirementsModal(false);
   }, []);
+
+  // Hide card if requirements are not met and should be hidden
+  if (availability === 'hidden') {
+    return null;
+  }
 
   return (
     <div
@@ -492,7 +502,7 @@ function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
           <span className={`text-micro sm:text-ultra-sm md:text-xs font-bold ${styles.textColor} uppercase tracking-wide`}>
             {candidate.role}
           </span>
-          {!requirementsMet && (
+          {availability === 'locked' && (
             <span className="text-white/70 text-xs sm:text-sm md:text-base">🔒</span>
           )}
         </div>
@@ -575,15 +585,15 @@ function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
       <div className="px-2 sm:px-3 md:px-4 pb-2 sm:pb-3 md:pb-4 relative mt-auto">
         <GameButton
           onClick={handleHire}
-          disabled={!requirementsMet || !canAfford}
+          disabled={availability === 'locked' || !canAfford}
           color="gold"
           fullWidth
           size="sm"
           className="w-full"
         >
-          {!canAfford ? 'Need Cash' : requirementsMet ? `Hire ${candidate.name.split(' ')[0]}` : 'Requirements Not Met'}
+          {!canAfford ? 'Need Cash' : availability === 'available' ? `Hire ${candidate.name.split(' ')[0]}` : 'Requirements Not Met'}
         </GameButton>
-        {requirementDescriptions.length > 0 && !requirementsMet && (
+        {requirementDescriptions.length > 0 && availability === 'locked' && (
           <button
             onClick={handleRequirementsClick}
             className="absolute top-0 right-2 sm:right-3 md:right-4 w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 bg-black/70 hover:bg-black/90 text-white rounded-full text-micro sm:text-caption md:text-xs font-bold shadow-lg transition-colors flex items-center justify-center z-10 border border-white/20"
