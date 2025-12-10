@@ -291,52 +291,44 @@ export function IndustrySimulationConfigTab({
   const updateWinCondition = (updates: Partial<WinCondition>) => {
     const current = winCondition || {};
     const merged = { ...current, ...updates };
-    // Remove undefined/null/empty string values
+
+    // Remove undefined values but keep explicit empty strings
     const cleaned: Partial<WinCondition> = {};
     Object.entries(merged).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-        if (typeof value === 'string') {
-          if (value !== '') {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (cleaned as any)[key] = value;
-          }
-        } else if (typeof value === 'number') {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (cleaned as any)[key] = value;
-        }
+      if (value !== undefined && value !== '') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (cleaned as any)[key] = value;
       }
     });
-    // If we have at least cashTarget (required field) or any other field, set it
-    if (cleaned.cashTarget !== undefined || Object.keys(cleaned).length > 0) {
-      setWinCondition(cleaned as WinCondition);
+
+    // If all win condition fields are empty, set to empty object to explicitly disable
+    // This distinguishes from null (use global defaults)
+    if (Object.keys(cleaned).length === 0) {
+      setWinCondition({} as WinCondition); // Empty object means "no win conditions"
     } else {
-      setWinCondition(null);
+      setWinCondition(cleaned as WinCondition);
     }
   };
 
   const updateLoseCondition = (updates: Partial<LoseCondition>) => {
     const current = loseCondition || {};
     const merged = { ...current, ...updates };
-    // Remove undefined/null/empty string values
+
+    // Remove undefined values but keep explicit empty strings
     const cleaned: Partial<LoseCondition> = {};
     Object.entries(merged).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-        if (typeof value === 'string') {
-          if (value !== '') {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (cleaned as any)[key] = value;
-          }
-        } else if (typeof value === 'number') {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (cleaned as any)[key] = value;
-        }
+      if (value !== undefined && value !== '') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (cleaned as any)[key] = value;
       }
     });
-    // If we have required fields or any field, set it
-    if (cleaned.cashThreshold !== undefined || cleaned.timeThreshold !== undefined || Object.keys(cleaned).length > 0) {
-      setLoseCondition(cleaned as LoseCondition);
+
+    // If all lose condition fields are empty, set to empty object to explicitly disable
+    // This distinguishes from null (use global defaults)
+    if (Object.keys(cleaned).length === 0) {
+      setLoseCondition({} as LoseCondition); // Empty object means "no lose conditions"
     } else {
-      setLoseCondition(null);
+      setLoseCondition(cleaned as LoseCondition);
     }
   };
 
@@ -677,13 +669,13 @@ export function IndustrySimulationConfigTab({
             <div className="space-y-3">
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Cash Target</label>
-                <NumberInput  min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(winCondition?.cashTarget)} onChange={(e) => updateWinCondition({ cashTarget: e.target.value === '' ? undefined : Number(e.target.value) })} />
-                <p className="text-xs text-slate-500 mt-1">Target cash amount to win the game</p>
+                <NumberInput  min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(winCondition?.cashTarget)} onChange={(e) => updateWinCondition({ cashTarget: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="Leave empty to disable" />
+                <p className="text-xs text-slate-500 mt-1">Target cash amount to win the game. Leave empty to disable cash-based winning.</p>
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Month Target</label>
-                <NumberInput  min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(winCondition?.monthTarget)} onChange={(e) => updateWinCondition({ monthTarget: e.target.value === '' ? undefined : Number(e.target.value) })} />
-                <p className="text-xs text-slate-500 mt-1">Win by surviving this many months (alternative to cash target)</p>
+                <NumberInput  min="0" className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(winCondition?.monthTarget)} onChange={(e) => updateWinCondition({ monthTarget: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="Leave empty to disable" />
+                <p className="text-xs text-slate-500 mt-1">Win by surviving this many months. Leave empty to disable month-based winning.</p>
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Custom Victory Title (Optional)</label>
@@ -703,12 +695,13 @@ export function IndustrySimulationConfigTab({
             <div className="space-y-3">
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Cash Threshold</label>
-                <NumberInput  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(loseCondition?.cashThreshold)} onChange={(e) => updateLoseCondition({ cashThreshold: e.target.value === '' ? undefined : Number(e.target.value) })} />
+                <NumberInput  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(loseCondition?.cashThreshold)} onChange={(e) => updateLoseCondition({ cashThreshold: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="Leave empty to disable" />
+                <p className="text-xs text-slate-500 mt-1">Game over if cash ≤ this value. Leave empty to disable cash-based game over.</p>
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Time Threshold</label>
-                <NumberInput  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(loseCondition?.timeThreshold)} onChange={(e) => updateLoseCondition({ timeThreshold: e.target.value === '' ? undefined : Number(e.target.value) })} />
-                <p className="text-xs text-slate-500 mt-1">Game over if available time &lt;= this value (only applies if time system is enabled)</p>
+                <NumberInput  className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200" value={getValue(loseCondition?.timeThreshold)} onChange={(e) => updateLoseCondition({ timeThreshold: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="Leave empty to disable" />
+                <p className="text-xs text-slate-500 mt-1">Game over if available time ≤ this value. Leave empty to disable time-based game over.</p>
               </div>
             </div>
           </div>

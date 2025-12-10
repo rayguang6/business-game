@@ -321,20 +321,37 @@ export function useSimulationConfig({
 
   const updateWinCondition = useCallback((updates: Partial<WinCondition>) => {
     setWinCondition(prev => {
-      const current = prev || {
-        cashTarget: 50000,
-      };
-      return { ...current, ...updates };
+      const current = prev || {};
+      const merged = { ...current, ...updates };
+
+      // Remove undefined values
+      const cleaned: Partial<WinCondition> = {};
+      Object.entries(merged).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (cleaned as any)[key] = value;
+        }
+      });
+
+      return Object.keys(cleaned).length > 0 ? cleaned as WinCondition : null;
     });
   }, []);
 
   const updateLoseCondition = useCallback((updates: Partial<LoseCondition>) => {
     setLoseCondition(prev => {
-      const current = prev || {
-        cashThreshold: 0,
-        timeThreshold: 90,
-      };
-      return { ...current, ...updates };
+      const current = prev || {};
+      const merged = { ...current, ...updates };
+
+      // Remove undefined values
+      const cleaned: Partial<LoseCondition> = {};
+      Object.entries(merged).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (cleaned as any)[key] = value;
+        }
+      });
+
+      return Object.keys(cleaned).length > 0 ? cleaned as LoseCondition : null;
     });
   }, []);
 

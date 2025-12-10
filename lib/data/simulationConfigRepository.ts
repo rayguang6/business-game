@@ -103,9 +103,16 @@ const mapMovementConfig = (raw: unknown): MovementConfig | undefined => {
 const mapWinCondition = (raw: unknown): WinCondition | undefined => {
   if (!isObject(raw)) return undefined;
   const candidate = raw as unknown as WinCondition;
-  if (typeof candidate.cashTarget === 'number') {
+
+  // If it's an empty object, return it (means no win conditions)
+  if (Object.keys(candidate).length === 0) {
+    return {};
+  }
+
+  // Otherwise, validate and return the win condition
+  if (typeof candidate.cashTarget === 'number' || candidate.cashTarget === undefined) {
     return {
-      cashTarget: candidate.cashTarget,
+      cashTarget: typeof candidate.cashTarget === 'number' ? candidate.cashTarget : undefined,
       monthTarget: typeof candidate.monthTarget === 'number' ? candidate.monthTarget : undefined,
       customTitle: typeof candidate.customTitle === 'string' ? candidate.customTitle : undefined,
       customMessage: typeof candidate.customMessage === 'string' ? candidate.customMessage : undefined,
@@ -117,13 +124,20 @@ const mapWinCondition = (raw: unknown): WinCondition | undefined => {
 const mapLoseCondition = (raw: unknown): LoseCondition | undefined => {
   if (!isObject(raw)) return undefined;
   const candidate = raw as unknown as LoseCondition;
+
+  // If it's an empty object, return it (means no lose conditions)
+  if (Object.keys(candidate).length === 0) {
+    return {};
+  }
+
+  // Otherwise, validate and return the lose condition
   if (
-    typeof candidate.cashThreshold === 'number' &&
-    typeof candidate.timeThreshold === 'number'
+    (typeof candidate.cashThreshold === 'number' || candidate.cashThreshold === undefined) &&
+    (typeof candidate.timeThreshold === 'number' || candidate.timeThreshold === undefined)
   ) {
     return {
-      cashThreshold: candidate.cashThreshold,
-      timeThreshold: candidate.timeThreshold,
+      cashThreshold: typeof candidate.cashThreshold === 'number' ? candidate.cashThreshold : undefined,
+      timeThreshold: typeof candidate.timeThreshold === 'number' ? candidate.timeThreshold : undefined,
     };
   }
   return undefined;

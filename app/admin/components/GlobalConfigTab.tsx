@@ -497,8 +497,9 @@ export function GlobalConfigTab({
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
                 value={getValue(winCondition?.cashTarget)}
                 onChange={(e) => onUpdateWinCondition({ cashTarget: e.target.value === '' ? undefined : Number(e.target.value) })}
+                placeholder="Leave empty to disable"
               />
-              <p className="text-xs text-slate-500 mt-1">Target cash amount to win the game</p>
+              <p className="text-xs text-slate-500 mt-1">Target cash amount to win the game. Leave empty to disable cash-based winning.</p>
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Month Target</label>
@@ -507,8 +508,9 @@ export function GlobalConfigTab({
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
                 value={getValue(winCondition?.monthTarget)}
                 onChange={(e) => onUpdateWinCondition({ monthTarget: e.target.value === '' ? undefined : Number(e.target.value) })}
+                placeholder="Leave empty to disable"
               />
-              <p className="text-xs text-slate-500 mt-1">Win by surviving this many months</p>
+              <p className="text-xs text-slate-500 mt-1">Win by surviving this many months. Leave empty to disable month-based winning.</p>
             </div>
             <div className="md:col-span-2">
               <label className="block text-xs text-slate-400 mb-1">Custom Victory Title (Optional)</label>
@@ -544,8 +546,9 @@ export function GlobalConfigTab({
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
                 value={getValue(loseCondition?.cashThreshold)}
                 onChange={(e) => onUpdateLoseCondition({ cashThreshold: e.target.value === '' ? undefined : Number(e.target.value) })}
+                placeholder="Leave empty to disable"
               />
-              <p className="text-xs text-slate-500 mt-1">Game over if cash &lt;= this value</p>
+              <p className="text-xs text-slate-500 mt-1">Game over if cash ≤ this value. Leave empty to disable cash-based game over.</p>
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Time Threshold</label>
@@ -553,8 +556,9 @@ export function GlobalConfigTab({
                 className="w-full rounded-lg bg-slate-700 border border-slate-600 px-3 py-2 text-slate-200"
                 value={getValue(loseCondition?.timeThreshold)}
                 onChange={(e) => onUpdateLoseCondition({ timeThreshold: e.target.value === '' ? undefined : Number(e.target.value) })}
+                placeholder="Leave empty to disable"
               />
-              <p className="text-xs text-slate-500 mt-1">Game over if available time &lt;= this value (only applies if time system is enabled)</p>
+              <p className="text-xs text-slate-500 mt-1">Game over if available time ≤ this value. Leave empty to disable time-based game over.</p>
             </div>
           </div>
         </div>

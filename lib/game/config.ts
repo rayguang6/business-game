@@ -170,7 +170,11 @@ export function getWinCondition(industryId?: IndustryId): WinCondition | null {
   // Use unified config repository
   if (industryId) {
     const industryConfig = getIndustryOverride(industryId);
-    if (industryConfig?.winCondition) {
+    // Check if winCondition is explicitly set (not undefined)
+    // undefined means "use global fallback", empty object {} means "no win conditions"
+    if (industryConfig?.winCondition !== undefined) {
+      // If it's an empty object, return it (means no win conditions)
+      // If it has properties, return the cloned object
       return { ...industryConfig.winCondition };
     }
   }
@@ -184,7 +188,11 @@ export function getLoseCondition(industryId?: IndustryId): LoseCondition | null 
   // Use unified config repository
   if (industryId) {
     const industryConfig = getIndustryOverride(industryId);
-    if (industryConfig?.loseCondition) {
+    // Check if loseCondition is explicitly set (not undefined)
+    // undefined means "use global fallback", empty object {} means "no lose conditions"
+    if (industryConfig?.loseCondition !== undefined) {
+      // If it's an empty object, return it (means no lose conditions)
+      // If it has properties, return the cloned object
       return { ...industryConfig.loseCondition };
     }
   }

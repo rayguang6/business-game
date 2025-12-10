@@ -4,7 +4,7 @@ import { OneTimeCost, OneTimeCostCategory } from '../types';
 import { effectManager, GameMetric, EffectType } from '@/lib/game/effectManager';
 import { checkRequirements } from '@/lib/game/requirementChecker';
 import type { Requirement, IndustryId } from '@/lib/game/types';
-import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
+import { DEFAULT_INDUSTRY_ID, getCurrentMonth } from '@/lib/game/config';
 import { useConfigStore } from '@/lib/store/configStore';
 import type { Customer } from '@/lib/features/customers';
 import type { Lead } from '@/lib/features/leads';
@@ -59,8 +59,10 @@ export interface MarketingCampaign {
 export interface MarketingSlice {
   campaignCooldowns: Record<string, number>; // campaignId -> cooldownEndTime
   campaignLevels: Record<string, number>; // campaignId -> current level (for leveled campaigns)
+  campaignLastActivated: Record<string, number>; // campaignId -> last activation gameTime
   startCampaign: (campaignId: string) => { success: boolean; message?: string };
   getCampaignLevel: (campaignId: string) => number;
+  wasCampaignActivatedThisMonth: (campaignId: string) => boolean;
   tickMarketing: (currentGameTime: number) => void;
   resetMarketing: () => void;
   resetMarketingLevels: () => void; // Reset levels only, keep effects active
@@ -187,9 +189,22 @@ const resolveCampaignBlueprints = (industryId: IndustryId): MarketingCampaign[] 
 export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlice> = (set, get) => ({
   campaignCooldowns: {},
   campaignLevels: {},
+  campaignLastActivated: {},
 
   getCampaignLevel: (campaignId: string) => {
     return get().campaignLevels[campaignId] || 0;
+  },
+
+  wasCampaignActivatedThisMonth: (campaignId: string) => {
+    const lastActivated = get().campaignLastActivated[campaignId];
+    if (!lastActivated) return false;
+
+    const industryId = (get().selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
+    const currentGameTime = get().gameTime;
+    const activationMonth = getCurrentMonth(lastActivated, industryId);
+    const currentMonth = getCurrentMonth(currentGameTime, industryId);
+
+    return activationMonth === currentMonth;
   },
 
   startCampaign: (campaignId: string) => {
@@ -322,6 +337,14 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
         get().setFlag(campaign.setsFlag, true);
       }
 
+      // Record activation time
+      set((state) => ({
+        campaignLastActivated: {
+          ...state.campaignLastActivated,
+          [campaignId]: gameTime,
+        },
+      }));
+
       // Start cooldown
       const cooldownEnd = gameTime + campaign.cooldownSeconds;
       set((state) => ({
@@ -417,6 +440,14 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
         get().setFlag(campaign.setsFlag, true);
       }
 
+      // Record activation time
+      set((state) => ({
+        campaignLastActivated: {
+          ...state.campaignLastActivated,
+          [campaignId]: gameTime,
+        },
+      }));
+
       // Start cooldown
       const cooldownEnd = gameTime + campaign.cooldownSeconds;
       set((state) => ({
@@ -455,6 +486,7 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
     set({
       campaignCooldowns: {},
       campaignLevels: {},
+      campaignLastActivated: {},
     });
   },
 

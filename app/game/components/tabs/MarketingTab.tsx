@@ -113,12 +113,13 @@ interface CampaignCardProps {
   isOnCooldown: boolean;
   cooldownRemaining: number;
   currentLevel?: number; // For leveled campaigns
+  wasActivatedThisMonth: boolean;
   onLaunch: (campaignId: string) => void;
   metrics: { cash: number; time: number };
   getDisplayLabel: (metric: GameMetric) => string;
 }
 
-function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, currentLevel, onLaunch, metrics, getDisplayLabel }: CampaignCardProps & { metrics: { cash: number; time: number }; getDisplayLabel: (metric: GameMetric) => string }) {
+function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, currentLevel, wasActivatedThisMonth, onLaunch, metrics, getDisplayLabel }: CampaignCardProps & { metrics: { cash: number; time: number }; getDisplayLabel: (metric: GameMetric) => string }) {
   const { areMet: requirementsMet, descriptions: requirementDescriptions } = useRequirements(campaign.requirements);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
   
@@ -210,8 +211,16 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
     setShowRequirementsModal(false);
   }, []);
 
+  const isMaxLevel = isLeveled && !canUpgradeMore && level > 0;
+
   return (
-    <Card className="flex flex-col justify-between p-2 sm:p-3 min-h-[200px] overflow-hidden">
+    <Card className={`flex flex-col justify-between p-2 sm:p-3 min-h-[200px] overflow-hidden ${
+      isMaxLevel
+        ? '!bg-amber-100 dark:!bg-amber-900/50 !border-amber-300 dark:!border-amber-600'
+        : wasActivatedThisMonth
+          ? '!border-green-500 dark:!border-green-400'
+          : ''
+    }`}>
       {/* Top Content Section */}
       <div className="flex-1 space-y-1">
         {/* Header: Campaign Name and Level Badge */}
@@ -249,9 +258,6 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
             </div>
 
             <div className="space-y-0.5">
-              <div className="text-micro font-semibold text-primary uppercase tracking-wide">
-                Effects:
-              </div>
               <ul className="space-y-0.5">
                 {descriptions.map((item, index) => (
                   <li key={`${campaign.id}-effect-${index}`} className="flex items-start gap-1 text-micro text-secondary leading-tight">
@@ -268,9 +274,6 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
         {(!isLeveled || !canUpgradeMore) && (
           <>
             <div className="space-y-0.5">
-              <div className="text-micro font-semibold text-primary uppercase tracking-wide">
-                Effects:
-              </div>
               <ul className="space-y-0.5">
                 {descriptions.map((item, index) => (
                   <li key={`${campaign.id}-effect-${index}`} className="flex items-start gap-1 text-micro text-secondary leading-tight">
@@ -283,14 +286,6 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
           </>
         )}
 
-        {/* Max Level Message */}
-        {isLeveled && !canUpgradeMore && level > 0 && (
-          <div className="p-1 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded">
-            <p className="text-micro text-green-700 dark:text-green-400 font-semibold text-center break-words whitespace-normal">
-              🎉 Max Level
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Bottom Section: Cost and Button */}
@@ -322,7 +317,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
               </span>
             </div>
           )}
-          {!needsCash && !needsTime && (
+          {!needsCash && !needsTime && !isMaxLevel && (
             <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
               <span className="text-sm">🆓</span>
               <span className="text-ultra-sm font-bold">Free</span>
@@ -395,6 +390,7 @@ export function MarketingTab() {
   const campaignCooldowns = useGameStore((state) => state.campaignCooldowns);
   const campaignLevels = useGameStore((state) => state.campaignLevels);
   const getCampaignLevel = useGameStore((state) => state.getCampaignLevel);
+  const wasCampaignActivatedThisMonth = useGameStore((state) => state.wasCampaignActivatedThisMonth);
   const startCampaign = useGameStore((state) => state.startCampaign);
   const metrics = useGameStore((state) => state.metrics);
   const gameTime = useGameStore((state) => state.gameTime);
@@ -547,6 +543,7 @@ export function MarketingTab() {
                           isOnCooldown={isOnCooldown}
                           cooldownRemaining={cooldownRemaining}
                           currentLevel={currentLevel}
+                          wasActivatedThisMonth={wasCampaignActivatedThisMonth(campaign.id)}
                           onLaunch={handleLaunch}
                           metrics={{ cash: metrics.cash, time: metrics.myTime }}
                           getDisplayLabel={getDisplayLabel}

@@ -963,9 +963,11 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     const loseCondition = getLoseCondition(industryId);
     if (!loseCondition) return; // Can't check lose condition if not loaded
 
-    // Check lose conditions: **cash only**
+    // Check lose conditions: only check configured conditions
     // Time can run out, but it no longer causes game over.
-    if (cash <= loseCondition.cashThreshold) {
+    const cashLose = loseCondition.cashThreshold !== undefined && cash <= loseCondition.cashThreshold;
+
+    if (cashLose) {
       // Refresh leveraged time from effects before ending game
       const leveragedTimeBonus = effectManager.calculate(GameMetric.LeveragedTime, 0);
 
@@ -995,26 +997,9 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     const winCondition = getWinCondition(industryId);
     if (!winCondition) return; // Can't check win condition if not loaded
 
-    // For time-based wins, check if the month that just ended meets the win condition
-    // currentMonth is the month that just started, so previousMonth is the one that just ended
-    const previousMonth = currentMonth - 1;
-    if (winCondition.monthTarget && previousMonth >= winCondition.monthTarget) {
+    // Use the centralized win condition checking logic
+    if (checkWinCondition(cash, currentMonth, winCondition)) {
       // Refresh leveraged time from effects before ending game
-      const leveragedTimeBonus = effectManager.calculate(GameMetric.LeveragedTime, 0);
-
-      set({
-        metrics: {
-          ...state.metrics,
-          leveragedTime: leveragedTimeBonus, // Refresh leveraged time to current effects
-          leveragedTimeCapacity: leveragedTimeBonus, // Update capacity to match
-        },
-        isGameOver: true,
-        gameOverReason: 'victory',
-        isPaused: true
-      });
-    } else if (cash >= winCondition.cashTarget) {
-      // Cash-based win - no additional expense deduction needed
-      // Still refresh leveraged time from effects
       const leveragedTimeBonus = effectManager.calculate(GameMetric.LeveragedTime, 0);
 
       set({
