@@ -842,16 +842,19 @@ export function UpgradesTab() {
 
           const upgradesByCategory = new Map<string | undefined, typeof availableUpgrades>();
 
-          // Initialize with uncategorized upgrades
-          upgradesByCategory.set(undefined, availableUpgrades.filter(u => !u.categoryId));
-
-          // Group upgrades by category
+          // Group upgrades by category first
           sortedCategories.forEach(category => {
             const categoryUpgrades = availableUpgrades.filter(u => u.categoryId === category.id);
             if (categoryUpgrades.length > 0) {
               upgradesByCategory.set(category.id, categoryUpgrades);
             }
           });
+
+          // Add uncategorized upgrades (others) at the end
+          const uncategorizedUpgrades = availableUpgrades.filter(u => !u.categoryId);
+          if (uncategorizedUpgrades.length > 0) {
+            upgradesByCategory.set(undefined, uncategorizedUpgrades);
+          }
 
           return (
             <div className="space-y-6">

@@ -472,16 +472,19 @@ export function MarketingTab() {
 
         const campaignsByCategory = new Map<string | undefined, typeof availableCampaigns>();
 
-        // Initialize with uncategorized campaigns
-        campaignsByCategory.set(undefined, availableCampaigns.filter(c => !c.categoryId));
-
-        // Group campaigns by category
+        // Group campaigns by category first
         sortedCategories.forEach(category => {
           const categoryCampaigns = availableCampaigns.filter(c => c.categoryId === category.id);
           if (categoryCampaigns.length > 0) {
             campaignsByCategory.set(category.id, categoryCampaigns);
           }
         });
+
+        // Add uncategorized campaigns (others) at the end
+        const uncategorizedCampaigns = availableCampaigns.filter(c => !c.categoryId);
+        if (uncategorizedCampaigns.length > 0) {
+          campaignsByCategory.set(undefined, uncategorizedCampaigns);
+        }
 
         return (
           <div className="space-y-6">
