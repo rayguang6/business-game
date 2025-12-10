@@ -116,7 +116,7 @@ export function useSimulationConfig({
     expLossPerAngryCustomer: 1,
     expPerLevel: 200,
     eventTriggerSeconds: [],
-    serviceRevenueMultiplier: 1,
+    serviceRevenueMultiplier: 100,
     serviceRevenueScale: 10,
   });
 

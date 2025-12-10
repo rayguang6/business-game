@@ -147,18 +147,18 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
   
   [GameMetric.ServiceRevenueMultiplier]: {
     id: GameMetric.ServiceRevenueMultiplier,
-    displayLabel: 'Revenue Multiplier',
-    description: 'Multiplier for all service revenue',
+    displayLabel: 'Revenue Bonus',
+    description: 'Percentage bonus for all service revenue',
     defaultValueSource: 'businessStats',
     defaultValuePath: 'serviceRevenueMultiplier',
     constraints: {
-      min: 0.1,
+      min: 0, // 10% minimum (equivalent to previous 0.1x)
     },
     display: {
       showOnHUD: false,
       showInDetails: true,
       showInAdmin: true,
-      unit: 'x',
+      unit: '%',
     },
     canBeModifiedByEffects: true,
   },

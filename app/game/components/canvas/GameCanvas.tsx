@@ -406,8 +406,8 @@ export function GameCanvas() {
             <div className="space-y-1 border-b border-gray-600 pb-1">
               <div className="text-[10px] text-gray-400 uppercase tracking-wide">Revenue Modifiers</div>
               <div>
-                <span className="text-gray-300">Price multiplier:</span>{' '}
-                <span className="font-semibold">×{serviceRevenueMultiplier.toFixed(2)}</span>
+                <span className="text-gray-300">Revenue bonus:</span>{' '}
+                <span className="font-semibold">{serviceRevenueMultiplier.toFixed(0)}%</span>
                 {metrics.baseServiceRevenueMultiplier === undefined && (
                   <span className="text-red-400 text-[10px] ml-1">(base: N/A)</span>
                 )}

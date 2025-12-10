@@ -53,7 +53,7 @@ const DEFAULT_BUSINESS_STATS: BusinessStats = {
   // Reasonable defaults (GLOBAL - industries commonly override)
   leadsPerMonth: 20, // Default leads per month (60s month / 3s interval = 20) - industries override (fast food: 40, consulting: 12)
   customerPatienceSeconds: 10, // Default patience - industries override (fast food: 5, spa: 15)
-  serviceRevenueMultiplier: 1, // Default pricing - industries override (dental: 1.2, restaurant: 0.8)
+  serviceRevenueMultiplier: 100, // Default pricing - industries override (dental: 120%, restaurant: 80%)
   serviceRevenueScale: 10, // Default revenue scale - industries override (freelance: 5, restaurant: 15)
   failureRate: 0, // Default no failures - industries override (restaurant: 20, medical: 5)
   

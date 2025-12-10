@@ -685,7 +685,7 @@ function processCustomersForTick({
       const servicePrice = updatedCustomer.service.price;
       const tierMultiplier = getTierRevenueMultiplier(updatedCustomer.service.pricingCategory);
       const baseServiceValue = (servicePrice * tierMultiplier) + serviceRevenueFlatBonus;
-      const serviceRevenue = Math.max(0, baseServiceValue) * serviceRevenueMultiplier * serviceRevenueScale;
+      const serviceRevenue = Math.max(0, baseServiceValue) * (serviceRevenueMultiplier / 100) * serviceRevenueScale;
 
       // Add revenue
       const oldCash = metricsAccumulator.cash;
