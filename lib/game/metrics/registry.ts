@@ -90,7 +90,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
   
   [GameMetric.Exp]: {
     id: GameMetric.Exp,
-    displayLabel: 'Level', // Shown as "Level X" in HUD
+    displayLabel: 'EXP', // Experience points
     description: 'Experience points that determine player level',
     defaultValueSource: 'businessMetrics',
     defaultValuePath: 'startingExp',
