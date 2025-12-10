@@ -10,12 +10,19 @@ import type { Requirement } from '@/lib/game/types';
  */
 export function useRequirements(requirements?: Requirement[]) {
   // Subscribe to specific parts of the store that affect requirements
+  // Use shallow equality for objects/arrays to prevent unnecessary re-renders
   const flags = useGameStore((state) => state.flags);
   const availableConditions = useGameStore((state) => state.availableConditions);
   const availableFlags = useGameStore((state) => state.availableFlags);
-
-  // Get the full store for the checker functions
-  const store = useGameStore();
+  
+  // Subscribe to primitive values that requirements might check (not entire objects)
+  const hiredStaffLength = useGameStore((state) => state.hiredStaff.length);
+  const upgradesKeys = useGameStore((state) => Object.keys(state.upgrades).sort().join(','));
+  const cash = useGameStore((state) => state.metrics.cash);
+  const exp = useGameStore((state) => state.metrics.exp);
+  const totalExpenses = useGameStore((state) => state.metrics.totalExpenses);
+  const gameTime = useGameStore((state) => state.gameTime);
+  const selectedIndustryId = useGameStore((state) => state.selectedIndustry?.id);
 
   return useMemo(() => {
     if (!requirements || requirements.length === 0) {
@@ -27,7 +34,9 @@ export function useRequirements(requirements?: Requirement[]) {
       };
     }
 
-    const storeInstance = store;
+    // Get the store snapshot without subscribing to avoid infinite loops
+    // We're already subscribed to the specific parts that trigger requirement checks above
+    const storeInstance = useGameStore.getState();
 
     // Check each requirement individually to determine availability
     let hasHiddenRequirement = false;
@@ -65,6 +74,6 @@ export function useRequirements(requirements?: Requirement[]) {
       descriptions,
       unmetDescriptions: areMet ? [] : descriptions,
     };
-  }, [requirements, flags, availableConditions, availableFlags, store]);
+  }, [requirements, flags, availableConditions, availableFlags, hiredStaffLength, upgradesKeys, cash, exp, totalExpenses, gameTime, selectedIndustryId]);
 }
 

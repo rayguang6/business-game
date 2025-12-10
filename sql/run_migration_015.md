@@ -94,3 +94,4 @@ After migration, test the marketing campaigns in the game:
 - Cooldown times converted from hours to seconds
 - Effects use null durationMonths for permanent effects, 1 for monthly effects, null for instant effects
 
+

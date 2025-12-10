@@ -6,7 +6,7 @@ import { ServicesTab } from '../../../components/ServicesTab';
 import { SidebarContentLayout } from '../../../components/SidebarContentLayout';
 import { useServices } from '../../../hooks/useServices';
 import { useFlags } from '../../../hooks/useFlags';
-import { useUpgrades } from '../../../hooks/useUpgrades';
+import { useUpgrades, useAllUpgrades } from '../../../hooks/useUpgrades';
 import { useRoles } from '../../../hooks/useRoles';
 import { buildServiceDetailUrl } from '../../../utils/routing';
 
@@ -20,6 +20,7 @@ export default function ServiceDetailPage({
   const services = useServices(industry, serviceId);
   const flags = useFlags(industry);
   const upgrades = useUpgrades(industry);
+  const allUpgrades = useAllUpgrades();
   const roles = useRoles(industry);
 
   // Redirect to list if service not found (404 handling)
@@ -95,7 +96,7 @@ export default function ServiceDetailPage({
         serviceDeleting={services.deleting}
         flags={flags.flags}
         flagsLoading={flags.loading}
-        upgrades={upgrades.upgrades}
+        upgrades={allUpgrades.data}
         staffRoles={roles.roles}
         onSelectService={handleSelectService}
         onCreateService={services.createService}

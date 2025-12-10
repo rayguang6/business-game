@@ -52,12 +52,21 @@ export const createActionNotificationsSlice: StateCreator<
 
   clearExpiredNotifications: () => {
     const now = Date.now();
-    set((state) => ({
-      notifications: state.notifications.filter((n) => {
+    set((state) => {
+      const filtered = state.notifications.filter((n) => {
         const age = now - n.timestamp;
         return age < n.duration;
-      }),
-    }));
+      });
+      
+      // Only update if notifications actually changed to prevent infinite loops
+      if (filtered.length === state.notifications.length) {
+        return state; // No change, return same state
+      }
+      
+      return {
+        notifications: filtered,
+      };
+    });
   },
 
   resetNotifications: () => {

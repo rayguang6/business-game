@@ -27,7 +27,7 @@ export default async function GamePage({ params }: GamePageProps) {
           message="Failed to load global simulation configuration."
           errorType="database"
           details="Please ensure simulation_config table has data configured for industry_id='global' in the admin panel."
-          onRetry={() => window.location.reload()}
+          showRetry={true}
         />
       );
     }
@@ -40,7 +40,7 @@ export default async function GamePage({ params }: GamePageProps) {
           message={`Failed to load content for industry "${industryId}".`}
           errorType="database"
           details="Please ensure the industry has all required content configured in the admin panel."
-          onRetry={() => window.location.reload()}
+          showRetry={true}
         />
       );
     }
@@ -59,7 +59,7 @@ export default async function GamePage({ params }: GamePageProps) {
           message={`The industry "${industry.name}" is not currently available.`}
           errorType="database"
           details="Please select a different industry or contact an administrator."
-          onRetry={() => redirect('/select-industry')}
+          showRetry={false}
         />
       );
     }
@@ -84,7 +84,7 @@ export default async function GamePage({ params }: GamePageProps) {
         message={errorMessage}
         errorType={errorType}
         details={errorMessage}
-        onRetry={() => window.location.reload()}
+        showRetry={true}
       />
     );
   }

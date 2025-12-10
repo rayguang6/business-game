@@ -41,7 +41,7 @@ class AudioManager {
     const tracks: { track: AudioTrack; src: string }[] = [
       { track: 'welcome', src: '/audio/welcome-music.mp3' },
       { track: 'selection', src: '/audio/selection-music.mp3' },
-      { track: 'game', src: '/audio/game-music.mp3' },
+      { track: 'game', src: '/audio/welcome-music.mp3' },
     ];
 
     tracks.forEach(({ track, src }) => {

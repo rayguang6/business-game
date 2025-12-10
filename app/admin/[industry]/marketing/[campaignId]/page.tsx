@@ -6,7 +6,7 @@ import { MarketingTab } from '../../../components/MarketingTab';
 import { SidebarContentLayout } from '../../../components/SidebarContentLayout';
 import { useMarketing } from '../../../hooks/useMarketing';
 import { useFlags } from '../../../hooks/useFlags';
-import { useUpgrades } from '../../../hooks/useUpgrades';
+import { useUpgrades, useAllUpgrades } from '../../../hooks/useUpgrades';
 import { useRoles } from '../../../hooks/useRoles';
 import { useCategories } from '../../../hooks/useCategories';
 import { METRIC_OPTIONS, EFFECT_TYPE_OPTIONS } from '../../../utils/constants';

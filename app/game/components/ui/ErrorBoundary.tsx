@@ -67,10 +67,7 @@ export class ErrorBoundary extends Component<Props, State> {
           }
           errorType={errorType}
           error={error}
-          onRetry={() => {
-            this.setState({ hasError: false, error: null });
-            window.location.reload();
-          }}
+          showRetry={true}
         />
       );
     }

@@ -4,7 +4,7 @@ import { use, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { UpgradesTab } from '../../../components/UpgradesTab';
 import { SidebarContentLayout } from '../../../components/SidebarContentLayout';
-import { useUpgrades } from '../../../hooks/useUpgrades';
+import { useUpgrades, useAllUpgrades } from '../../../hooks/useUpgrades';
 import { useFlags } from '../../../hooks/useFlags';
 import { useRoles } from '../../../hooks/useRoles';
 import { useCategories } from '../../../hooks/useCategories';
@@ -19,6 +19,7 @@ export default function UpgradeDetailPage({
   const { industry, upgradeId } = use(params);
   const router = useRouter();
   const upgrades = useUpgrades(industry, upgradeId);
+  const allUpgrades = useAllUpgrades();
   const flags = useFlags(industry);
   const roles = useRoles(industry);
   const categories = useCategories(industry);
@@ -101,6 +102,7 @@ export default function UpgradeDetailPage({
         flagsLoading={flags.loading}
         categories={categories.categories}
         categoriesLoading={categories.loading}
+        allUpgrades={allUpgrades.data}
         staffRoles={roles.roles}
         metricOptions={METRIC_OPTIONS}
         effectTypeOptions={EFFECT_TYPE_OPTIONS}

@@ -458,3 +458,4 @@ INSERT INTO marketing_campaign_levels (
   '[{"metric": "leads", "type": "add", "value": 2, "durationMonths": null}]'::jsonb
 );
 
+

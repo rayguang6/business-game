@@ -71,22 +71,28 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [direction, setDirection] = useState<'down' | 'left' | 'up' | 'right'>('down');
 
+  // Check if this is the main character (used for notifications)
+  const isMainChar = isMainCharacter(staff);
+
   // Action notifications for main character only
-  const notifications = useGameStore((state) =>
-    isMainCharacter(staff) ? state.notifications : []
-  );
+  // Subscribe to notifications only for main character to avoid unnecessary re-renders
+  const storeNotifications = useGameStore((state) => state.notifications);
+  const notifications = isMainChar ? storeNotifications : [];
+  
   const clearExpiredNotifications = useGameStore((state) => state.clearExpiredNotifications);
 
-  // Clear expired notifications periodically
+  // Clear expired notifications periodically (only for main character)
   useEffect(() => {
-    if (isMainCharacter(staff)) {
-      const interval = setInterval(() => {
-        clearExpiredNotifications();
-      }, 100); // Check every 100ms
-
-      return () => clearInterval(interval);
+    if (!isMainChar) {
+      return; // Early return for non-main characters
     }
-  }, [staff, clearExpiredNotifications]);
+    
+    const interval = setInterval(() => {
+      clearExpiredNotifications();
+    }, 1000); // Check every 1 second instead of 100ms to reduce updates
+
+    return () => clearInterval(interval);
+  }, [isMainChar, clearExpiredNotifications]);
 
   // Use dynamic position if available, otherwise use fallback position
   const hasDynamicPosition = staff.x !== undefined && staff.y !== undefined;
@@ -234,9 +240,6 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
   const finalIsWalking = isIdle ? isWalking : baseAnimationState.isWalking;
   const finalIsCelebrating = isIdle ? isCelebrating : false;
   const finalDirection = isIdle ? direction : baseAnimationState.direction;
-
-  // Check if this is the main character
-  const isMainChar = isMainCharacter(staff);
 
   return (
     <div className="relative">

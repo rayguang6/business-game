@@ -2,7 +2,7 @@
 
 import { fetchIndustriesFromSupabase, upsertIndustryToSupabase, deleteIndustryFromSupabase } from '@/lib/data/industryRepository';
 import { fetchServicesForIndustry, upsertServiceForIndustry, deleteServiceById } from '@/lib/data/serviceRepository';
-import { fetchUpgradesForIndustry, upsertUpgradeForIndustry, deleteUpgradeById } from '@/lib/data/upgradeRepository';
+import { fetchUpgradesForIndustry, upsertUpgradeForIndustry, deleteUpgradeById, fetchAllUpgradesFromSupabase } from '@/lib/data/upgradeRepository';
 import { fetchEventsForIndustry, upsertEventForIndustry, deleteEventById } from '@/lib/data/eventRepository';
 import { fetchMarketingCampaignsForIndustry, upsertMarketingCampaignForIndustry, deleteMarketingCampaignById } from '@/lib/data/marketingRepository';
 import { fetchCategoriesForIndustry, upsertCategoryForIndustry, deleteCategoryById } from '@/lib/data/categoryRepository';
@@ -37,6 +37,10 @@ export async function fetchServices(industryId: IndustryId) {
 
 export async function fetchUpgrades(industryId: IndustryId) {
   return await fetchUpgradesForIndustry(industryId);
+}
+
+export async function fetchAllUpgrades() {
+  return await fetchAllUpgradesFromSupabase();
 }
 
 export async function fetchEvents(industryId: IndustryId) {

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchUpgrades, upsertUpgrade, deleteUpgrade, fetchCategories } from '@/lib/server/actions/adminActions';
+import { fetchUpgrades, fetchAllUpgrades, upsertUpgrade, deleteUpgrade, fetchCategories } from '@/lib/server/actions/adminActions';
 import type { UpgradeDefinition, Category } from '@/lib/game/types';
 import type { Requirement } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
@@ -543,4 +543,15 @@ export function useUpgrades(industryId: string, upgradeId?: string) {
     removeLevel,
     updateLevel,
   };
+}
+
+// Hook to fetch all upgrades from all industries
+export function useAllUpgrades() {
+  return useQuery({
+    queryKey: ['all-upgrades'],
+    queryFn: async () => {
+      const result = await fetchAllUpgrades();
+      return result || [];
+    },
+  });
 }

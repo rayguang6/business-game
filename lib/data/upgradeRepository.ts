@@ -33,6 +33,84 @@ function parseNumber(value: number | string | null | undefined): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+export async function fetchAllUpgradesFromSupabase(): Promise<UpgradeDefinition[] | null> {
+  if (!supabaseServer) {
+    console.error('Supabase client not configured. Unable to fetch all upgrades.');
+    return null;
+  }
+
+  // Fetch base upgrades
+  const { data: upgradesData, error: upgradesError } = await supabaseServer
+    .from('upgrades')
+    .select('id, industry_id, name, description, icon, max_level, category_id, sets_flag, requirements, order')
+    .order('industry_id', { ascending: true })
+    .order('order', { ascending: true, nullsFirst: false })
+    .order('name', { ascending: true });
+
+  if (upgradesError) {
+    console.error('Error fetching all upgrades:', upgradesError);
+    return null;
+  }
+
+  if (!upgradesData || upgradesData.length === 0) {
+    return [];
+  }
+
+  // Fetch levels for all upgrades
+  const upgradeIds = upgradesData.map(u => u.id);
+  const { data: levelsData, error: levelsError } = await supabaseServer
+    .from('upgrade_levels')
+    .select('upgrade_id, level, name, description, icon, cost, time_cost, effects')
+    .in('upgrade_id', upgradeIds)
+    .order('upgrade_id', { ascending: true })
+    .order('level', { ascending: true });
+
+  if (levelsError) {
+    console.error('Error fetching upgrade levels:', levelsError);
+    return null;
+  }
+
+  // Group levels by upgrade_id
+  const levelsByUpgrade: Record<string, any[]> = {};
+  if (levelsData) {
+    levelsData.forEach(level => {
+      if (!levelsByUpgrade[level.upgrade_id]) {
+        levelsByUpgrade[level.upgrade_id] = [];
+      }
+      levelsByUpgrade[level.upgrade_id].push(level);
+    });
+  }
+
+  // Build upgrade definitions
+  const upgrades: UpgradeDefinition[] = upgradesData.map(upgrade => {
+    const levels = levelsByUpgrade[upgrade.id] || [];
+    const levelConfigs: UpgradeLevelConfig[] = levels.map(level => ({
+      level: level.level,
+      name: level.name || `Level ${level.level}`,
+      description: level.description,
+      icon: level.icon,
+      cost: parseNumber(level.cost),
+      timeCost: level.time_cost ? parseNumber(level.time_cost) : undefined,
+      effects: validateAndParseUpgradeEffects(level.effects),
+    }));
+
+    return {
+      id: upgrade.id,
+      name: upgrade.name,
+      description: upgrade.description,
+      icon: upgrade.icon,
+      maxLevel: upgrade.max_level,
+      categoryId: upgrade.category_id || undefined,
+      setsFlag: upgrade.sets_flag || undefined,
+      requirements: (upgrade.requirements as any) || [],
+      levels: levelConfigs,
+      order: upgrade.order || undefined,
+    };
+  });
+
+  return upgrades;
+}
+
 export async function fetchUpgradesForIndustry(
   industryId: IndustryId,
 ): Promise<UpgradeDefinition[] | null> {

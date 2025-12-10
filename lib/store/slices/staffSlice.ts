@@ -45,18 +45,19 @@ export const createStaffSlice: StateCreator<GameStore, [], [], StaffSlice> = (se
         return;
       }
 
+      // TEMPORARILY DISABLE REQUIREMENTS CHECK
       // Check requirements
-      if (candidate.requirements && candidate.requirements.length > 0) {
-        const availability = getAvailability(candidate.requirements, store);
-        if (availability === 'hidden') {
-          console.warn(`[Requirements] Cannot hire ${candidate.name}: staff is hidden due to requirements`);
-          return;
-        }
-        if (availability === 'locked') {
-          console.warn(`[Requirements] Cannot hire ${candidate.name}: requirements not met`);
-          return;
-        }
-      }
+      // if (candidate.requirements && candidate.requirements.length > 0) {
+      //   const availability = getAvailability(candidate.requirements, store);
+      //   if (availability === 'hidden') {
+      //     console.warn(`[Requirements] Cannot hire ${candidate.name}: staff is hidden due to requirements`);
+      //     return;
+      //   }
+      //   if (availability === 'locked') {
+      //     console.warn(`[Requirements] Cannot hire ${candidate.name}: requirements not met`);
+      //     return;
+      //   }
+      // }
 
       // Apply staff effects, including direct state metric changes
       addStaffEffects(candidate, {

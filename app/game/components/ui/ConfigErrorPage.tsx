@@ -11,7 +11,7 @@ interface ConfigErrorPageProps {
   details?: string;
   errorType?: ErrorType;
   error?: Error | unknown;
-  onRetry?: () => void;
+  showRetry?: boolean;
 }
 
 function getErrorType(error: unknown): ErrorType {
@@ -66,13 +66,13 @@ function getErrorDetails(error: unknown, errorType: ErrorType): string {
   return 'An unexpected error occurred. Please try refreshing the page.';
 }
 
-export function ConfigErrorPage({ 
-  title, 
-  message, 
-  details, 
+export function ConfigErrorPage({
+  title,
+  message,
+  details,
   errorType: providedErrorType,
   error,
-  onRetry 
+  showRetry = false
 }: ConfigErrorPageProps) {
   const router = useRouter();
   const errorType = providedErrorType || (error ? getErrorType(error) : 'unknown');
@@ -111,8 +111,8 @@ export function ConfigErrorPage({
       )}
       
       <div className="flex gap-4 mt-4">
-        {onRetry && (
-          <GameButton onClick={onRetry} color="blue">
+        {showRetry && (
+          <GameButton onClick={() => window.location.reload()} color="blue">
             Try Again
           </GameButton>
         )}

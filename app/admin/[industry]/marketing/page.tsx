@@ -6,7 +6,7 @@ import { MarketingTab } from '../../components/MarketingTab';
 import { SidebarContentLayout } from '../../components/SidebarContentLayout';
 import { useMarketing } from '../../hooks/useMarketing';
 import { useFlags } from '../../hooks/useFlags';
-import { useUpgrades } from '../../hooks/useUpgrades';
+import { useUpgrades, useAllUpgrades } from '../../hooks/useUpgrades';
 import { useRoles } from '../../hooks/useRoles';
 import { useCategories } from '../../hooks/useCategories';
 import { METRIC_OPTIONS, EFFECT_TYPE_OPTIONS } from '../../utils/constants';
@@ -22,6 +22,7 @@ export default function MarketingPage({
   const marketing = useMarketing(industry);
   const flags = useFlags(industry);
   const upgrades = useUpgrades(industry);
+  const allUpgrades = useAllUpgrades();
   const roles = useRoles(industry);
   const categories = useCategories(industry);
 
@@ -139,7 +140,7 @@ export default function MarketingPage({
           flagsLoading={flags.loading}
           categories={categories.categories}
           categoriesLoading={categories.loading}
-          upgrades={upgrades.upgrades}
+          upgrades={allUpgrades.data}
           staffRoles={roles.roles}
           metricOptions={METRIC_OPTIONS}
           effectTypeOptions={EFFECT_TYPE_OPTIONS}
