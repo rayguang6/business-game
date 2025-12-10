@@ -7,6 +7,7 @@ import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { UpgradeEffect, UpgradeDefinition } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
+import { getMetricIcon } from '@/lib/game/metrics/registry';
 import { useRequirements } from '@/lib/hooks/useRequirements';
 import { useConfigStore, selectUpgradesForIndustry } from '@/lib/store/configStore';
 import { Card } from '@/app/components/ui/Card';
@@ -248,12 +249,16 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
                   Effects:
                 </div>
                 <ul className="space-y-0.5">
-                  {nextLevelEffects.map((effect, idx) => (
-                    <li key={idx} className="flex items-start gap-1 text-micro text-secondary leading-tight">
-                      <span className="text-primary mt-0.5 flex-shrink-0">•</span>
-                      <span className="flex-1 break-words whitespace-normal">{effect}</span>
-                    </li>
-                  ))}
+                  {nextLevelEffects.map((effect, idx) => {
+                    const effectData = nextLevelConfig?.effects[idx];
+                    const icon = effectData ? getMetricIcon(effectData.metric) : '•';
+                    return (
+                      <li key={idx} className="flex items-start gap-1 text-micro text-secondary leading-tight">
+                        <span className="text-primary mt-0.5 flex-shrink-0">{icon}</span>
+                        <span className="flex-1 break-words whitespace-normal">{effect}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             )}
@@ -281,7 +286,7 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
                   ? 'text-green-600 dark:text-green-400'
                   : 'text-red-600 dark:text-red-400'
               }`}>
-                <span className="text-sm"></span>
+                <span className="text-sm">{getMetricIcon(GameMetric.Cash)}</span>
                 <span className="text-ultra-sm font-bold">
                   ${upgradeCost.toLocaleString()}
                 </span>
@@ -420,18 +425,8 @@ const getRoleStyles = (role: string) => ROLE_STYLE_MAP[role] ?? FALLBACK_STYLE;
 
 // formatStaffEffect moved inside StaffCandidateCard component to use hook
 
-const getEffectIcon = (metric: GameMetric) => {
-  switch (metric) {
-    case GameMetric.Cash: return '💵';
-    case GameMetric.MyTime: return '⏰';
-    case GameMetric.ServiceSpeedMultiplier: return '⚡';
-    case GameMetric.Exp: return '⭐';
-    case GameMetric.ServiceRevenueMultiplier: return '💰';
-    case GameMetric.ServiceRevenueFlatBonus: return '💵';
-    case GameMetric.MonthlyExpenses: return '💸';
-    default: return '✨';
-  }
-};
+// Use centralized metric icons from registry
+// const getEffectIcon = (metric: GameMetric) => getMetricIcon(metric);
 
 interface StaffCandidateCardProps {
   candidate: Staff;
@@ -538,7 +533,7 @@ function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProps) {
               return (
                 <div key={index} className="flex items-center justify-between gap-2 min-w-0">
                   <span className="text-white text-caption sm:text-label font-medium flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1">
-                    <span className="text-micro sm:text-ultra-sm flex-shrink-0">{getEffectIcon(effect.metric)}</span>
+                    <span className="text-micro sm:text-ultra-sm flex-shrink-0">{getMetricIcon(effect.metric)}</span>
                     <span className="truncate">{label}</span>
                   </span>
                   <span className="text-green-400 font-bold text-caption sm:text-label whitespace-nowrap flex-shrink-0">{value}</span>
@@ -696,7 +691,7 @@ function HiredStaffCard({ member, onFire }: HiredStaffCardProps) {
               return (
                 <div key={index} className="flex items-center justify-between gap-2 min-w-0">
                   <span className="text-white text-caption sm:text-label font-medium flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1">
-                    <span className="text-micro sm:text-ultra-sm flex-shrink-0">{getEffectIcon(effect.metric)}</span>
+                    <span className="text-micro sm:text-ultra-sm flex-shrink-0">{getMetricIcon(effect.metric)}</span>
                     <span className="truncate">{label}</span>
                   </span>
                   <span className="text-green-400 font-bold text-caption sm:text-label whitespace-nowrap flex-shrink-0">{value}</span>

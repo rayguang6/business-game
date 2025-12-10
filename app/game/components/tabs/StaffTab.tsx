@@ -4,6 +4,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
 import type { Staff } from '@/lib/features/staff';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
+import { getMetricIcon } from '@/lib/game/metrics/registry';
 import { useRequirements } from '@/lib/hooks/useRequirements';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
 import { Modal } from '@/app/components/ui/Modal';
@@ -105,19 +106,8 @@ function StaffCandidateCard({ candidate, onHire, formatEffect }: StaffCandidateC
     setShowRequirementsModal(true);
   };
 
-  // Get icon for effect
-  const getEffectIcon = (metric: GameMetric) => {
-    switch (metric) {
-      case GameMetric.Cash: return '💵';
-      case GameMetric.MyTime: return '⏰';
-      case GameMetric.ServiceSpeedMultiplier: return '⚡';
-      case GameMetric.Exp: return '⭐';
-      case GameMetric.ServiceRevenueMultiplier: return '💰';
-      case GameMetric.ServiceRevenueFlatBonus: return '💵';
-      case GameMetric.MonthlyExpenses: return '💸';
-      default: return '✨';
-    }
-  };
+  // Use centralized metric icons from registry
+  // const getEffectIcon = (metric: GameMetric) => getMetricIcon(metric);
 
   return (
     <div
@@ -180,7 +170,7 @@ function StaffCandidateCard({ candidate, onHire, formatEffect }: StaffCandidateC
               return (
                 <div key={index} className="flex items-center justify-between gap-2 min-w-0">
                   <span className="text-white text-xs font-medium flex items-center gap-1.5 min-w-0 flex-1">
-                    <span className="flex-shrink-0">{getEffectIcon(effect.metric)}</span>
+                    <span className="flex-shrink-0">{getMetricIcon(effect.metric)}</span>
                     <span className="truncate">{label}</span>
                   </span>
                   <span className="text-green-400 font-bold text-sm whitespace-nowrap flex-shrink-0">{value}</span>
@@ -283,19 +273,8 @@ export function StaffTab() {
           {hiredStaff.map((member) => {
             const styles = getRoleStyles(member.role);
             
-            // Get icon for effect
-            const getEffectIcon = (metric: GameMetric) => {
-              switch (metric) {
-                case GameMetric.Cash: return '💵';
-                case GameMetric.MyTime: return '⏰';
-                case GameMetric.ServiceSpeedMultiplier: return '⚡';
-                case GameMetric.Exp: return '⭐';
-                case GameMetric.ServiceRevenueMultiplier: return '💰';
-                case GameMetric.ServiceRevenueFlatBonus: return '💵';
-                case GameMetric.MonthlyExpenses: return '💸';
-                default: return '✨';
-              }
-            };
+            // Use centralized metric icons from registry
+            // const getEffectIcon = (metric: GameMetric) => getMetricIcon(metric);
             
             return (
               <div key={member.id} className="w-[180px] flex">
@@ -357,7 +336,7 @@ export function StaffTab() {
                           return (
                             <div key={index} className="flex items-center justify-between gap-2 min-w-0">
                               <span className="text-white text-xs font-medium flex items-center gap-1.5 min-w-0 flex-1">
-                                <span className="flex-shrink-0">{getEffectIcon(effect.metric)}</span>
+                                <span className="flex-shrink-0">{getMetricIcon(effect.metric)}</span>
                                 <span className="truncate">{label}</span>
                               </span>
                               <span className="text-green-400 font-bold text-sm whitespace-nowrap flex-shrink-0">{value}</span>

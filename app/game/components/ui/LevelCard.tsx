@@ -11,6 +11,7 @@ import { fetchLevelReward, fetchLevelRewards } from '@/lib/server/actions/adminA
 import type { LevelReward } from '@/lib/data/levelRewardsRepository';
 import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
+import { getMetricIcon } from '@/lib/game/metrics/registry';
 import type { UpgradeEffect } from '@/lib/game/types';
 
 const formatMagnitude = (value: number): string => {
@@ -24,20 +25,8 @@ const formatRawNumber = (value: number): string => {
 const formatCurrency = (value: number): string => `$${Math.abs(value).toLocaleString()}`;
 const formatRawCurrency = (value: number): string => `${value < 0 ? '-' : ''}$${Math.abs(value).toLocaleString()}`;
 
-const getEffectIcon = (metric: GameMetric) => {
-  switch (metric) {
-    case GameMetric.Cash: return '💵';
-    case GameMetric.MyTime: return '⏰';
-    case GameMetric.ServiceSpeedMultiplier: return '⚡';
-    case GameMetric.Exp: return '⭐';
-    case GameMetric.ServiceRevenueMultiplier: return '💰';
-    case GameMetric.ServiceRevenueFlatBonus: return '💵';
-    case GameMetric.MonthlyExpenses: return '💸';
-    case GameMetric.LeadsPerMonth: return '💡';
-    case GameMetric.ServiceCapacity: return '👥';
-    default: return '✨';
-  }
-};
+// Use centralized metric icons from registry
+// const getEffectIcon = (metric: GameMetric) => getMetricIcon(metric);
 
 export function LevelCard() {
   // ALL HOOKS MUST BE CALLED FIRST - before any conditional returns

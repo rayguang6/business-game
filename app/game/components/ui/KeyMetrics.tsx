@@ -12,6 +12,7 @@ import type { IndustryId } from '@/lib/game/types';
 import { getLevel, getLevelProgress, getExpRequiredForCurrentLevel } from '@/lib/store/types';
 import { getExpPerLevel } from '@/lib/game/config';
 import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
+import { getMetricIcon } from '@/lib/game/metrics/registry';
 import Image from 'next/image';
 
 export function KeyMetrics() {
@@ -142,7 +143,7 @@ export function KeyMetrics() {
         switch (def.id) {
           case GameMetric.Cash:
             value = `${metrics.cash.toLocaleString()}${unit}`;
-            icon = '💵';
+            icon = getMetricIcon(def.id);
             image = iconPath || '/images/icons/finance.png'; // Use DB iconPath with fallback
             color = 'text-green-400';
             feedback = feedbackByMetric.cash;
@@ -152,7 +153,7 @@ export function KeyMetrics() {
             const currentLevelProgress = getLevelProgress(metrics.exp, expPerLevel);
             const expRequiredForCurrentLevel = getExpRequiredForCurrentLevel(metrics.exp, expPerLevel);
             value = `Level ${currentLevel} (${currentLevelProgress}/${expRequiredForCurrentLevel}${unit})`;
-            icon = '💵';
+            icon = getMetricIcon(def.id);
             image = iconPath || '/images/icons/marketing.png'; // Use DB iconPath with fallback
             color = 'text-yellow-400';
             feedback = feedbackByMetric.exp;
@@ -163,7 +164,7 @@ export function KeyMetrics() {
             const maxMyTime = metrics.myTimeCapacity;
             // Display format: just show myTime/myTimeCapacity (never show formulas)
             value = `${metrics.myTime}/${maxMyTime}${unit}`;
-            icon = '⏱️';
+            icon = getMetricIcon(def.id);
             image = iconPath || '/images/icons/upgrades.png'; // Use DB iconPath with fallback
             color = 'text-cyan-400';
             feedback = feedbackByMetric.myTime || [];
@@ -174,7 +175,7 @@ export function KeyMetrics() {
             const maxLeveragedTime = metrics.leveragedTimeCapacity;
             // Display format: leveragedTime/leveragedTimeCapacity (e.g., "0/0", "10/10 h")
             value = `${metrics.leveragedTime}/${maxLeveragedTime}${unit}`;
-            icon = '⏱️';
+            icon = getMetricIcon(def.id);
             image = iconPath || '/images/icons/upgrades.png'; // Use DB iconPath with fallback
             color = 'text-cyan-400';
             feedback = feedbackByMetric.leveragedTime || [];
@@ -182,7 +183,7 @@ export function KeyMetrics() {
           }
           case GameMetric.ConversionRate:
             value = `${conversionRate?.toFixed(1) ?? 0}${unit}`;
-            icon = '📊';
+            icon = getMetricIcon(def.id);
             image = iconPath || null; // Use DB iconPath (no fallback for conversion rate)
             color = 'text-blue-400';
             feedback = [];
@@ -193,7 +194,7 @@ export function KeyMetrics() {
             const baseLeadsPerMonth = baseStats?.leadsPerMonth ?? 20;
             const calculatedLeadsPerMonth = Math.max(0, Math.round(effectManager.calculate(GameMetric.LeadsPerMonth, baseLeadsPerMonth)));
             value = `${calculatedLeadsPerMonth}${unit}`;
-            icon = '👥';
+            icon = getMetricIcon(def.id);
             image = iconPath || '/images/icons/marketing.png';
             color = 'text-cyan-400';
             feedback = [];
@@ -203,7 +204,7 @@ export function KeyMetrics() {
             // For other metrics, try to get value from metrics object
             const metricValue = (metrics as unknown as Record<string, number>)[def.id] ?? 0;
             value = `${metricValue}${unit}`;
-            icon = '📊';
+            icon = getMetricIcon(def.id);
             image = iconPath || null; // Use DB iconPath (no fallback for other metrics)
             color = 'text-gray-400';
             feedback = [];
@@ -249,17 +250,21 @@ export function KeyMetrics() {
         >
           {/* Icon positioned outside from the left with overflow design */}
           <div className="absolute -left-1 sm:-left-1.5 md:-left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 md:w-6 md:h-6 rounded-full flex items-center justify-center z-10 overflow-hidden">
-            {metric.image ? (
-              <Image 
-                src={metric.image} 
+            {/* IMAGE-FIRST MODE (uncomment to use images with icon fallback) */}
+            {/* {metric.image ? (
+              <Image
+                src={metric.image}
                 alt={metric.label}
                 width={20}
                 height={20}
                 className="w-full h-full object-cover rounded-full"
               />
             ) : (
-              <span className="text-white text-micro sm:text-ultra-sm md:text-sm">{metric.icon}</span>
-            )}
+              <span className="text-white text-sm sm:text-base md:text-lg">{metric.icon}</span>
+            )} */}
+
+            {/* ICON-FIRST MODE (uncomment to use icons only) */}
+            <span className="text-white text-sm sm:text-base md:text-lg">{metric.icon}</span>
           </div>
 
           <div className="flex flex-col min-w-0 flex-1 pl-0.5 sm:pl-1 md:pl-2">
