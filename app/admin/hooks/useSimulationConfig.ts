@@ -324,10 +324,10 @@ export function useSimulationConfig({
       const current = prev || {};
       const merged = { ...current, ...updates };
 
-      // Remove undefined values
+      // Remove undefined values and empty strings
       const cleaned: Partial<WinCondition> = {};
       Object.entries(merged).forEach(([key, value]) => {
-        if (value !== undefined && value !== '') {
+        if (value !== undefined && !(typeof value === 'string' && value === '')) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (cleaned as any)[key] = value;
         }
@@ -342,10 +342,10 @@ export function useSimulationConfig({
       const current = prev || {};
       const merged = { ...current, ...updates };
 
-      // Remove undefined values
+      // Remove undefined values and empty strings
       const cleaned: Partial<LoseCondition> = {};
       Object.entries(merged).forEach(([key, value]) => {
-        if (value !== undefined && value !== '') {
+        if (value !== undefined && !(typeof value === 'string' && value === '')) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (cleaned as any)[key] = value;
         }
