@@ -210,6 +210,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
       showInDetails: true,
       showInAdmin: true,
       priority: 5,
+      unit: '%',
     },
     canBeModifiedByEffects: true,
   },

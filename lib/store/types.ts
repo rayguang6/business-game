@@ -169,14 +169,23 @@ export interface GameState {
  */
 function getCumulativeExpForLevel(level: number, expPerLevel: number | number[]): number {
   if (level <= 1) return 0;
-  
+
   if (typeof expPerLevel === 'number') {
     // Flat EXP per level: Level N requires (N-1) * expPerLevel EXP
     return (level - 1) * expPerLevel;
   } else {
     // Array-based: sum up EXP requirements for each level up to target
-    const cumulativeExp = expPerLevel.slice(0, level - 1).reduce((sum, exp) => sum + exp, 0);
-    return cumulativeExp;
+    const definedLevels = expPerLevel.length;
+    const expForDefinedLevels = expPerLevel.slice(0, Math.min(level - 1, definedLevels)).reduce((sum, exp) => sum + exp, 0);
+
+    // If level exceeds defined levels, add the remaining levels using the last value
+    if (level - 1 > definedLevels) {
+      const lastExpValue = expPerLevel[definedLevels - 1] ?? 200;
+      const additionalLevels = level - 1 - definedLevels;
+      return expForDefinedLevels + (additionalLevels * lastExpValue);
+    }
+
+    return expForDefinedLevels;
   }
 }
 

@@ -995,8 +995,10 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     const winCondition = getWinCondition(industryId);
     if (!winCondition) return; // Can't check win condition if not loaded
 
-    // For time-based wins, no additional expense deduction needed (already handled in month transition)
-    if (winCondition.monthTarget && currentMonth >= winCondition.monthTarget) {
+    // For time-based wins, check if the month that just ended meets the win condition
+    // currentMonth is the month that just started, so previousMonth is the one that just ended
+    const previousMonth = currentMonth - 1;
+    if (winCondition.monthTarget && previousMonth >= winCondition.monthTarget) {
       // Refresh leveraged time from effects before ending game
       const leveragedTimeBonus = effectManager.calculate(GameMetric.LeveragedTime, 0);
 
