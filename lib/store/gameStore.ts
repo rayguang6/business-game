@@ -9,6 +9,7 @@ import { createUpgradesSlice, UpgradesSlice } from './slices/upgradesSlice';
 import { EventSlice, createEventSlice } from './slices/eventSlice';
 import { createStaffSlice, StaffSlice } from './slices/staffSlice';
 import { createMarketingSlice, MarketingSlice } from './slices/marketingSlice';
+import { createActionNotificationsSlice, ActionNotificationsSlice } from './slices/actionNotificationsSlice';
 import { createConditionSlice, ConditionSlice } from './slices/conditionSlice';
 import { createFlagSlice, FlagSlice } from './slices/flagSlice';
 
@@ -23,6 +24,7 @@ export type GameStore = IndustrySlice &
   EventSlice &
   StaffSlice &
   MarketingSlice &
+  ActionNotificationsSlice &
   ConditionSlice &
   FlagSlice;
 
@@ -37,6 +39,7 @@ export const useGameStore = create<GameStore>()((...args) => ({
   ...createEventSlice(...args),
   ...createStaffSlice(...args),
   ...createMarketingSlice(...args),
+  ...createActionNotificationsSlice(...args),
   ...createConditionSlice(...args),
   ...createFlagSlice(...args),
 }));

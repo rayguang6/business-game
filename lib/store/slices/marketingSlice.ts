@@ -350,6 +350,17 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
         },
       }));
 
+      // Add action notification
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const storeForNotification = get() as any; // Cast to any to access addNotification
+      if (storeForNotification.addNotification) {
+        storeForNotification.addNotification({
+          type: 'marketing',
+          title: campaign.name,
+          duration: 2500, // 2.5 seconds - faster disappearance
+        });
+      }
+
       return { success: true, message: `${campaign.name} level ${newLevel} purchased!` };
     }
 
@@ -449,6 +460,17 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
           [campaignId]: cooldownEnd,
         },
       }));
+
+      // Add action notification
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const storeForNotification = get() as any; // Cast to any to access addNotification
+      if (storeForNotification.addNotification) {
+        storeForNotification.addNotification({
+          type: 'marketing',
+          title: campaign.name,
+          duration: 2500, // 2.5 seconds - faster disappearance
+        });
+      }
 
       return { success: true };
     }

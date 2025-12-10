@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Staff } from '@/lib/features/staff';
 import { MainCharacter, isMainCharacter } from '@/lib/features/mainCharacter';
 import { GridPosition } from '@/lib/game/types';
 import { Character2D, Character2DProps } from './Character2D';
+import { ActionBubble } from './ActionBubble';
+import { useGameStore } from '@/lib/store/gameStore';
 
 interface SpriteStaffProps {
   staff: Staff | MainCharacter;
@@ -68,7 +70,24 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
   const [isWalking, setIsWalking] = useState(false);
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [direction, setDirection] = useState<'down' | 'left' | 'up' | 'right'>('down');
-  
+
+  // Action notifications for main character only
+  const notifications = useGameStore((state) =>
+    isMainCharacter(staff) ? state.notifications : []
+  );
+  const clearExpiredNotifications = useGameStore((state) => state.clearExpiredNotifications);
+
+  // Clear expired notifications periodically
+  useEffect(() => {
+    if (isMainCharacter(staff)) {
+      const interval = setInterval(() => {
+        clearExpiredNotifications();
+      }, 100); // Check every 100ms
+
+      return () => clearInterval(interval);
+    }
+  }, [staff, clearExpiredNotifications]);
+
   // Use dynamic position if available, otherwise use fallback position
   const hasDynamicPosition = staff.x !== undefined && staff.y !== undefined;
   const renderX = hasDynamicPosition ? (staff.x ?? 0) : position.x;
@@ -249,6 +268,22 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
           </div>
         </div>
       )}
+
+      {/* ====================================================================
+          ACTION BUBBLES FOR MAIN CHARACTER
+          ====================================================================
+          Show action notifications as bubbles above the main character's head
+          */}
+      {isMainChar && notifications.map((notification, index) => (
+        <ActionBubble
+          key={notification.id}
+          notification={notification}
+          index={index}
+          scaleFactor={scaleFactor}
+          characterX={renderX}
+          characterY={renderY}
+        />
+      ))}
 
       {/* ====================================================================
           STAFF SPRITE RENDERING

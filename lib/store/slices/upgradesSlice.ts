@@ -484,6 +484,18 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
       upgradesActivatedThisMonth: new Set([...state.upgradesActivatedThisMonth]).add(upgradeId),
     }));
 
+    // Add action notification
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const storeForNotification = get() as any; // Cast to any to access addNotification
+    if (storeForNotification.addNotification) {
+      storeForNotification.addNotification({
+        type: 'upgrade',
+        title: upgrade.name,
+        description: levelName,
+        duration: 2500, // 2.5 seconds - faster disappearance
+      });
+    }
+
     const levelText = ` - ${levelName}`;
     const costParts: string[] = [];
     if (needsCash) costParts.push(`$${upgradeCost}`);
