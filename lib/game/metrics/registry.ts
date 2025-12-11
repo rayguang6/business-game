@@ -15,6 +15,8 @@ import { GameMetric } from '../effectManager';
 import { IndustryId, BusinessMetrics, BusinessStats } from '../types';
 import { getBusinessMetrics, getBusinessStats } from '../config';
 import type { MetricDisplayConfig } from '@/lib/data/metricDisplayConfigRepository';
+import { EventEffectType } from '@/lib/types/gameEvents';
+import { EventCategoryType } from '../constants/eventCategories';
 
 /**
  * Where the default value comes from
@@ -550,6 +552,32 @@ export function getMetricIcon(metric: GameMetric): string {
     case GameMetric.FailureRate: return '⚠️'; // Warning for failure
     case GameMetric.MonthlyExpenses: return '💸'; // Money with wings for expenses
     default: return '✨'; // Sparkles for unknown
+  }
+}
+
+/**
+ * Get the standard emoji icon for event effects (for consistency with HUD)
+ * This centralizes icon definitions so all components use the same icons
+ */
+export function getEventEffectIcon(effectType: EventEffectType): string {
+  switch (effectType) {
+    case EventEffectType.Cash: return '💴'; // Money bag for cash effects
+    case EventEffectType.Exp: return '⭐'; // Star for experience points
+    case EventEffectType.DynamicCash: return '💰'; // Money bag for dynamic cash (same as cash)
+    case EventEffectType.Metric: return '📊'; // Chart for metric effects
+    default: return '✨'; // Sparkles for unknown
+  }
+}
+
+/**
+ * Get the standard emoji icon for event categories
+ * This centralizes icon definitions so all components use the same icons
+ */
+export function getEventCategoryIcon(category: EventCategoryType): string {
+  switch (category) {
+    case 'opportunity': return '✨'; // Sparkles for opportunities
+    case 'good-bad': return '⚠️'; // Warning for good/bad events
+    default: return '📝'; // Document for unknown categories
   }
 }
 

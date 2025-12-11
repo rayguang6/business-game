@@ -9,17 +9,8 @@ import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { IndustryId } from '@/lib/game/types';
 import { EventCategory, AUTO_RESOLVE_CATEGORIES } from '@/lib/game/constants/eventCategories';
+import { getEventEffectIcon, getEventCategoryIcon } from '@/lib/game/metrics/registry';
 
-const getEffectIcon = (type: GameEventEffect['type']) => {
-  switch (type) {
-    case EventEffectType.Cash:
-      return '💰';
-    case EventEffectType.Exp:
-      return '⭐';
-    default:
-      return '';
-  }
-};
 
 const getEffectColorClass = (type: GameEventEffect['type'], amount: number) => {
   if (type === EventEffectType.Exp) {
@@ -33,7 +24,7 @@ const formatEffect = (effect: GameEventEffect) => {
     const prefix = effect.type === EventEffectType.Cash ? '$' : '';
     const sign = effect.amount > 0 ? '+' : effect.amount < 0 ? '-' : '';
     const value = Math.abs(effect.amount);
-    return `${getEffectIcon(effect.type)} ${sign}${prefix}${value.toLocaleString()}`;
+    return `${getEventEffectIcon(effect.type)} ${sign}${prefix}${value.toLocaleString()}`;
   }
   return ''; // Metric effects are handled separately
 };
@@ -255,8 +246,8 @@ const EventPopup: React.FC = () => {
                     if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.Exp) {
                       return (
                         <li key={index} className={`flex items-center gap-1 ${getEffectColorClass(effect.type, effect.amount)}`}>
-                          <span>{getEffectIcon(effect.type)}</span>
-                          <span>{formatEffect(effect).replace(getEffectIcon(effect.type) + ' ', '')}</span>
+                          <span>{getEventEffectIcon(effect.type)}</span>
+                          <span>{formatEffect(effect).replace(getEventEffectIcon(effect.type) + ' ', '')}</span>
                         </li>
                       );
                     } else if (effect.type === EventEffectType.Metric) {
@@ -357,8 +348,8 @@ const EventPopup: React.FC = () => {
                     if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.Exp) {
                       return (
                         <li key={index} className={`flex items-center gap-1 ${getEffectColorClass(effect.type, effect.amount)}`}>
-                          <span>{getEffectIcon(effect.type)}</span>
-                          <span>{formatEffect(effect).replace(getEffectIcon(effect.type) + ' ', '')}</span>
+                          <span>{getEventEffectIcon(effect.type)}</span>
+                          <span>{formatEffect(effect).replace(getEventEffectIcon(effect.type) + ' ', '')}</span>
                         </li>
                       );
                     } else if (effect.type === EventEffectType.Metric) {
@@ -416,7 +407,7 @@ const EventPopup: React.FC = () => {
 
   const isOpportunity = currentEvent.category === EventCategory.Opportunity;
   const shouldShowChoices = currentEvent.category === EventCategory.Opportunity;
-  const eventIcon = isOpportunity ? '✨' : '⚠️';
+  const eventIcon = getEventCategoryIcon(currentEvent.category);
   const eventTitleColor = isOpportunity ? 'text-green-300' : 'text-red-300';
   const categoryGradient = isOpportunity 
     ? 'from-green-500/20 via-green-600/15 to-green-700/20'
