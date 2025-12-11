@@ -41,13 +41,10 @@ const formatEffect = (effect: GameEventEffect) => {
 // METRIC_LABELS removed - now using merged definitions from registry + database
 
 const formatDurationLabel = (durationMonths: number | null | undefined) => {
-  if (durationMonths === null || durationMonths === undefined || !Number.isFinite(durationMonths)) {
-    return ' (Permanent)';
+  if (durationMonths === null || durationMonths === undefined || !Number.isFinite(durationMonths) || durationMonths <= 0) {
+    return '';
   }
-  if (durationMonths <= 0) {
-    return ' (Instant)';
-  }
-  return ` for ${durationMonths} month${durationMonths === 1 ? '' : 's'}`;
+  return ` ${durationMonths} month`;
 };
 
 // formatMetricEffect moved inside component to use hook
@@ -260,21 +257,15 @@ const EventPopup: React.FC = () => {
                           <span>{formatEffect(effect).replace(getEffectIcon(effect.type) + ' ', '')}</span>
                         </li>
                       );
+                    } else if (effect.type === EventEffectType.Metric) {
+                      return (
+                        <li key={index} className="text-[var(--text-primary)]">
+                          {formatMetricEffect(effect)}
+                        </li>
+                      );
                     }
                     return null;
                   }).filter(Boolean)}
-                </ul>
-              </div>
-            )}
-            {lastDelayedOutcome.appliedEffects.some(effect => effect.type === EventEffectType.Metric) && (
-              <div className="bg-[var(--game-primary)]/20 rounded p-1.5 md:p-3 mb-1 md:mb-2 border border-[var(--game-primary)]/40">
-                <div className="text-[10px] md:text-sm font-semibold text-[var(--game-primary-light)] mb-0.5">Active:</div>
-                <ul className="space-y-0.5 text-[9px] md:text-sm text-[var(--text-primary)]">
-                  {lastDelayedOutcome.appliedEffects
-                    .filter((effect): effect is Extract<GameEventEffect, { type: EventEffectType.Metric }> => effect.type === EventEffectType.Metric)
-                    .map((effect, index) => (
-                      <li key={index}>{formatMetricEffect(effect)}</li>
-                    ))}
                 </ul>
               </div>
             )}
@@ -315,24 +306,45 @@ const EventPopup: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-[var(--game-primary-light)]/20 via-[var(--game-primary)]/15 to-[var(--game-primary-dark)]/20 rounded-md md:rounded-2xl border-2 border-[var(--game-primary)]/30 shadow-[0_0_30px_rgba(35,170,246,0.3)]" />
           
           <div className="relative bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-secondary)] rounded-md md:rounded-2xl shadow-xl p-2.5 md:p-6 border-2 border-[var(--border-primary)] max-h-[calc(100vh-5rem)] md:max-h-[70vh] overflow-y-auto">
-            <div className="flex items-center gap-1 md:gap-1.5 mb-1.5 md:mb-3">
-              <span className="text-[var(--game-primary-light)] text-sm md:text-xl drop-shadow-[0_0_4px_rgba(35,170,246,0.6)]">🎲</span>
-              <h3 className="text-sm md:text-lg font-semibold text-[var(--text-primary)] leading-tight flex-1" style={{
+            {/* Main Title - Event Title */}
+            <div className="mb-1.5 md:mb-3">
+              <h3 className="text-sm md:text-lg font-semibold text-[var(--text-primary)] leading-tight" style={{
                 textShadow: '0 1px 2px rgba(0,0,0,0.8)'
               }}>
                 {lastEventOutcome.eventTitle}
               </h3>
             </div>
-            <p className="text-[10px] md:text-sm text-[var(--text-secondary)] mb-1.5 md:mb-3 leading-snug">
-              You chose <span className="font-semibold text-[var(--game-primary-light)]">{lastEventOutcome.choiceLabel}</span>
-              {lastEventOutcome.costPaid > 0 && <span className="text-red-400 ml-1">(-${lastEventOutcome.costPaid})</span>}
-            </p>
+
+            {/* Event Summary */}
+            {lastEventOutcome.eventSummary && (
+              <p className="text-[10px] md:text-sm text-[var(--text-secondary)] mb-1.5 md:mb-3 leading-snug">
+                {lastEventOutcome.eventSummary}
+              </p>
+            )}
+
+            {/* Consequence Label as Small Subtitle */}
             {lastEventOutcome.consequenceLabel && (
+              <div className="mb-1.5 md:mb-3">
+                <h4 className="text-xs md:text-sm font-medium text-[var(--game-primary-light)]" style={{
+                  textShadow: '0 1px 2px rgba(0,0,0,0.6)'
+                }}>
+                  {lastEventOutcome.consequenceLabel}
+                </h4>
+              </div>
+            )}
+
+            {/* Choice Info (only for non-GoodBad events) */}
+            {lastEventOutcome.eventCategory !== EventCategory.GoodBad && (
+              <p className="text-[10px] md:text-sm text-[var(--text-secondary)] mb-1.5 md:mb-3 leading-snug">
+                You chose <span className="font-semibold text-[var(--game-primary-light)]">{lastEventOutcome.choiceLabel}</span>
+                {lastEventOutcome.costPaid > 0 && <span className="text-red-400 ml-1">(-${lastEventOutcome.costPaid})</span>}
+              </p>
+            )}
+
+            {/* Consequence Description */}
+            {lastEventOutcome.consequenceDescription && (
               <div className="text-[10px] md:text-sm text-[var(--text-primary)] mb-1 md:mb-2 bg-[var(--bg-tertiary)]/50 rounded p-1.5 md:p-2 border border-[var(--border-secondary)]">
-                <span className="font-medium">{lastEventOutcome.consequenceLabel}</span>
-                {lastEventOutcome.consequenceDescription && (
-                  <span className="text-[var(--text-secondary)] ml-1">• {lastEventOutcome.consequenceDescription}</span>
-                )}
+                <span className="font-medium">{lastEventOutcome.consequenceDescription}</span>
               </div>
             )}
             {lastEventOutcome.appliedEffects.length > 0 && (
@@ -347,21 +359,15 @@ const EventPopup: React.FC = () => {
                           <span>{formatEffect(effect).replace(getEffectIcon(effect.type) + ' ', '')}</span>
                         </li>
                       );
+                    } else if (effect.type === EventEffectType.Metric) {
+                      return (
+                        <li key={index} className="text-[var(--text-primary)]">
+                          {formatMetricEffect(effect)}
+                        </li>
+                      );
                     }
                     return null;
                   }).filter(Boolean)}
-                </ul>
-              </div>
-            )}
-            {lastEventOutcome.appliedEffects.some(effect => effect.type === EventEffectType.Metric) && (
-              <div className="bg-[var(--game-primary)]/20 rounded p-1.5 md:p-3 mb-1 md:mb-2 border border-[var(--game-primary)]/40">
-                <div className="text-[10px] md:text-sm font-semibold text-[var(--game-primary-light)] mb-0.5">Active:</div>
-                <ul className="space-y-0.5 text-[9px] md:text-sm text-[var(--text-primary)]">
-                  {lastEventOutcome.appliedEffects
-                    .filter((effect): effect is Extract<GameEventEffect, { type: EventEffectType.Metric }> => effect.type === EventEffectType.Metric)
-                    .map((effect, index) => (
-                      <li key={index}>{formatMetricEffect(effect)}</li>
-                    ))}
                 </ul>
               </div>
             )}
@@ -435,14 +441,6 @@ const EventPopup: React.FC = () => {
         {/* Game-style frame with category color */}
         <div className={`absolute inset-0 bg-gradient-to-br ${categoryGradient} rounded-md md:rounded-2xl border-2 ${categoryBorder} shadow-[0_0_30px_rgba(0,0,0,0.4)]`} />
         
-        {/* Category badge ribbon */}
-        <div className={`absolute top-0 right-4 md:right-6 px-2 md:px-3 py-0.5 md:py-1 bg-gradient-to-r ${categoryGradient} border border-[var(--border-secondary)] rounded-b-md shadow-lg z-20`}>
-          <span className="text-[8px] md:text-sm font-bold uppercase tracking-wide text-white" style={{
-            textShadow: '0 1px 2px rgba(0,0,0,0.8)'
-          }}>
-            {isOpportunity ? 'Opportunity' : 'Challenge'}
-          </span>
-        </div>
 
         <div className="relative bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-secondary)] rounded-md md:rounded-2xl shadow-xl p-2.5 md:p-5 lg:p-6 border-2 border-[var(--border-primary)] max-h-[calc(100vh-5rem)] md:max-h-[80vh] overflow-y-auto">
           {/* Header */}

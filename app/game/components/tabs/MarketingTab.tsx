@@ -81,13 +81,10 @@ const useActiveMarketingCampaigns = () => {
 };
 
 const formatDurationLabel = (durationMonths: number | null | undefined): string => {
-  if (durationMonths === null || durationMonths === undefined || !Number.isFinite(durationMonths)) {
-    return ' (Permanent)';
+  if (durationMonths === null || durationMonths === undefined || !Number.isFinite(durationMonths) || durationMonths <= 0) {
+    return '';
   }
-  if (durationMonths <= 0) {
-    return ' (Instant)';
-  }
-  return ` for ${durationMonths} month${durationMonths === 1 ? '' : 's'}`;
+  return ` ${durationMonths} month`;
 };
 
 // describeEffect moved inside component to use hook

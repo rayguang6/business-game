@@ -177,6 +177,8 @@ export type ResolvedEffect =
 export interface ResolvedEventOutcome {
   eventId: string;
   eventTitle: string;
+  eventSummary?: string;
+  eventCategory: string;
   choiceId: string;
   choiceLabel: string;
   consequenceId: string | null;
@@ -637,6 +639,8 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
       lastEventOutcome: {
         eventId: event.id,
         eventTitle: event.title,
+        eventSummary: event.summary,
+        eventCategory: event.category,
         choiceId: choice.id,
         choiceLabel: choice.label,
         consequenceId: consequence?.id ?? null,
