@@ -18,6 +18,7 @@ import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import { useConfigStore } from '@/lib/store/configStore';
 import { getMonthlyBaseExpenses } from '@/lib/features/economy';
 import { ConfigErrorPage } from '../ui/ConfigErrorPage';
+import GameOverPopup from '../ui/GameOverPopup';
 
 // Canvas scaling configuration
 const CANVAS_CONFIG = {
@@ -738,6 +739,9 @@ export function GameCanvas() {
           </div>
         )}
       </div>
+
+      {/* Game Over Popup - Inside Canvas Area */}
+      <GameOverPopup />
     </div>
   );
 }

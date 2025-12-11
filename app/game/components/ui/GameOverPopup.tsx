@@ -93,22 +93,23 @@ const GameOverPopup: React.FC = () => {
   const { title, message, icon, color } = getGameOverMessage();
 
   return (
-    <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full mx-4">
+    <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none">
+      <div className="pointer-events-auto bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl p-4 sm:p-6 max-w-[280px] sm:max-w-sm w-full mx-2 border-2 border-gray-200">
         <div className="text-center">
-          <div className="text-6xl mb-4">{icon}</div>
-          <h2 className={`text-3xl font-bold mb-4 ${
-            color === 'green' ? 'text-green-600' : 
-            color === 'orange' ? 'text-orange-600' : 
+          <div className="text-4xl sm:text-5xl mb-3 sm:mb-4">{icon}</div>
+          <h2 className={`text-xl sm:text-2xl font-bold mb-3 sm:mb-4 ${
+            color === 'green' ? 'text-green-600' :
+            color === 'orange' ? 'text-orange-600' :
             'text-red-600'
           }`}>{title}</h2>
-          <p className="text-gray-700 mb-8 text-lg">{message}</p>
+          <p className="text-gray-700 mb-4 sm:mb-6 text-sm sm:text-base leading-relaxed">{message}</p>
 
           <GameButton
             color={color === 'green' ? 'green' : 'blue'}
             fullWidth
             size="sm"
             onClick={handleGoHome}
+            className="text-sm sm:text-base"
           >
             🏠 Back to Home
           </GameButton>

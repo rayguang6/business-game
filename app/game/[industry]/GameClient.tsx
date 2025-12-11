@@ -15,7 +15,6 @@ import { TabType, TAB_CONFIGS } from '@/lib/types/ui';
 import { useAudioControls } from '@/hooks/useAudio';
 import { FullscreenToggle } from '@/app/game/components/ui/FullscreenToggle';
 import EventPopup from '@/app/game/components/ui/EventPopup';
-import GameOverPopup from '@/app/game/components/ui/GameOverPopup';
 import LevelUpPopup from '@/app/game/components/ui/LevelUpPopup';
 import { FlagDebug } from '@/app/game/components/ui/FlagDebug';
 import { TierMultiplierDebug } from '@/app/game/components/ui/TierMultiplierDebug';
@@ -132,7 +131,6 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
           {/* Global Popups - Above everything */}
           <EventPopup />
           <LevelUpPopup />
-          <GameOverPopup />
         {/* Mobile: Top Section - Game Canvas Area (40% height) */}
         {/* Desktop: Left Section - Game Canvas Area (50% width) */}
         <div className="relative h-[40vh] md:h-full md:w-1/2 flex items-center justify-center py-4 md:py-0 overflow-hidden">
