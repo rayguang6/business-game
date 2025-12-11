@@ -295,9 +295,9 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
         }
       }
 
-      // Remove old effects and add new level effects
-      //NOTE: Remove this To change leveled campaigns to stacking:
-      // removeMarketingEffects(campaignId);
+      // Remove old effects first to prevent duplication, then add fresh stacked effects
+      // This enables proper stacking: Level 2 = Level 1 effects + Level 2 effects (not 2x Level 1 + Level 2)
+      removeMarketingEffects(campaignId);
       
       // Add effects for all levels from 1 to newLevel (effects accumulate)
       const store = get();
