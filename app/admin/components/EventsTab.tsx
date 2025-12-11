@@ -32,6 +32,7 @@ interface EventsTabProps {
     category: EventCategoryType;
     summary?: string;
     requirements?: Requirement[];
+    order?: number;
   };
   eventChoices: GameEventChoice[];
   eventSaving: boolean;
@@ -90,7 +91,8 @@ export function EventsTab({
     description: '',
     cost: '',
     timeCost: '',
-    requirements: []
+    requirements: [],
+    order: ''
   });
 
   const [selectedConsequenceId, setSelectedConsequenceId] = useState<string>('');
@@ -107,7 +109,7 @@ export function EventsTab({
   useEffect(() => {
     setSelectedChoiceId('');
     setIsCreatingChoice(false);
-    setChoiceForm({ id: '', label: '', description: '', cost: '', timeCost: '', requirements: [] });
+    setChoiceForm({ id: '', label: '', description: '', cost: '', timeCost: '', requirements: [], order: '' });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
     setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
@@ -176,6 +178,7 @@ export function EventsTab({
       timeCost: choice.timeCost !== undefined ? String(choice.timeCost) : '',
       setsFlag: choice.setsFlag,
       requirements: (choice as any).requirements || [],
+      order: choice.order !== undefined ? String(choice.order) : '',
     });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
@@ -189,7 +192,7 @@ export function EventsTab({
     }
     setIsCreatingChoice(true);
     setSelectedChoiceId('');
-    setChoiceForm({ id: '', label: '', description: '', cost: '', timeCost: '', setsFlag: '', requirements: [] });
+    setChoiceForm({ id: '', label: '', description: '', cost: '', timeCost: '', setsFlag: '', requirements: [], order: '' });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
     setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
@@ -223,6 +226,12 @@ export function EventsTab({
     }
 
     const exists = eventChoices.some((c) => c.id === id);
+    const order = choiceForm.order.trim() === '' ? undefined : Number(choiceForm.order);
+    if (order !== undefined && (!Number.isFinite(order) || order < 0)) {
+      error('Choice order must be a non-negative number.');
+      return;
+    }
+
     const nextItem: any = {
       id,
       label,
@@ -232,9 +241,18 @@ export function EventsTab({
       setsFlag,
       consequences: exists ? eventChoices.find((c) => c.id === id)!.consequences : [],
       requirements: choiceForm.requirements || [],
+      order,
     };
     const next = (exists ? eventChoices.map((c) => (c.id === id ? nextItem : c)) : [...eventChoices, nextItem])
-      .sort((a, b) => a.label.localeCompare(b.label));
+      .sort((a, b) => {
+        // Sort by order first (null orders last), then by label
+        const aOrder = a.order ?? Infinity;
+        const bOrder = b.order ?? Infinity;
+        if (aOrder !== bOrder) {
+          return aOrder - bOrder;
+        }
+        return a.label.localeCompare(b.label);
+      });
     onUpdateEventChoices(next);
     setIsCreatingChoice(false);
     setSelectedChoiceId(id);
@@ -246,7 +264,7 @@ export function EventsTab({
     const next = eventChoices.filter((c) => c.id !== selectedChoiceId);
     onUpdateEventChoices(next);
     setSelectedChoiceId('');
-    setChoiceForm({ id: '', label: '', description: '', cost: '', timeCost: '', setsFlag: '', requirements: [] });
+    setChoiceForm({ id: '', label: '', description: '', cost: '', timeCost: '', setsFlag: '', requirements: [], order: '' });
     setSelectedConsequenceId('');
     setIsCreatingConsequence(false);
     setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
@@ -260,7 +278,7 @@ export function EventsTab({
     } else {
       setIsCreatingChoice(false);
       setSelectedChoiceId('');
-      setChoiceForm({ id: '', label: '', description: '', cost: '', timeCost: '', setsFlag: '', requirements: [] });
+      setChoiceForm({ id: '', label: '', description: '', cost: '', timeCost: '', setsFlag: '', requirements: [], order: '' });
     }
   };
 
@@ -530,6 +548,17 @@ export function EventsTab({
                 <option value={EventCategory.Opportunity}>Opportunity</option>
                 <option value={EventCategory.GoodBad}>Good/Bad</option>
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-300 mb-1">Order (optional)</label>
+              <NumberInput
+                min="0"
+                placeholder="Display order (lower = first)"
+                value={String(eventForm.order ?? '')}
+                onChange={(e) => onUpdateEventForm({ order: e.target.value === '' ? undefined : Number(e.target.value) })}
+                className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+              />
+              <p className="text-xs text-gray-400 mt-1">Lower numbers appear first in event lists</p>
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-slate-300 mb-1">Summary (optional)</label>

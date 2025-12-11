@@ -201,7 +201,7 @@ export function DelayedConsequenceEditor({
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-300 mb-1">Label (optional)</label>
+              <label className="block text-sm font-semibold text-slate-300 mb-1">Label</label>
               <input
                 value={delayedConsequence.label ?? ''}
                 onChange={(e) => onUpdate({ ...delayedConsequence, label: e.target.value })}

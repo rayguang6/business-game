@@ -95,7 +95,7 @@ export function EventEffectEditor({
           {effect.type === EventEffectType.Cash && (
             <div className="relative">
               <label className="flex items-center gap-1 text-xs text-slate-400 mb-1">
-                Label (optional)
+                Label
                 <button
                   type="button"
                   onClick={() => setShowLabelTooltip(showLabelTooltip === `cash-${index}` ? null : `cash-${index}`)}

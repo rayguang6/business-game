@@ -47,6 +47,7 @@ export interface GameEventChoice {
   timeCost?: number; // upfront time cost (positive number) shown before selection
   consequences: GameEventConsequence[];
   setsFlag?: string; // Optional flag to set when this choice is selected
+  order?: number; // Display order (lower numbers appear first)
 }
 
 export interface GameEvent {
@@ -56,4 +57,5 @@ export interface GameEvent {
   summary?: string;
   choices: GameEventChoice[];
   requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)
+  order?: number; // Display order (lower numbers appear first)
 }

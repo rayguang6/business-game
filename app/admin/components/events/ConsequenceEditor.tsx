@@ -113,7 +113,7 @@ export function ConsequenceEditor({
       </div>
 
       <div>
-        <label className="block text-sm font-semibold text-slate-300 mb-1">Label (optional)</label>
+        <label className="block text-sm font-semibold text-slate-300 mb-1">Label</label>
         <input
           value={consequenceForm.label}
           onChange={(e) => onUpdate({ label: e.target.value })}

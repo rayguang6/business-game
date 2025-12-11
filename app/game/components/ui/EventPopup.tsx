@@ -464,7 +464,14 @@ const EventPopup: React.FC = () => {
           {/* Choices - only show for opportunity events */}
           {shouldShowChoices && (
             <div className="space-y-1.5 md:space-y-2.5">
-              {currentEvent.choices.map((choice, index) => {
+              {currentEvent.choices
+                .sort((a, b) => {
+                  // Null orders sort to the end
+                  const aOrder = a.order ?? Infinity;
+                  const bOrder = b.order ?? Infinity;
+                  return aOrder - bOrder;
+                })
+                .map((choice, index) => {
               const isDefault = choice.id === defaultChoiceId;
               const hasCost = choice.cost !== undefined && choice.cost > 0;
               const hasTimeCost = choice.timeCost !== undefined && choice.timeCost > 0;

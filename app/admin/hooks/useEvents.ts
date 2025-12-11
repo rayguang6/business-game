@@ -14,6 +14,7 @@ interface EventForm {
   category: EventCategoryType;
   summary?: string;
   requirements?: Requirement[];
+  order?: number;
 }
 
 // Query key factory for events
@@ -43,7 +44,15 @@ export function useEvents(industryId: string, eventId?: string) {
       if (!industryId) return [];
       const result = await fetchEvents(industryId);
       if (!result) return [];
-      return result.slice().sort((a, b) => a.title.localeCompare(b.title));
+      return result.slice().sort((a, b) => {
+        // Sort by order first (null orders last), then by title
+        const aOrder = a.order ?? Infinity;
+        const bOrder = b.order ?? Infinity;
+        if (aOrder !== bOrder) {
+          return aOrder - bOrder;
+        }
+        return a.title.localeCompare(b.title);
+      });
     },
     enabled: !!industryId,
   });
@@ -65,7 +74,15 @@ export function useEvents(industryId: string, eventId?: string) {
       queryClient.setQueryData<GameEvent[]>(eventsQueryKey(industryId), (old = []) => {
         const exists = old.some((e) => e.id === newEvent.id);
         const next = exists ? old.map((e) => (e.id === newEvent.id ? newEvent : e)) : [...old, newEvent];
-        return next.sort((a, b) => a.title.localeCompare(b.title));
+        return next.sort((a, b) => {
+          // Sort by order first (null orders last), then by title
+          const aOrder = a.order ?? Infinity;
+          const bOrder = b.order ?? Infinity;
+          if (aOrder !== bOrder) {
+            return aOrder - bOrder;
+          }
+          return a.title.localeCompare(b.title);
+        });
       });
 
       return { previousEvents };
@@ -138,6 +155,7 @@ export function useEvents(industryId: string, eventId?: string) {
       category: event.category,
       summary: event.summary,
       requirements: event.requirements || [],
+      order: event.order,
     });
     setChoices(event.choices || []);
   }, []);
@@ -155,6 +173,7 @@ export function useEvents(industryId: string, eventId?: string) {
           category: event.category,
           summary: event.summary,
           requirements: event.requirements || [],
+          order: event.order,
         });
         setChoices(event.choices || []);
         

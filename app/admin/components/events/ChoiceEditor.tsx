@@ -14,6 +14,7 @@ export interface ChoiceFormData {
   timeCost: string;
   setsFlag?: string;
   requirements: Requirement[];
+  order: string;
 }
 
 interface ChoiceEditorProps {
@@ -85,6 +86,17 @@ export function ChoiceEditor({
             onChange={(e) => onUpdate({ timeCost: e.target.value })}
             className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
           />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-slate-300 mb-1">Order (optional)</label>
+          <NumberInput
+            min="0"
+            placeholder="Display order (lower = first)"
+            value={choiceForm.order}
+            onChange={(e) => onUpdate({ order: e.target.value })}
+            className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
+          />
+          <p className="text-xs text-gray-400 mt-1">Lower numbers appear first in choice lists</p>
         </div>
       </div>
 

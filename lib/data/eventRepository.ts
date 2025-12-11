@@ -20,6 +20,7 @@ interface EventRow {
   summary?: string;
   choices: unknown;
   requirements: unknown;
+  order?: number;
 }
 
 type RawChoice = {
@@ -30,6 +31,7 @@ type RawChoice = {
   timeCost?: number;
   consequences?: RawConsequence[];
   setsFlag?: string;
+  order?: number;
 };
 
 type RawDelayedConsequence = {
@@ -142,6 +144,7 @@ const mapChoices = (raw: RawChoice[] | undefined): GameEventChoice[] => {
       timeCost: choice.timeCost !== undefined ? toNumber(choice.timeCost, 0) : undefined,
       setsFlag: choice.setsFlag,
       consequences: mapConsequences(choice.consequences),
+      order: choice.order != null ? toNumber(choice.order, 0) : undefined,
     }));
 };
 
@@ -153,7 +156,7 @@ export async function fetchEventsForIndustry(industryId: IndustryId): Promise<Ga
 
   const { data, error } = await supabaseServer
     .from('events')
-    .select('id, industry_id, title, category, summary, choices, requirements')
+    .select('id, industry_id, title, category, summary, choices, requirements, order')
     .eq('industry_id', industryId);
 
   if (error) {
@@ -202,6 +205,7 @@ export async function fetchEventsForIndustry(industryId: IndustryId): Promise<Ga
         summary: row.summary,
         choices,
         requirements,
+        order: row.order != null ? toNumber(row.order, 0) : undefined,
       });
     } catch (err) {
       console.error(`[Events] Failed to parse event "${row.id}":`, err);
@@ -334,6 +338,7 @@ export async function upsertEventForIndustry(
     summary: event.summary,
     choices: serializeChoices(event.choices),
     requirements: event.requirements || [],
+    order: event.order,
   };
 
   const { error } = await supabaseServer

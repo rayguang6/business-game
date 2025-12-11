@@ -17,9 +17,16 @@ export function ChoiceList({
   onSelectChoice,
   onCreateChoice,
 }: ChoiceListProps) {
+  const sortedChoices = [...choices].sort((a, b) => {
+    // Null orders sort to the end
+    const aOrder = a.order ?? Infinity;
+    const bOrder = b.order ?? Infinity;
+    return aOrder - bOrder;
+  });
+
   return (
     <div className="flex flex-wrap gap-2 mb-3">
-      {choices.map((choice) => (
+      {sortedChoices.map((choice) => (
         <button
           key={choice.id}
           type="button"
