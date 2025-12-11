@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Industry } from '@/lib/features/industries';
 import { LeaderboardEntry, LeaderboardMetric } from '@/lib/data/leaderboardRepository';
 import GameButton from '@/app/components/ui/GameButton';
+import { getMetricIcon } from '@/lib/game/metrics/registry';
+import { GameMetric } from '@/lib/game/effectManager';
 
 interface LeaderboardClientProps {
   industry: Industry;
@@ -103,8 +105,9 @@ export default function LeaderboardClient({
     return metric === 'cash' ? 'Cash' : 'Leveraged Time';
   };
 
-  const getMetricIcon = (metric: LeaderboardMetric): string => {
-    return metric === 'cash' ? '💰' : '⏱️';
+  const getMetricIconForLeaderboard = (metric: LeaderboardMetric): string | null => {
+    const gameMetric = metric === 'cash' ? GameMetric.Cash : GameMetric.LeveragedTime;
+    return getMetricIcon(gameMetric);
   };
 
   const formatDate = (date: Date): string => {
@@ -169,7 +172,16 @@ export default function LeaderboardClient({
             {/* Cash Leaderboard Search */}
             <div className="flex flex-col items-center gap-4">
               <h3 className="text-xl font-semibold flex items-center gap-2">
-                💰 Highest Cash
+                {getMetricIconForLeaderboard('cash') ? (
+                  <img
+                    src={getMetricIconForLeaderboard('cash')!}
+                    alt="Cash"
+                    className="w-6 h-6"
+                  />
+                ) : (
+                  <>💰</>
+                )}
+                Highest Cash
               </h3>
               <input
                 type="text"
@@ -194,7 +206,16 @@ export default function LeaderboardClient({
             {/* Leveraged Time Leaderboard Search */}
             <div className="flex flex-col items-center gap-4">
               <h3 className="text-xl font-semibold flex items-center gap-2">
-                ⏱️ Highest Leveraged Time
+                {getMetricIconForLeaderboard('leveragedTime') ? (
+                  <img
+                    src={getMetricIconForLeaderboard('leveragedTime')!}
+                    alt="Time"
+                    className="w-6 h-6"
+                  />
+                ) : (
+                  <>⏱️</>
+                )}
+                Highest Leveraged Time
               </h3>
               <input
                 type="text"

@@ -11,6 +11,7 @@ import { Modal } from '@/app/components/ui/Modal';
 import GameButton from '@/app/components/ui/GameButton';
 import { DEFAULT_INDUSTRY_ID, getBusinessStats } from '@/lib/game/config';
 import type { IndustryId } from '@/lib/game/types';
+import { getMetricIcon } from '@/lib/game/metrics/registry';
 
 const formatSeconds = (seconds: number): string => {
   return `${Math.max(0, Math.floor(seconds))}s`;
@@ -147,9 +148,11 @@ export function MarketingCampaignCard({
     }
   };
 
-  const descriptions = effects.map((effect) => ({
+  const descriptions = effects.map((effect, index) => ({
     text: describeEffect(effect),
     toneClass: getToneClass(effect),
+    metric: effect.metric,
+    effectIndex: index,
   }));
 
   const buttonDisabled = isOnCooldown || !canAfford || availability === 'locked' || isLaunching;
@@ -171,7 +174,7 @@ export function MarketingCampaignCard({
   }
 
   return (
-    <Card className={`relative flex flex-col justify-between p-3 sm:p-5 md:p-7 min-h-[160px] sm:min-h-[220px] md:min-h-[240px] overflow-hidden ${
+    <Card className={`relative flex flex-col justify-between p-2 sm:p-3 md:p-4 min-h-[140px] sm:min-h-[180px] md:min-h-[200px] overflow-hidden ${
       isMaxLevel
         ? '!bg-amber-100 dark:!bg-amber-900/50 !border-amber-300 dark:!border-amber-600'
         : wasActivatedThisMonth
@@ -180,7 +183,7 @@ export function MarketingCampaignCard({
     }`}>
       {/* Level Badge - Absolute positioned */}
       {isLeveled && (
-        <div className={`absolute top-1 right-1 sm:top-2 sm:right-2 md:top-3 md:right-3 px-1.5 py-0.5 rounded border text-body-sm sm:text-label font-bold z-10 bg-black/40 backdrop-blur-sm ${
+        <div className={`absolute top-1 right-1 sm:top-1.5 sm:right-1.5 md:top-2 md:right-2 px-1.5 py-0.5 rounded border text-body-sm sm:text-label font-bold z-10 bg-black/40 backdrop-blur-sm ${
           level > 0
             ? 'text-green-300 border-green-400'
             : 'text-gray-300 border-gray-500'
@@ -190,7 +193,7 @@ export function MarketingCampaignCard({
       )}
 
       {/* Top Content Section */}
-      <div className="flex-1 space-y-0.5 sm:space-y-1">
+      <div className="flex-1 space-y-0.5">
         {/* Header: Campaign Name */}
         <div className="flex items-center">
           <div className="flex items-center gap-1 flex-1 min-w-0">
@@ -211,12 +214,23 @@ export function MarketingCampaignCard({
 
             <div className="space-y-0.5">
               <ul className="space-y-0.5">
-                {descriptions.map((item, index) => (
-                  <li key={`${campaign.id}-effect-${index}`} className="flex items-start gap-1 text-body-sm text-secondary leading-tight">
-                    <span className="text-primary mt-0.5 flex-shrink-0">•</span>
-                    <span className={`flex-1 ${item.toneClass} break-words whitespace-normal`}>{item.text}</span>
-                  </li>
-                ))}
+                {descriptions.map((item, index) => {
+                  const iconPath = getMetricIcon(item.metric);
+                  return (
+                    <li key={`${campaign.id}-effect-${index}`} className="flex items-start gap-1 text-body-sm text-secondary leading-tight">
+                      {iconPath ? (
+                        <img
+                          src={iconPath}
+                          alt=""
+                          className="w-4 h-4 mt-0.5 flex-shrink-0"
+                        />
+                      ) : (
+                        <span className="text-primary mt-0.5 flex-shrink-0">•</span>
+                      )}
+                      <span className={`flex-1 ${item.toneClass} break-words whitespace-normal`}>{item.text}</span>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </>
@@ -227,12 +241,23 @@ export function MarketingCampaignCard({
           <>
             <div className="space-y-0.5">
               <ul className="space-y-0.5">
-                {descriptions.map((item, index) => (
-                  <li key={`${campaign.id}-effect-${index}`} className="flex items-start gap-1 text-body-sm text-secondary leading-tight">
-                    <span className="text-primary mt-0.5 flex-shrink-0">•</span>
-                    <span className={`flex-1 ${item.toneClass} break-words whitespace-normal`}>{item.text}</span>
-                  </li>
-                ))}
+                {descriptions.map((item, index) => {
+                  const iconPath = getMetricIcon(item.metric);
+                  return (
+                    <li key={`${campaign.id}-effect-${index}`} className="flex items-start gap-1 text-body-sm text-secondary leading-tight">
+                      {iconPath ? (
+                        <img
+                          src={iconPath}
+                          alt=""
+                          className="w-4 h-4 mt-0.5 flex-shrink-0"
+                        />
+                      ) : (
+                        <span className="text-primary mt-0.5 flex-shrink-0">•</span>
+                      )}
+                      <span className={`flex-1 ${item.toneClass} break-words whitespace-normal`}>{item.text}</span>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </>
@@ -241,7 +266,7 @@ export function MarketingCampaignCard({
       </div>
 
       {/* Bottom Section: Cost and Button */}
-      <div className="space-y-0.5 sm:space-y-1 mt-1.5 sm:mt-3">
+      <div className="space-y-0.5 sm:space-y-1 mt-2">
 
         {/* Cost Section - Compact */}
         <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
@@ -251,7 +276,15 @@ export function MarketingCampaignCard({
                 ? 'text-green-600 dark:text-green-400'
                 : 'text-red-600 dark:text-red-400'
             }`}>
-              <span className="text-body-sm">💵</span>
+              {getMetricIcon(GameMetric.Cash) ? (
+                <img
+                  src={getMetricIcon(GameMetric.Cash)!}
+                  alt="Cash"
+                  className="w-4 h-4"
+                />
+              ) : (
+                <span className="text-body-sm">💵</span>
+              )}
               <span className="text-body-sm font-bold">
                 ${cost.toLocaleString()}
               </span>
@@ -263,7 +296,15 @@ export function MarketingCampaignCard({
                 ? 'text-cyan-600 dark:text-cyan-400'
                 : 'text-red-600 dark:text-red-400'
             }`}>
-              <span className="text-body-sm">⏱️</span>
+              {getMetricIcon(GameMetric.MyTime) ? (
+                <img
+                  src={getMetricIcon(GameMetric.MyTime)!}
+                  alt="Time"
+                  className="w-4 h-4"
+                />
+              ) : (
+                <span className="text-body-sm">⏱️</span>
+              )}
               <span className="text-body-sm font-bold">
                 {timeCost}h
               </span>

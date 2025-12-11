@@ -203,10 +203,18 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
                 <ul className="space-y-0.5">
                   {nextLevelEffects.map((effect, idx) => {
                     const effectData = nextLevelConfig?.effects[idx];
-                    const icon = effectData ? getMetricIcon(effectData.metric) : '•';
+                    const iconPath = effectData ? getMetricIcon(effectData.metric) : null;
                     return (
                       <li key={idx} className="flex items-start gap-1 text-body-sm text-secondary leading-tight">
-                        <span className="text-primary mt-0.5 flex-shrink-0">{icon}</span>
+                        {iconPath ? (
+                          <img
+                            src={iconPath}
+                            alt=""
+                            className="w-4 h-4 mt-0.5 flex-shrink-0"
+                          />
+                        ) : (
+                          <span className="text-primary mt-0.5 flex-shrink-0">•</span>
+                        )}
                         <span className="flex-1 break-words whitespace-normal">{effect}</span>
                       </li>
                     );
@@ -238,7 +246,15 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
                   ? 'text-green-600 dark:text-green-400'
                   : 'text-red-600 dark:text-red-400'
               }`}>
-                <span className="text-body-sm">{getMetricIcon(GameMetric.Cash)}</span>
+                {getMetricIcon(GameMetric.Cash) ? (
+                  <img
+                    src={getMetricIcon(GameMetric.Cash)!}
+                    alt="Cash"
+                    className="w-4 h-4"
+                  />
+                ) : (
+                  <span className="text-body-sm">💵</span>
+                )}
                 <span className="text-body-sm font-bold">
                   ${upgradeCost.toLocaleString()}
                 </span>

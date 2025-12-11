@@ -438,6 +438,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
       showInDetails: false,
       showInAdmin: true,
     },
+    iconPath: '/images/icons/leads.png',
     canBeModifiedByEffects: true,
   },
 };
@@ -559,26 +560,12 @@ export function getDefaultValue(metric: GameMetric, industryId: IndustryId = 'fr
 }
 
 /**
- * Get the standard emoji icon for a metric (for consistency across UI)
+ * Get the icon for a metric - returns the icon path from the registry if available
  * This centralizes icon definitions so all components use the same icons
  */
-export function getMetricIcon(metric: GameMetric): string {
-  switch (metric) {
-    case GameMetric.Cash: return '💵';
-    case GameMetric.Exp: return '💎'; // Diamond for experience/leveling
-    case GameMetric.MyTime: return '⏱️'; // Timer for personal time
-    case GameMetric.LeveragedTime: return '⏳'; // Hourglass for leveraged time
-    case GameMetric.ServiceSpeedMultiplier: return '⚡'; // Lightning for speed
-    case GameMetric.ServiceCapacity: return '👥'; // People for capacity
-    case GameMetric.ServiceRevenueMultiplier: return '💰'; // Money bag for revenue
-    case GameMetric.ServiceRevenueFlatBonus: return '💵'; // Bills for flat bonus
-    case GameMetric.LeadsPerMonth: return '👥'; // People for leads
-    case GameMetric.ConversionRate: return '📊'; // Chart for conversion
-    case GameMetric.FailureRate: return '⚠️'; // Warning for failure
-    case GameMetric.MonthlyExpenses: return '💸'; // Money with wings for expenses
-    case GameMetric.CustomerPatienceSeconds: return '⏳'; // Hourglass for patience
-    default: return '✨'; // Sparkles for unknown
-  }
+export function getMetricIcon(metric: GameMetric): string | null {
+  const definition = getMetricDefinition(metric);
+  return definition.iconPath ?? null;
 }
 
 /**

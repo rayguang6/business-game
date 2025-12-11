@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useGameStore } from '../../../../lib/store/gameStore';
 import { GameEvent, GameEventChoice, GameEventEffect, EventEffectType } from '../../../../lib/types/gameEvents';
-import { EffectType, GameMetric } from '@/lib/game/effectManager';
+import { EffectType } from '@/lib/game/effectManager';
 import type { ResolvedEventOutcome, ResolvedDelayedOutcome } from '@/lib/store/slices/eventSlice';
 import GameButton from '@/app/components/ui/GameButton';
 import { useConfigStore } from '@/lib/store/configStore';
@@ -9,7 +9,8 @@ import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { IndustryId } from '@/lib/game/types';
 import { EventCategory, AUTO_RESOLVE_CATEGORIES } from '@/lib/game/constants/eventCategories';
-import { getEventEffectIcon, getEventCategoryIcon } from '@/lib/game/metrics/registry';
+import { getEventEffectIcon, getEventCategoryIcon, getMetricIcon } from '@/lib/game/metrics/registry';
+import { GameMetric } from '@/lib/game/effectManager';
 
 
 const getEffectColorClass = (type: GameEventEffect['type'], amount: number) => {
@@ -24,7 +25,7 @@ const formatEffect = (effect: GameEventEffect) => {
     const prefix = effect.type === EventEffectType.Cash ? '$' : '';
     const sign = effect.amount > 0 ? '+' : effect.amount < 0 ? '-' : '';
     const value = Math.abs(effect.amount);
-    return `${getEventEffectIcon(effect.type)} ${sign}${prefix}${value.toLocaleString()}`;
+    return `${sign}${prefix}${value.toLocaleString()}`;
   }
   return ''; // Metric effects are handled separately
 };
@@ -244,10 +245,19 @@ const EventPopup: React.FC = () => {
                 <ul className="space-y-0.5 text-[9px] md:text-sm">
                   {lastDelayedOutcome.appliedEffects.map((effect, index) => {
                     if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.Exp) {
+                      const iconPath = effect.type === EventEffectType.Cash ? getMetricIcon(GameMetric.Cash) : getMetricIcon(GameMetric.Exp);
                       return (
                         <li key={index} className={`flex items-center gap-1 ${getEffectColorClass(effect.type, effect.amount)}`}>
-                          <span>{getEventEffectIcon(effect.type)}</span>
-                          <span>{formatEffect(effect).replace(getEventEffectIcon(effect.type) + ' ', '')}</span>
+                          {iconPath ? (
+                            <img
+                              src={iconPath}
+                              alt={effect.type === EventEffectType.Cash ? 'Cash' : 'EXP'}
+                              className="w-3 h-3"
+                            />
+                          ) : (
+                            <span>{getEventEffectIcon(effect.type)}</span>
+                          )}
+                          <span>{formatEffect(effect)}</span>
                         </li>
                       );
                     } else if (effect.type === EventEffectType.Metric) {
@@ -346,10 +356,19 @@ const EventPopup: React.FC = () => {
                 <ul className="space-y-0.5 text-[9px] md:text-sm">
                   {lastEventOutcome.appliedEffects.map((effect, index) => {
                     if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.Exp) {
+                      const iconPath = effect.type === EventEffectType.Cash ? getMetricIcon(GameMetric.Cash) : getMetricIcon(GameMetric.Exp);
                       return (
                         <li key={index} className={`flex items-center gap-1 ${getEffectColorClass(effect.type, effect.amount)}`}>
-                          <span>{getEventEffectIcon(effect.type)}</span>
-                          <span>{formatEffect(effect).replace(getEventEffectIcon(effect.type) + ' ', '')}</span>
+                          {iconPath ? (
+                            <img
+                              src={iconPath}
+                              alt={effect.type === EventEffectType.Cash ? 'Cash' : 'EXP'}
+                              className="w-3 h-3"
+                            />
+                          ) : (
+                            <span>{getEventEffectIcon(effect.type)}</span>
+                          )}
+                          <span>{formatEffect(effect)}</span>
                         </li>
                       );
                     } else if (effect.type === EventEffectType.Metric) {
@@ -517,8 +536,17 @@ const EventPopup: React.FC = () => {
                       </div>
                     )}
                     {hasTimeCost && choice.timeCost !== undefined && (
-                      <div className="flex-shrink-0 px-2 py-1 bg-black/40 border border-black/60 rounded text-xs font-semibold text-blue-300 whitespace-nowrap">
-                        ⏱ {choice.timeCost.toLocaleString()}h
+                      <div className="flex-shrink-0 px-2 py-1 bg-black/40 border border-black/60 rounded text-xs font-semibold text-blue-300 whitespace-nowrap flex items-center gap-1">
+                        {getMetricIcon(GameMetric.MyTime) ? (
+                          <img
+                            src={getMetricIcon(GameMetric.MyTime)!}
+                            alt="Time"
+                            className="w-3 h-3"
+                          />
+                        ) : (
+                          <>⏱</>
+                        )}
+                        {choice.timeCost.toLocaleString()}h
                       </div>
                     )}
                   </div>

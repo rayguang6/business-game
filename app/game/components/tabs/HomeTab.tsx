@@ -20,6 +20,7 @@ import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import type { IndustryId } from '@/lib/game/types';
 import { LevelCard } from '@/app/game/components/ui/LevelCard';
 import { getLevel } from '@/lib/store/types';
+import { getMetricIcon } from '@/lib/game/metrics/registry';
 
 export function HomeTab() {
   const {
@@ -205,7 +206,15 @@ export function HomeTab() {
         {/* Total Customers Card */}
         <Card>
           <div className="flex flex-col items-center text-center py-3 sm:py-2">
-            <span className="text-lg sm:text-xl mb-1">👥</span>
+            {getMetricIcon(GameMetric.LeadsPerMonth) ? (
+              <img
+                src={getMetricIcon(GameMetric.LeadsPerMonth)!}
+                alt="Customers"
+                className="w-5 h-5 mb-1"
+              />
+            ) : (
+              <span className="text-lg sm:text-xl mb-1">👥</span>
+            )}
             <div className="text-xs sm:text-sm text-secondary mb-1">Total Customers</div>
             <div className="text-lg sm:text-xl font-bold mb-1.5" style={{ color: 'var(--game-primary)' }}>
               {totalCustomersGenerated.toLocaleString()}
@@ -263,7 +272,16 @@ export function HomeTab() {
         <Card>
           <div className="flex flex-col">
             <div className="text-xs sm:text-sm text-secondary mb-1.5 sm:mb-2 flex items-center gap-1.5 sm:gap-2">
-              <span style={{ color: 'var(--game-primary)' }}>💰</span>
+              {getMetricIcon(GameMetric.Cash) ? (
+                <img
+                  src={getMetricIcon(GameMetric.Cash)!}
+                  alt="Revenue"
+                  className="w-4 h-4"
+                  style={{ filter: 'brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(1352%) hue-rotate(187deg) brightness(101%) contrast(105%)' }}
+                />
+              ) : (
+                <span style={{ color: 'var(--game-primary)' }}>💰</span>
+              )}
               <span>Total Revenue</span>
             </div>
             <div className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--success)' }}>
@@ -275,7 +293,16 @@ export function HomeTab() {
         <Card>
           <div className="flex flex-col">
             <div className="text-xs sm:text-sm text-secondary mb-1.5 sm:mb-2 flex items-center gap-1.5 sm:gap-2">
-              <span style={{ color: 'var(--game-primary)' }}>💸</span>
+              {getMetricIcon(GameMetric.MonthlyExpenses) ? (
+                <img
+                  src={getMetricIcon(GameMetric.MonthlyExpenses)!}
+                  alt="Expenses"
+                  className="w-4 h-4"
+                  style={{ filter: 'brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(1352%) hue-rotate(187deg) brightness(101%) contrast(105%)' }}
+                />
+              ) : (
+                <span style={{ color: 'var(--game-primary)' }}>💸</span>
+              )}
               <span>Total Expenses</span>
             </div>
             <div className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--error)' }}>
@@ -287,7 +314,16 @@ export function HomeTab() {
         <Card>
           <div className="flex flex-col">
             <div className="text-xs sm:text-sm text-secondary mb-1.5 sm:mb-2 flex items-center gap-1.5 sm:gap-2">
-              <span style={{ color: 'var(--game-primary)' }}>📊</span>
+              {getMetricIcon(GameMetric.Cash) ? (
+                <img
+                  src={getMetricIcon(GameMetric.Cash)!}
+                  alt="Profit"
+                  className="w-4 h-4"
+                  style={{ filter: 'brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(1352%) hue-rotate(187deg) brightness(101%) contrast(105%)' }}
+                />
+              ) : (
+                <span style={{ color: 'var(--game-primary)' }}>📊</span>
+              )}
               <span>Total Profit</span>
             </div>
             <div className={`text-xl sm:text-2xl font-bold ${lifetimeProfit >= 0 ? '' : ''}`} style={{ color: lifetimeProfit >= 0 ? 'var(--success)' : 'var(--error)' }}>
@@ -453,7 +489,15 @@ export function HomeTab() {
                         )}
                         {w.customersGenerated !== undefined && (
                           <div className="flex items-center gap-1.5">
-                            <span>👥</span>
+                            {getMetricIcon(GameMetric.LeadsPerMonth) ? (
+                              <img
+                                src={getMetricIcon(GameMetric.LeadsPerMonth)!}
+                                alt="Customers"
+                                className="w-4 h-4"
+                              />
+                            ) : (
+                              <span>👥</span>
+                            )}
                             <span className="text-tertiary">Customers:</span>
                             <span className="font-semibold" style={{ color: 'var(--game-primary)' }}>
                               {(w.customersGenerated ?? 0).toLocaleString()}

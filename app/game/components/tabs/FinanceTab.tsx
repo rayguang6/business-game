@@ -5,6 +5,8 @@ import { useFinanceData } from '@/hooks/useFinanceData';
 import { RevenueCategory, type RevenueEntry } from '@/lib/store/types';
 import { Card } from '@/app/components/ui/Card';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
+import { getMetricIcon } from '@/lib/game/metrics/registry';
+import { GameMetric } from '@/lib/game/effectManager';
 
 export function FinanceTab() {
   const {
@@ -23,7 +25,18 @@ export function FinanceTab() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading>💰 Financial Overview</SectionHeading>
+      <SectionHeading>
+        {getMetricIcon(GameMetric.Cash) ? (
+          <img
+            src={getMetricIcon(GameMetric.Cash)!}
+            alt="Cash"
+            className="w-5 h-5 inline mr-2"
+          />
+        ) : (
+          <>💰 </>
+        )}
+        Financial Overview
+      </SectionHeading>
       
       {/* Financial Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -31,7 +44,15 @@ export function FinanceTab() {
         <Card variant="success">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-lg flex items-center justify-center shadow-lg" style={{ backgroundColor: 'var(--success)' }}>
-              <span className="text-2xl">💰</span>
+              {getMetricIcon(GameMetric.Cash) ? (
+                <img
+                  src={getMetricIcon(GameMetric.Cash)!}
+                  alt="Cash"
+                  className="w-6 h-6"
+                />
+              ) : (
+                <span className="text-2xl">💰</span>
+              )}
             </div>
             <div>
               <h4 className="text-primary font-bold text-sm sm:text-base">Revenue</h4>
@@ -68,7 +89,15 @@ export function FinanceTab() {
         <Card variant="error">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-lg flex items-center justify-center shadow-lg" style={{ backgroundColor: 'var(--error)' }}>
-              <span className="text-2xl">💸</span>
+              {getMetricIcon(GameMetric.MonthlyExpenses) ? (
+                <img
+                  src={getMetricIcon(GameMetric.MonthlyExpenses)!}
+                  alt="Expenses"
+                  className="w-6 h-6"
+                />
+              ) : (
+                <span className="text-2xl">💸</span>
+              )}
             </div>
             <div>
               <h4 className="text-primary font-bold text-sm sm:text-base">Expenses</h4>
@@ -126,7 +155,15 @@ export function FinanceTab() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-lg flex items-center justify-center shadow-lg" style={{ backgroundColor: 'var(--game-primary)' }}>
-                <span className="text-2xl">📊</span>
+                {getMetricIcon(GameMetric.Cash) ? (
+                  <img
+                    src={getMetricIcon(GameMetric.Cash)!}
+                    alt="Profit"
+                    className="w-6 h-6"
+                  />
+                ) : (
+                  <span className="text-2xl">📊</span>
+                )}
               </div>
               <div>
                 <h4 className="text-primary font-bold text-sm sm:text-base">Net Profit</h4>
@@ -148,7 +185,16 @@ export function FinanceTab() {
       {/* Monthly History */}
       <Card>
         <SectionHeading>
-          <span style={{ color: 'var(--game-secondary)' }}>📈</span> Monthly Performance
+          {getMetricIcon(GameMetric.LeadsPerMonth) ? (
+            <img
+              src={getMetricIcon(GameMetric.LeadsPerMonth)!}
+              alt="Performance"
+              className="w-5 h-5 inline mr-2"
+            />
+          ) : (
+            <span style={{ color: 'var(--game-secondary)' }}>📈</span>
+          )}
+          Monthly Performance
         </SectionHeading>
         
         {monthlyHistory.length === 0 ? (

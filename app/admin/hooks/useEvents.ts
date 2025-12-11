@@ -197,7 +197,7 @@ export function useEvents(industryId: string, eventId?: string) {
     });
     setChoices([]);
     
-  }, [industryId, error]);
+  }, [industryId]);
 
   const persistEventWithChoices = useCallback(
     async (nextChoices: GameEventChoice[], successMessage: string = 'Event saved.') => {
@@ -239,7 +239,7 @@ export function useEvents(industryId: string, eventId?: string) {
         },
       });
     },
-    [industryId, form, saveMutation, toastSuccess]
+    [industryId, form, saveMutation]
   );
 
   const saveEvent = useCallback(async () => {
@@ -325,7 +325,7 @@ export function useEvents(industryId: string, eventId?: string) {
     if (newStatus) {
       error(newStatus);
     }
-  }, [error]);
+  }, []);
 
   const operation: Operation = isLoading ? 'loading' : saveMutation.isPending ? 'saving' : deleteMutation.isPending ? 'deleting' : 'idle';
 

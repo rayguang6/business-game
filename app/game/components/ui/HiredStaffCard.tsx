@@ -103,7 +103,15 @@ export function HiredStaffCard({ member, onFire }: HiredStaffCardProps) {
               return (
                 <div key={index} className="flex items-center justify-between gap-1 min-w-0">
                   <span className="text-slate-300 text-xs flex items-center gap-0.5 min-w-0 flex-1">
-                    <span className="text-xs flex-shrink-0">{getMetricIcon(effect.metric)}</span>
+                    {getMetricIcon(effect.metric) ? (
+                      <img
+                        src={getMetricIcon(effect.metric)!}
+                        alt=""
+                        className="w-4 h-4 flex-shrink-0"
+                      />
+                    ) : (
+                      <span className="text-xs flex-shrink-0">•</span>
+                    )}
                     <span className="truncate">{label}</span>
                   </span>
                   <span className="text-green-400 font-bold text-xs whitespace-nowrap flex-shrink-0">{value}</span>
