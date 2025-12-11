@@ -174,7 +174,7 @@ export function MarketingCampaignCard({
   }
 
   return (
-    <Card className={`relative flex flex-col justify-between p-2 sm:p-3 md:p-4 min-h-[140px] sm:min-h-[180px] md:min-h-[200px] overflow-hidden ${
+    <Card className={`relative flex flex-col justify-between overflow-hidden ${
       isMaxLevel
         ? '!bg-amber-100 dark:!bg-amber-900/50 !border-amber-300 dark:!border-amber-600'
         : wasActivatedThisMonth
@@ -193,11 +193,11 @@ export function MarketingCampaignCard({
       )}
 
       {/* Top Content Section */}
-      <div className="flex-1 space-y-0.5">
+      <div className="space-y-0.5">
         {/* Header: Campaign Name */}
         <div className="flex items-center">
           <div className="flex items-center gap-1 flex-1 min-w-0">
-            <span className="text-body font-bold sm:text-heading-sm text-primary break-words whitespace-normal leading-tight">
+            <span className="text-caption font-bold sm:text-body-sm text-primary break-words whitespace-normal leading-tight">
               {campaign.name}
             </span>
           </div>
@@ -207,17 +207,17 @@ export function MarketingCampaignCard({
         {isLeveled && canUpgradeMore && (
           <>
             <div>
-              <p className="text-body font-semibold text-primary leading-tight break-words whitespace-normal">
+              <p className="text-caption font-semibold text-primary leading-tight break-words whitespace-normal">
                 Level {level + 1}
               </p>
             </div>
 
-            <div className="space-y-0.5">
+            <div className="">
               <ul className="space-y-0.5">
                 {descriptions.map((item, index) => {
                   const iconPath = getMetricIcon(item.metric);
                   return (
-                    <li key={`${campaign.id}-effect-${index}`} className="flex items-start gap-1 text-body-sm text-secondary leading-tight">
+                    <li key={`${campaign.id}-effect-${index}`} className="flex items-center gap-1 text-caption sm:text-body-sm text-secondary leading-tight">
                       {iconPath ? (
                         <img
                           src={iconPath}
@@ -239,12 +239,12 @@ export function MarketingCampaignCard({
         {/* For unlimited campaigns or when no upgrade available */}
         {(!isLeveled || !canUpgradeMore) && (
           <>
-            <div className="space-y-0.5">
+            <div className="">
               <ul className="space-y-0.5">
                 {descriptions.map((item, index) => {
                   const iconPath = getMetricIcon(item.metric);
                   return (
-                    <li key={`${campaign.id}-effect-${index}`} className="flex items-start gap-1 text-body-sm text-secondary leading-tight">
+                    <li key={`${campaign.id}-effect-${index}`} className="flex items-center gap-1 text-caption sm:text-body-sm text-secondary leading-tight">
                       {iconPath ? (
                         <img
                           src={iconPath}
@@ -265,58 +265,13 @@ export function MarketingCampaignCard({
 
       </div>
 
-      {/* Bottom Section: Cost and Button */}
-      <div className="space-y-0.5 sm:space-y-1 mt-2">
+      {/* Separator */}
+      <div className="text-center py-1">
+        <div className="h-px bg-border opacity-30"></div>
+      </div>
 
-        {/* Cost Section - Compact */}
-        <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-          {needsCash && (
-            <div className={`flex items-center gap-0.5 ${
-              metrics.cash >= cost
-                ? 'text-green-600 dark:text-green-400'
-                : 'text-red-600 dark:text-red-400'
-            }`}>
-              {getMetricIcon(GameMetric.Cash) ? (
-                <img
-                  src={getMetricIcon(GameMetric.Cash)!}
-                  alt="Cash"
-                  className="w-4 h-4"
-                />
-              ) : (
-                <span className="text-body-sm">💵</span>
-              )}
-              <span className="text-body-sm font-bold">
-                ${cost.toLocaleString()}
-              </span>
-            </div>
-          )}
-          {needsTime && (
-            <div className={`flex items-center gap-0.5 ${
-              metrics.time >= (timeCost ?? 0)
-                ? 'text-cyan-600 dark:text-cyan-400'
-                : 'text-red-600 dark:text-red-400'
-            }`}>
-              {getMetricIcon(GameMetric.MyTime) ? (
-                <img
-                  src={getMetricIcon(GameMetric.MyTime)!}
-                  alt="Time"
-                  className="w-4 h-4"
-                />
-              ) : (
-                <span className="text-body-sm">⏱️</span>
-              )}
-              <span className="text-body-sm font-bold">
-                {timeCost}h
-              </span>
-            </div>
-          )}
-          {!needsCash && !needsTime && !isMaxLevel && (
-            <div className="flex items-center gap-0.5 text-green-600 dark:text-green-400">
-              <span className="text-body-sm">🆓</span>
-              <span className="text-body-sm font-bold">Free</span>
-            </div>
-          )}
-        </div>
+      {/* Bottom Section: Button and Cost */}
+      <div className="space-y-1">
 
         {/* Action Button */}
         <div className="relative">
@@ -326,7 +281,7 @@ export function MarketingCampaignCard({
             color={isMaxLevel ? 'gold' : canAfford && availability === 'available' ? 'blue' : 'gold'}
             size="sm"
             fullWidth
-            className="text-body-sm sm:text-sm py-1 sm:py-2 px-2 sm:px-4"
+            className="text-caption sm:text-body-sm py-1 sm:py-2 px-2 sm:px-4"
           >
             {isLaunching
               ? 'Launching...'
@@ -348,6 +303,56 @@ export function MarketingCampaignCard({
             >
               ?
             </button>
+          )}
+        </div>
+
+        {/* Cost Section - Compact */}
+        <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+          {needsCash && (
+            <div className={`flex items-center gap-0.5 ${
+              metrics.cash >= cost
+                ? 'text-green-600 dark:text-green-400'
+                : 'text-red-600 dark:text-red-400'
+            }`}>
+              {getMetricIcon(GameMetric.Cash) ? (
+                <img
+                  src={getMetricIcon(GameMetric.Cash)!}
+                  alt="Cash"
+                  className="w-4 h-4"
+                />
+              ) : (
+                <span className="text-body-sm">💵</span>
+              )}
+              <span className="text-caption font-bold sm:text-body-sm">
+                ${cost.toLocaleString()}
+              </span>
+            </div>
+          )}
+          {needsTime && (
+            <div className={`flex items-center gap-0.5 ${
+              metrics.time >= (timeCost ?? 0)
+                ? 'text-cyan-600 dark:text-cyan-400'
+                : 'text-red-600 dark:text-red-400'
+            }`}>
+              {getMetricIcon(GameMetric.MyTime) ? (
+                <img
+                  src={getMetricIcon(GameMetric.MyTime)!}
+                  alt="Time"
+                  className="w-4 h-4"
+                />
+              ) : (
+                <span className="text-body-sm">⏱️</span>
+              )}
+              <span className="text-caption font-bold sm:text-body-sm">
+                {timeCost}h
+              </span>
+            </div>
+          )}
+          {!needsCash && !needsTime && !isMaxLevel && (
+            <div className="flex items-center gap-0.5 text-green-600 dark:text-green-400">
+              <span className="text-body-sm">🆓</span>
+              <span className="text-caption font-bold sm:text-body-sm">Free</span>
+            </div>
           )}
         </div>
       </div>

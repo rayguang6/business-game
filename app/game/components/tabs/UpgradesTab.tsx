@@ -142,7 +142,7 @@ export function UpgradesTab() {
                         <span className="text-caption text-secondary">• {category.description}</span>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 sm:gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {sortedUpgrades.map((upgrade) => (
                         <UpgradeCard key={upgrade.id} upgrade={upgrade} />
                       ))}

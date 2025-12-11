@@ -238,7 +238,7 @@ export function MarketingTab() {
                       <span className="text-sm text-slate-400">• {category.description}</span>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 sm:gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {sortedCampaigns.map((campaign) => {
                       const isLeveled = campaign.type === 'leveled';
                       const currentLevel = isLeveled ? getCampaignLevel(campaign.id) : 0;

@@ -53,15 +53,15 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
         case GameMetric.Cash:
         case GameMetric.MonthlyExpenses:
         case GameMetric.ServiceRevenueFlatBonus:
-          return `${sign}${formatCurrency(value)} ${label}`;
+          return `${sign}${formatCurrency(value)}${label}`;
         case GameMetric.MyTime:
-          return `${sign}${formatMagnitude(value)}h ${label}`;
+          return `${sign}${formatMagnitude(value)}h${label}`;
         case GameMetric.LeadsPerMonth:
-          return `${sign}${formatMagnitude(value)} ${label}`;
+          return `${sign}${formatMagnitude(value)}${label}`;
         case GameMetric.ServiceCapacity:
-          return `${sign}${formatMagnitude(value)} ${label}`;
+          return `${sign}${formatMagnitude(value)}${label}`;
         default:
-          return `${sign}${formatMagnitude(value)} ${label}`;
+          return `${sign}${formatMagnitude(value)}${label}`;
       }
     }
 
@@ -69,15 +69,15 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
       const percent = Math.round(absValue);
       switch (metric) {
         case GameMetric.LeadsPerMonth:
-          return `${sign}${percent}% ${label}`;
+          return `${sign}${percent}%${label}`;
         default:
-          return `${sign}${percent}% ${label}`;
+          return `${sign}${percent}%${label}`;
       }
     }
 
     if (type === EffectType.Multiply) {
       const multiplier = Number.isInteger(value) ? value.toString() : value.toFixed(2);
-      return `×${multiplier} ${label}`;
+      return `×${multiplier}${label}`;
     }
 
     if (type === EffectType.Set) {
@@ -162,7 +162,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
   }
 
   return (
-    <Card className={`relative flex flex-col justify-between p-3 sm:p-5 md:p-7 min-h-[160px] sm:min-h-[220px] md:min-h-[240px] overflow-hidden ${
+    <Card className={`relative flex flex-col justify-between p-0.5 overflow-hidden ${
       wasActivatedThisMonth
         ? '!border-green-500 dark:!border-green-400'
         : isMaxed
@@ -179,11 +179,11 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
       </div>
 
       {/* Top Content Section */}
-      <div className="flex-1 space-y-0.5 sm:space-y-1">
+      <div className="flex-1 space-y-0.5">
         {/* Header: Upgrade Name */}
         <div className="flex items-center">
           <div className="flex items-center gap-1 flex-1 min-w-0">
-            <span className="text-body font-bold sm:text-heading-sm text-primary break-words whitespace-normal leading-tight">
+            <span className="text-caption font-bold sm:text-body-sm text-primary break-words whitespace-normal leading-tight">
               {upgrade.name}
             </span>
           </div>
@@ -193,19 +193,19 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
         {nextLevelConfig && !isMaxed && (
           <>
             <div>
-              <p className="text-body font-semibold text-primary leading-tight break-words whitespace-normal">
+              <p className="text-caption font-semibold text-primary leading-tight break-words whitespace-normal">
                 {nextLevelConfig.name}
               </p>
             </div>
 
             {nextLevelEffects.length > 0 && (
-              <div className="space-y-0.5">
+              <div className="">
                 <ul className="space-y-0.5">
                   {nextLevelEffects.map((effect, idx) => {
                     const effectData = nextLevelConfig?.effects[idx];
                     const iconPath = effectData ? getMetricIcon(effectData.metric) : null;
                     return (
-                      <li key={idx} className="flex items-start gap-1 text-body-sm text-secondary leading-tight">
+                      <li key={idx} className="flex items-center gap-1 text-caption sm:text-body-sm text-secondary leading-tight">
                         {iconPath ? (
                           <img
                             src={iconPath}
@@ -235,65 +235,14 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
         )}
       </div>
 
-      {/* Bottom Section: Cost and Button */}
+      {/* Separator */}
+      <div className="text-center py-1">
+        <div className="h-px bg-border opacity-30"></div>
+      </div>
+
+      {/* Bottom Section: Button and Cost */}
       {nextLevelConfig && !isMaxed && (
-        <div className="space-y-0.5 sm:space-y-1 mt-1.5 sm:mt-3">
-          {/* Cost Section - Compact */}
-          <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-            {needsCash && (
-              <div className={`flex items-center gap-0.5 ${
-                metrics.cash >= upgradeCost
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-red-600 dark:text-red-400'
-              }`}>
-                {getMetricIcon(GameMetric.Cash) ? (
-                  <img
-                    src={getMetricIcon(GameMetric.Cash)!}
-                    alt="Cash"
-                    className="w-4 h-4"
-                  />
-                ) : (
-                  <span className="text-body-sm">💵</span>
-                )}
-                <span className="text-body-sm font-bold">
-                  ${upgradeCost.toLocaleString()}
-                </span>
-              </div>
-            )}
-            {needsTime && (
-              <div className={`flex items-center gap-0.5 ${
-                metrics.myTime >= upgradeTimeCost!
-                  ? 'text-cyan-600 dark:text-cyan-400'
-                  : 'text-red-600 dark:text-red-400'
-              }`}>
-                <span className="text-body-sm">⏱️</span>
-                <span className="text-body-sm font-bold">
-                  {upgradeTimeCost}h
-                </span>
-              </div>
-            )}
-            {!needsCash && !needsTime && (
-              <div className="flex items-center gap-0.5 text-green-600 dark:text-green-400">
-                <span className="text-body-sm">🆓</span>
-                <span className="text-body-sm font-bold">Free</span>
-              </div>
-            )}
-          </div>
-
-      {/* Requirements Modal */}
-      <Modal
-        isOpen={showRequirementsModal}
-        onClose={handleCloseModal}
-        maxWidth="sm"
-      >
-        <div className="text-center text-secondary text-body-sm leading-relaxed space-y-1">
-          <h3 className="text-primary font-semibold mb-3">Requirements</h3>
-          {requirementDescriptions.map((desc, idx) => (
-            <div key={idx}>{desc}</div>
-          ))}
-        </div>
-      </Modal>
-
+        <div className="space-y-1">
           {/* Action Button */}
           <div className="relative">
             <GameButton
@@ -302,7 +251,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
               size="sm"
               disabled={buttonDisabled}
               onClick={handlePurchase}
-              className="text-body-sm sm:text-sm py-1 sm:py-2 px-2 sm:px-4"
+              className="text-caption sm:text-body-sm py-1 sm:py-2 px-2 sm:px-4"
             >
               {isMaxed
                 ? 'Max Level'
@@ -322,6 +271,62 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
               </button>
             )}
           </div>
+
+          {/* Cost Section - Compact */}
+          <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+            {needsCash && (
+              <div className={`flex items-center gap-0.5 ${
+                metrics.cash >= upgradeCost
+                  ? 'text-green-600 dark:text-green-400'
+                  : 'text-red-600 dark:text-red-400'
+              }`}>
+                {getMetricIcon(GameMetric.Cash) ? (
+                  <img
+                    src={getMetricIcon(GameMetric.Cash)!}
+                    alt="Cash"
+                    className="w-4 h-4"
+                  />
+                ) : (
+                  <span className="text-body-sm">💵</span>
+                )}
+                <span className="text-caption font-bold sm:text-body-sm">
+                  ${upgradeCost.toLocaleString()}
+                </span>
+              </div>
+            )}
+            {needsTime && (
+              <div className={`flex items-center gap-0.5 ${
+                metrics.myTime >= upgradeTimeCost!
+                  ? 'text-cyan-600 dark:text-cyan-400'
+                  : 'text-red-600 dark:text-red-400'
+              }`}>
+                <span className="text-body-sm">⏱️</span>
+                <span className="text-caption font-bold sm:text-body-sm">
+                  {upgradeTimeCost}h
+                </span>
+              </div>
+            )}
+            {!needsCash && !needsTime && (
+              <div className="flex items-center gap-0.5 text-green-600 dark:text-green-400">
+                <span className="text-body-sm">🆓</span>
+                <span className="text-caption font-bold sm:text-body-sm">Free</span>
+              </div>
+            )}
+          </div>
+
+      {/* Requirements Modal */}
+      <Modal
+        isOpen={showRequirementsModal}
+        onClose={handleCloseModal}
+        maxWidth="sm"
+      >
+        <div className="text-center text-secondary text-body-sm leading-relaxed space-y-1">
+          <h3 className="text-primary font-semibold mb-3">Requirements</h3>
+          {requirementDescriptions.map((desc, idx) => (
+            <div key={idx}>{desc}</div>
+          ))}
+        </div>
+      </Modal>
         </div>
       )}
     </Card>
