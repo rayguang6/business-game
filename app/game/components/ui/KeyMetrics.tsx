@@ -266,7 +266,7 @@ export function KeyMetrics() {
   }
 
   return (
-    <div className="grid grid-cols-3 gap-1 sm:gap-1.5 md:gap-2 pt-1 sm:pt-1.5 md:pt-2">
+    <div className="grid grid-cols-1 gap-1 sm:gap-1.5 md:gap-2 pt-1 sm:pt-1.5 md:pt-2">
       {metricsData.map((metric, index) => (
         <div 
           key={index} 

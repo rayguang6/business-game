@@ -12,6 +12,7 @@ import { SpriteLead } from './SpriteLead';
 import { SpriteStaff } from './SpriteStaff';
 import { GridOverlay } from './GridOverlay';
 import { LeadProgress } from '../ui/LeadProgress';
+import { KeyMetrics } from '../ui/KeyMetrics';
 import { DEFAULT_INDUSTRY_ID, getBusinessStats, getBusinessMetrics, getLayoutConfig, getCapacityImageForIndustry } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
@@ -25,9 +26,24 @@ const CANVAS_CONFIG = {
   REFERENCE_SIZE: 320, // 10 tiles × 32px = 320px
   // Responsive breakpoints
   BREAKPOINTS: {
-    mobile: 320,  // 1x scale
-    tablet: 384,  // 1.2x scale
-    desktop: 480  // 1.5x scale
+    mobile: 320,   // 1x scale
+    tablet: 384,   // 1.2x scale
+    desktop:560,  // 1.75x scale
+    large: 960     // 2.25x scale for very wide screens
+  }
+};
+
+// HUD layout configuration - single variable to control all HUD display
+const HUD_CONFIG = {
+  // Set to true to show KeyMetrics HUD (vertical layout like mobile)
+  // Set to false to hide KeyMetrics HUD completely
+  SHOW_KEY_METRICS: true,
+  // Position configuration - positioned to avoid TopBar overlap
+  POSITION: {
+    top: 'top-20 sm:top-24 md:top-28', // Below TopBar (top-16 + margin)
+    left: 'left-4',
+    zIndex: 'z-20',
+    maxWidth: 'max-w-[140px]'
   }
 };
 
@@ -64,8 +80,9 @@ export function GameCanvas() {
       
       // Determine canvas size based on screen size
       let size = CANVAS_CONFIG.BREAKPOINTS.mobile;
-      if (width >= 1024) size = CANVAS_CONFIG.BREAKPOINTS.desktop;
-      else if (width >= 768) size = CANVAS_CONFIG.BREAKPOINTS.tablet;
+      if (width >= 2160) size = CANVAS_CONFIG.BREAKPOINTS.large;      
+      else if (width >= 1024) size = CANVAS_CONFIG.BREAKPOINTS.desktop; 
+      else if (width >= 768) size = CANVAS_CONFIG.BREAKPOINTS.tablet;   
       
       setCanvasSize(size);
       setScaleFactor(size / CANVAS_CONFIG.REFERENCE_SIZE);
@@ -338,13 +355,13 @@ export function GameCanvas() {
   };
 
   return (
-    <div className="h-full w-full bg-[#8ed0fb] relative overflow-hidden flex items-center justify-center">
+    <div className="h-full w-full bg-[#8ed0fb] relative overflow-hidden flex items-center justify-end md:justify-center">
       {/* Debug stats panel - toggle with 'D' key (development mode only) */}
       {process.env.NODE_ENV === 'development' && showModifiers && (
         <div className="absolute bottom-3 right-3 z-40">
           <div className="bg-black/75 text-white text-xs sm:text-[13px] px-3 py-2 rounded-lg shadow-lg space-y-1.5 max-w-[280px] max-h-[80vh] overflow-y-auto">
             <div className="font-semibold text-sm mb-1 sticky top-0 bg-black/75 pb-1">Live Modifiers</div>
-            
+
             {/* Lead Flow Section */}
             <div className="space-y-1 border-b border-gray-600 pb-1">
               <div className="text-[10px] text-gray-400 uppercase tracking-wide">Lead Flow</div>
@@ -520,11 +537,22 @@ export function GameCanvas() {
         </div>
       )}
 
+      {/* KeyMetrics HUD - Single variable controls visibility and layout */}
+      {HUD_CONFIG.SHOW_KEY_METRICS && (
+        <div
+          className={`absolute ${HUD_CONFIG.POSITION.top} ${HUD_CONFIG.POSITION.left} ${HUD_CONFIG.POSITION.zIndex} ${HUD_CONFIG.POSITION.maxWidth}`}
+        >
+          <div className="space-y-2">
+            <KeyMetrics />
+          </div>
+        </div>
+      )}
+
       {/* Lead Progress Widget - Bottom Left - DISABLED FOR NOW */}
       {/* <LeadProgress position="bottom-left" /> */}
 
       {/* Canvas Container - Responsive with max constraints */}
-      <div 
+      <div
         ref={canvasRef}
         className="relative"
         style={{

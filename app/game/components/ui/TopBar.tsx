@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/store/gameStore';
 import { useConfigStore } from '@/lib/store/configStore';
-import { KeyMetrics } from './KeyMetrics';
 import { DEFAULT_INDUSTRY_ID, getBusinessStats } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
 import { useAudioControls } from '@/hooks/useAudio';
@@ -57,9 +56,6 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
               <span className="text-white font-bold text-ultra-sm sm:text-caption md:text-sm truncate">{selectedIndustry.name}</span>
             </div>
           </div>
-        </div>
-        <div className="flex-1 pl-0.5 sm:pl-0.5 md:pl-2 min-w-0 mt-1 sm:mt-1.5 md:mt-3">
-          <KeyMetrics />
         </div>
       </div>
     );
@@ -126,10 +122,6 @@ export function TopBar({ onSettingsOpen }: TopBarProps) {
           </div>
         </div>
 
-        {/* Right Section: Key Metrics (60% width) */}
-        <div className="flex-1 pl-0.5 sm:pl-0.5 md:pl-2 min-w-0 mt-1 sm:mt-1.5 md:mt-3">
-          <KeyMetrics />
-        </div>
       </div>
     </>
   );
