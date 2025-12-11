@@ -5,9 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ServicesTab } from '../../components/ServicesTab';
 import { SidebarContentLayout } from '../../components/SidebarContentLayout';
 import { useServices } from '../../hooks/useServices';
-import { useFlags } from '../../hooks/useFlags';
 import { useUpgrades, useAllUpgrades } from '../../hooks/useUpgrades';
-import { useRoles } from '../../hooks/useRoles';
 import { buildServiceDetailUrl } from '../../utils/routing';
 
 export default function ServicesPage({
@@ -18,10 +16,7 @@ export default function ServicesPage({
   const { industry } = use(params);
   const router = useRouter();
   const services = useServices(industry);
-  const flags = useFlags(industry);
-  const upgrades = useUpgrades(industry);
   const allUpgrades = useAllUpgrades();
-  const roles = useRoles(industry);
 
   // Auto-redirect to first service if services are loaded and not creating
   useEffect(() => {
@@ -130,10 +125,6 @@ export default function ServicesPage({
           serviceForm={services.form}
           serviceSaving={services.saving}
           serviceDeleting={services.deleting}
-          flags={flags.flags}
-          flagsLoading={flags.loading}
-          upgrades={allUpgrades.data}
-          staffRoles={roles.roles}
           onSelectService={handleSelectService}
           onCreateService={handleCreateNew}
           onSaveService={handleSave}

@@ -2,9 +2,8 @@
 
 import { useEffect } from 'react';
 import type { IndustryServiceDefinition, Requirement, UpgradeDefinition, ServiceTier } from '@/lib/game/types';
-import type { GameFlag } from '@/lib/data/flagRepository';
-import type { StaffRoleConfig } from '@/lib/game/staffConfig';
 import { RequirementsSelector } from './RequirementsSelector';
+import { useRoles } from '../hooks/useRoles';
 import { NumberInput } from './NumberInput';
 import { makeUniqueId, slugify } from './utils';
 
@@ -17,10 +16,6 @@ interface ServicesTabProps {
   serviceForm: { id: string; name: string; duration: string; price: string; tier: string; expGained: string; requirements: Requirement[]; pricingCategory: string; weightage: string; requiredStaffRoleIds: string[]; timeCost: string; order: string };
   serviceSaving: boolean;
   serviceDeleting: boolean;
-  flags: GameFlag[];
-  flagsLoading: boolean;
-  upgrades?: UpgradeDefinition[];
-  staffRoles?: StaffRoleConfig[];
   onSelectService: (service: IndustryServiceDefinition) => void;
   onCreateService: () => void;
   onSaveService: () => Promise<void>;
@@ -38,10 +33,6 @@ export function ServicesTab({
   serviceForm,
   serviceSaving,
   serviceDeleting,
-  flags,
-  flagsLoading,
-  upgrades,
-  staffRoles,
   onSelectService,
   onCreateService,
   onSaveService,
@@ -49,6 +40,8 @@ export function ServicesTab({
   onReset,
   onUpdateForm,
 }: ServicesTabProps) {
+  const roles = useRoles(industryId);
+
   // Keyboard shortcuts for save and delete
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -280,9 +273,9 @@ export function ServicesTab({
                           })()}
                         </div>
                         {/* Regular Staff Roles */}
-                        {staffRoles && staffRoles.length > 0 ? (
+                        {roles.roles && roles.roles.length > 0 ? (
                           <div className="flex flex-wrap gap-2">
-                            {staffRoles.map((role) => {
+                            {roles.roles.map((role) => {
                               const isSelected = serviceForm.requiredStaffRoleIds?.includes(role.id) ?? false;
                               return (
                                 <button
@@ -327,10 +320,7 @@ export function ServicesTab({
                     <div className="md:col-span-2">
                       <label className="block text-sm font-semibold text-slate-300 mb-2">Requirements</label>
                       <RequirementsSelector
-                        flags={flags}
-                        upgrades={upgrades || []}
-                        staffRoles={staffRoles || []}
-                        flagsLoading={flagsLoading}
+                        industryId={industryId}
                         requirements={serviceForm.requirements || []}
                         onRequirementsChange={(requirements) => onUpdateForm({ requirements })}
                       />

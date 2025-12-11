@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { UpgradesTab } from '../../components/UpgradesTab';
 import { SidebarContentLayout } from '../../components/SidebarContentLayout';
 import { useUpgrades, useAllUpgrades } from '../../hooks/useUpgrades';
-import { useFlags } from '../../hooks/useFlags';
-import { useRoles } from '../../hooks/useRoles';
 import { useCategories } from '../../hooks/useCategories';
 import { METRIC_OPTIONS, EFFECT_TYPE_OPTIONS } from '../../utils/constants';
 import { buildUpgradeDetailUrl } from '../../utils/routing';
@@ -20,8 +18,6 @@ export default function UpgradesPage({
   const router = useRouter();
   const upgrades = useUpgrades(industry);
   const allUpgrades = useAllUpgrades();
-  const flags = useFlags(industry);
-  const roles = useRoles(industry);
   const categories = useCategories(industry);
 
   // Auto-redirect to first upgrade if upgrades are loaded and not creating
@@ -134,12 +130,8 @@ export default function UpgradesPage({
           levelsForm={upgrades.levelsForm}
           upgradeSaving={upgrades.saving}
           upgradeDeleting={upgrades.deleting}
-          flags={flags.flags}
-          flagsLoading={flags.loading}
           categories={categories.categories}
           categoriesLoading={categories.loading}
-          allUpgrades={allUpgrades.data}
-          staffRoles={roles.roles}
           metricOptions={METRIC_OPTIONS}
           effectTypeOptions={EFFECT_TYPE_OPTIONS}
           onSelectUpgrade={handleSelectUpgrade}

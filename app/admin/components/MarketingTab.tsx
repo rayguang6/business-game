@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
-import type { GameFlag } from '@/lib/data/flagRepository';
 import type { MarketingCampaign } from '@/lib/store/slices/marketingSlice';
+import { useFlags } from '../hooks/useFlags';
 import type { Requirement, UpgradeDefinition } from '@/lib/game/types';
 import type { StaffRoleConfig } from '@/lib/game/staffConfig';
 import { RequirementsSelector } from './RequirementsSelector';
@@ -27,6 +27,7 @@ interface CampaignLevelForm {
 }
 
 interface MarketingTabProps {
+  industryId: string;
   campaigns: MarketingCampaign[];
   campaignsLoading: boolean;
   selectedCampaignId: string;
@@ -54,12 +55,8 @@ interface MarketingTabProps {
   campaignLevelsForm?: CampaignLevelForm[];
   campaignSaving: boolean;
   campaignDeleting: boolean;
-  flags: GameFlag[];
-  flagsLoading: boolean;
   categories: import('@/lib/game/types').Category[];
   categoriesLoading: boolean;
-  upgrades?: UpgradeDefinition[];
-  staffRoles?: StaffRoleConfig[];
   metricOptions: Array<{ value: GameMetric; label: string }>;
   effectTypeOptions: Array<{ value: EffectType; label: string; hint: string }>;
   onSelectCampaign: (campaign: MarketingCampaign) => void;
@@ -75,6 +72,7 @@ interface MarketingTabProps {
 }
 
 export function MarketingTab({
+  industryId,
   campaigns,
   campaignsLoading,
   selectedCampaignId,
@@ -84,12 +82,8 @@ export function MarketingTab({
   campaignLevelsForm = [],
   campaignSaving,
   campaignDeleting,
-  flags,
-  flagsLoading,
   categories,
   categoriesLoading,
-  upgrades = [],
-  staffRoles = [],
   metricOptions,
   effectTypeOptions,
   onSelectCampaign,
@@ -103,6 +97,8 @@ export function MarketingTab({
   onRemoveLevel,
   onUpdateLevel,
 }: MarketingTabProps) {
+  const flags = useFlags(industryId);
+
   // Keyboard shortcuts for save and delete
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -312,12 +308,12 @@ export function MarketingTab({
                   <select
                     value={campaignForm.setsFlag || ''}
                     onChange={(e) => onUpdateForm({ setsFlag: e.target.value })}
-                    disabled={flagsLoading}
+                    disabled={flags.loading}
                     className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200 disabled:opacity-50"
                   >
-                    <option value="">{flagsLoading ? 'Loading flags...' : 'None'}</option>
-                    {!flagsLoading &&
-                      flags.map((flag) => (
+                    <option value="">{flags.loading ? 'Loading flags...' : 'None'}</option>
+                    {!flags.loading &&
+                      flags.flags.map((flag) => (
                         <option key={flag.id} value={flag.id}>
                           {flag.name} ({flag.id})
                         </option>
@@ -328,10 +324,7 @@ export function MarketingTab({
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-slate-300 mb-2">Requirements</label>
                   <RequirementsSelector
-                    flags={flags}
-                    upgrades={upgrades}
-                    staffRoles={staffRoles}
-                    flagsLoading={flagsLoading}
+                    industryId={industryId}
                     requirements={campaignForm.requirements || []}
                     onRequirementsChange={(requirements) => onUpdateForm({ requirements })}
                   />

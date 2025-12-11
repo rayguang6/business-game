@@ -5,9 +5,6 @@ import { useRouter } from 'next/navigation';
 import { MarketingTab } from '../../../components/MarketingTab';
 import { SidebarContentLayout } from '../../../components/SidebarContentLayout';
 import { useMarketing } from '../../../hooks/useMarketing';
-import { useFlags } from '../../../hooks/useFlags';
-import { useUpgrades, useAllUpgrades } from '../../../hooks/useUpgrades';
-import { useRoles } from '../../../hooks/useRoles';
 import { useCategories } from '../../../hooks/useCategories';
 import { METRIC_OPTIONS, EFFECT_TYPE_OPTIONS } from '../../../utils/constants';
 import { buildMarketingDetailUrl } from '../../../utils/routing';
@@ -20,9 +17,6 @@ export default function MarketingDetailPage({
   const { industry, campaignId } = use(params);
   const router = useRouter();
   const marketing = useMarketing(industry, campaignId);
-  const flags = useFlags(industry);
-  const upgrades = useUpgrades(industry);
-  const roles = useRoles(industry);
   const categories = useCategories(industry);
 
   // Redirect to list if campaign not found (404 handling)
@@ -90,6 +84,7 @@ export default function MarketingDetailPage({
       }}
     >
       <MarketingTab
+        industryId={industry}
         campaigns={marketing.campaigns}
         campaignsLoading={marketing.loading}
         selectedCampaignId={marketing.selectedId}
@@ -99,12 +94,8 @@ export default function MarketingDetailPage({
         campaignLevelsForm={marketing.levelsForm}
         campaignSaving={marketing.saving}
         campaignDeleting={marketing.deleting}
-        flags={flags.flags}
-        flagsLoading={flags.loading}
         categories={categories.categories}
         categoriesLoading={categories.loading}
-        upgrades={upgrades.upgrades}
-        staffRoles={roles.roles}
         metricOptions={METRIC_OPTIONS}
         effectTypeOptions={EFFECT_TYPE_OPTIONS}
         onSelectCampaign={handleSelectCampaign}

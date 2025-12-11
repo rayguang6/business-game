@@ -5,10 +5,6 @@ import { useRouter } from 'next/navigation';
 import { EventsTab } from '../../components/EventsTab';
 import { SidebarContentLayout } from '../../components/SidebarContentLayout';
 import { useEvents } from '../../hooks/useEvents';
-import { useFlags } from '../../hooks/useFlags';
-import { useUpgrades } from '../../hooks/useUpgrades';
-import { useRoles } from '../../hooks/useRoles';
-import { useMarketing } from '../../hooks/useMarketing';
 import { METRIC_OPTIONS, EFFECT_TYPE_OPTIONS } from '../../utils/constants';
 import { buildEventDetailUrl } from '../../utils/routing';
 
@@ -20,10 +16,6 @@ export default function EventsPage({
   const { industry } = use(params);
   const router = useRouter();
   const events = useEvents(industry);
-  const flags = useFlags(industry);
-  const upgrades = useUpgrades(industry);
-  const roles = useRoles(industry);
-  const marketing = useMarketing(industry);
 
   // Auto-redirect to first event if events are loaded and not creating
   useEffect(() => {
@@ -131,11 +123,6 @@ export default function EventsPage({
           eventChoices={events.choices}
           eventSaving={events.saving}
           eventDeleting={events.deleting}
-          flags={flags.flags}
-          flagsLoading={flags.loading}
-          upgrades={upgrades.upgrades}
-          staffRoles={roles.roles}
-          marketingCampaigns={marketing.campaigns}
           metricOptions={METRIC_OPTIONS}
           effectTypeOptions={EFFECT_TYPE_OPTIONS}
           onSelectEvent={handleSelectEvent}

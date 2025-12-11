@@ -5,9 +5,7 @@ import { useRouter } from 'next/navigation';
 import { MarketingTab } from '../../components/MarketingTab';
 import { SidebarContentLayout } from '../../components/SidebarContentLayout';
 import { useMarketing } from '../../hooks/useMarketing';
-import { useFlags } from '../../hooks/useFlags';
 import { useUpgrades, useAllUpgrades } from '../../hooks/useUpgrades';
-import { useRoles } from '../../hooks/useRoles';
 import { useCategories } from '../../hooks/useCategories';
 import { METRIC_OPTIONS, EFFECT_TYPE_OPTIONS } from '../../utils/constants';
 import { buildMarketingDetailUrl } from '../../utils/routing';
@@ -20,10 +18,7 @@ export default function MarketingPage({
   const { industry } = use(params);
   const router = useRouter();
   const marketing = useMarketing(industry);
-  const flags = useFlags(industry);
-  const upgrades = useUpgrades(industry);
   const allUpgrades = useAllUpgrades();
-  const roles = useRoles(industry);
   const categories = useCategories(industry);
 
   // Auto-redirect to first campaign if campaigns are loaded and not creating
@@ -127,6 +122,7 @@ export default function MarketingPage({
     >
       {marketing.isCreating ? (
         <MarketingTab
+          industryId={industry}
           campaigns={marketing.campaigns}
           campaignsLoading={marketing.loading}
           selectedCampaignId={marketing.selectedId}
@@ -136,12 +132,8 @@ export default function MarketingPage({
           campaignLevelsForm={marketing.levelsForm}
           campaignSaving={marketing.saving}
           campaignDeleting={marketing.deleting}
-          flags={flags.flags}
-          flagsLoading={flags.loading}
           categories={categories.categories}
           categoriesLoading={categories.loading}
-          upgrades={allUpgrades.data}
-          staffRoles={roles.roles}
           metricOptions={METRIC_OPTIONS}
           effectTypeOptions={EFFECT_TYPE_OPTIONS}
           onSelectCampaign={handleSelectCampaign}

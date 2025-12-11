@@ -1,19 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import type { GameFlag } from '@/lib/data/flagRepository';
-import type { Requirement, UpgradeDefinition } from '@/lib/game/types';
-import type { StaffRoleConfig } from '@/lib/game/staffConfig';
+import type { Requirement } from '@/lib/game/types';
 import { getMetricDefinition } from '@/lib/game/metrics/registry';
 import { GameMetric } from '@/lib/game/effectManager';
 import { NumberInput } from './NumberInput';
+import { useFlags } from '../hooks/useFlags';
+import { useUpgrades } from '../hooks/useUpgrades';
+import { useRoles } from '../hooks/useRoles';
+import { useMarketing } from '../hooks/useMarketing';
+import { useConditions } from '../hooks/useConditions';
 
 interface RequirementsSelectorProps {
-  flags: GameFlag[];
-  upgrades?: UpgradeDefinition[];
-  staffRoles?: StaffRoleConfig[];
-  marketingCampaigns?: import('@/lib/store/slices/marketingSlice').MarketingCampaign[];
-  flagsLoading: boolean;
+  industryId: string;
   requirements?: Requirement[];
   onRequirementsChange?: (requirements: Requirement[]) => void;
 }
@@ -35,24 +34,33 @@ const OPERATOR_OPTIONS = [
 ] as const;
 
 export function RequirementsSelector({
-  flags,
-  upgrades = [],
-  staffRoles = [],
-  marketingCampaigns = [],
-  flagsLoading,
+  industryId,
   requirements = [],
   onRequirementsChange,
 }: RequirementsSelectorProps) {
+  // Fetch all required data internally
+  const flags = useFlags(industryId);
+  const upgrades = useUpgrades(industryId);
+  const roles = useRoles(industryId);
+  const marketing = useMarketing(industryId);
+  const conditionsData = useConditions(industryId);
+
+  const flagsData = flags.flags;
+  const upgradesData = upgrades.upgrades;
+  const staffRoles = roles.roles;
+  const marketingCampaigns = marketing.campaigns;
+  const conditionsList = conditionsData.conditions;
+  const flagsLoading = flags.loading;
   const [search, setSearch] = useState<string>('');
   const [editingRequirement, setEditingRequirement] = useState<string | null>(null);
 
-  const filteredFlags = (flags || []).filter(
+  const filteredFlags = (flagsData || []).filter(
     (flag) =>
       flag.name.toLowerCase().includes(search.toLowerCase()) ||
       (flag.description || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  const filteredUpgrades = (upgrades || []).filter(
+  const filteredUpgrades = (upgradesData || []).filter(
     (upgrade) =>
       upgrade.name.toLowerCase().includes(search.toLowerCase()) ||
       upgrade.id.toLowerCase().includes(search.toLowerCase())
@@ -68,6 +76,13 @@ export function RequirementsSelector({
     (campaign) =>
       campaign.name.toLowerCase().includes(search.toLowerCase()) ||
       campaign.id.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const filteredConditions = (conditionsList || []).filter(
+    (condition) =>
+      condition.name.toLowerCase().includes(search.toLowerCase()) ||
+      condition.id.toLowerCase().includes(search.toLowerCase()) ||
+      (condition.description || '').toLowerCase().includes(search.toLowerCase())
   );
 
   const filteredMetrics = METRIC_OPTIONS.filter(
@@ -101,13 +116,15 @@ export function RequirementsSelector({
       } else if (type === 'upgrade' || type === 'metric' || type === 'staff' || type === 'marketing') {
         newReq.operator = (defaultOperator || '>=') as any;
         newReq.value = defaultValue ?? (type === 'upgrade' || type === 'staff' || type === 'marketing' ? 1 : 0);
+      } else if (type === 'condition') {
+        newReq.expected = true;
       }
       onRequirementsChange([...requirements, newReq]);
       setEditingRequirement(`${type}-${cleanId}`);
     }
   };
 
-  const handleToggleExpected = (cleanId: string, type: 'flag') => {
+  const handleToggleExpected = (cleanId: string, type: 'flag' | 'condition') => {
     if (!onRequirementsChange) return;
 
     const updated = requirements.map(req => {
@@ -732,6 +749,99 @@ export function RequirementsSelector({
             </div>
           )}
 
+          {/* Conditions Section */}
+          {filteredConditions.length > 0 && (
+            <div>
+              <h4 className="text-sm font-semibold text-slate-300 mb-2 flex items-center gap-2">
+                <span>🎯</span> Conditions{' '}
+                <span className="text-xs text-slate-400 font-normal">({filteredConditions.length})</span>
+              </h4>
+              <div className="max-h-48 overflow-y-auto pr-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {filteredConditions.map((condition) => {
+                    const isSelected = isRequirementSelected(condition.id, 'condition');
+                    const req = getRequirement(condition.id, 'condition');
+                    const expected = req?.expected;
+
+                    return (
+                      <div
+                        key={condition.id}
+                        className={`px-3 py-2 rounded-lg border transition-colors ${
+                          isSelected
+                            ? 'bg-teal-500/20 border-teal-500 text-teal-200'
+                            : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-slate-500'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggle(condition.id, 'condition')}
+                            className="w-4 h-4 rounded border-slate-500 bg-slate-800 text-teal-600 focus:ring-teal-500 focus:ring-2"
+                          />
+                          <span className="text-sm flex-1">{condition.name}</span>
+                          {condition.description && (
+                            <span
+                              className="text-xs text-slate-400 truncate max-[150px]"
+                              title={condition.description}
+                            >
+                              {condition.description}
+                            </span>
+                          )}
+                        </div>
+                        {isSelected && (
+                          <div className="space-y-2 mt-2 ml-6">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-slate-400">Must be:</span>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleExpected(condition.id, 'condition')}
+                                className={`px-2 py-1 text-xs rounded border transition-colors ${
+                                  expected === false
+                                    ? 'bg-red-500/20 border-red-500 text-red-200'
+                                    : 'bg-green-500/20 border-green-500 text-green-200'
+                                }`}
+                              >
+                                {expected === false ? 'NO' : 'YES'}
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-slate-400">When unmet:</span>
+                              <div className="flex gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleOnFail(condition.id, 'condition', 'lock')}
+                                  className={`px-2 py-1 text-xs rounded border transition-colors ${
+                                    req?.onFail === 'lock'
+                                      ? 'bg-orange-500/20 border-orange-500 text-orange-200'
+                                      : 'bg-slate-600/50 border-slate-500 text-slate-400 hover:bg-slate-600'
+                                  }`}
+                                >
+                                  Lock
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleOnFail(condition.id, 'condition', 'hide')}
+                                  className={`px-2 py-1 text-xs rounded border transition-colors ${
+                                    req?.onFail === 'hide'
+                                      ? 'bg-red-500/20 border-red-500 text-red-200'
+                                      : 'bg-slate-600/50 border-slate-500 text-slate-400 hover:bg-slate-600'
+                                  }`}
+                                >
+                                  Hide
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Total Staff Option */}
           {filteredStaffRoles.length > 0 && (
             <div>
@@ -850,11 +960,12 @@ export function RequirementsSelector({
 
           {/* Empty State */}
           {(() => {
-            const hasAnyData = (flags || []).length > 0 || (upgrades || []).length > 0 ||
-                              (staffRoles || []).length > 0 || (marketingCampaigns || []).length > 0;
+            const hasAnyData = (flagsData || []).length > 0 || (upgradesData || []).length > 0 ||
+                              (staffRoles || []).length > 0 || (marketingCampaigns || []).length > 0 ||
+                              (conditionsList || []).length > 0;
             const hasFilteredResults = filteredFlags.length > 0 || filteredUpgrades.length > 0 ||
                                       filteredMetrics.length > 0 || filteredStaffRoles.length > 0 ||
-                                      filteredMarketingCampaigns.length > 0;
+                                      filteredMarketingCampaigns.length > 0 || filteredConditions.length > 0;
 
             if (!hasAnyData) {
               return (

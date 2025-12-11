@@ -5,6 +5,7 @@ import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import type { Requirement } from '@/lib/game/types';
 import { EventEffectType } from '@/lib/types/gameEvents';
 import { RequirementsSelector } from '../RequirementsSelector';
+import type { GameCondition } from '@/lib/types/conditions';
 import { NumberInput } from '../NumberInput';
 import { EventEffectEditor, EventEffectFormData } from './EventEffectEditor';
 
@@ -24,11 +25,7 @@ interface DelayedConsequenceEditorProps {
   eventTitle: string;
   metricOptions: Array<{ value: GameMetric; label: string }>;
   effectTypeOptions: Array<{ value: EffectType; label: string; hint: string }>;
-  flags: import('@/lib/data/flagRepository').GameFlag[];
-  flagsLoading: boolean;
-  upgrades?: import('@/lib/game/types').UpgradeDefinition[];
-  staffRoles?: import('@/lib/game/staffConfig').StaffRoleConfig[];
-  marketingCampaigns?: import('@/lib/store/slices/marketingSlice').MarketingCampaign[];
+  industryId: string;
   onUpdate: (delayedConsequence: DelayedConsequenceFormData | undefined) => void;
 }
 
@@ -37,11 +34,7 @@ export function DelayedConsequenceEditor({
   eventTitle,
   metricOptions,
   effectTypeOptions,
-  flags,
-  flagsLoading,
-  upgrades = [],
-  staffRoles = [],
-  marketingCampaigns = [],
+  industryId,
   onUpdate,
 }: DelayedConsequenceEditorProps) {
   const [showLabelTooltip, setShowLabelTooltip] = useState<string | null>(null);
@@ -214,13 +207,9 @@ export function DelayedConsequenceEditor({
           <div>
             <label className="block text-sm font-semibold text-slate-300 mb-2">Success Requirements (optional)</label>
             <RequirementsSelector
+              industryId={industryId}
               requirements={delayedConsequence.successRequirements}
               onRequirementsChange={(requirements) => onUpdate({ ...delayedConsequence, successRequirements: requirements })}
-              flags={flags}
-              flagsLoading={flagsLoading}
-              upgrades={upgrades}
-              staffRoles={staffRoles}
-              marketingCampaigns={marketingCampaigns}
             />
           </div>
 

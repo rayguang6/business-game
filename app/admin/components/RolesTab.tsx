@@ -3,9 +3,9 @@
 import { useEffect } from 'react';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import type { StaffRoleConfig } from '@/lib/game/staffConfig';
-import type { GameFlag } from '@/lib/data/flagRepository';
 import type { Requirement } from '@/lib/game/types';
 import { RequirementsSelector } from './RequirementsSelector';
+import { useFlags } from '../hooks/useFlags';
 import { EffectsList } from './EffectsList';
 import { NumberInput } from './NumberInput';
 import { makeUniqueId, slugify } from './utils';
@@ -28,9 +28,6 @@ interface RolesTabProps {
   };
   saving: boolean;
   deleting: boolean;
-  flags: GameFlag[];
-  flagsLoading: boolean;
-  upgrades?: import('@/lib/game/types').UpgradeDefinition[];
   metricOptions: Array<{ value: GameMetric; label: string }>;
   effectTypeOptions: Array<{ value: EffectType; label: string; hint: string }>;
   onSelectRole: (role: StaffRoleConfig) => void;
@@ -50,9 +47,6 @@ export function RolesTab({
   form,
   saving,
   deleting,
-  flags,
-  flagsLoading,
-  upgrades = [],
   metricOptions,
   effectTypeOptions,
   onSelectRole,
@@ -62,6 +56,7 @@ export function RolesTab({
   onReset,
   onUpdateForm,
 }: RolesTabProps) {
+  const flags = useFlags(industryId);
   // Keyboard shortcuts for save and delete
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -182,12 +177,12 @@ export function RolesTab({
                       <select
                         value={form.setsFlag || ''}
                         onChange={(e) => onUpdateForm({ setsFlag: e.target.value })}
-                        disabled={flagsLoading}
-                        className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200 disabled:opacity-50"
-                      >
-                        <option value="">{flagsLoading ? 'Loading flags...' : 'None'}</option>
-                        {!flagsLoading &&
-                          flags.map((flag) => (
+                        disabled={flags.loading}
+                      className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200 disabled:opacity-50"
+                    >
+                      <option value="">{flags.loading ? 'Loading flags...' : 'None'}</option>
+                      {!flags.loading &&
+                        flags.flags.map((flag) => (
                             <option key={flag.id} value={flag.id}>
                               {flag.name} ({flag.id})
                             </option>
@@ -198,10 +193,7 @@ export function RolesTab({
                     <div className="md:col-span-2">
                       <label className="block text-sm font-semibold text-slate-300 mb-2">Requirements</label>
                       <RequirementsSelector
-                        flags={flags}
-                        upgrades={upgrades}
-                        staffRoles={roles}
-                        flagsLoading={flagsLoading}
+                        industryId={industryId}
                         requirements={form.requirements || []}
                         onRequirementsChange={(requirements) => onUpdateForm({ requirements })}
                       />

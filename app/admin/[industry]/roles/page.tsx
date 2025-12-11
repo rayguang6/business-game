@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { RolesTab } from '../../components/RolesTab';
 import { SidebarContentLayout } from '../../components/SidebarContentLayout';
 import { useRoles } from '../../hooks/useRoles';
-import { useFlags } from '../../hooks/useFlags';
-import { useUpgrades } from '../../hooks/useUpgrades';
 import { METRIC_OPTIONS, EFFECT_TYPE_OPTIONS } from '../../utils/constants';
 import { buildRoleDetailUrl } from '../../utils/routing';
 
@@ -18,8 +16,6 @@ export default function RolesPage({
   const { industry } = use(params);
   const router = useRouter();
   const roles = useRoles(industry);
-  const flags = useFlags(industry);
-  const upgrades = useUpgrades(industry);
 
   // Auto-redirect to first role if roles are loaded and not creating
   useEffect(() => {
@@ -126,9 +122,6 @@ export default function RolesPage({
           form={roles.form}
           saving={roles.saving}
           deleting={roles.deleting}
-          flags={flags.flags}
-          flagsLoading={flags.loading}
-          upgrades={upgrades.upgrades}
           metricOptions={METRIC_OPTIONS}
           effectTypeOptions={EFFECT_TYPE_OPTIONS}
           onSelectRole={handleSelectRole}

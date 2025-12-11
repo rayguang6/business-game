@@ -5,9 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ServicesTab } from '../../../components/ServicesTab';
 import { SidebarContentLayout } from '../../../components/SidebarContentLayout';
 import { useServices } from '../../../hooks/useServices';
-import { useFlags } from '../../../hooks/useFlags';
 import { useUpgrades, useAllUpgrades } from '../../../hooks/useUpgrades';
-import { useRoles } from '../../../hooks/useRoles';
 import { buildServiceDetailUrl } from '../../../utils/routing';
 
 export default function ServiceDetailPage({
@@ -18,10 +16,7 @@ export default function ServiceDetailPage({
   const { industry, serviceId } = use(params);
   const router = useRouter();
   const services = useServices(industry, serviceId);
-  const flags = useFlags(industry);
-  const upgrades = useUpgrades(industry);
   const allUpgrades = useAllUpgrades();
-  const roles = useRoles(industry);
 
   // Redirect to list if service not found (404 handling)
   useEffect(() => {
@@ -94,10 +89,6 @@ export default function ServiceDetailPage({
         serviceForm={services.form}
         serviceSaving={services.saving}
         serviceDeleting={services.deleting}
-        flags={flags.flags}
-        flagsLoading={flags.loading}
-        upgrades={allUpgrades.data}
-        staffRoles={roles.roles}
         onSelectService={handleSelectService}
         onCreateService={services.createService}
         onSaveService={handleSave}

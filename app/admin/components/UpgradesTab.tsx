@@ -3,9 +3,10 @@
 import { useEffect } from 'react';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import type { UpgradeDefinition, Requirement } from '@/lib/game/types';
-import type { GameFlag } from '@/lib/data/flagRepository';
 import type { GameCondition } from '@/lib/types/conditions';
 import { RequirementsSelector } from './RequirementsSelector';
+import { useFlags } from '../hooks/useFlags';
+import { useAllUpgrades } from '../hooks/useUpgrades';
 import { EffectsList } from './EffectsList';
 import { NumberInput } from './NumberInput';
 import { makeUniqueId, slugify } from './utils';
@@ -42,12 +43,8 @@ interface UpgradesTabProps {
   levelsForm: LevelFormData[];
   upgradeSaving: boolean;
   upgradeDeleting: boolean;
-  flags: GameFlag[];
-  flagsLoading: boolean;
   categories: import('@/lib/game/types').Category[];
   categoriesLoading: boolean;
-  allUpgrades?: UpgradeDefinition[];
-  staffRoles?: import('@/lib/game/staffConfig').StaffRoleConfig[];
   metricOptions: Array<{ value: GameMetric; label: string }>;
   effectTypeOptions: Array<{ value: EffectType; label: string; hint: string }>;
   onSelectUpgrade: (upgrade: UpgradeDefinition) => void;
@@ -71,12 +68,8 @@ export function UpgradesTab({
   levelsForm,
   upgradeSaving,
   upgradeDeleting,
-  flags,
-  flagsLoading,
   categories,
   categoriesLoading,
-  allUpgrades = [],
-  staffRoles = [],
   metricOptions,
   effectTypeOptions,
   onSelectUpgrade,
@@ -89,6 +82,9 @@ export function UpgradesTab({
   onRemoveLevel,
   onUpdateLevel,
 }: UpgradesTabProps) {
+  const flags = useFlags(industryId);
+  const allUpgrades = useAllUpgrades();
+
   // Keyboard shortcuts for save and delete
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -182,7 +178,7 @@ export function UpgradesTab({
                         onBlur={() => {
                           if (!upgradeForm.id && upgradeForm.name.trim()) {
                             const base = slugify(upgradeForm.name.trim());
-                            const allUpgradesList = allUpgrades || upgrades;
+                            const allUpgradesList = allUpgrades.data || upgrades;
                             const unique = makeUniqueId(base, new Set(allUpgradesList.map((u) => u.id)));
                             onUpdateForm({ id: unique });
                           }
@@ -351,12 +347,12 @@ export function UpgradesTab({
                       <select
                         value={upgradeForm.setsFlag || ''}
                         onChange={(e) => onUpdateForm({ setsFlag: e.target.value })}
-                        disabled={flagsLoading}
+                        disabled={flags.loading}
                         className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200 disabled:opacity-50"
                       >
-                        <option value="">{flagsLoading ? 'Loading flags...' : 'None'}</option>
-                        {!flagsLoading &&
-                          flags.map((flag) => (
+                        <option value="">{flags.loading ? 'Loading flags...' : 'None'}</option>
+                        {!flags.loading &&
+                          flags.flags.map((flag) => (
                             <option key={flag.id} value={flag.id}>
                               {flag.name} ({flag.id})
                             </option>
@@ -367,10 +363,7 @@ export function UpgradesTab({
                     <div className="md:col-span-2">
                       <label className="block text-sm font-semibold text-slate-300 mb-2">Requirements</label>
                       <RequirementsSelector
-                        flags={flags}
-                        upgrades={allUpgrades ?? upgrades}
-                        staffRoles={staffRoles}
-                        flagsLoading={flagsLoading}
+                        industryId={industryId}
                         requirements={upgradeForm.requirements || []}
                         onRequirementsChange={(requirements) => onUpdateForm({ requirements })}
                       />

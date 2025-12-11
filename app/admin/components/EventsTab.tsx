@@ -7,6 +7,7 @@ import type { GameEvent, GameEventChoice, GameEventConsequence, GameEventEffect,
 import { EventEffectType } from '@/lib/types/gameEvents';
 import type { Requirement, UpgradeDefinition } from '@/lib/game/types';
 import type { StaffRoleConfig } from '@/lib/game/staffConfig';
+import type { GameCondition } from '@/lib/types/conditions';
 import { RequirementsSelector } from './RequirementsSelector';
 import { NumberInput } from './NumberInput';
 import { makeUniqueId, slugify, generateUniqueId } from './utils';
@@ -37,11 +38,6 @@ interface EventsTabProps {
   eventChoices: GameEventChoice[];
   eventSaving: boolean;
   eventDeleting: boolean;
-  flags: GameFlag[];
-  flagsLoading: boolean;
-  upgrades?: UpgradeDefinition[];
-  staffRoles?: StaffRoleConfig[];
-  marketingCampaigns?: import('@/lib/store/slices/marketingSlice').MarketingCampaign[];
   metricOptions: Array<{ value: GameMetric; label: string }>;
   effectTypeOptions: Array<{ value: EffectType; label: string; hint: string }>;
   onSelectEvent: (event: GameEvent) => void;
@@ -64,11 +60,6 @@ export function EventsTab({
   eventChoices,
   eventSaving,
   eventDeleting,
-  flags,
-  flagsLoading,
-  upgrades = [],
-  staffRoles = [],
-  marketingCampaigns = [],
   metricOptions,
   effectTypeOptions,
   onSelectEvent,
@@ -573,13 +564,9 @@ export function EventsTab({
               <label className="block text-sm font-semibold text-slate-300 mb-2">Event Requirements</label>
               <p className="text-xs text-slate-400 mb-2">Requirements that must be met for this event to be eligible for selection. If empty, event is always eligible.</p>
               <RequirementsSelector
+                industryId={industryId}
                 requirements={eventForm.requirements || []}
                 onRequirementsChange={(requirements) => onUpdateEventForm({ requirements })}
-                flags={flags}
-                upgrades={upgrades}
-                staffRoles={staffRoles}
-                marketingCampaigns={marketingCampaigns}
-                flagsLoading={flagsLoading}
               />
             </div>
             <div className="md:col-span-2 flex flex-wrap gap-3">
@@ -641,11 +628,7 @@ export function EventsTab({
               <ChoiceEditor
                 choiceForm={choiceForm}
                 isCreatingChoice={isCreatingChoice}
-                flags={flags}
-                flagsLoading={flagsLoading}
-                upgrades={upgrades}
-                staffRoles={staffRoles}
-                marketingCampaigns={marketingCampaigns}
+                industryId={industryId}
                 onUpdate={(updates) => setChoiceForm(prev => ({ ...prev, ...updates }))}
                 onSave={handleSaveChoice}
                 onReset={handleResetChoice}
@@ -685,11 +668,7 @@ export function EventsTab({
                     eventTitle={eventForm.title}
                     metricOptions={metricOptions}
                     effectTypeOptions={effectTypeOptions}
-                    flags={flags}
-                    flagsLoading={flagsLoading}
-                    upgrades={upgrades}
-                    staffRoles={staffRoles}
-                    marketingCampaigns={marketingCampaigns}
+                    industryId={industryId}
                     onUpdate={(updates) => setConsequenceForm(prev => ({ ...prev, ...updates }))}
                     onSave={handleSaveConsequence}
                     onReset={handleResetConsequence}
@@ -729,11 +708,7 @@ export function EventsTab({
                 eventTitle={eventForm.title}
                 metricOptions={metricOptions}
                 effectTypeOptions={effectTypeOptions}
-                flags={flags}
-                flagsLoading={flagsLoading}
-                upgrades={upgrades}
-                staffRoles={staffRoles}
-                marketingCampaigns={marketingCampaigns}
+                industryId={industryId}
                 onUpdate={(updates) => setConsequenceForm(prev => ({ ...prev, ...updates }))}
                 onSave={handleSaveConsequence}
                 onReset={handleResetConsequence}

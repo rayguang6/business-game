@@ -3,6 +3,7 @@
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import { EventEffectType } from '@/lib/types/gameEvents';
 import { NumberInput } from '../NumberInput';
+import type { GameCondition } from '@/lib/types/conditions';
 import { EventEffectEditor, EventEffectFormData } from './EventEffectEditor';
 import { DelayedConsequenceEditor, DelayedConsequenceFormData } from './DelayedConsequenceEditor';
 
@@ -21,11 +22,7 @@ interface ConsequenceEditorProps {
   eventTitle: string;
   metricOptions: Array<{ value: GameMetric; label: string }>;
   effectTypeOptions: Array<{ value: EffectType; label: string; hint: string }>;
-  flags: import('@/lib/data/flagRepository').GameFlag[];
-  flagsLoading: boolean;
-  upgrades?: import('@/lib/game/types').UpgradeDefinition[];
-  staffRoles?: import('@/lib/game/staffConfig').StaffRoleConfig[];
-  marketingCampaigns?: import('@/lib/store/slices/marketingSlice').MarketingCampaign[];
+  industryId: string;
   onUpdate: (updates: Partial<ConsequenceFormData>) => void;
   onSave: () => void;
   onReset: () => void;
@@ -38,11 +35,7 @@ export function ConsequenceEditor({
   eventTitle,
   metricOptions,
   effectTypeOptions,
-  flags,
-  flagsLoading,
-  upgrades = [],
-  staffRoles = [],
-  marketingCampaigns = [],
+  industryId,
   onUpdate,
   onSave,
   onReset,
@@ -188,11 +181,7 @@ export function ConsequenceEditor({
         eventTitle={eventTitle}
         metricOptions={metricOptions}
         effectTypeOptions={effectTypeOptions}
-        flags={flags}
-        flagsLoading={flagsLoading}
-        upgrades={upgrades}
-        staffRoles={staffRoles}
-        marketingCampaigns={marketingCampaigns}
+        industryId={industryId}
         onUpdate={(delayedConsequence) => onUpdate({ delayedConsequence })}
       />
 
