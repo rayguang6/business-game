@@ -10,6 +10,7 @@ import { fetchMarketingCampaignsForIndustry } from '@/lib/data/marketingReposito
 import { fetchStaffDataForIndustry } from '@/lib/data/staffRepository';
 import { fetchFlagsForIndustry } from '@/lib/data/flagRepository';
 import { fetchConditionsForIndustry } from '@/lib/data/conditionRepository';
+import { fetchLevelRewardsForIndustry } from '@/lib/data/levelRewardsRepository';
 import { fetchIndustriesFromSupabase } from '@/lib/data/industryRepository';
 import type { SimulationLayoutConfig } from '@/lib/game/types';
 
@@ -103,6 +104,7 @@ export async function loadIndustryContent(
     staffResult,
     flagsResult,
     conditionsResult,
+    levelRewardsResult,
     industrySimConfig,
   ] = await Promise.all([
     fetchServicesForIndustry(industryId),
@@ -112,6 +114,7 @@ export async function loadIndustryContent(
     fetchStaffDataForIndustry(industryId),
     fetchFlagsForIndustry(industryId),
     fetchConditionsForIndustry(industryId),
+    fetchLevelRewardsForIndustry(industryId),
     fetchSimulationConfig(industryId),
   ]);
 
@@ -122,7 +125,8 @@ export async function loadIndustryContent(
     eventsResult === null ||
     marketingResult === null ||
     flagsResult === null ||
-    conditionsResult === null
+    conditionsResult === null ||
+    levelRewardsResult === null
   ) {
     return null;
   }
@@ -134,6 +138,7 @@ export async function loadIndustryContent(
   const marketingCampaigns = marketingResult;
   const flags = flagsResult;
   const conditions = conditionsResult;
+  const levelRewards = levelRewardsResult;
 
   const staffDataAvailable = Boolean(staffResult);
 
@@ -173,6 +178,7 @@ export async function loadIndustryContent(
     staffNamePool: staffResult?.namePool ?? undefined,
     flags,
     conditions,
+    levelRewards,
     layout: resolvedLayout,
     // Industry-specific simulation config overrides
     businessMetrics: industrySimConfig?.businessMetrics,

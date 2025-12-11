@@ -7,8 +7,8 @@ import { Card } from '@/app/components/ui/Card';
 import { getLevel } from '@/lib/store/types';
 import { getExpPerLevel, getBusinessStats, DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { IndustryId } from '@/lib/game/types';
-import { fetchLevelReward, fetchLevelRewards } from '@/lib/server/actions/adminActions';
 import type { LevelReward } from '@/lib/data/levelRewardsRepository';
+import { useLevelRewards } from '@/hooks/useLevelRewards';
 import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import { getMetricIcon } from '@/lib/game/metrics/registry';
@@ -24,13 +24,9 @@ export function LevelCard() {
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
   const configStatus = useConfigStore((state) => state.configStatus);
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-  const { getDisplayLabel, getMergedDefinition } = useMetricDisplayConfigs(industryId);
-  const [levelReward, setLevelReward] = useState<LevelReward | null>(null);
-  const [allLevelRewards, setAllLevelRewards] = useState<LevelReward[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  
-  // Safely get exp per level - handle case when config isn't loaded yet
-  const expPerLevel = useMemo(() => {
+
+  // Calculate current level BEFORE using it in hooks
+  const currentLevel = useMemo(() => {
     let expPerLevel: number | number[] = 200; // Default fallback
     try {
       if (configStatus === 'ready') {
@@ -43,109 +39,34 @@ export function LevelCard() {
       // If config access fails, use default
       console.warn('[LevelCard] Error accessing expPerLevel config, using default', error);
     }
-    return expPerLevel;
-  }, [configStatus, industryId]);
-  
-  const currentLevel = getLevel(metrics.exp, expPerLevel);
+    return getLevel(metrics.exp, expPerLevel);
+  }, [metrics.exp, configStatus, industryId]);
+
+  // Now call hooks with calculated values
+  const { getDisplayLabel, getMergedDefinition } = useMetricDisplayConfigs(industryId);
+  const {
+    allLevelRewards,
+    currentLevelReward,
+    isLoading,
+    getCumulativeEffects
+  } = useLevelRewards(industryId, currentLevel);
 
   // Debug logging
   useEffect(() => {
     console.log('[LevelCard] Render:', {
       exp: metrics.exp,
-      expPerLevel,
       currentLevel,
       industryId,
       configStatus,
+      isLoading,
     });
-  }, [metrics.exp, expPerLevel, currentLevel, industryId, configStatus]);
-
-  // Fetch all level rewards and current level reward when level or industry changes
-  useEffect(() => {
-    console.log('[LevelCard] Fetching level rewards for level:', currentLevel);
-    setIsLoading(true);
-    
-    // Fetch all level rewards for the industry
-    Promise.all([
-      fetchLevelRewards(industryId),
-      fetchLevelReward(industryId, currentLevel)
-    ])
-      .then(([allRewards, currentReward]) => {
-        console.log('[LevelCard] Fetched level rewards:', { 
-          allRewards: allRewards?.length || 0, 
-          currentLevel, 
-          currentReward 
-        });
-        setAllLevelRewards(allRewards || []);
-        setLevelReward(currentReward);
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        console.error('[LevelCard] Failed to fetch level rewards:', error);
-        setAllLevelRewards([]);
-        setLevelReward(null);
-        setIsLoading(false);
-      });
-  }, [currentLevel, industryId]);
+  }, [metrics.exp, currentLevel, industryId, configStatus, isLoading]);
 
 
-  // Helper function to calculate cumulative effects up to a specific level
+  // Use getCumulativeEffects from the hook
   const calculateCumulativeEffects = useCallback((targetLevel: number): UpgradeEffect[] => {
-    // Filter rewards from level 0 up to target level (include all levels that have rewards)
-    const applicableRewards = allLevelRewards
-      .filter(reward => reward.level <= targetLevel)
-      .sort((a, b) => a.level - b.level);
-
-
-    if (applicableRewards.length === 0) {
-      return [];
-    }
-
-    // Group effects by metric and type
-    const effectMap = new Map<string, {
-      metric: GameMetric;
-      type: EffectType;
-      value: number;
-      levels: number[];
-    }>();
-
-    applicableRewards.forEach(reward => {
-      reward.effects.forEach(effect => {
-        const key = `${effect.metric}_${effect.type}`;
-        const existing = effectMap.get(key);
-
-        if (existing) {
-          // Aggregate based on effect type
-          if (effect.type === EffectType.Add) {
-            existing.value += effect.value;
-          } else if (effect.type === EffectType.Percent) {
-            existing.value += effect.value; // Sum percentages
-          } else if (effect.type === EffectType.Multiply) {
-            existing.value *= effect.value; // Multiply multipliers
-          } else if (effect.type === EffectType.Set) {
-            // Set: use the value from the highest level
-            if (reward.level > Math.max(...existing.levels)) {
-              existing.value = effect.value;
-            }
-          }
-          existing.levels.push(reward.level);
-        } else {
-          effectMap.set(key, {
-            metric: effect.metric,
-            type: effect.type,
-            value: effect.value,
-            levels: [reward.level],
-          });
-        }
-      });
-    });
-
-    // Convert map to array of UpgradeEffect
-    return Array.from(effectMap.values()).map(({ metric, type, value }) => ({
-      metric,
-      type,
-      value,
-    }));
-  }, [allLevelRewards]);
+    return getCumulativeEffects(targetLevel);
+  }, [getCumulativeEffects]);
 
   // Calculate cumulative effects for current level
   const currentLevelEffects = useMemo(() => {
@@ -182,22 +103,13 @@ export function LevelCard() {
     );
   }
 
-  if (isLoading) {
-    return (
-      <Card className="w-full" variant="info">
-        <div className="p-4">
-          <div className="text-center text-tertiary text-sm">Loading level rewards...</div>
-        </div>
-      </Card>
-    );
-  }
 
   // Determine titles
-  const currentTitle = levelReward?.title 
-    ? `Level ${currentLevel}: ${levelReward.title}` 
+  const currentTitle = currentLevelReward?.title
+    ? `Level ${currentLevel}: ${currentLevelReward.title}`
     : `Level ${currentLevel}`;
-  const nextTitle = nextLevelReward?.title 
-    ? `Level ${nextLevel}: ${nextLevelReward.title}` 
+  const nextTitle = nextLevelReward?.title
+    ? `Level ${nextLevel}: ${nextLevelReward.title}`
     : `Level ${nextLevel}`;
 
   return (

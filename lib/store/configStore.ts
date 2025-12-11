@@ -42,6 +42,7 @@ const cloneIndustryConfig = (
   staffNamePool: config.staffNamePool ? [...config.staffNamePool] : undefined,
   flags: (config.flags || []).map((flag) => ({ ...flag })),
   conditions: (config.conditions || []).map((condition) => ({ ...condition })),
+  levelRewards: (config.levelRewards || []).map((reward) => ({ ...reward })),
   layout: config.layout
     ? {
         entryPosition: { ...config.layout.entryPosition },
@@ -111,10 +112,12 @@ export const useConfigStore = create<ConfigStore>((set) => ({
 const EMPTY_SERVICES: IndustryServiceDefinition[] = [];
 const EMPTY_UPGRADES: UpgradeDefinition[] = [];
 const EMPTY_EVENTS: GameEvent[] = [];
+const EMPTY_LEVEL_REWARDS: import('@/lib/data/levelRewardsRepository').LevelReward[] = [];
 
 const servicesCache = new WeakMap<IndustryContentConfig, IndustryServiceDefinition[]>();
 const upgradesCache = new WeakMap<IndustryContentConfig, UpgradeDefinition[]>();
 const eventsCache = new WeakMap<IndustryContentConfig, GameEvent[]>();
+const levelRewardsCache = new WeakMap<IndustryContentConfig, import('@/lib/data/levelRewardsRepository').LevelReward[]>();
 
 const cloneService = (service: IndustryServiceDefinition): IndustryServiceDefinition => ({
   ...service,
@@ -180,6 +183,19 @@ const getEventsSnapshot = (config: IndustryContentConfig): GameEvent[] => {
   return cloned;
 };
 
+const getLevelRewardsSnapshot = (config: IndustryContentConfig): import('@/lib/data/levelRewardsRepository').LevelReward[] => {
+  if (config.levelRewards.length === 0) {
+    return EMPTY_LEVEL_REWARDS;
+  }
+  const cached = levelRewardsCache.get(config);
+  if (cached) {
+    return cached;
+  }
+  const cloned = config.levelRewards.map((reward) => ({ ...reward }));
+  levelRewardsCache.set(config, cloned);
+  return cloned;
+};
+
 export const selectServicesForIndustry =
   (industryId: IndustryId) =>
   (state: ConfigStore): IndustryServiceDefinition[] => {
@@ -210,6 +226,16 @@ export const selectEventsForIndustry =
     return getEventsSnapshot(config);
   };
 
+export const selectLevelRewardsForIndustry =
+  (industryId: IndustryId) =>
+  (state: ConfigStore): import('@/lib/data/levelRewardsRepository').LevelReward[] => {
+    const config = state.industryConfigs[industryId];
+    if (!config) {
+      return EMPTY_LEVEL_REWARDS;
+    }
+    return getLevelRewardsSnapshot(config);
+  };
+
 export function getServicesFromStore(industryId: IndustryId): IndustryServiceDefinition[] {
   const config = useConfigStore.getState().industryConfigs[industryId];
   if (!config) {
@@ -232,4 +258,12 @@ export function getEventsFromStore(industryId: IndustryId): GameEvent[] {
     return EMPTY_EVENTS;
   }
   return getEventsSnapshot(config);
+}
+
+export function getLevelRewardsFromStore(industryId: IndustryId): import('@/lib/data/levelRewardsRepository').LevelReward[] {
+  const config = useConfigStore.getState().industryConfigs[industryId];
+  if (!config) {
+    return EMPTY_LEVEL_REWARDS;
+  }
+  return getLevelRewardsSnapshot(config);
 }

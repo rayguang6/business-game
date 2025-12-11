@@ -14,6 +14,7 @@ import type { StaffPreset, StaffRoleConfig } from '@/lib/game/staffConfig';
 import type { GameFlag } from '@/lib/data/flagRepository';
 import type { GameCondition } from '@/lib/types/conditions';
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
+import type { LevelReward } from '@/lib/data/levelRewardsRepository';
 
 export type ConfigLoadStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -47,6 +48,7 @@ export interface IndustryContentConfig {
   staffNamePool?: string[];
   flags: GameFlag[];
   conditions: GameCondition[];
+  levelRewards: LevelReward[];
   layout?: SimulationLayoutConfig;
   // Industry-specific simulation config overrides
   businessMetrics?: BusinessMetrics;
