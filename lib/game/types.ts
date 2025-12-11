@@ -15,7 +15,7 @@ export interface BusinessStats {
   ticksPerSecond: number;
   monthDurationSeconds: number;
   leadsPerMonth: number; // Leads spawned per industry month (replaces spawnIntervalSeconds)
-  customerPatienceSeconds: number;
+  customerPatienceSeconds: number; // How long customers wait before getting angry
   leavingAngryDurationTicks: number;
   customerSpawnPosition: {
     x: number;

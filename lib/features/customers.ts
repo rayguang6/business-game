@@ -4,6 +4,7 @@
  */
 
 import { Service } from './services';
+import { effectManager, GameMetric } from '@/lib/game/effectManager';
 import {
   DEFAULT_INDUSTRY_ID,
   getBusinessStats,
@@ -14,7 +15,6 @@ import {
   secondsToTicks,
 } from '@/lib/game/config';
 import { IndustryId, GridPosition, ServicePricingCategory } from '@/lib/game/types';
-import { effectManager, GameMetric } from '@/lib/game/effectManager';
 
 // Types
 export enum CustomerStatus {
@@ -110,7 +110,10 @@ export function spawnCustomer(
   const stats = getBusinessStats(industryId);
   const layout = getLayoutConfig(industryId);
   if (!stats || !layout) throw new Error('Business config not loaded');
-  const patience = secondsToTicks(stats.customerPatienceSeconds, industryId);
+
+  // Calculate effective patience with effects applied
+  const effectivePatienceSeconds = effectManager.calculate(GameMetric.CustomerPatienceSeconds, stats.customerPatienceSeconds);
+  const patience = secondsToTicks(effectivePatienceSeconds, industryId);
   const spawnPosition = stats.customerSpawnPosition ?? (layout ? layout.entryPosition : { x: 4, y: 9 });
 
   // Convert the aggregated speed multiplier into a shorter duration (higher speed = shorter time)

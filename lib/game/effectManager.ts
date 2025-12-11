@@ -29,6 +29,7 @@ export enum GameMetric {
   ServiceRevenueFlatBonus = 'serviceRevenueFlatBonus',
   FailureRate = 'failureRate', // Chance of business operations failing (0-100%)
   ConversionRate = 'conversionRate', // How much progress each lead adds toward customer conversion
+  CustomerPatienceSeconds = 'customerPatienceSeconds', // How long customers wait before getting angry
   GenerateLeads = 'generateLeads', // Immediate lead generation (one-time action)
   // Note: ExpGainPerHappyCustomer and ExpLossPerAngryCustomer are config-only (not modifiable by effects)
   // Tier-specific service metrics

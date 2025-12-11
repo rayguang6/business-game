@@ -11,6 +11,7 @@ const getUniqueMetricOptions = (): { value: GameMetric; label: string }[] => {
     { value: GameMetric.FailureRate, label: getMetricDefinition(GameMetric.FailureRate).displayLabel },
     { value: GameMetric.GenerateLeads, label: getMetricDefinition(GameMetric.GenerateLeads).displayLabel },
     { value: GameMetric.ConversionRate, label: getMetricDefinition(GameMetric.ConversionRate).displayLabel },
+    { value: GameMetric.CustomerPatienceSeconds, label: getMetricDefinition(GameMetric.CustomerPatienceSeconds).displayLabel },
     { value: GameMetric.ServiceCapacity, label: getMetricDefinition(GameMetric.ServiceCapacity).displayLabel },
     { value: GameMetric.MonthlyExpenses, label: getMetricDefinition(GameMetric.MonthlyExpenses).displayLabel },
     { value: GameMetric.ServiceSpeedMultiplier, label: getMetricDefinition(GameMetric.ServiceSpeedMultiplier).displayLabel },

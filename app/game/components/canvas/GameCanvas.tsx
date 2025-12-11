@@ -295,7 +295,7 @@ export function GameCanvas() {
   const TILE_SIZE = 32;
 
   // Base stats (non-editable) - read directly from config (same as game uses)
-  const customerPatience = businessStats.customerPatienceSeconds;
+  const customerPatience = effectManager.calculate(GameMetric.CustomerPatienceSeconds, businessStats.customerPatienceSeconds);
   const monthDuration = businessStats.monthDurationSeconds;
   
   // Use calculated values (with effects) - these match what the game uses

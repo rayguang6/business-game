@@ -111,12 +111,13 @@ interface CampaignCardProps {
   cooldownRemaining: number;
   currentLevel?: number; // For leveled campaigns
   wasActivatedThisMonth: boolean;
+  isLaunching?: boolean; // Prevent multiple rapid clicks
   onLaunch: (campaignId: string) => void;
   metrics: { cash: number; time: number };
   getDisplayLabel: (metric: GameMetric) => string;
 }
 
-function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, currentLevel, wasActivatedThisMonth, onLaunch, metrics, getDisplayLabel }: CampaignCardProps & { metrics: { cash: number; time: number }; getDisplayLabel: (metric: GameMetric) => string }) {
+function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, currentLevel, wasActivatedThisMonth, isLaunching, onLaunch, metrics, getDisplayLabel }: CampaignCardProps & { isLaunching?: boolean; metrics: { cash: number; time: number }; getDisplayLabel: (metric: GameMetric) => string }) {
   const { availability, descriptions: requirementDescriptions } = useRequirements(campaign.requirements);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
   
@@ -197,7 +198,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
     toneClass: getToneClass(effect),
   }));
 
-  const buttonDisabled = isOnCooldown || !canAfford || availability === 'locked';
+  const buttonDisabled = isOnCooldown || !canAfford || availability === 'locked' || isLaunching;
 
   const handleRequirementsClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -335,15 +336,17 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
             color={buttonDisabled ? 'gold' : 'green'}
             size="sm"
           >
-            {isOnCooldown
-              ? `Cooldown: ${formatSeconds(cooldownRemaining)}`
-              : availability === 'locked'
-                ? 'Requirements Not Met'
-                : isLeveled && !canUpgradeMore
-                  ? 'Max Level'
-                  : canAfford
-                    ? `Upgrade`
-                    : needText}
+            {isLaunching
+              ? 'Launching...'
+              : isOnCooldown
+                ? `Cooldown: ${formatSeconds(cooldownRemaining)}`
+                : availability === 'locked'
+                  ? 'Requirements Not Met'
+                  : isLeveled && !canUpgradeMore
+                    ? 'Max Level'
+                    : canAfford
+                      ? `Upgrade`
+                      : needText}
           </GameButton>
           {requirementDescriptions.length > 0 && availability === 'locked' && !isOnCooldown && canAfford && (
             <button
@@ -399,11 +402,30 @@ export function MarketingTab() {
 
   const activeCampaigns = useActiveMarketingCampaigns();
   const [message, setMessage] = useState<string | null>(null);
+  const [launchingCampaigns, setLaunchingCampaigns] = useState<Set<string>>(new Set());
 
   const handleLaunch = (campaignId: string) => {
-    const result = startCampaign(campaignId);
-    // No message to display
-    setMessage(null);
+    // Prevent multiple rapid clicks on the same campaign
+    if (launchingCampaigns.has(campaignId)) {
+      return;
+    }
+
+    setLaunchingCampaigns(prev => new Set(prev).add(campaignId));
+
+    try {
+      const result = startCampaign(campaignId);
+      // No message to display
+      setMessage(null);
+    } finally {
+      // Remove from launching set after a short delay to allow UI feedback
+      setTimeout(() => {
+        setLaunchingCampaigns(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(campaignId);
+          return newSet;
+        });
+      }, 500);
+    }
   };
 
   return (
@@ -546,6 +568,7 @@ export function MarketingTab() {
                           cooldownRemaining={cooldownRemaining}
                           currentLevel={currentLevel}
                           wasActivatedThisMonth={campaignsActivatedThisMonth.has(campaign.id)}
+                          isLaunching={launchingCampaigns.has(campaign.id)}
                           onLaunch={handleLaunch}
                           metrics={{ cash: metrics.cash, time: metrics.myTime }}
                           getDisplayLabel={getDisplayLabel}

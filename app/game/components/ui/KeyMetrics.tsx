@@ -12,7 +12,7 @@ import type { IndustryId } from '@/lib/game/types';
 import { getLevel, getLevelProgress, getExpRequiredForCurrentLevel } from '@/lib/store/types';
 import { getExpPerLevel } from '@/lib/game/config';
 import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
-import { getMetricIcon } from '@/lib/game/metrics/registry';
+import { getMetricIcon, getAllMetrics } from '@/lib/game/metrics/registry';
 import Image from 'next/image';
 
 export function KeyMetrics() {
@@ -25,24 +25,36 @@ export function KeyMetrics() {
   const { getMetricsForHUD, getMergedDefinition, loading: configsLoading } = useMetricDisplayConfigs(industryId);
   
   // All hooks must be called before any conditional returns
-  const [feedbackByMetric, setFeedbackByMetric] = useState<Record<string, FeedbackItem[]>>({
-    cash: [],
-    myTime: [],
-    leveragedTime: [],
-    exp: [],
+  const [feedbackByMetric, setFeedbackByMetric] = useState<Record<string, FeedbackItem[]>>(() => {
+    // Initialize feedback for all HUD metrics dynamically
+    const allHudMetrics = getAllMetrics().filter(metric => metric.display.showOnHUD);
+    const initialFeedback: Record<string, FeedbackItem[]> = {};
+
+    allHudMetrics.forEach(metric => {
+      initialFeedback[metric.id] = [];
+    });
+
+    return initialFeedback;
   });
+
+  // Force re-render when effect manager changes (effects update)
+  const [, forceUpdate] = useState(0);
+
+  useEffect(() => {
+    const unsubscribe = effectManager.subscribe(() => forceUpdate(prev => prev + 1));
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     // Only add feedback if there are actual changes
     if (Object.keys(changes).length === 0) return;
 
     setFeedbackByMetric((prev) => {
-      const newFeedback: Record<string, FeedbackItem[]> = {
-        cash: [...prev.cash],
-        myTime: [...prev.myTime],
-        leveragedTime: [...prev.leveragedTime],
-        exp: [...prev.exp],
-      };
+      // Create new feedback object with existing feedback preserved
+      const newFeedback: Record<string, FeedbackItem[]> = {};
+      Object.keys(prev).forEach(key => {
+        newFeedback[key] = [...prev[key]];
+      });
 
       // Add cash change feedback
       if (changes.cash !== undefined && changes.cash !== 0) {
@@ -197,6 +209,18 @@ export function KeyMetrics() {
             icon = getMetricIcon(def.id);
             image = iconPath || '/images/icons/marketing.png';
             color = 'text-cyan-400';
+            feedback = [];
+            break;
+          }
+          case GameMetric.CustomerPatienceSeconds: {
+            // Calculate customerPatienceSeconds with effects applied
+            const baseStats = getBusinessStats(industryId);
+            const baseCustomerPatience = baseStats?.customerPatienceSeconds ?? 10;
+            const calculatedCustomerPatience = Math.max(1, Math.round(effectManager.calculate(GameMetric.CustomerPatienceSeconds, baseCustomerPatience)));
+            value = `${calculatedCustomerPatience}${unit}`;
+            icon = getMetricIcon(def.id);
+            image = iconPath || '/images/icons/customers.png';
+            color = 'text-orange-400';
             feedback = [];
             break;
           }

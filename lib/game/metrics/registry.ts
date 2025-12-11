@@ -216,6 +216,25 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
     },
     canBeModifiedByEffects: true,
   },
+
+  [GameMetric.CustomerPatienceSeconds]: {
+    id: GameMetric.CustomerPatienceSeconds,
+    displayLabel: 'Customer Patience',
+    description: 'How long customers wait before getting angry (seconds)',
+    defaultValueSource: 'businessStats',
+    defaultValuePath: 'customerPatienceSeconds',
+    constraints: {
+      min: 1,
+      roundToInt: true,
+    },
+    display: {
+      showOnHUD: false,
+      showInDetails: false,
+      showInAdmin: true,
+      unit: 's',
+    },
+    canBeModifiedByEffects: true,
+  },
   
   [GameMetric.FailureRate]: {
     id: GameMetric.FailureRate,
@@ -551,6 +570,7 @@ export function getMetricIcon(metric: GameMetric): string {
     case GameMetric.ConversionRate: return '📊'; // Chart for conversion
     case GameMetric.FailureRate: return '⚠️'; // Warning for failure
     case GameMetric.MonthlyExpenses: return '💸'; // Money with wings for expenses
+    case GameMetric.CustomerPatienceSeconds: return '⏳'; // Hourglass for patience
     default: return '✨'; // Sparkles for unknown
   }
 }

@@ -6,6 +6,8 @@ import { getAllMetrics, getMetricDefinition } from '@/lib/game/metrics/registry'
 import type { IndustryId } from '@/lib/game/types';
 import type { MetricDisplayConfig } from '@/lib/data/metricDisplayConfigRepository';
 import { NumberInput } from './NumberInput';
+import { seedMetricDisplayConfigAction } from '@/lib/server/actions/adminActions';
+import { useToastFunctions } from './ui/ToastContext';
 
 interface MetricDisplayConfigTabProps {
   industryId: IndustryId | 'global';
@@ -38,10 +40,14 @@ export function MetricDisplayConfigTab({
 }: MetricDisplayConfigTabProps) {
   const allMetrics = getAllMetrics();
   const isGlobal = industryId === 'global';
+  const { success, error } = useToastFunctions();
 
   // Sorting state
   const [sortBy, setSortBy] = useState<'priority' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  // Seeding state
+  const [seeding, setSeeding] = useState(false);
 
   // Sorting logic
   const handleSort = (column: 'priority') => {
@@ -73,6 +79,31 @@ export function MetricDisplayConfigTab({
       }
     });
   }, [allMetrics, sortBy, sortDirection]);
+
+  // Seed database with current registry values
+  const handleSeed = async () => {
+    if (!confirm('This will seed the database with all current metric definitions from the code. Existing customizations will be preserved, but new metrics will be added. Continue?')) {
+      return;
+    }
+
+    setSeeding(true);
+    try {
+      const result = await seedMetricDisplayConfigAction();
+      if (result.success) {
+        success(`Successfully seeded ${result.seeded} metric display configs`);
+        // Reload to show the newly seeded configs
+        window.location.reload();
+      } else {
+        error(`Seeding failed: ${result.errors.join(', ')}`);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to seed metric display configs';
+      error(message);
+      console.error('[MetricDisplayConfigTab] Seeding failed:', err);
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   // Keyboard shortcut for save
   useEffect(() => {
@@ -226,6 +257,27 @@ export function MetricDisplayConfigTab({
               ? `Configure global default display settings for all metrics. ${referenceIndustryId ? `Showing ${referenceIndustryId} values for reference. ` : ''}Industries can override these defaults.`
               : `Configure display settings for ${industryName || industryId}. Overrides global defaults.`}
           </p>
+
+          {/* Seed Button */}
+          {isGlobal && (
+            <div className="mt-4">
+              <button
+                onClick={handleSeed}
+                disabled={seeding || loading}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                  seeding || loading
+                    ? 'bg-slate-700 text-slate-400 cursor-wait'
+                    : 'bg-green-600 hover:bg-green-500 text-white'
+                }`}
+                title="Seed database with current metric definitions from code"
+              >
+                {seeding ? '🌱 Seeding...' : '🌱 Seed Database'}
+              </button>
+              <p className="text-xs text-slate-500 mt-1">
+                Add any new metrics from the code to the database. Safe to run multiple times.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
