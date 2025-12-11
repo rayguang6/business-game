@@ -109,10 +109,6 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
   // Trigger random events for the active game
   useRandomEventTrigger();
 
-  const openSettings = () => {
-    pauseGame();
-    setSettingsOpen(true);
-  };
 
   const closeSettings = () => {
     setSettingsOpen(false);
@@ -133,15 +129,15 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
     <ErrorBoundary>
       <GameQueryProvider>
         <div id="game-shell" className="h-screen relative flex flex-col md:flex-row overflow-hidden">
-        {/* Mobile: Top Section - Game Canvas Area (flexible height) */}
+        {/* Mobile: Top Section - Game Canvas Area (40% height) */}
         {/* Desktop: Left Section - Game Canvas Area (50% width) */}
-        <div className="relative md:h-full md:w-1/2 flex items-center justify-center py-4 md:py-0 overflow-hidden">
+        <div className="relative h-[40vh] md:h-full md:w-1/2 flex items-center justify-center py-4 md:py-0 overflow-hidden">
           {/* Unified Top HUD Container */}
           <div className="absolute top-0 left-0 z-20 pt-2 sm:pt-3 md:pt-4 px-2 sm:px-3 md:px-4">
             <div className="flex flex-col items-start gap-2">
               {/* Top Section: Industry Info */}
               <div className="flex-shrink-0">
-                <TopBar onSettingsOpen={openSettings} />
+                <TopBar />
               </div>
 
               {/* Bottom Section: KeyMetrics HUD */}
