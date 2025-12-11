@@ -249,7 +249,7 @@ export function KeyMetrics() {
   // If config not ready, return minimal UI
   if (!isConfigReady) {
     return (
-      <div className="grid grid-cols-3 gap-1 sm:gap-1.5 md:gap-2 pt-1 sm:pt-1.5 md:pt-2">
+      <div className="grid grid-cols-1 gap-1 sm:gap-1.5 md:gap-2">
         <div className="flex items-center bg-black/65 py-0.5 sm:py-0.5 md:py-1 px-0.5 sm:px-0.5 md:px-1.5 rounded relative w-full min-w-0">
           {/* Icon positioned outside from the left with overflow design */}
           <div className="absolute -left-1 sm:-left-1.5 md:-left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 md:w-6 md:h-6 rounded-full flex items-center justify-center z-10 overflow-hidden">
@@ -266,7 +266,7 @@ export function KeyMetrics() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-1 sm:gap-1.5 md:gap-2 pt-1 sm:pt-1.5 md:pt-2">
+    <div className="grid grid-cols-1 gap-1 sm:gap-1.5 md:gap-2">
       {metricsData.map((metric, index) => (
         <div 
           key={index} 

@@ -12,7 +12,6 @@ import { SpriteLead } from './SpriteLead';
 import { SpriteStaff } from './SpriteStaff';
 import { GridOverlay } from './GridOverlay';
 import { LeadProgress } from '../ui/LeadProgress';
-import { KeyMetrics } from '../ui/KeyMetrics';
 import { DEFAULT_INDUSTRY_ID, getBusinessStats, getBusinessMetrics, getLayoutConfig, getCapacityImageForIndustry } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
@@ -33,19 +32,7 @@ const CANVAS_CONFIG = {
   }
 };
 
-// HUD layout configuration - single variable to control all HUD display
-const HUD_CONFIG = {
-  // Set to true to show KeyMetrics HUD (vertical layout like mobile)
-  // Set to false to hide KeyMetrics HUD completely
-  SHOW_KEY_METRICS: true,
-  // Position configuration - positioned to avoid TopBar overlap
-  POSITION: {
-    top: 'top-20 sm:top-24 md:top-28', // Below TopBar (top-16 + margin)
-    left: 'left-4',
-    zIndex: 'z-20',
-    maxWidth: 'max-w-[140px]'
-  }
-};
+// HUD moved to GameClient for unified layout
 
 const formatDuration = (seconds: number): string => {
   const clamped = Math.max(0, Math.floor(seconds));
@@ -537,16 +524,6 @@ export function GameCanvas() {
         </div>
       )}
 
-      {/* KeyMetrics HUD - Single variable controls visibility and layout */}
-      {HUD_CONFIG.SHOW_KEY_METRICS && (
-        <div
-          className={`absolute ${HUD_CONFIG.POSITION.top} ${HUD_CONFIG.POSITION.left} ${HUD_CONFIG.POSITION.zIndex} ${HUD_CONFIG.POSITION.maxWidth}`}
-        >
-          <div className="space-y-2">
-            <KeyMetrics />
-          </div>
-        </div>
-      )}
 
       {/* Lead Progress Widget - Bottom Left - DISABLED FOR NOW */}
       {/* <LeadProgress position="bottom-left" /> */}

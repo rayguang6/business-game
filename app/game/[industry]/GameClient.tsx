@@ -7,6 +7,7 @@ import { useGameLoop } from '@/hooks/useGameLoop';
 import { useAudio } from '@/hooks/useAudio';
 import { TopBar } from '@/app/game/components/ui/TopBar';
 import { GameCanvas } from '@/app/game/components/canvas/GameCanvas';
+import { KeyMetrics } from '@/app/game/components/ui/KeyMetrics';
 import { HomeTab } from '@/app/game/components/tabs/HomeTab';
 import { UpgradesTab } from '@/app/game/components/tabs/UpgradesTab';
 import { MarketingTab } from '@/app/game/components/tabs/MarketingTab';
@@ -135,9 +136,19 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
         {/* Mobile: Top Section - Game Canvas Area (flexible height) */}
         {/* Desktop: Left Section - Game Canvas Area (50% width) */}
         <div className="relative md:h-full md:w-1/2 flex items-center justify-center py-4 md:py-0 overflow-hidden">
-          {/* TopBar Overlay */}
-          <div className="absolute top-0 left-0 right-0 z-20 pt-1 sm:pt-1.5 md:pt-2">
-            <TopBar onSettingsOpen={openSettings} />
+          {/* Unified Top HUD Container */}
+          <div className="absolute top-0 left-0 z-20 pt-2 sm:pt-3 md:pt-4 px-2 sm:px-3 md:px-4">
+            <div className="flex flex-col items-start gap-2">
+              {/* Top Section: Industry Info */}
+              <div className="flex-shrink-0">
+                <TopBar onSettingsOpen={openSettings} />
+              </div>
+
+              {/* Bottom Section: KeyMetrics HUD */}
+              <div className="flex-shrink-0 max-w-[140px]">
+                <KeyMetrics />
+              </div>
+            </div>
           </div>
 
           <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 z-30">
