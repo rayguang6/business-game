@@ -210,12 +210,12 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
                     )}
                     
                     <div className="relative z-10">
-                      <Image 
-                        src={tab.icon} 
+                      <Image
+                        src={tab.icon}
                         alt={tab.label}
                         width={32}
                         height={32}
-                        className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 transition-all duration-200"
+                        className="w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9 transition-all duration-200"
                       />
                     </div>
                     

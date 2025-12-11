@@ -140,6 +140,17 @@ const DEFAULT_CUSTOMER_IMAGES = [
   '/images/customer/customer8.png',
   '/images/customer/customer9.png',
   '/images/customer/customer10.png',
+  '/images/customer/customer11.png',
+  '/images/customer/customer12.png',
+  '/images/customer/customer13.png',
+  '/images/customer/customer14.png',
+  '/images/customer/customer15.png',
+  '/images/customer/customer16.png',
+  '/images/customer/customer17.png',
+  '/images/customer/customer18.png',
+  '/images/customer/customer19.png',
+  '/images/customer/customer20.png',
+  
 ];
 
 function createSharedBase(): Omit<IndustrySimulationConfig, 'id' | 'services' | 'upgrades' | 'events'> {

@@ -18,12 +18,14 @@ export default function GlobalConfigPage() {
         winCondition={globalConfig.winCondition}
         loseCondition={globalConfig.loseCondition}
         uiConfig={globalConfig.uiConfig}
+        customerImages={globalConfig.customerImages}
         onUpdateMetrics={globalConfig.updateMetrics}
         onUpdateStats={globalConfig.updateStats}
         onUpdateMovement={globalConfig.updateMovement}
         onUpdateWinCondition={globalConfig.updateWinCondition}
         onUpdateLoseCondition={globalConfig.updateLoseCondition}
         onUpdateUiConfig={globalConfig.updateUiConfig}
+        onUpdateMediaConfig={globalConfig.updateMediaConfig}
         onSave={globalConfig.save}
       />
     </div>

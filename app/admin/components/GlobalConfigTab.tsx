@@ -22,12 +22,14 @@ interface GlobalConfigTabProps {
   winCondition: WinCondition | null;
   loseCondition: LoseCondition | null;
   uiConfig: UiConfig;
+  customerImages: string[];
   onUpdateMetrics: (updates: Partial<BusinessMetrics>) => void;
   onUpdateStats: (updates: Partial<BusinessStats>) => void;
   onUpdateMovement: (movement: MovementConfig | null) => void;
   onUpdateWinCondition: (updates: Partial<WinCondition>) => void;
   onUpdateLoseCondition: (updates: Partial<LoseCondition>) => void;
   onUpdateUiConfig: (updates: Partial<UiConfig>) => void;
+  onUpdateMediaConfig: (updates: { customerImages?: string[] }) => void;
   onSave: () => Promise<void>;
 }
 
@@ -40,12 +42,14 @@ export function GlobalConfigTab({
   winCondition,
   loseCondition,
   uiConfig,
+  customerImages,
   onUpdateMetrics,
   onUpdateStats,
   onUpdateMovement,
   onUpdateWinCondition,
   onUpdateLoseCondition,
   onUpdateUiConfig,
+  onUpdateMediaConfig,
   onSave,
 }: GlobalConfigTabProps) {
   // Helper to get value or empty string for inputs
@@ -593,6 +597,61 @@ export function GlobalConfigTab({
             >
               {globalSaving ? '💾 Saving…' : '💾 Save Config (⌘↵)'}
             </button>
+          </div>
+        </div>
+
+        {/* Customer Images Configuration */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-200">Customer Images</h3>
+              <p className="text-sm text-slate-400">Configure paths to customer sprite images</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-semibold text-slate-300 mb-2">Customer Image Paths</label>
+              <div className="space-y-2">
+                {customerImages.map((image, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={image}
+                      onChange={(e) => {
+                        const newImages = [...customerImages];
+                        newImages[index] = e.target.value;
+                        onUpdateMediaConfig({ customerImages: newImages });
+                      }}
+                      className="flex-1 rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200 text-sm"
+                      placeholder="/images/customer/customer1.png"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newImages = customerImages.filter((_, i) => i !== index);
+                        onUpdateMediaConfig({ customerImages: newImages });
+                      }}
+                      className="px-3 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    onUpdateMediaConfig({ customerImages: [...customerImages, ''] });
+                  }}
+                  className="w-full px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm"
+                >
+                  + Add Customer Image
+                </button>
+              </div>
+              <p className="text-xs text-slate-500 mt-2">
+                Customer images are used for customer sprites in the game. Each customer gets assigned an image based on their ID.
+              </p>
+            </div>
           </div>
         </div>
 
