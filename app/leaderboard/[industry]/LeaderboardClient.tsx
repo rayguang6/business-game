@@ -30,8 +30,10 @@ export default function LeaderboardClient({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState<LeaderboardMetric>(currentMetric);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQueries, setSearchQueries] = useState<{cash: string; leveragedTime: string}>({
+    cash: '',
+    leveragedTime: ''
+  });
   const [pagination, setPagination] = useState<PaginationState>({
     cash: {
       entries: cashLeaderboard,
@@ -45,23 +47,17 @@ export default function LeaderboardClient({
     },
   });
 
-  const handleTabChange = (metric: LeaderboardMetric) => {
-    setActiveTab(metric);
-    const newSearchParams = new URLSearchParams(searchParams);
-    newSearchParams.set('metric', metric);
-    router.push(`?${newSearchParams.toString()}`, { scroll: false });
-  };
 
-  // Get filtered and paginated entries for current tab
-  const getCurrentLeaderboard = () => {
-    const currentState = pagination[activeTab];
+  // Get filtered and paginated entries for a specific metric
+  const getLeaderboardData = (metric: LeaderboardMetric) => {
+    const currentState = pagination[metric];
     const allEntries = currentState.entries;
 
     // Filter by search query
-    const filteredEntries = searchQuery.trim() === ''
+    const filteredEntries = searchQueries[metric].trim() === ''
       ? allEntries
       : allEntries.filter(entry =>
-          entry.username.toLowerCase().includes(searchQuery.toLowerCase())
+          entry.username.toLowerCase().includes(searchQueries[metric].toLowerCase())
         );
 
     // Calculate pagination
@@ -77,18 +73,18 @@ export default function LeaderboardClient({
     };
   };
 
-  const goToPage = (page: number) => {
+  const goToPage = (metric: LeaderboardMetric, page: number) => {
     setPagination(prev => ({
       ...prev,
-      [activeTab]: {
-        ...prev[activeTab],
-        currentPage: Math.max(1, Math.min(page, prev[activeTab].totalPages))
+      [metric]: {
+        ...prev[metric],
+        currentPage: Math.max(1, Math.min(page, prev[metric].totalPages))
       }
     }));
   };
 
-  const formatValue = (entry: LeaderboardEntry): string => {
-    if (activeTab === 'cash') {
+  const formatValue = (entry: LeaderboardEntry, metric: LeaderboardMetric): string => {
+    if (metric === 'cash') {
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD',
@@ -103,12 +99,12 @@ export default function LeaderboardClient({
     }
   };
 
-  const getMetricLabel = (): string => {
-    return activeTab === 'cash' ? 'Cash' : 'Leveraged Time';
+  const getMetricLabel = (metric: LeaderboardMetric): string => {
+    return metric === 'cash' ? 'Cash' : 'Leveraged Time';
   };
 
-  const getMetricIcon = (): string => {
-    return activeTab === 'cash' ? '💰' : '⏱️';
+  const getMetricIcon = (metric: LeaderboardMetric): string => {
+    return metric === 'cash' ? '💰' : '⏱️';
   };
 
   const formatDate = (date: Date): string => {
@@ -147,12 +143,11 @@ export default function LeaderboardClient({
     }
   };
 
-  const { entries: currentLeaderboard, totalEntries, totalPages, currentPage } = getCurrentLeaderboard();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-400 to-blue-700 text-white">
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           {/* Back Button */}
           <div className="mb-6">
             <GameButton
@@ -169,22 +164,25 @@ export default function LeaderboardClient({
             <h2 className="text-2xl font-semibold mb-4">{industry.name}</h2>
           </div>
 
-          {/* Search and Tabs */}
-          <div className="flex flex-col items-center gap-6 mb-8">
-            {/* Search Input */}
-            <div className="w-full max-w-md">
+          {/* Search Inputs */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Cash Leaderboard Search */}
+            <div className="flex flex-col items-center gap-4">
+              <h3 className="text-xl font-semibold flex items-center gap-2">
+                💰 Highest Cash
+              </h3>
               <input
                 type="text"
                 placeholder="Search by username..."
-                value={searchQuery}
+                value={searchQueries.cash}
                 onChange={(e) => {
                   const query = e.target.value;
-                  setSearchQuery(query);
+                  setSearchQueries(prev => ({ ...prev, cash: query }));
                   // Reset to first page when searching
                   setPagination(prev => ({
                     ...prev,
-                    [activeTab]: {
-                      ...prev[activeTab],
+                    cash: {
+                      ...prev.cash,
                       currentPage: 1
                     }
                   }));
@@ -193,129 +191,247 @@ export default function LeaderboardClient({
               />
             </div>
 
-            {/* Tabs */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-1">
-              <button
-                onClick={() => handleTabChange('cash')}
-                className={`px-6 py-3 rounded-md font-semibold transition-all duration-200 ${
-                  activeTab === 'cash'
-                    ? 'bg-white/20 text-white shadow-lg'
-                    : 'text-blue-100 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                💰 Highest Cash
-              </button>
-              <button
-                onClick={() => handleTabChange('leveragedTime')}
-                className={`px-6 py-3 rounded-md font-semibold transition-all duration-200 ${
-                  activeTab === 'leveragedTime'
-                    ? 'bg-white/20 text-white shadow-lg'
-                    : 'text-blue-100 hover:text-white hover:bg-white/10'
-                }`}
-              >
+            {/* Leveraged Time Leaderboard Search */}
+            <div className="flex flex-col items-center gap-4">
+              <h3 className="text-xl font-semibold flex items-center gap-2">
                 ⏱️ Highest Leveraged Time
-              </button>
+              </h3>
+              <input
+                type="text"
+                placeholder="Search by username..."
+                value={searchQueries.leveragedTime}
+                onChange={(e) => {
+                  const query = e.target.value;
+                  setSearchQueries(prev => ({ ...prev, leveragedTime: query }));
+                  // Reset to first page when searching
+                  setPagination(prev => ({
+                    ...prev,
+                    leveragedTime: {
+                      ...prev.leveragedTime,
+                      currentPage: 1
+                    }
+                  }));
+                }}
+                className="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50"
+              />
             </div>
           </div>
 
-          {/* Leaderboard Table */}
-          {currentLeaderboard.length === 0 ? (
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 text-center">
-              <p className="text-xl mb-4">
-                {searchQuery.trim() !== '' ? 'No players found' : 'No entries yet'}
-              </p>
-              <p className="text-blue-100">
-                {searchQuery.trim() !== ''
-                  ? `No players match "${searchQuery}"`
-                  : `Be the first to compete in the ${getMetricLabel().toLowerCase()} leaderboard for this industry!`
-                }
-              </p>
-            </div>
-          ) : (
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-white/20">
-                    <tr>
-                      <th className="px-6 py-4 text-left font-semibold">Rank</th>
-                      <th className="px-6 py-4 text-left font-semibold">Username</th>
-                      <th className="px-6 py-4 text-right font-semibold">
-                        {activeTab === 'cash' ? 'Cash' : 'Leveraged Time'}
-                      </th>
-                      <th className="px-6 py-4 text-center font-semibold">Result</th>
-                      <th className="px-6 py-4 text-left font-semibold">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentLeaderboard.map((entry, index) => {
-                      // Calculate global rank (considering search and pagination)
-                      const entriesPerPage = LEADERBOARD_DISPLAY_PAGE_SIZE;
-                      const globalRank = (currentPage - 1) * entriesPerPage + index + 1;
+          {/* Leaderboard Tables */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Cash Leaderboard */}
+            <div>
+              {(() => {
+                const cashData = getLeaderboardData('cash');
+                return (
+                  <>
+                    {cashData.entries.length === 0 ? (
+                      <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 text-center">
+                        <p className="text-xl mb-4">
+                          {searchQueries.cash.trim() !== '' ? 'No players found' : 'No entries yet'}
+                        </p>
+                        <p className="text-blue-100">
+                          {searchQueries.cash.trim() !== ''
+                            ? `No players match "${searchQueries.cash}"`
+                            : 'Be the first to compete in the cash leaderboard for this industry!'
+                          }
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden">
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead className="bg-white/20">
+                              <tr>
+                                <th className="px-4 py-3 text-left font-semibold">Rank</th>
+                                <th className="px-4 py-3 text-left font-semibold">Username</th>
+                                <th className="px-4 py-3 text-right font-semibold">Cash</th>
+                                <th className="px-4 py-3 text-center font-semibold">Result</th>
+                                <th className="px-4 py-3 text-left font-semibold">Date</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {cashData.entries.map((entry, index) => {
+                                // Calculate global rank (considering search and pagination)
+                                const entriesPerPage = LEADERBOARD_DISPLAY_PAGE_SIZE;
+                                const globalRank = (cashData.currentPage - 1) * entriesPerPage + index + 1;
 
-                      return (
-                        <tr
-                          key={entry.id}
-                          className={`border-t border-white/10 ${
-                            index % 2 === 0 ? 'bg-white/5' : 'bg-white/10'
-                          }`}
+                                return (
+                                  <tr
+                                    key={`cash-${entry.id}`}
+                                    className={`border-t border-white/10 ${
+                                      index % 2 === 0 ? 'bg-white/5' : 'bg-white/10'
+                                    }`}
+                                  >
+                                    <td className="px-4 py-3 font-bold text-lg">
+                                      #{globalRank}
+                                    </td>
+                                    <td className="px-4 py-3 font-medium">{entry.username}</td>
+                                    <td className="px-4 py-3 text-right font-semibold text-lg">
+                                      {formatValue(entry, 'cash')}
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                      <span className="inline-flex items-center gap-1">
+                                        <span>{getGameResultIcon(entry.gameOverReason)}</span>
+                                        <span className="text-sm">{getGameResultLabel(entry.gameOverReason)}</span>
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-blue-100">
+                                      {formatDate(entry.createdAt)}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Cash Pagination */}
+                    {cashData.totalPages > 1 && (
+                      <div className="mt-4 flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => goToPage('cash', cashData.currentPage - 1)}
+                          disabled={cashData.currentPage <= 1}
+                          className="px-3 py-2 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:cursor-not-allowed backdrop-blur-sm rounded-lg font-semibold text-white text-sm transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-white/30"
                         >
-                          <td className="px-6 py-4 font-bold text-lg">
-                            #{globalRank}
-                          </td>
-                        <td className="px-6 py-4 font-medium">{entry.username}</td>
-                        <td className="px-6 py-4 text-right font-semibold text-lg">
-                          {formatValue(entry)}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="inline-flex items-center gap-1">
-                            <span>{getGameResultIcon(entry.gameOverReason)}</span>
-                            <span className="text-sm">{getGameResultLabel(entry.gameOverReason)}</span>
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-blue-100">
-                          {formatDate(entry.createdAt)}
-                        </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                          ←
+                        </button>
+
+                        <span className="px-3 py-2 bg-white/10 backdrop-blur-sm rounded-lg font-semibold text-white text-sm">
+                          {cashData.currentPage} of {cashData.totalPages}
+                        </span>
+
+                        <button
+                          onClick={() => goToPage('cash', cashData.currentPage + 1)}
+                          disabled={cashData.currentPage >= cashData.totalPages}
+                          className="px-3 py-2 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:cursor-not-allowed backdrop-blur-sm rounded-lg font-semibold text-white text-sm transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-white/30"
+                        >
+                          →
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Cash Footer Info */}
+                    <div className="mt-2 text-center text-blue-100 text-xs">
+                      <p>
+                        Showing {cashData.entries.length} of {cashData.totalEntries} entries
+                        {searchQueries.cash.trim() !== '' && ` (filtered by "${searchQueries.cash}")`}
+                      </p>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
-          )}
 
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="mt-6 flex items-center justify-center gap-4">
-              <button
-                onClick={() => goToPage(currentPage - 1)}
-                disabled={currentPage <= 1}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:cursor-not-allowed backdrop-blur-sm rounded-lg font-semibold text-white transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-white/30"
-              >
-                ← Previous
-              </button>
+            {/* Leveraged Time Leaderboard */}
+            <div>
+              {(() => {
+                const timeData = getLeaderboardData('leveragedTime');
+                return (
+                  <>
+                    {timeData.entries.length === 0 ? (
+                      <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 text-center">
+                        <p className="text-xl mb-4">
+                          {searchQueries.leveragedTime.trim() !== '' ? 'No players found' : 'No entries yet'}
+                        </p>
+                        <p className="text-blue-100">
+                          {searchQueries.leveragedTime.trim() !== ''
+                            ? `No players match "${searchQueries.leveragedTime}"`
+                            : 'Be the first to compete in the leveraged time leaderboard for this industry!'
+                          }
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden">
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead className="bg-white/20">
+                              <tr>
+                                <th className="px-4 py-3 text-left font-semibold">Rank</th>
+                                <th className="px-4 py-3 text-left font-semibold">Username</th>
+                                <th className="px-4 py-3 text-right font-semibold">Time</th>
+                                <th className="px-4 py-3 text-center font-semibold">Result</th>
+                                <th className="px-4 py-3 text-left font-semibold">Date</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {timeData.entries.map((entry, index) => {
+                                // Calculate global rank (considering search and pagination)
+                                const entriesPerPage = LEADERBOARD_DISPLAY_PAGE_SIZE;
+                                const globalRank = (timeData.currentPage - 1) * entriesPerPage + index + 1;
 
-              <span className="px-6 py-2 bg-white/10 backdrop-blur-sm rounded-lg font-semibold text-white">
-                Page {currentPage} of {totalPages}
-              </span>
+                                return (
+                                  <tr
+                                    key={`time-${entry.id}`}
+                                    className={`border-t border-white/10 ${
+                                      index % 2 === 0 ? 'bg-white/5' : 'bg-white/10'
+                                    }`}
+                                  >
+                                    <td className="px-4 py-3 font-bold text-lg">
+                                      #{globalRank}
+                                    </td>
+                                    <td className="px-4 py-3 font-medium">{entry.username}</td>
+                                    <td className="px-4 py-3 text-right font-semibold text-lg">
+                                      {formatValue(entry, 'leveragedTime')}
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                      <span className="inline-flex items-center gap-1">
+                                        <span>{getGameResultIcon(entry.gameOverReason)}</span>
+                                        <span className="text-sm">{getGameResultLabel(entry.gameOverReason)}</span>
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-blue-100">
+                                      {formatDate(entry.createdAt)}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
 
-              <button
-                onClick={() => goToPage(currentPage + 1)}
-                disabled={currentPage >= totalPages}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:cursor-not-allowed backdrop-blur-sm rounded-lg font-semibold text-white transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-white/30"
-              >
-                Next →
-              </button>
+                    {/* Leveraged Time Pagination */}
+                    {timeData.totalPages > 1 && (
+                      <div className="mt-4 flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => goToPage('leveragedTime', timeData.currentPage - 1)}
+                          disabled={timeData.currentPage <= 1}
+                          className="px-3 py-2 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:cursor-not-allowed backdrop-blur-sm rounded-lg font-semibold text-white text-sm transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-white/30"
+                        >
+                          ←
+                        </button>
+
+                        <span className="px-3 py-2 bg-white/10 backdrop-blur-sm rounded-lg font-semibold text-white text-sm">
+                          {timeData.currentPage} of {timeData.totalPages}
+                        </span>
+
+                        <button
+                          onClick={() => goToPage('leveragedTime', timeData.currentPage + 1)}
+                          disabled={timeData.currentPage >= timeData.totalPages}
+                          className="px-3 py-2 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:cursor-not-allowed backdrop-blur-sm rounded-lg font-semibold text-white text-sm transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-white/30"
+                        >
+                          →
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Leveraged Time Footer Info */}
+                    <div className="mt-2 text-center text-blue-100 text-xs">
+                      <p>
+                        Showing {timeData.entries.length} of {timeData.totalEntries} entries
+                        {searchQueries.leveragedTime.trim() !== '' && ` (filtered by "${searchQueries.leveragedTime}")`}
+                      </p>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
-          )}
-
-          {/* Footer Info */}
-          <div className="mt-4 text-center text-blue-100 text-sm">
-            <p>
-              Showing {currentLeaderboard.length} of {totalEntries} entries
-              {searchQuery.trim() !== '' && ` (filtered by "${searchQuery}")`}
-            </p>
           </div>
+
         </div>
       </div>
     </div>
