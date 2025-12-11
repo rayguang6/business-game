@@ -218,7 +218,7 @@ export function SpriteCustomer({ customer, scaleFactor }: SpriteCustomerProps) {
 
           {/* Price */}
           <div className="text-green-600">
-            ${customer.finalPrice}
+            ${customer.finalPrice?.toFixed(2) || '...'}
           </div>
 
           {/* Progress Bar */}

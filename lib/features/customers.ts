@@ -44,7 +44,7 @@ export interface Customer {
   targetY?: number;
   path?: GridPosition[]; // Current path waypoints (excluding current tile)
   service: Service;
-  finalPrice: number; // Final price customer will pay (calculated at spawn time)
+  finalPrice?: number; // Final price customer will pay (calculated when service starts)
   status: CustomerStatus;
   serviceTimeLeft: number; // ticks remaining for service completion
   patienceLeft: number; // ticks remaining before leaving (while waiting)
@@ -119,9 +119,6 @@ export function spawnCustomer(
   // Convert the aggregated speed multiplier into a shorter duration (higher speed = shorter time)
   const effectiveDuration = service.duration / Math.max(serviceSpeedMultiplier, 0.1);
 
-  // Calculate the final price customer will pay (including all current multipliers)
-  const finalPrice = calculateFinalServicePrice(service, industryId);
-
   return {
     id: Math.random().toString(36).substr(2, 9),
     imageSrc,
@@ -129,7 +126,7 @@ export function spawnCustomer(
     y: spawnPosition.y,
     facingDirection: 'down',
     service: service,
-    finalPrice: finalPrice,
+    // finalPrice will be calculated when service starts
     status: CustomerStatus.Spawning, // Start at door!
     serviceTimeLeft: secondsToTicks(effectiveDuration, industryId),
     patienceLeft: patience,
@@ -322,6 +319,7 @@ export function tickCustomer(customer: Customer): Customer {
  * Starts service for a customer (assigns to a room)
  * Recalculates serviceTimeLeft based on current serviceSpeedMultiplier
  * This ensures service speed upgrades apply to waiting customers
+ * Also calculates the final price when service starts
  */
 export function startService(
   customer: Customer,
@@ -333,12 +331,16 @@ export function startService(
   // This ensures that service speed upgrades apply to customers who were waiting
   const effectiveDuration = customer.service.duration / Math.max(serviceSpeedMultiplier, 0.1);
   const newServiceTimeLeft = secondsToTicks(effectiveDuration, industryId);
-  
+
+  // Calculate the final price when service starts (not when customer spawns)
+  const finalPrice = calculateFinalServicePrice(customer.service, industryId);
+
   return {
     ...customer,
     status: CustomerStatus.WalkingToRoom, // First walk to room, then service starts
     roomId,
     serviceTimeLeft: newServiceTimeLeft,
+    finalPrice: finalPrice,
   };
 }
 

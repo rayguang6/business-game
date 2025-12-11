@@ -683,9 +683,9 @@ function processCustomersForTick({
       customersServedCount++;
 
 
-      // Use the final price that was calculated when customer spawned
+      // Use the final price that was calculated when customer started service
       // This ensures UI display matches actual revenue earned
-      const serviceRevenue = updatedCustomer.finalPrice;
+      const serviceRevenue = updatedCustomer.finalPrice || 0;
 
       // Add revenue
       const oldCash = metricsAccumulator.cash;
