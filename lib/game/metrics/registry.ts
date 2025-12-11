@@ -87,6 +87,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
       showInAdmin: true,
       priority: 1,
     },
+    iconPath: '/images/icons/cash.png',
     canBeModifiedByEffects: true,
   },
   
@@ -107,6 +108,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
       priority: 2,
       unit: ' EXP',
     },
+    iconPath: '/images/icons/exp.png',
     canBeModifiedByEffects: true,
   },
   
@@ -195,6 +197,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
       showInAdmin: false,
       unit: '/m',
     },
+    iconPath: '/images/icons/leads-per-month.png',
     canBeModifiedByEffects: true,
   },
   
@@ -214,6 +217,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
       priority: 5,
       unit: '%',
     },
+    iconPath: null, // No specific icon for conversion rate
     canBeModifiedByEffects: true,
   },
 
@@ -290,6 +294,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
       showInAdmin: true,
       unit: 'h',
     },
+    iconPath: '/images/icons/my-time.png',
     canBeModifiedByEffects: true,
   },
   
@@ -310,6 +315,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
       priority: 3, // Display after MyTime
       unit: 'h',
     },
+    iconPath: '/images/icons/leveraged-time.png',
     canBeModifiedByEffects: true,
   },
   
@@ -485,7 +491,7 @@ export function getMergedMetricDefinition(
       priority: displayConfig.priority ?? codeDef.display.priority,
       unit: displayConfig.unit || codeDef.display.unit,
     },
-    iconPath: displayConfig.iconPath,
+    iconPath: displayConfig.iconPath ?? codeDef.iconPath, // DB overrides registry default
   };
 }
 

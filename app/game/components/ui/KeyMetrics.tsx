@@ -149,14 +149,14 @@ export function KeyMetrics() {
 
         // Get unit and iconPath from merged configuration (DB override or code default)
         const unit = merged.display.unit || '';
-        const iconPath = merged.iconPath;
+        const iconPath = merged.iconPath ?? null;
 
         // Map metric ID to display data
         switch (def.id) {
           case GameMetric.Cash:
             value = `${metrics.cash.toLocaleString()}${unit}`;
             icon = getMetricIcon(def.id);
-            image = iconPath || '/images/icons/finance.png'; // Use DB iconPath with fallback
+            image = iconPath; // Use merged iconPath (DB → registry fallback)
             color = 'text-green-400';
             feedback = feedbackByMetric.cash;
             break;
@@ -166,7 +166,7 @@ export function KeyMetrics() {
             const expRequiredForCurrentLevel = getExpRequiredForCurrentLevel(metrics.exp, expPerLevel);
             value = `Level ${currentLevel} (${currentLevelProgress}/${expRequiredForCurrentLevel}${unit})`;
             icon = getMetricIcon(def.id);
-            image = iconPath || '/images/icons/marketing.png'; // Use DB iconPath with fallback
+            image = iconPath; // Use merged iconPath (DB → registry fallback)
             color = 'text-yellow-400';
             feedback = feedbackByMetric.exp;
             break;
@@ -177,7 +177,7 @@ export function KeyMetrics() {
             // Display format: just show myTime/myTimeCapacity (never show formulas)
             value = `${metrics.myTime}/${maxMyTime}${unit}`;
             icon = getMetricIcon(def.id);
-            image = iconPath || '/images/icons/upgrades.png'; // Use DB iconPath with fallback
+            image = iconPath; // Use merged iconPath (DB → registry fallback)
             color = 'text-cyan-400';
             feedback = feedbackByMetric.myTime || [];
             break;
@@ -188,7 +188,7 @@ export function KeyMetrics() {
             // Display format: leveragedTime/leveragedTimeCapacity (e.g., "0/0", "10/10 h")
             value = `${metrics.leveragedTime}/${maxLeveragedTime}${unit}`;
             icon = getMetricIcon(def.id);
-            image = iconPath || '/images/icons/upgrades.png'; // Use DB iconPath with fallback
+            image = iconPath; // Use merged iconPath (DB → registry fallback)
             color = 'text-cyan-400';
             feedback = feedbackByMetric.leveragedTime || [];
             break;
@@ -196,7 +196,7 @@ export function KeyMetrics() {
           case GameMetric.ConversionRate:
             value = `${conversionRate?.toFixed(1) ?? 0}${unit}`;
             icon = getMetricIcon(def.id);
-            image = iconPath || null; // Use DB iconPath (no fallback for conversion rate)
+            image = iconPath; // Use merged iconPath (DB → registry fallback)
             color = 'text-blue-400';
             feedback = [];
             break;
@@ -207,7 +207,7 @@ export function KeyMetrics() {
             const calculatedLeadsPerMonth = Math.max(0, Math.round(effectManager.calculate(GameMetric.LeadsPerMonth, baseLeadsPerMonth)));
             value = `${calculatedLeadsPerMonth}${unit}`;
             icon = getMetricIcon(def.id);
-            image = iconPath || '/images/icons/marketing.png';
+            image = iconPath; // Use merged iconPath (DB → registry fallback)
             color = 'text-cyan-400';
             feedback = [];
             break;
@@ -219,7 +219,7 @@ export function KeyMetrics() {
             const calculatedCustomerPatience = Math.max(1, Math.round(effectManager.calculate(GameMetric.CustomerPatienceSeconds, baseCustomerPatience)));
             value = `${calculatedCustomerPatience}${unit}`;
             icon = getMetricIcon(def.id);
-            image = iconPath || '/images/icons/customers.png';
+            image = iconPath; // Use merged iconPath (DB → registry fallback)
             color = 'text-orange-400';
             feedback = [];
             break;
@@ -229,7 +229,7 @@ export function KeyMetrics() {
             const metricValue = (metrics as unknown as Record<string, number>)[def.id] ?? 0;
             value = `${metricValue}${unit}`;
             icon = getMetricIcon(def.id);
-            image = iconPath || null; // Use DB iconPath (no fallback for other metrics)
+            image = iconPath; // Use merged iconPath (DB → registry fallback)
             color = 'text-gray-400';
             feedback = [];
         }
@@ -256,7 +256,7 @@ export function KeyMetrics() {
             <span className="text-white text-micro sm:text-ultra-sm md:text-sm">💵</span>
           </div>
 
-          <div className="flex flex-col min-w-0 flex-1 pl-0.5 sm:pl-1 md:pl-2">
+          <div className="flex flex-col min-w-0 flex-1 pl-1 sm:pl-2 md:pl-3">
             <span className="text-caption font-semibold text-green-400 truncate">Cash</span>
             <span className="text-white text-label font-bold truncate">{metrics.cash.toLocaleString()}</span>
           </div>
@@ -274,25 +274,21 @@ export function KeyMetrics() {
         >
           {/* Icon positioned outside from the left with overflow design */}
           <div className="absolute -left-1 sm:-left-1.5 md:-left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 md:w-6 md:h-6 rounded-full flex items-center justify-center z-10 overflow-hidden">
-            {/* IMAGE-FIRST MODE (uncomment to use images with icon fallback) */}
-            {/* {metric.image ? (
+            {/* IMAGE-FIRST MODE: Use database images as single source of truth with icon fallback */}
+            {metric.image ? (
               <Image
                 src={metric.image}
                 alt={metric.label}
-                width={20}
-                height={20}
-                className="w-full h-full object-cover rounded-full"
+                fill
+                className="object-cover rounded-full"
               />
             ) : (
               <span className="text-white text-sm sm:text-base md:text-lg">{metric.icon}</span>
-            )} */}
-
-            {/* ICON-FIRST MODE (uncomment to use icons only) */}
-            <span className="text-white text-sm sm:text-base md:text-lg">{metric.icon}</span>
+            )}
           </div>
 
-          <div className="flex flex-col min-w-0 flex-1 pl-0.5 sm:pl-1 md:pl-2">
-            <span 
+          <div className="flex flex-col min-w-0 flex-1 pl-2 sm:pl-3 md:pl-4">
+            <span
               className={`text-caption font-semibold ${metric.color} truncate`}
               style={{
                 textShadow: '0 0 2px rgba(0, 0, 0, 0.95), 0 1px 1px rgba(0, 0, 0, 0.8), 0 -1px 1px rgba(0, 0, 0, 0.8)'
