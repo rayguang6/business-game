@@ -186,7 +186,7 @@ export function useCategories(industryId: string, categoryId?: string) {
       orderIndex: '0',
       description: '',
     });
-  }, [industryId]);
+  }, [industryId, error]);
 
   const saveCategory = useCallback(async () => {
     if (!industryId) {
@@ -217,7 +217,7 @@ export function useCategories(industryId: string, categoryId?: string) {
     };
 
     saveMutation.mutate(payload);
-  }, [industryId, form, saveMutation]);
+  }, [industryId, form, saveMutation, error]);
 
   const deleteCategoryHandler = useCallback(async () => {
     if (isCreating || !selectedId) return;

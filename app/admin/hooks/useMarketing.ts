@@ -415,7 +415,7 @@ export function useMarketing(industryId: string, campaignId?: string) {
 
     console.log('[Marketing] Payload to save:', JSON.stringify(payload, null, 2));
     saveMutation.mutate(payload);
-  }, [industryId, form, effectsForm, levelsForm, saveMutation]);
+  }, [industryId, form, effectsForm, levelsForm, saveMutation, error]);
 
   const deleteCampaignHandler = useCallback(async () => {
     if (isCreating || !selectedId) return;

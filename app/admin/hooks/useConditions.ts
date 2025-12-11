@@ -200,7 +200,7 @@ export function useConditions(industryId: string, conditionId?: string) {
       value: '0',
     });
     
-  }, [industryId]);
+  }, [industryId, error]);
 
   const saveCondition = useCallback(async () => {
     if (!industryId) {
@@ -228,7 +228,7 @@ export function useConditions(industryId: string, conditionId?: string) {
       value,
     };
     saveMutation.mutate(payload);
-  }, [industryId, form, saveMutation]);
+  }, [industryId, form, saveMutation, error]);
 
   const deleteConditionHandler = useCallback(async () => {
     if (isCreating || !selectedId) return;

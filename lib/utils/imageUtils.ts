@@ -81,7 +81,7 @@ export async function uploadToSupabaseStorage(
   bucket: string,
   path: string,
   file: File | Blob,
-  supabaseClient: any
+  supabaseClient: import('@supabase/supabase-js').SupabaseClient
 ): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
     const { data, error } = await supabaseClient.storage

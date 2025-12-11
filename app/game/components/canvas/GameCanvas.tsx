@@ -25,7 +25,7 @@ const CANVAS_CONFIG = {
   REFERENCE_SIZE: 320, // 10 tiles × 32px = 320px
   // Responsive breakpoints
   BREAKPOINTS: {
-    mobile: 320,   // 1x scale
+    mobile:280,   // 1x scale
     tablet: 384,   // 1.2x scale
     desktop:560,  // 1.75x scale
     large: 960     // 2.25x scale for very wide screens

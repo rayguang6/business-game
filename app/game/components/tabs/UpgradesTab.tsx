@@ -1,377 +1,74 @@
 'use client';
 
 import React, { useMemo, useState, useCallback } from 'react';
-import GameButton from '@/app/components/ui/GameButton';
-import { useGameStore } from '@/lib/store/gameStore';
-import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
-import type { UpgradeEffect, UpgradeDefinition } from '@/lib/game/config';
-import { IndustryId } from '@/lib/game/types';
-import { GameMetric, EffectType } from '@/lib/game/effectManager';
-import { getMetricIcon } from '@/lib/game/metrics/registry';
-import { useRequirements } from '@/lib/hooks/useRequirements';
 import { useConfigStore, selectUpgradesForIndustry } from '@/lib/store/configStore';
-import { Card } from '@/app/components/ui/Card';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
+import { UpgradeCard } from '../ui/UpgradeCard';
+import GameButton from '@/app/components/ui/GameButton';
 import { Modal } from '@/app/components/ui/Modal';
 import type { Staff } from '@/lib/features/staff';
 import { calculateSeveranceCost, SEVERANCE_MULTIPLIER } from '@/lib/features/staff';
-import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
 import { useCategories } from '../../hooks/useCategories';
-import { getBusinessStats } from '@/lib/game/config';
-import { effectManager } from '@/lib/game/effectManager';
-
+import { useGameStore } from '@/lib/store/gameStore';
+import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
+import type { IndustryId } from '@/lib/game/types';
+import { GameMetric, EffectType } from '@/lib/game/effectManager';
+import { getMetricIcon } from '@/lib/game/metrics/registry';
+import { useRequirements } from '@/lib/hooks/useRequirements';
+import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
+    
 // METRIC_LABELS removed - now using merged definitions from registry + database
 
 const formatMagnitude = (value: number): string => {
   return Number.isInteger(value) ? Math.abs(value).toString() : Math.abs(value).toFixed(2);
 };
 
-const formatRawNumber = (value: number): string => {
-  return Number.isInteger(value) ? value.toString() : value.toFixed(2);
-};
-
-const formatCurrency = (value: number): string => `$${Math.abs(value).toLocaleString()}`;
-const formatRawCurrency = (value: number): string => `${value < 0 ? '-' : ''}$${Math.abs(value).toLocaleString()}`;
-
-// formatEffect moved inside component to use hook - see UpgradeCard component
-
-interface UpgradeCardProps {
-  upgrade: UpgradeDefinition;
-}
+// UpgradeCard component moved to separate file
 
 // Helper to compare effects and show differences
-function compareEffects(
-  currentEffects: UpgradeEffect[],
-  nextEffects: UpgradeEffect[],
-  formatEffect: (effect: UpgradeEffect) => string,
-): Array<{ effect: string; isNew: boolean; isImproved: boolean }> {
-  // Create a map of current effects by metric+type
-  const currentMap = new Map<string, UpgradeEffect>();
-  currentEffects.forEach((e) => {
-    const key = `${e.metric}_${e.type}`;
-    currentMap.set(key, e);
-  });
+// function compareEffects(
+//   currentEffects: UpgradeEffect[],
+//   nextEffects: UpgradeEffect[],
+//   formatEffect: (effect: UpgradeEffect) => string,
+// ): Array<{ effect: string; isNew: boolean; isImproved: boolean }> {
+//   // Create a map of current effects by metric+type
+//   const currentMap = new Map<string, UpgradeEffect>();
+//   currentEffects.forEach((e) => {
+//     const key = `${e.metric}_${e.type}`;
+//     currentMap.set(key, e);
+//   });
 
-  const result: Array<{ effect: string; isNew: boolean; isImproved: boolean }> = [];
-  nextEffects.forEach((e) => {
-    const key = `${e.metric}_${e.type}`;
-    const formatted = formatEffect(e);
-    const currentEffect = currentMap.get(key);
+//   const result: Array<{ effect: string; isNew: boolean; isImproved: boolean }> = [];
+//   nextEffects.forEach((e) => {
+//     const key = `${e.metric}_${e.type}`;
+//     const formatted = formatEffect(e);
+//     const currentEffect = currentMap.get(key);
     
-    if (!currentEffect) {
-      // This effect doesn't exist in current level - it's new
-      result.push({ effect: formatted, isNew: true, isImproved: false });
-    } else if (currentEffect.value !== e.value) {
-      // Value changed - check if it's an improvement (higher is better for most metrics)
-      // For Add/Percent types, positive values increasing is improvement
-      // For Multiply, >1 increasing is improvement, <1 decreasing is improvement
-      // For Set, we'll just mark as changed
-      const isImprovement = 
-        (e.type === EffectType.Add && e.value > currentEffect.value) ||
-        (e.type === EffectType.Percent && e.value > currentEffect.value) ||
-        (e.type === EffectType.Multiply && e.value > currentEffect.value && e.value >= 1) ||
-        (e.type === EffectType.Multiply && e.value < currentEffect.value && e.value < 1) ||
-        (e.type === EffectType.Set);
+//     if (!currentEffect) {
+//       // This effect doesn't exist in current level - it's new
+//       result.push({ effect: formatted, isNew: true, isImproved: false });
+//     } else if (currentEffect.value !== e.value) {
+//       // Value changed - check if it's an improvement (higher is better for most metrics)
+//       // For Add/Percent types, positive values increasing is improvement
+//       // For Multiply, >1 increasing is improvement, <1 decreasing is improvement
+//       // For Set, we'll just mark as changed
+//       const isImprovement = 
+//         (e.type === EffectType.Add && e.value > currentEffect.value) ||
+//         (e.type === EffectType.Percent && e.value > currentEffect.value) ||
+//         (e.type === EffectType.Multiply && e.value > currentEffect.value && e.value >= 1) ||
+//         (e.type === EffectType.Multiply && e.value < currentEffect.value && e.value < 1) ||
+//         (e.type === EffectType.Set);
       
-      result.push({ effect: formatted, isNew: false, isImproved: isImprovement });
-    } else {
-      // Same effect value
-      result.push({ effect: formatted, isNew: false, isImproved: false });
-    }
-  });
+//       result.push({ effect: formatted, isNew: false, isImproved: isImprovement });
+//     } else {
+//       // Same effect value
+//       result.push({ effect: formatted, isNew: false, isImproved: false });
+//     }
+//   });
 
-  return result;
-}
+//   return result;
+// }
 
-function UpgradeCard({ upgrade }: UpgradeCardProps) {
-  const { getUpgradeLevel, purchaseUpgrade, upgradesActivatedThisMonth } = useGameStore();
-  const selectedIndustry = useGameStore((state) => state.selectedIndustry);
-  const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-  const { getDisplayLabel } = useMetricDisplayConfigs(industryId);
-  // Subscribe to upgrades state to ensure re-renders when levels change
-  const upgrades = useGameStore((state) => state.upgrades);
-  // Subscribe to metrics with selector to ensure re-renders when metrics change
-  const metrics = useGameStore((state) => state.metrics);
-  const { availability, descriptions: requirementDescriptions } = useRequirements(upgrade.requirements);
-  const [showRequirementsModal, setShowRequirementsModal] = useState(false);
-
-  const formatEffect = useCallback((effect: UpgradeEffect): string => {
-    const { metric, type, value } = effect;
-    const label = getDisplayLabel(metric);
-    const sign = value >= 0 ? '+' : '-';
-    const absValue = Math.abs(value);
-
-    if (type === EffectType.Add) {
-      switch (metric) {
-        case GameMetric.Cash:
-        case GameMetric.MonthlyExpenses:
-        case GameMetric.ServiceRevenueFlatBonus:
-          return `${sign}${formatCurrency(value)} ${label}`;
-        case GameMetric.MyTime:
-          return `${sign}${formatMagnitude(value)}h ${label}`;
-        case GameMetric.LeadsPerMonth:
-          return `${sign}${formatMagnitude(value)} ${label}`;
-        case GameMetric.ServiceCapacity:
-          return `${sign}${formatMagnitude(value)} ${label}`;
-        default:
-          return `${sign}${formatMagnitude(value)} ${label}`;
-      }
-    }
-
-    if (type === EffectType.Percent) {
-      const percent = Math.round(absValue);
-      switch (metric) {
-        case GameMetric.LeadsPerMonth:
-          return `${sign}${percent}% ${label}`;
-        default:
-          return `${sign}${percent}% ${label}`;
-      }
-    }
-
-    if (type === EffectType.Multiply) {
-      const multiplier = Number.isInteger(value) ? value.toString() : value.toFixed(2);
-      return `×${multiplier} ${label}`;
-    }
-
-    if (type === EffectType.Set) {
-      switch (metric) {
-        case GameMetric.MonthlyExpenses:
-        case GameMetric.ServiceRevenueFlatBonus:
-          return `Set ${label} to ${formatRawCurrency(value)}`;
-        case GameMetric.LeadsPerMonth:
-          return `Set ${label} to ${formatRawNumber(value)}`;
-        default:
-          return `Set ${label} to ${formatRawNumber(value)}`;
-      }
-    }
-
-    return `${sign}${formatMagnitude(value)} ${label}`;
-  }, [getDisplayLabel]);
-
-  // Calculate current level from subscribed upgrades state
-  // currentLevel is 1-indexed: 0 = not purchased, 1 = level 1 purchased, 2 = level 2 purchased, etc.
-  const currentLevel = useMemo(() => upgrades[upgrade.id] || 0, [upgrades, upgrade.id]);
-  
-  // Get current level config (for display)
-  const currentLevelConfig = currentLevel > 0 && currentLevel <= upgrade.levels.length
-    ? upgrade.levels.find(l => l.level === currentLevel) || upgrade.levels[currentLevel - 1]
-    : null;
-  
-  // Get next level config (for purchase)
-  const nextLevelNumber = currentLevel + 1;
-  const nextLevelConfig = currentLevel < upgrade.maxLevel 
-    ? (upgrade.levels.find(level => level.level === nextLevelNumber) || upgrade.levels[currentLevel])
-    : null;
-  
-  // Get cost, timeCost, and effects from level config
-  const upgradeCost = nextLevelConfig ? nextLevelConfig.cost : 0;
-  const upgradeTimeCost = nextLevelConfig?.timeCost;
-  
-  const needsCash = upgradeCost > 0;
-  const needsTime = upgradeTimeCost !== undefined && upgradeTimeCost > 0;
-  // Calculate affordability directly using subscribed metrics to ensure reactivity
-  // Upgrades now only use personal time (myTime), not leveraged time
-  const canAfford = useMemo(() => {
-    const hasCash = upgradeCost === 0 || metrics.cash >= upgradeCost;
-    const hasTime = upgradeTimeCost === undefined || upgradeTimeCost === 0 || metrics.myTime >= upgradeTimeCost;
-    return hasCash && hasTime;
-  }, [metrics.cash, metrics.myTime, upgradeCost, upgradeTimeCost]);
-  const isMaxed = currentLevel >= upgrade.maxLevel;
-  const wasActivatedThisMonth = useMemo(() => upgradesActivatedThisMonth.has(upgrade.id), [upgradesActivatedThisMonth, upgrade.id]);
-
-  // Determine what's missing for button text
-  const needText = useMemo(() => {
-    const hasCash = !needsCash || metrics.cash >= upgradeCost;
-    const hasTime = !needsTime || metrics.myTime >= upgradeTimeCost!;
-    return (!hasCash || !hasTime) ? 'Need Resources' : '';
-  }, [needsCash, needsTime, metrics.cash, metrics.myTime, upgradeCost, upgradeTimeCost]);
-  
-  // Get next level effects for display
-  const nextLevelEffects = useMemo(() => {
-    if (!nextLevelConfig) return [];
-    return nextLevelConfig.effects.map(effect => formatEffect(effect));
-  }, [nextLevelConfig, formatEffect]);
-
-  const buttonDisabled = isMaxed || !canAfford || availability === 'locked';
-
-  const handlePurchase = useCallback(() => {
-    if (!buttonDisabled) {
-      purchaseUpgrade(upgrade.id);
-    }
-  }, [buttonDisabled, purchaseUpgrade, upgrade.id]);
-
-  const handleRequirementsClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowRequirementsModal(true);
-  }, []);
-
-  const handleCloseModal = useCallback(() => {
-    setShowRequirementsModal(false);
-  }, []);
-
-  // Hide card if requirements are not met and should be hidden
-  if (availability === 'hidden') {
-    return null;
-  }
-
-  return (
-    <Card className={`flex flex-col justify-between p-2 sm:p-3 min-h-[200px] overflow-hidden ${
-      wasActivatedThisMonth
-        ? '!border-green-500 dark:!border-green-400'
-        : isMaxed
-          ? '!bg-amber-100 dark:!bg-amber-900/50 !border-amber-300 dark:!border-amber-600'
-          : ''
-    }`}>
-      {/* Top Content Section */}
-      <div className="flex-1 space-y-1">
-        {/* Header: Upgrade Name and Level Badge */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <span className="text-sm font-bold text-primary break-words whitespace-normal">
-              {upgrade.name}
-            </span>
-          </div>
-          <div className={`px-1.5 py-0.5 rounded border text-sm font-bold ${
-            currentLevel > 0
-              ? 'bg-green-100 border-green-300 text-green-800 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300'
-              : 'bg-gray-100 border-gray-300 text-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'
-          }`}>
-            {currentLevel}/{upgrade.maxLevel}
-          </div>
-        </div>
-
-        {/* What You'll Get (Next Level Info) */}
-        {nextLevelConfig && !isMaxed && (
-          <>
-            <div>
-              <p className="text-sm font-semibold text-primary leading-tight break-words whitespace-normal">
-                {nextLevelConfig.name}
-              </p>
-            </div>
-
-            {/* {nextLevelConfig.description && (
-              <div>
-                <p className="text-sm text-secondary leading-relaxed break-words whitespace-normal">
-                  {nextLevelConfig.description}
-                </p>
-              </div>
-            )} */}
-
-            {nextLevelEffects.length > 0 && (
-              <div className="space-y-0.5">
-                {/* <div className="text-sm font-semibold text-primary uppercase tracking-wide">
-                  Effects:
-                </div> */}
-                <ul className="space-y-0.5">
-                  {nextLevelEffects.map((effect, idx) => {
-                    const effectData = nextLevelConfig?.effects[idx];
-                    const icon = effectData ? getMetricIcon(effectData.metric) : '•';
-                    return (
-                      <li key={idx} className="flex items-start gap-1 text-sm text-secondary leading-tight">
-                        <span className="text-primary mt-0.5 flex-shrink-0">{icon}</span>
-                        <span className="flex-1 break-words whitespace-normal">{effect}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Max Level Message */}
-        {isMaxed && (
-          <div className="p-1 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded">
-            <p className="text-sm text-green-700 dark:text-green-400 font-semibold text-center break-words whitespace-normal">
-              🎉 Max Level
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Bottom Section: Cost and Button */}
-      {nextLevelConfig && !isMaxed && (
-        <div className="space-y-1 mt-2">
-          {/* Cost Section - 2 rows */}
-          <div className="space-y-0.5">
-            {needsCash && (
-              <div className={`flex items-center gap-1 ${
-                metrics.cash >= upgradeCost
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-red-600 dark:text-red-400'
-              }`}>
-                <span className="text-sm">{getMetricIcon(GameMetric.Cash)}</span>
-                <span className="text-sm font-bold">
-                  ${upgradeCost.toLocaleString()}
-                </span>
-              </div>
-            )}
-            {needsTime && (
-              <div className={`flex items-center gap-1 ${
-                metrics.myTime >= upgradeTimeCost!
-                  ? 'text-cyan-600 dark:text-cyan-400'
-                  : 'text-red-600 dark:text-red-400'
-              }`}>
-                <span className="text-sm">⏱️</span>
-                <span className="text-sm font-bold">
-                  {upgradeTimeCost}h
-                </span>
-              </div>
-            )}
-            {!needsCash && !needsTime && (
-              <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                <span className="text-sm">🆓</span>
-                <span className="text-sm font-bold">Free</span>
-              </div>
-            )}
-          </div>
-
-      {/* Requirements Modal */}
-      <Modal
-        isOpen={showRequirementsModal}
-        onClose={handleCloseModal}
-        maxWidth="sm"
-      >
-        <div className="text-center text-secondary text-body-sm leading-relaxed space-y-1">
-          <h3 className="text-primary font-semibold mb-3">Requirements</h3>
-          {requirementDescriptions.map((desc, idx) => (
-            <div key={idx}>{desc}</div>
-          ))}
-        </div>
-      </Modal>
-
-          {/* Action Button */}
-          <div className="relative">
-            <GameButton
-              color={isMaxed ? 'gold' : canAfford && availability === 'available' ? 'blue' : 'gold'}
-              fullWidth
-              size="sm"
-              disabled={buttonDisabled}
-              onClick={handlePurchase}
-            >
-              {isMaxed
-                ? 'Max Level'
-                : availability === 'locked'
-                  ? 'Requirements Not Met'
-                  : canAfford
-                    ? `Upgrade`
-                    : needText}
-            </GameButton>
-            {requirementDescriptions.length > 0 && availability === 'locked' && (
-              <button
-                onClick={handleRequirementsClick}
-                className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[var(--bg-tertiary)] hover:bg-[var(--game-primary)] text-white rounded-full text-micro font-bold shadow-md transition-colors flex items-center justify-center z-10"
-                title="Click to see requirements"
-              >
-                ?
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-    </Card>
-  );
-}
 
 // Staff-related helper functions and styles (from StaffTab)
 const ROLE_STYLE_MAP: Record<
@@ -876,22 +573,22 @@ export function UpgradesTab() {
           }
 
           return (
-            <div className="space-y-6">
+            <div className="space-y-3 sm:space-y-5 md:space-y-6">
               {Array.from(upgradesByCategory.entries()).map(([categoryId, categoryUpgrades]) => {
                 const category = categoryId ? categories.find(c => c.id === categoryId) : null;
                 const sortedUpgrades = categoryUpgrades.sort((a, b) => (a.order || 0) - (b.order || 0));
 
                 return (
-                  <div key={categoryId || 'others'} className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+                  <div key={categoryId || 'others'} className="bg-slate-800/50 border border-slate-700 rounded-xl p-2 sm:p-4 md:p-6">
                     <div className="flex items-center gap-2 mb-3">
-                      <h3 className="text-lg font-semibold text-slate-200">
+                      <h3 className="text-heading text-primary">
                         {category ? category.name : 'Others'}
                       </h3>
                       {category?.description && (
-                        <span className="text-sm text-slate-400">• {category.description}</span>
+                        <span className="text-caption text-secondary">• {category.description}</span>
                       )}
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 sm:gap-3">
                       {sortedUpgrades.map((upgrade) => (
                         <UpgradeCard key={upgrade.id} upgrade={upgrade} />
                       ))}
@@ -931,7 +628,7 @@ export function UpgradesTab() {
         {/* Available Staff */}
         <div className="space-y-2 sm:space-y-3 md:space-y-4 lg:space-y-6">
           <div className="text-center">
-            <h4 className="text-base sm:text-lg md:text-xl font-bold text-primary mb-1 sm:mb-2">Hire Staff</h4>
+            <h4 className="text-heading text-primary mb-2 sm:mb-3">Hire Staff</h4>
           </div>
           <div className="max-w-6xl mx-auto flex flex-wrap justify-center items-stretch gap-2 sm:gap-3 md:gap-4 px-2 sm:px-3 md:px-4">
             {availableStaff.map((candidate) => (
@@ -945,7 +642,7 @@ export function UpgradesTab() {
               </div>
             ))}
             {availableStaff.length === 0 && (
-              <div className="text-center text-muted text-sm sm:text-sm md:text-base py-6 sm:py-8 md:py-10 w-full">
+              <div className="text-center text-secondary text-body py-6 sm:py-8 md:py-10 w-full">
                 All available staff have joined your team. Check back later!
               </div>
             )}

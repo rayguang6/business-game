@@ -890,7 +890,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     
     set((state) => {
       // Deduct leveraged time first, then my time
-      let remaining = timeSpent;
+      const remaining = timeSpent;
       let leveragedDeduction = Math.min(remaining, state.metrics.leveragedTime);
       let myTimeDeduction = remaining - leveragedDeduction;
       

@@ -1,5 +1,5 @@
 import { supabaseServer } from '@/lib/server/supabaseServer';
-import { GameCondition } from '@/lib/types/conditions';
+import { GameCondition, ConditionMetric, ConditionOperator } from '@/lib/types/conditions';
 import { IndustryId } from '@/lib/game/types';
 import { cleanupConditionReferences } from './referenceCleanup';
 
@@ -48,8 +48,8 @@ export async function fetchConditionsForIndustry(
         id: row.id,
         name: row.name,
         description: row.description || '',
-        metric: row.metric as any, // Will be validated by GameMetric enum
-        operator: row.operator as any,
+        metric: row.metric as ConditionMetric,
+        operator: row.operator as ConditionOperator,
         value: Number(row.value) || 0,
       }));
   } catch (error) {

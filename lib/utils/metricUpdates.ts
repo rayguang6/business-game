@@ -9,7 +9,7 @@ import { effectManager, GameMetric } from '@/lib/game/effectManager';
  */
 export function updateLeveragedTimeCapacity(
   currentMetrics: { leveragedTime: number; leveragedTimeCapacity: number },
-  setMetrics: (updater: (state: any) => any) => void
+  setMetrics: (updater: (state: Record<string, unknown>) => Record<string, unknown>) => void
 ): void {
   // Calculate new capacity from all effects
   const newLeveragedTimeCapacity = effectManager.calculate(GameMetric.LeveragedTime, 0);

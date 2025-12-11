@@ -8,6 +8,7 @@ import { fetchMarketingCampaignsForIndustry, upsertMarketingCampaignForIndustry,
 import { fetchCategoriesForIndustry, upsertCategoryForIndustry, deleteCategoryById } from '@/lib/data/categoryRepository';
 import { fetchStaffDataForIndustry, upsertStaffRole, deleteStaffRole, upsertStaffPreset, deleteStaffPreset } from '@/lib/data/staffRepository';
 import { fetchFlagsForIndustry, upsertFlagForIndustry, deleteFlagById } from '@/lib/data/flagRepository';
+import type { UpgradeEffect, Requirement } from '@/lib/game/types';
 import { fetchConditionsForIndustry, upsertConditionForIndustry, deleteConditionById } from '@/lib/data/conditionRepository';
 import { fetchLevelRewardsForIndustry, fetchLevelReward as fetchLevelRewardFromRepo, upsertLevelRewardForIndustry, deleteLevelRewardById, type LevelReward } from '@/lib/data/levelRewardsRepository';
 // Import unified simulation config repository
@@ -165,10 +166,10 @@ export async function upsertStaffRoleAction(role: {
   industryId: IndustryId;
   name: string;
   salary: number;
-  effects: any[];
+  effects: UpgradeEffect[];
   spriteImage?: string;
   setsFlag?: string;
-  requirements?: any[];
+  requirements?: Requirement[];
   order?: number;
 }) {
   return await upsertStaffRole(role);

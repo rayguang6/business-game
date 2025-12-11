@@ -119,7 +119,7 @@ export const createCustomerSlice: StateCreator<GameState, [], [], CustomerSlice>
 
       if (serviceTimeCost > 0) {
         // Deduct time cost - leveraged time first, then my time
-        let remaining = serviceTimeCost;
+        const remaining = serviceTimeCost;
         const leveragedDeduction = Math.min(remaining, state.metrics.leveragedTime);
         const myTimeDeduction = remaining - leveragedDeduction;
         
