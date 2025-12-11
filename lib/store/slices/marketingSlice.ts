@@ -140,7 +140,7 @@ function addMarketingEffects(
     
     // For other metrics or effect types, use effect manager
     effectManager.add({
-      id: `marketing_${campaign.id}_${currentGameTime}_${index}`,
+      id: `marketing_${campaign.id}_${currentGameTime}_${index}_${Math.random().toString(36).substr(2, 9)}`,
       source: {
         category: 'marketing',
         id: campaign.id,
@@ -429,7 +429,8 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       
       // Register effects (effects from multiple launches will stack)
       const store = get();
-      addMarketingEffects(campaign, campaign.effects, campaign.name, gameTime, {
+      // Use gameTime + 10 to ensure effects don't expire immediately due to timing issues
+      addMarketingEffects(campaign, campaign.effects, campaign.name, gameTime + 10, {
         applyCashChange: store.applyCashChange,
         applyTimeChange: store.applyTimeChange,
         applyExpChange: store.applyExpChange,

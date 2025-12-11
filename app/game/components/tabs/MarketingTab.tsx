@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useState, useMemo } from 'react';
+import React, { useCallback, useState, useMemo, useRef } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
 import { CampaignEffect, MarketingCampaign } from '@/lib/store/slices/marketingSlice';
 import { GameMetric, EffectType, effectManager } from '@/lib/game/effectManager';
@@ -403,13 +403,18 @@ export function MarketingTab() {
   const activeCampaigns = useActiveMarketingCampaigns();
   const [message, setMessage] = useState<string | null>(null);
   const [launchingCampaigns, setLaunchingCampaigns] = useState<Set<string>>(new Set());
+  const launchingCampaignsRef = useRef<Set<string>>(new Set());
 
   const handleLaunch = (campaignId: string) => {
-    // Prevent multiple rapid clicks on the same campaign
-    if (launchingCampaigns.has(campaignId)) {
+    // Prevent multiple simultaneous launches using synchronous ref
+    if (launchingCampaignsRef.current.has(campaignId)) {
       return;
     }
 
+    // Immediately mark as launching (synchronous)
+    launchingCampaignsRef.current.add(campaignId);
+
+    // Update state for UI feedback
     setLaunchingCampaigns(prev => new Set(prev).add(campaignId));
 
     try {
@@ -417,14 +422,13 @@ export function MarketingTab() {
       // No message to display
       setMessage(null);
     } finally {
-      // Remove from launching set after a short delay to allow UI feedback
-      setTimeout(() => {
-        setLaunchingCampaigns(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(campaignId);
-          return newSet;
-        });
-      }, 500);
+      // Immediately allow new launches
+      launchingCampaignsRef.current.delete(campaignId);
+      setLaunchingCampaigns(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(campaignId);
+        return newSet;
+      });
     }
   };
 
