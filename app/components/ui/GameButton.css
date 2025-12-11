@@ -165,17 +165,42 @@
   --btn-darkest: #B91C1C; /* Slightly darker for depth */
   --btn-shadow-dark: #991B1B; /* Darker for shadow */
   --btn-shadow-light: #FCA5A5; /* Lighter for highlight */
-  
+
   /* Override text-stroke color to use accent color */
   --text-stroke: var(--btn-text-stroke);
-  
+
   background: linear-gradient(to bottom,
     var(--btn-light) 0%,
     var(--btn-base) 26%,
     var(--btn-mid) 64%,
     var(--btn-darkest) 100%
   );
-  
+
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3),
+              inset 0 -2px 0 var(--btn-shadow-dark),
+              inset 0 2px 0 var(--btn-shadow-light);
+}
+
+.game-btn-gray {
+  --btn-text-stroke: #64748b; /* Use text-muted from design system */
+  --btn-light: #94a3b8; /* text-tertiary - lighter gray */
+  --btn-base: #64748b; /* text-muted - base gray */
+  --btn-dark: #475569; /* border-secondary - darker gray */
+  --btn-mid: #64748b; /* text-muted - mid gray */
+  --btn-darkest: #334155; /* border-primary - darkest gray */
+  --btn-shadow-dark: #1e293b; /* Even darker for shadow */
+  --btn-shadow-light: #cbd5e1; /* text-secondary - lighter for highlight */
+
+  /* Override text-stroke color to use muted gray */
+  --text-stroke: var(--btn-text-stroke);
+
+  background: linear-gradient(to bottom,
+    var(--btn-light) 0%,
+    var(--btn-base) 26%,
+    var(--btn-mid) 64%,
+    var(--btn-darkest) 100%
+  );
+
   box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3),
               inset 0 -2px 0 var(--btn-shadow-dark),
               inset 0 2px 0 var(--btn-shadow-light);
@@ -186,7 +211,8 @@
 .game-btn-gold::before,
 .game-btn-purple::before,
 .game-btn-green::before,
-.game-btn-red::before {
+.game-btn-red::before,
+.game-btn-gray::before {
   content: "";
   position: absolute;
   inset: -5px;
@@ -214,12 +240,17 @@
   background: linear-gradient(to bottom, var(--btn-base), var(--btn-darkest));
 }
 
+.game-btn-gray::before {
+  background: linear-gradient(to bottom, var(--btn-base), var(--btn-darkest));
+}
+
 /* Gloss effect overlay */
 .game-btn-blue::after,
 .game-btn-gold::after,
 .game-btn-purple::after,
 .game-btn-green::after,
-.game-btn-red::after {
+.game-btn-red::after,
+.game-btn-gray::after {
   content: "";
   position: absolute;
   top: 0;
@@ -262,6 +293,13 @@
 }
 
 .game-btn-red:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25),
+              inset 0 -2px 0 var(--btn-shadow-dark),
+              inset 0 2px 0 var(--btn-shadow-light);
+}
+
+.game-btn-gray:active:not(:disabled) {
   transform: translateY(2px);
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25),
               inset 0 -2px 0 var(--btn-shadow-dark),

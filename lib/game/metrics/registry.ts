@@ -583,6 +583,46 @@ export function getEventEffectIcon(effectType: EventEffectType): string {
 }
 
 /**
+ * Get the standard emoji icon for metrics (fallback when no iconPath exists)
+ * This centralizes emoji definitions so all components use the same emojis
+ */
+export function getMetricEmojiIcon(metric: GameMetric): string {
+  switch (metric) {
+    case GameMetric.Cash:
+    case GameMetric.ServiceRevenueFlatBonus:
+    case GameMetric.MonthlyExpenses:
+      return '💸'; // Money bag for cash/expense related metrics
+    case GameMetric.Exp:
+      return '⭐'; // Star for experience points
+    case GameMetric.MyTime:
+    case GameMetric.LeveragedTime:
+      return '⏱️'; // Timer for time-related metrics
+    case GameMetric.LeadsPerMonth:
+    case GameMetric.GenerateLeads:
+      return '👥'; // People for leads
+    case GameMetric.ServiceCapacity:
+      return '🏢'; // Building for capacity
+    case GameMetric.ServiceSpeedMultiplier:
+      return '⚡'; // Lightning for speed
+    case GameMetric.ConversionRate:
+      return '📈'; // Chart for conversion
+    case GameMetric.FailureRate:
+      return '❌'; // X for failure
+    case GameMetric.ServiceRevenueMultiplier:
+    case GameMetric.HighTierServiceRevenueMultiplier:
+    case GameMetric.MidTierServiceRevenueMultiplier:
+    case GameMetric.LowTierServiceRevenueMultiplier:
+      return '💎'; // Diamond for revenue multipliers
+    case GameMetric.HighTierServiceWeightageMultiplier:
+    case GameMetric.MidTierServiceWeightageMultiplier:
+    case GameMetric.LowTierServiceWeightageMultiplier:
+      return '🎯'; // Target for weightage multipliers
+    default:
+      return '📊'; // Chart for unknown metrics
+  }
+}
+
+/**
  * Get the standard emoji icon for event categories
  * This centralizes icon definitions so all components use the same icons
  */

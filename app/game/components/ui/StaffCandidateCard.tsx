@@ -7,7 +7,7 @@ import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { Staff } from '@/lib/features/staff';
 import type { IndustryId } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
-import { getMetricIcon } from '@/lib/game/metrics/registry';
+import { getMetricIcon, getMetricEmojiIcon } from '@/lib/game/metrics/registry';
 import { useRequirements } from '@/lib/hooks/useRequirements';
 import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
 import { Modal } from '@/app/components/ui/Modal';
@@ -63,111 +63,127 @@ export function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProp
   }
 
   return (
-    <div className="relative w-full h-full flex flex-col bg-slate-800 rounded-lg border border-slate-600 hover:bg-slate-750 transition-colors overflow-hidden">
-      {/* Header with Role */}
-      <div className="px-2 py-1 bg-slate-700 border-b border-slate-600 flex items-center justify-between">
-        <span className="text-xs font-bold text-slate-200 uppercase tracking-wide">
-          {candidate.role}
-        </span>
-        {availability === 'locked' && (
-          <span className="text-slate-400 text-xs">🔒</span>
-        )}
-      </div>
+    <div className="w-full flex flex-col justify-between bg-slate-800 rounded-lg border border-slate-600 hover:bg-slate-750 transition-colors">
+      {/* Top Content Section */}
+      <div className="space-y-0.5">
+        {/* Header with Role */}
+        <div className="px-3 md:px-4 py-2 bg-slate-700 border-b border-slate-600 flex items-center justify-between h-10 md:h-12">
+          <span className="text-xs md:text-sm font-bold text-slate-200 uppercase tracking-wide leading-tight line-clamp-2">
+            {candidate.role}
+          </span>
+          {availability === 'locked' && (
+            <span className="text-slate-400 text-xs md:text-sm">🔒</span>
+          )}
+        </div>
 
-      {/* Avatar Section */}
-      <div className="flex justify-center py-2">
-        <div className="relative w-8 h-8 bg-slate-600 rounded border border-slate-500 overflow-hidden">
-          <img
-            src={candidate.spriteImage || '/images/staff/staff1.png'}
-            alt={candidate.name}
-            className="w-[1600%] h-full object-cover object-left select-none"
-            style={{ imageRendering: 'pixelated' }}
-            draggable={false}
-            onContextMenu={(e) => e.preventDefault()}
-            onDragStart={(e) => e.preventDefault()}
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/images/staff/staff1.png';
-            }}
-          />
+        {/* Avatar Section */}
+        <div className="flex justify-center py-2">
+          <div className="relative w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 bg-slate-600 rounded border border-slate-500 overflow-hidden">
+            <img
+              src={candidate.spriteImage || '/images/staff/staff1.png'}
+              alt={candidate.name}
+              className="w-[1600%] h-full object-cover object-left select-none"
+              style={{ imageRendering: 'pixelated' }}
+              draggable={false}
+              onContextMenu={(e) => e.preventDefault()}
+              onDragStart={(e) => e.preventDefault()}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/images/staff/staff1.png';
+              }}
+            />
+          </div>
+        </div>
+
+      {/* Name */}
+        <div className="px-3 md:px-4 pb-1 text-center">
+          <h5 className="text-white font-bold text-xs md:text-sm truncate">
+            {candidate.name}
+          </h5>
+        </div>
+
+        {/* Stats Panel */}
+        <div className="px-3 md:px-4 pb-1 space-y-0.5">
+          <div className="space-y-0.5">
+            {Array.from({ length: 2 }, (_, index) => {
+              const effect = candidate.effects[index];
+              if (effect) {
+                const formattedEffect = formatStaffEffect(effect);
+                return (
+                  <div key={index} className="flex items-center gap-1 min-w-0">
+                    <span className="text-slate-300 text-[10px] flex items-center gap-0.5 min-w-0 flex-1">
+                      {getMetricIcon(effect.metric) ? (
+                        <img
+                          src={getMetricIcon(effect.metric)!}
+                          alt=""
+                          className="w-4 h-4 flex-shrink-0"
+                        />
+                      ) : (
+                        <span className="text-[10px] flex-shrink-0">{getMetricEmojiIcon(effect.metric)}</span>
+                      )}
+                      <span className="truncate">{formattedEffect}</span>
+                    </span>
+                  </div>
+                );
+              } else {
+                // Empty effect line for consistent height
+                return (
+                  <div key={index} className="flex items-center gap-1 min-w-0 opacity-0">
+                    <span className="text-slate-300 text-[10px] flex items-center gap-0.5 min-w-0 flex-1">
+                      <span className="text-[10px] flex-shrink-0">📊</span>
+                      <span className="truncate">Placeholder +0</span>
+                    </span>
+                  </div>
+                );
+              }
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Name */}
-      <div className="px-2 pb-1 text-center">
-        <h5 className="text-white font-bold text-xs truncate">
-          {candidate.name}
-        </h5>
-      </div>
-
-      {/* Stats Panel */}
-      <div className="px-2 pb-2 space-y-0.5 flex-grow">
-        {candidate.effects.length > 0 && (
-          <div className="space-y-0.5">
-            {candidate.effects.slice(0, 2).map((effect, index) => {
-              const effectParts = formatStaffEffect(effect).split(' ');
-              const value = effectParts[0];
-              const label = effectParts.slice(1).join(' ');
-              return (
-                <div key={index} className="flex items-center justify-between gap-1 min-w-0">
-                  <span className="text-slate-300 text-xs flex items-center gap-0.5 min-w-0 flex-1">
-                    {getMetricIcon(effect.metric) ? (
-                      <img
-                        src={getMetricIcon(effect.metric)!}
-                        alt=""
-                        className="w-4 h-4 flex-shrink-0"
-                      />
-                    ) : (
-                      <span className="text-xs flex-shrink-0">•</span>
-                    )}
-                    <span className="truncate">{label}</span>
-                  </span>
-                  <span className="text-green-400 font-bold text-xs whitespace-nowrap flex-shrink-0">{value}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        <div className="text-center pt-1 border-t border-slate-600 mt-auto">
+      {/* Bottom Section: Salary and Button */}
+      <div className="px-3 md:px-4 pb-3 space-y-1">
+        {/* Salary - Bottom aligned */}
+        <div className="text-center">
           <div className={`text-xs font-bold ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
             ${Math.round(candidate.salary).toLocaleString()}/m
           </div>
         </div>
-      </div>
 
-      <Modal
-        isOpen={showRequirementsModal}
-        onClose={handleCloseModal}
-        maxWidth="sm"
-      >
-        <div className="text-center text-secondary text-body-sm leading-relaxed space-y-1">
-          <h3 className="text-primary font-semibold mb-3">Requirements</h3>
-          {requirementDescriptions.map((desc, idx) => (
-            <div key={idx}>{desc}</div>
-          ))}
-        </div>
-      </Modal>
-
-      <div className="px-2 pb-2 relative">
-        <GameButton
-          onClick={handleHire}
-          disabled={availability === 'locked' || !canAfford}
-          color="gold"
-          fullWidth
-          size="sm"
-          className="w-full text-xs py-1"
-        >
-          {!canAfford ? 'Need Cash' : availability === 'available' ? `Hire` : 'Locked'}
-        </GameButton>
-        {requirementDescriptions.length > 0 && availability === 'locked' && (
-          <button
-            onClick={handleRequirementsClick}
-            className="absolute top-1 right-1 w-4 h-4 bg-slate-600 hover:bg-slate-500 text-white rounded-full text-xs font-bold transition-colors flex items-center justify-center"
-            title="Click to see requirements"
+        {/* Hire Button */}
+        <div className="relative">
+          <GameButton
+            onClick={handleHire}
+            disabled={availability === 'locked' || !canAfford}
+            color={availability === 'available' && canAfford ? "purple" : "gray"}
+            fullWidth
+            size="sm"
+            className="w-full text-xs py-1.5"
           >
-            ?
-          </button>
-        )}
+            {!canAfford ? 'Need Cash' : availability === 'available' ? `Hire` : 'Locked'}
+          </GameButton>
+          {requirementDescriptions.length > 0 && availability === 'locked' && (
+            <button
+              onClick={handleRequirementsClick}
+              className="absolute -top-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-slate-600 hover:bg-slate-500 text-white rounded-full text-micro font-bold shadow-md transition-colors flex items-center justify-center z-10"
+              title="Click to see requirements"
+            >
+              ?
+            </button>
+          )}
+        </div>
+
+        <Modal
+          isOpen={showRequirementsModal}
+          onClose={handleCloseModal}
+          maxWidth="sm"
+        >
+          <div className="text-center text-secondary text-body-sm leading-relaxed space-y-1">
+            <h3 className="text-primary font-semibold mb-3">Requirements</h3>
+            {requirementDescriptions.map((desc, idx) => (
+              <div key={idx}>{desc}</div>
+            ))}
+          </div>
+        </Modal>
       </div>
     </div>
   );

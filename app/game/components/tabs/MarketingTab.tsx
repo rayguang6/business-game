@@ -85,7 +85,7 @@ const formatDurationLabel = (durationMonths: number | null | undefined): string 
   if (durationMonths === null || durationMonths === undefined || !Number.isFinite(durationMonths) || durationMonths <= 0) {
     return '';
   }
-  return ` ${durationMonths} month`;
+  return ` for ${durationMonths} month`;
 };
 
 

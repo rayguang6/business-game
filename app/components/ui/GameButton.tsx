@@ -6,7 +6,7 @@ import "./GameButton.css";
 
 type GameButtonProps = {
   children: React.ReactNode;
-  color?: "blue" | "gold" | "purple" | "green" | "red";
+  color?: "blue" | "gold" | "purple" | "green" | "red" | "gray";
   href?: string;
   onClick?: () => void;
   className?: string;

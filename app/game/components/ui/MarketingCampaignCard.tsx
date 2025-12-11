@@ -11,7 +11,7 @@ import { Modal } from '@/app/components/ui/Modal';
 import GameButton from '@/app/components/ui/GameButton';
 import { DEFAULT_INDUSTRY_ID, getBusinessStats } from '@/lib/game/config';
 import type { IndustryId } from '@/lib/game/types';
-import { getMetricIcon } from '@/lib/game/metrics/registry';
+import { getMetricIcon, getMetricEmojiIcon } from '@/lib/game/metrics/registry';
 
 const formatSeconds = (seconds: number): string => {
   return `${Math.max(0, Math.floor(seconds))}s`;
@@ -30,7 +30,7 @@ const formatDurationLabel = (durationMonths: number | null | undefined): string 
   if (durationMonths === null || durationMonths === undefined || !Number.isFinite(durationMonths) || durationMonths <= 0) {
     return '';
   }
-  return ` ${durationMonths} month`;
+  return ` for ${durationMonths} month`;
 };
 
 const getToneClass = (effect: CampaignEffect): string => {
@@ -88,11 +88,12 @@ export function MarketingCampaignCard({
   let cost = 0;
   let timeCost: number | undefined;
   let effects: CampaignEffect[] = [];
+  let levelConfig: any = null;
 
   if (isLeveled && canUpgradeMore) {
     // Get next level config
     const nextLevelNumber = level + 1;
-    const levelConfig = campaign.levels?.find(l => l.level === nextLevelNumber) || campaign.levels?.[nextLevelNumber - 1];
+    levelConfig = campaign.levels?.find(l => l.level === nextLevelNumber) || campaign.levels?.[nextLevelNumber - 1];
     if (levelConfig) {
       needsCash = levelConfig.cost > 0;
       needsTime = levelConfig.timeCost !== undefined && levelConfig.timeCost > 0;
@@ -183,7 +184,7 @@ export function MarketingCampaignCard({
     }`}>
       {/* Level Badge - Absolute positioned */}
       {isLeveled && (
-        <div className={`absolute top-1 right-1 sm:top-1.5 sm:right-1.5 md:top-2 md:right-2 px-1.5 py-0.5 rounded border text-body-sm sm:text-label font-bold z-10 bg-black/40 backdrop-blur-sm ${
+        <div className={`absolute top-1 right-1 sm:top-1.5 sm:right-1.5 md:top-2 md:right-2 px-1.5 py-0.5 rounded border text-body-sm sm:text-label font-bold z-10 bg-black/20 ${
           level > 0
             ? 'text-green-300 border-green-400'
             : 'text-gray-300 border-gray-500'
@@ -206,11 +207,13 @@ export function MarketingCampaignCard({
         {/* What You'll Get (Next Level Info) */}
         {isLeveled && canUpgradeMore && (
           <>
-            <div>
-              <p className="text-caption font-semibold text-primary leading-tight break-words whitespace-normal">
-                Level {level + 1}
-              </p>
-            </div>
+            {levelConfig?.name && (
+              <div>
+                <p className="text-caption font-semibold text-primary leading-tight break-words whitespace-normal">
+                  {levelConfig.name}
+                </p>
+              </div>
+            )}
 
             <div className="">
               <ul className="space-y-0.5">
@@ -225,7 +228,7 @@ export function MarketingCampaignCard({
                           className="w-4 h-4 mt-0.5 flex-shrink-0"
                         />
                       ) : (
-                        <span className="text-primary mt-0.5 flex-shrink-0">•</span>
+                        <span className="text-primary mt-0.5 flex-shrink-0">{getMetricEmojiIcon(item.metric)}</span>
                       )}
                       <span className={`flex-1 ${item.toneClass} break-words whitespace-normal`}>{item.text}</span>
                     </li>
@@ -252,7 +255,7 @@ export function MarketingCampaignCard({
                           className="w-4 h-4 mt-0.5 flex-shrink-0"
                         />
                       ) : (
-                        <span className="text-primary mt-0.5 flex-shrink-0">•</span>
+                        <span className="text-primary mt-0.5 flex-shrink-0">{getMetricEmojiIcon(item.metric)}</span>
                       )}
                       <span className={`flex-1 ${item.toneClass} break-words whitespace-normal`}>{item.text}</span>
                     </li>
@@ -278,7 +281,7 @@ export function MarketingCampaignCard({
           <GameButton
             onClick={() => onLaunch(campaign.id)}
             disabled={buttonDisabled}
-            color={isMaxLevel ? 'gold' : canAfford && availability === 'available' ? 'blue' : 'gold'}
+            color={isMaxLevel ? 'gold' : buttonDisabled ? 'gray' : 'green'}
             size="sm"
             fullWidth
             className="text-caption sm:text-body-sm py-1 sm:py-2 px-2 sm:px-4"

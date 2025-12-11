@@ -4,7 +4,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
 import type { Staff } from '@/lib/features/staff';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
-import { getMetricIcon } from '@/lib/game/metrics/registry';
+import { getMetricIcon, getMetricEmojiIcon } from '@/lib/game/metrics/registry';
 import { useRequirements } from '@/lib/hooks/useRequirements';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
 import { Modal } from '@/app/components/ui/Modal';
@@ -111,7 +111,8 @@ function StaffCandidateCard({ candidate, onHire, formatEffect }: StaffCandidateC
 
   return (
     <div
-      className={`relative w-full h-full flex flex-col bg-gradient-to-b ${styles.cardGradient} rounded-2xl border-2 ${styles.borderColor} ${styles.borderGlow} hover:scale-[1.02] transition-all duration-300 overflow-hidden group`}
+      className={`relative w-full flex flex-col justify-between bg-gradient-to-b ${styles.cardGradient} rounded-2xl border-2 ${styles.borderColor} ${styles.borderGlow} hover:scale-[1.02] transition-all duration-300 overflow-hidden group transform-gpu`}
+      style={{ transformOrigin: 'center' }}
     >
       {/* Hero Banner - Top decorative section */}
       <div className={`h-16 bg-gradient-to-r ${styles.cardGradient} relative overflow-hidden border-b-2 ${styles.borderColor}/50`}>
@@ -146,7 +147,7 @@ function StaffCandidateCard({ candidate, onHire, formatEffect }: StaffCandidateC
       </div>
 
       {/* Name Section */}
-      <div className="px-4 pb-3 text-center">
+      <div className="px-4 pb-3 text-center min-h-[4rem] flex flex-col justify-center">
         <h5 className="text-white font-bold text-base sm:text-lg mb-2 tracking-tight truncate px-2">
           {candidate.name}
         </h5>
@@ -160,16 +161,16 @@ function StaffCandidateCard({ candidate, onHire, formatEffect }: StaffCandidateC
       </div>
 
       {/* Stats Panel */}
-      <div className="px-4 pb-3 space-y-1.5 flex-grow">
+      <div className="px-4 pb-1 space-y-1">
         {candidate.effects.length > 0 && (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {candidate.effects.map((effect, index) => {
               const effectParts = formatEffect(effect).split(' ');
               const value = effectParts[0];
               const label = effectParts.slice(1).join(' ');
               return (
                 <div key={index} className="flex items-center justify-between gap-2 min-w-0">
-                  <span className="text-white text-sm font-medium flex items-center gap-1.5 min-w-0 flex-1">
+                  <span className="text-white text-xs font-medium flex items-center gap-1.5 min-w-0 flex-1">
                     {getMetricIcon(effect.metric) ? (
                       <img
                         src={getMetricIcon(effect.metric)!}
@@ -181,15 +182,15 @@ function StaffCandidateCard({ candidate, onHire, formatEffect }: StaffCandidateC
                     )}
                     <span className="truncate">{label}</span>
                   </span>
-                  <span className="text-green-400 font-bold text-sm whitespace-nowrap flex-shrink-0">{value}</span>
+                  <span className="text-green-400 font-bold text-xs whitespace-nowrap flex-shrink-0">{value}</span>
                 </div>
               );
             })}
           </div>
         )}
 
-        <div className="text-center pt-2 border-t border-white/10 mt-auto">
-          <div className={`text-lg sm:text-xl font-bold ${canAfford ? 'text-[var(--game-secondary)]' : 'text-[var(--error)]'}`}>
+        <div className="text-center">
+          <div className={`text-base sm:text-lg font-bold ${canAfford ? 'text-[var(--game-secondary)]' : 'text-[var(--error)]'}`}>
             ${Math.round(candidate.salary).toLocaleString()}/m
           </div>
         </div>
@@ -210,11 +211,11 @@ function StaffCandidateCard({ candidate, onHire, formatEffect }: StaffCandidateC
       </Modal>
 
       {/* Action Button - Using GameButton from design system */}
-      <div className="px-4 pb-4 relative mt-auto">
+      <div className="px-4 pb-4 relative">
         <GameButton
           onClick={handleHire}
           disabled={!requirementsMet || !canAfford}
-          color="gold"
+          color={requirementsMet && canAfford ? "purple" : "gray"}
           fullWidth
           className="w-full"
         >
@@ -277,18 +278,18 @@ export function StaffTab() {
             Meet the team running your business every day.
           </p>
         </div>
-        <div className="max-w-6xl mx-auto flex flex-wrap justify-center items-stretch gap-4 px-3 sm:px-4">
+        <div className="max-w-5xl mx-auto grid grid-cols-3 gap-4 px-4">
           {hiredStaff.map((member) => {
             const styles = getRoleStyles(member.role);
-            
+
             // Use centralized metric icons from registry
             // const getEffectIcon = (metric: GameMetric) => getMetricIcon(metric);
-            
+
             return (
-              <div key={member.id} className="w-[180px] flex">
-                <div className="w-full">
-                  <div
-                    className={`relative w-full h-full flex flex-col bg-gradient-to-b ${styles.cardGradient} rounded-2xl border-2 ${styles.borderColor} ${styles.borderGlow} hover:scale-[1.02] transition-all duration-300 overflow-hidden group`}
+              <div
+                key={member.id}
+                className={`relative w-full flex flex-col bg-gradient-to-b ${styles.cardGradient} rounded-2xl border-2 ${styles.borderColor} ${styles.borderGlow} hover:scale-[1.02] transition-all duration-300 overflow-hidden group justify-between transform-gpu`}
+                style={{ transformOrigin: 'center' }}
                   >
                   {/* Hero Banner */}
                 <div className={`h-16 bg-gradient-to-r ${styles.cardGradient} relative overflow-hidden border-b-2 ${styles.borderColor}/50`}>
@@ -320,7 +321,7 @@ export function StaffTab() {
                 </div>
 
                 {/* Name Section */}
-                <div className="px-4 pb-3 text-center">
+                <div className="px-4 pb-3 text-center min-h-[4rem] flex flex-col justify-center">
                   <h4 className="text-white font-bold text-base sm:text-lg mb-2 tracking-tight truncate px-2">
                     {member.name}
                   </h4>
@@ -334,16 +335,14 @@ export function StaffTab() {
                 </div>
 
                   {/* Stats Panel */}
-                  <div className="px-4 pb-3 space-y-1.5 flex-grow">
+                  <div className="px-4 pb-1 space-y-1">
                     {member.effects.length > 0 && (
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         {member.effects.map((effect, index) => {
-                          const effectParts = formatEffect(effect).split(' ');
-                          const value = effectParts[0];
-                          const label = effectParts.slice(1).join(' ');
+                          const formattedEffect = formatEffect(effect);
                           return (
-                            <div key={index} className="flex items-center justify-between gap-2 min-w-0">
-                              <span className="text-white text-sm font-medium flex items-center gap-1.5 min-w-0 flex-1">
+                            <div key={index} className="flex items-center gap-2 min-w-0">
+                              <span className="text-white text-xs font-medium flex items-center gap-1.5 min-w-0 flex-1">
                                 {getMetricIcon(effect.metric) ? (
                                   <img
                                     src={getMetricIcon(effect.metric)!}
@@ -351,25 +350,22 @@ export function StaffTab() {
                                     className="w-4 h-4 flex-shrink-0"
                                   />
                                 ) : (
-                                  <span className="flex-shrink-0">•</span>
+                                  <span className="flex-shrink-0">{getMetricEmojiIcon(effect.metric)}</span>
                                 )}
-                                <span className="truncate">{label}</span>
+                                <span className="truncate">{formattedEffect}</span>
                               </span>
-                              <span className="text-green-400 font-bold text-sm whitespace-nowrap flex-shrink-0">{value}</span>
                             </div>
                           );
                         })}
                       </div>
                     )}
 
-                    <div className="text-center pt-2 border-t border-white/10 mt-auto">
-                      <div className="text-lg sm:text-xl font-bold text-[var(--game-secondary)]">
+                    <div className="text-center">
+                      <div className="text-base sm:text-lg font-bold text-[var(--game-secondary)]">
                         ${Math.round(member.salary).toLocaleString()}/m
                       </div>
                     </div>
                   </div>
-                </div>
-                </div>
               </div>
             );
           })}
@@ -389,17 +385,14 @@ export function StaffTab() {
             Choose who joins your business next. Hiring is instant and only adds their salary.
           </p>
         </div>
-        <div className="max-w-6xl mx-auto flex flex-wrap justify-center items-stretch gap-4 px-3 sm:px-4">
+        <div className="max-w-5xl mx-auto grid grid-cols-3 gap-4 px-4">
           {availableStaff.map((candidate) => (
-            <div key={candidate.id} className="w-[200px] flex">
-              <div className="w-full">
-                <StaffCandidateCard
-                  candidate={candidate}
-                  onHire={handleHireStaff}
-                  formatEffect={formatEffect}
-                />
-              </div>
-            </div>
+            <StaffCandidateCard
+              key={candidate.id}
+              candidate={candidate}
+              onHire={handleHireStaff}
+              formatEffect={formatEffect}
+            />
           ))}
           {availableStaff.length === 0 && (
             <div className="text-center text-muted text-sm sm:text-base py-10 w-full">

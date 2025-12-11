@@ -252,7 +252,7 @@ export function KeyMetrics() {
       <div className="grid grid-cols-1 gap-1 sm:gap-1.5 md:gap-2">
         <div className="flex items-center bg-black/65 py-0.5 sm:py-0.5 md:py-1 px-0.5 sm:px-0.5 md:px-1.5 rounded relative w-full min-w-0">
           {/* Icon positioned outside from the left with overflow design */}
-          <div className="absolute -left-1 sm:-left-1.5 md:-left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 md:w-6 md:h-6 rounded-full flex items-center justify-center z-10 overflow-hidden">
+          <div className="absolute -left-1 sm:-left-1.5 md:-left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 md:w-6 md:h-6 flex items-center justify-center z-10 overflow-hidden">
             <span className="text-white text-micro sm:text-ultra-sm md:text-sm">💵</span>
           </div>
 
@@ -273,14 +273,14 @@ export function KeyMetrics() {
           className="flex items-center bg-black/65 py-0.5 sm:py-0.5 md:py-1 px-0.5 sm:px-0.5 md:px-1.5 rounded relative w-full min-w-0"
         >
           {/* Icon positioned outside from the left with overflow design */}
-          <div className="absolute -left-1 sm:-left-1.5 md:-left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 md:w-6 md:h-6 rounded-full flex items-center justify-center z-10 overflow-hidden">
+          <div className="absolute -left-1 sm:-left-1.5 md:-left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 md:w-6 md:h-6 flex items-center justify-center z-10 overflow-hidden">
             {/* IMAGE-FIRST MODE: Use database images as single source of truth with icon fallback */}
             {metric.image ? (
               <Image
                 src={metric.image}
                 alt={metric.label}
                 fill
-                className="object-cover rounded-full"
+                className="object-cover"
               />
             ) : (
               <span className="text-white text-sm sm:text-base md:text-lg">{metric.icon}</span>

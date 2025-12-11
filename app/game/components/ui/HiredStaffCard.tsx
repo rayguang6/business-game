@@ -7,7 +7,7 @@ import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { Staff } from '@/lib/features/staff';
 import type { IndustryId } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
-import { getMetricIcon } from '@/lib/game/metrics/registry';
+import { getMetricIcon, getMetricEmojiIcon } from '@/lib/game/metrics/registry';
 import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
 import { calculateSeveranceCost, SEVERANCE_MULTIPLIER } from '@/lib/features/staff';
 import { Modal } from '@/app/components/ui/Modal';
@@ -59,83 +59,96 @@ export function HiredStaffCard({ member, onFire }: HiredStaffCardProps) {
   }, [getDisplayLabel]);
 
   return (
-    <div className="relative w-full h-full flex flex-col bg-slate-800 rounded-lg border border-slate-600 hover:bg-slate-750 transition-colors overflow-hidden">
-      {/* Header with Role */}
-      <div className="px-2 py-1 bg-slate-700 border-b border-slate-600 flex items-center justify-center">
-        <span className="text-xs font-bold text-slate-200 uppercase tracking-wide">
-          {member.role}
-        </span>
-      </div>
+    <div className="w-full flex flex-col justify-between bg-slate-800 rounded-lg border border-slate-600 hover:bg-slate-750 transition-colors">
+      {/* Top Content Section */}
+      <div className="space-y-0.5">
+        {/* Header with Role */}
+        <div className="px-3 md:px-4 py-2 bg-slate-700 border-b border-slate-600 flex items-center justify-center h-10 md:h-12">
+          <span className="text-xs md:text-sm font-bold text-slate-200 uppercase tracking-wide leading-tight line-clamp-2">
+            {member.role}
+          </span>
+        </div>
 
-      {/* Avatar Section */}
-      <div className="flex justify-center py-2">
-        <div className="relative w-8 h-8 bg-slate-600 rounded border border-slate-500 overflow-hidden">
-          <img
-            src={member.spriteImage || '/images/staff/staff1.png'}
-            alt={member.name}
-            className="w-[1600%] h-full object-cover object-left select-none"
-            style={{ imageRendering: 'pixelated' }}
-            draggable={false}
-            onContextMenu={(e) => e.preventDefault()}
-            onDragStart={(e) => e.preventDefault()}
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/images/staff/staff1.png';
-            }}
-          />
+        {/* Avatar Section */}
+        <div className="flex justify-center py-2">
+          <div className="relative w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 bg-slate-600 rounded border border-slate-500 overflow-hidden">
+            <img
+              src={member.spriteImage || '/images/staff/staff1.png'}
+              alt={member.name}
+              className="w-[1600%] h-full object-cover object-left select-none"
+              style={{ imageRendering: 'pixelated' }}
+              draggable={false}
+              onContextMenu={(e) => e.preventDefault()}
+              onDragStart={(e) => e.preventDefault()}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/images/staff/staff1.png';
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Name */}
+        <div className="px-3 md:px-4 pb-1 text-center">
+          <h4 className="text-white font-bold text-xs md:text-sm truncate">
+            {member.name}
+          </h4>
+        </div>
+
+        {/* Stats Panel */}
+        <div className="px-3 md:px-4 pb-1 space-y-0.5">
+          <div className="space-y-0.5">
+            {Array.from({ length: 2 }, (_, index) => {
+              const effect = member.effects[index];
+              if (effect) {
+                const formattedEffect = formatStaffEffect(effect);
+                return (
+                  <div key={index} className="flex items-center gap-1 min-w-0">
+                    <span className="text-slate-300 text-[10px] flex items-center gap-0.5 min-w-0 flex-1">
+                      {getMetricIcon(effect.metric) ? (
+                        <img
+                          src={getMetricIcon(effect.metric)!}
+                          alt=""
+                          className="w-4 h-4 flex-shrink-0"
+                        />
+                      ) : (
+                        <span className="text-[10px] flex-shrink-0">{getMetricEmojiIcon(effect.metric)}</span>
+                      )}
+                      <span className="truncate">{formattedEffect}</span>
+                    </span>
+                  </div>
+                );
+              } else {
+                // Empty effect line for consistent height
+                return (
+                  <div key={index} className="flex items-center gap-1 min-w-0 opacity-0">
+                    <span className="text-slate-300 text-[10px] flex items-center gap-0.5 min-w-0 flex-1">
+                      <span className="text-[10px] flex-shrink-0">📊</span>
+                      <span className="truncate">Placeholder +0</span>
+                    </span>
+                  </div>
+                );
+              }
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Name */}
-      <div className="px-2 pb-1 text-center">
-        <h4 className="text-white font-bold text-xs truncate">
-          {member.name}
-        </h4>
-      </div>
-
-      {/* Stats Panel */}
-      <div className="px-2 pb-2 space-y-0.5 flex-grow">
-        {member.effects.length > 0 && (
-          <div className="space-y-0.5">
-            {member.effects.slice(0, 2).map((effect, index) => {
-              const effectParts = formatStaffEffect(effect).split(' ');
-              const value = effectParts[0];
-              const label = effectParts.slice(1).join(' ');
-              return (
-                <div key={index} className="flex items-center justify-between gap-1 min-w-0">
-                  <span className="text-slate-300 text-xs flex items-center gap-0.5 min-w-0 flex-1">
-                    {getMetricIcon(effect.metric) ? (
-                      <img
-                        src={getMetricIcon(effect.metric)!}
-                        alt=""
-                        className="w-4 h-4 flex-shrink-0"
-                      />
-                    ) : (
-                      <span className="text-xs flex-shrink-0">•</span>
-                    )}
-                    <span className="truncate">{label}</span>
-                  </span>
-                  <span className="text-green-400 font-bold text-xs whitespace-nowrap flex-shrink-0">{value}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        <div className="text-center pt-1 border-t border-slate-600 mt-auto">
+      {/* Bottom Section: Salary and Button */}
+      <div className="px-3 md:px-4 pb-3 space-y-1">
+        {/* Salary - Bottom aligned */}
+        <div className="text-center">
           <div className="text-xs font-bold text-green-400">
             ${Math.round(member.salary).toLocaleString()}/m
           </div>
         </div>
-      </div>
 
-      {/* Fire Button */}
-      <div className="px-2 pb-2">
+        {/* Fire Button */}
         <GameButton
           onClick={handleFireClick}
           color="red"
           fullWidth
           size="sm"
-          className="w-full text-xs py-1"
+          className="w-full text-xs py-1.5"
           disabled={!canAffordSeverance}
         >
           Fire

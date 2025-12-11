@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useConfigStore } from '@/lib/store/configStore';
+import { useConfigStore, selectLevelRewardsForIndustry } from '@/lib/store/configStore';
 import type { LevelReward } from '@/lib/data/levelRewardsRepository';
 import type { IndustryId } from '@/lib/game/types';
 
@@ -11,11 +11,8 @@ import type { IndustryId } from '@/lib/game/types';
  * Data is loaded once at game start and never refetched
  */
 export function useLevelRewards(industryId: IndustryId, currentLevel?: number) {
-  // Get level rewards from the pre-loaded config store
-  const allLevelRewards = useConfigStore((state) => {
-    const config = state.industryConfigs[industryId];
-    return config?.levelRewards || [];
-  });
+  // Get level rewards from the pre-loaded config store using memoized selector
+  const allLevelRewards = useConfigStore(selectLevelRewardsForIndustry(industryId));
 
   // Get current level reward from all level rewards (just filtering, no network call)
   const currentLevelReward = useMemo(() => {

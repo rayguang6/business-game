@@ -7,7 +7,7 @@ import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { UpgradeEffect, UpgradeDefinition } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
-import { getMetricIcon } from '@/lib/game/metrics/registry';
+import { getMetricIcon, getMetricEmojiIcon } from '@/lib/game/metrics/registry';
 import { useRequirements } from '@/lib/hooks/useRequirements';
 import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
 import { Card } from '@/app/components/ui/Card';
@@ -32,7 +32,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
   const { getUpgradeLevel, purchaseUpgrade } = useGameStore();
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
-  const { getDisplayLabel } = useMetricDisplayConfigs(industryId);
+  const { getDisplayLabel, getMergedDefinition } = useMetricDisplayConfigs(industryId);
   // Subscribe to upgrades state to ensure re-renders when levels change
   const upgrades = useGameStore((state) => state.upgrades);
   // Subscribe to metrics with selector to ensure re-renders when metrics change
@@ -53,15 +53,15 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
         case GameMetric.Cash:
         case GameMetric.MonthlyExpenses:
         case GameMetric.ServiceRevenueFlatBonus:
-          return `${sign}${formatCurrency(value)}${label}`;
+          return `${sign}${formatCurrency(value)} ${label}`;
         case GameMetric.MyTime:
-          return `${sign}${formatMagnitude(value)}h${label}`;
+          return `${sign}${formatMagnitude(value)}h ${label}`;
         case GameMetric.LeadsPerMonth:
-          return `${sign}${formatMagnitude(value)}${label}`;
+          return `${sign}${formatMagnitude(value)} ${label}`;
         case GameMetric.ServiceCapacity:
-          return `${sign}${formatMagnitude(value)}${label}`;
+          return `${sign}${formatMagnitude(value)} ${label}`;
         default:
-          return `${sign}${formatMagnitude(value)}${label}`;
+          return `${sign}${formatMagnitude(value)} ${label}`;
       }
     }
 
@@ -69,15 +69,15 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
       const percent = Math.round(absValue);
       switch (metric) {
         case GameMetric.LeadsPerMonth:
-          return `${sign}${percent}%${label}`;
+          return `${sign}${percent}% ${label}`;
         default:
-          return `${sign}${percent}%${label}`;
+          return `${sign}${percent}% ${label}`;
       }
     }
 
     if (type === EffectType.Multiply) {
       const multiplier = Number.isInteger(value) ? value.toString() : value.toFixed(2);
-      return `×${multiplier}${label}`;
+      return `×${multiplier} ${label}`;
     }
 
     if (type === EffectType.Set) {
@@ -170,7 +170,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
           : ''
     }`}>
       {/* Level Badge - Absolute positioned */}
-      <div className={`absolute top-1 right-1 sm:top-2 sm:right-2 md:top-3 md:right-3 px-1.5 py-0.5 rounded border text-body-sm sm:text-label font-bold z-10 bg-black/40 backdrop-blur-sm ${
+      <div className={`absolute top-1 right-1 sm:top-2 sm:right-2 md:top-3 md:right-3 px-1.5 py-0.5 rounded border text-body-sm sm:text-label font-bold z-10 bg-black/20 ${
         currentLevel > 0
           ? 'text-green-300 border-green-400'
           : 'text-gray-300 border-gray-500'
@@ -193,7 +193,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
         {nextLevelConfig && !isMaxed && (
           <>
             <div>
-              <p className="text-caption font-semibold text-primary leading-tight break-words whitespace-normal">
+              <p className="text-xs font-semibold text-primary leading-tight break-words whitespace-normal">
                 {nextLevelConfig.name}
               </p>
             </div>
@@ -204,16 +204,17 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
                   {nextLevelEffects.map((effect, idx) => {
                     const effectData = nextLevelConfig?.effects[idx];
                     const iconPath = effectData ? getMetricIcon(effectData.metric) : null;
+                    const emojiIcon = effectData ? getMetricEmojiIcon(effectData.metric) : '📊';
                     return (
                       <li key={idx} className="flex items-center gap-1 text-caption sm:text-body-sm text-secondary leading-tight">
                         {iconPath ? (
                           <img
                             src={iconPath}
                             alt=""
-                            className="w-4 h-4 mt-0.5 flex-shrink-0"
+                            className="w-4 h-4 flex-shrink-0"
                           />
                         ) : (
-                          <span className="text-primary mt-0.5 flex-shrink-0">•</span>
+                          <span className="text-primary flex-shrink-0">{emojiIcon}</span>
                         )}
                         <span className="flex-1 break-words whitespace-normal">{effect}</span>
                       </li>
@@ -246,7 +247,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
           {/* Action Button */}
           <div className="relative">
             <GameButton
-              color={isMaxed ? 'gold' : canAfford && availability === 'available' ? 'blue' : 'gold'}
+              color={isMaxed ? 'gold' : buttonDisabled ? 'gray' : 'blue'}
               fullWidth
               size="sm"
               disabled={buttonDisabled}
@@ -280,15 +281,19 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
                   ? 'text-green-600 dark:text-green-400'
                   : 'text-red-600 dark:text-red-400'
               }`}>
-                {getMetricIcon(GameMetric.Cash) ? (
-                  <img
-                    src={getMetricIcon(GameMetric.Cash)!}
-                    alt="Cash"
-                    className="w-4 h-4"
-                  />
-                ) : (
-                  <span className="text-body-sm">💵</span>
-                )}
+                {(() => {
+                  const cashDef = getMergedDefinition(GameMetric.Cash);
+                  const iconPath = cashDef.iconPath;
+                  return iconPath ? (
+                    <img
+                      src={iconPath}
+                      alt="Cash"
+                      className="w-4 h-4"
+                    />
+                  ) : (
+                    <span className="text-body-sm">💵</span>
+                  );
+                })()}
                 <span className="text-caption font-bold sm:text-body-sm">
                   ${upgradeCost.toLocaleString()}
                 </span>
@@ -300,7 +305,19 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
                   ? 'text-cyan-600 dark:text-cyan-400'
                   : 'text-red-600 dark:text-red-400'
               }`}>
-                <span className="text-body-sm">⏱️</span>
+                {(() => {
+                  const timeDef = getMergedDefinition(GameMetric.MyTime);
+                  const iconPath = timeDef.iconPath;
+                  return iconPath ? (
+                    <img
+                      src={iconPath}
+                      alt="Time"
+                      className="w-4 h-4"
+                    />
+                  ) : (
+                    <span className="text-body-sm">⏱️</span>
+                  );
+                })()}
                 <span className="text-caption font-bold sm:text-body-sm">
                   {upgradeTimeCost}h
                 </span>

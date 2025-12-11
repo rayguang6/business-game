@@ -36,7 +36,7 @@ const formatDurationLabel = (durationMonths: number | null | undefined) => {
   if (durationMonths === null || durationMonths === undefined || !Number.isFinite(durationMonths) || durationMonths <= 0) {
     return '';
   }
-  return ` ${durationMonths} month`;
+  return ` for ${durationMonths} month`;
 };
 
 // formatMetricEffect moved inside component to use hook
@@ -446,6 +446,12 @@ const EventPopup: React.FC = () => {
 
   const defaultChoiceId = affordableChoice?.id || currentEvent.choices[0]?.id;
 
+  // DISABLED CHOICE STYLING - Comment/uncomment to switch between red and grey
+  // For RED styling (more obvious disabled state):
+  const disabledChoiceStyling = 'bg-red-600/60 border-red-500 text-red-200';
+  // For GREY styling (subtle disabled state):
+  // const disabledChoiceStyling = 'opacity-50 grayscale';
+
   return (
     <div className="absolute inset-0 z-[9999] flex items-center justify-center px-4 py-4 pointer-events-none">
       <div className="absolute inset-0 bg-black/35 pointer-events-auto" />
@@ -509,7 +515,7 @@ const EventPopup: React.FC = () => {
                   key={choice.id}
                   onClick={() => !isDisabled ? handleUserChoice(choice) : undefined}
                   disabled={isDisabled}
-                  className={`w-full text-left p-2 md:p-3 rounded transition-all duration-200 border ${choiceBg} ${choiceBorder} ${choiceText} text-xs md:text-sm flex flex-col items-start relative overflow-hidden group ${isDisabled ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}`}
+                  className={`w-full text-left p-2 md:p-3 rounded transition-all duration-200 border ${isDisabled ? disabledChoiceStyling : choiceBg} ${choiceBorder} ${choiceText} text-xs md:text-sm flex flex-col items-start relative overflow-hidden group ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                 >
                   {/* Subtle gloss effect */}
                   <div className="absolute top-0 left-0 w-full h-1/2 bg-white/5 rounded-t-md opacity-0 group-hover:opacity-100 transition-opacity duration-200" />

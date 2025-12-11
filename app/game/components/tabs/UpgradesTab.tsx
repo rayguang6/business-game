@@ -142,7 +142,7 @@ export function UpgradesTab() {
                         <span className="text-caption text-secondary">• {category.description}</span>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div className="max-w-5xl mx-auto grid grid-cols-3 gap-4">
                       {sortedUpgrades.map((upgrade) => (
                         <UpgradeCard key={upgrade.id} upgrade={upgrade} />
                       ))}
@@ -181,16 +181,14 @@ export function UpgradesTab() {
           <div className="text-center">
             <h4 className="text-heading text-primary mb-2 sm:mb-3">Hire Staff</h4>
           </div>
-          <div className="max-w-6xl mx-auto">
-            {/* Mobile: 2 columns, Tablet+: Grid layout */}
-            <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 px-1 sm:px-1.5 md:px-2 lg:px-3">
+          <div className="max-w-5xl mx-auto">
+            <div className="grid grid-cols-3 gap-4">
               {availableStaff.map((candidate) => (
-                <div key={candidate.id} className="w-full">
-                  <StaffCandidateCard
-                    candidate={candidate}
-                    onHire={handleHireStaff}
-                  />
-                </div>
+                <StaffCandidateCard
+                  key={candidate.id}
+                  candidate={candidate}
+                  onHire={handleHireStaff}
+                />
               ))}
             </div>
             {availableStaff.length === 0 && (
