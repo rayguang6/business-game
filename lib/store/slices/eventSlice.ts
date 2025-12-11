@@ -159,6 +159,7 @@ import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import { DynamicValueEvaluator } from '@/lib/game/dynamicValueEvaluator';
 import { SourceType } from '@/lib/config/sourceTypes';
 import { SourceHelpers } from '@/lib/utils/financialTracking';
+import { updateLeveragedTimeCapacity } from '@/lib/utils/metricUpdates';
 import { generateLeads } from '@/lib/features/leads';
 import { EventCategory, AUTO_RESOLVE_CATEGORIES } from '@/lib/game/constants/eventCategories';
 
@@ -419,27 +420,31 @@ const applyEventEffect = (
             store.applyTimeChange(delta);
           }
         } else if (effect.metric === GameMetric.LeveragedTime) {
-          const currentTime = metrics.leveragedTime;
-          const newTime = effectManager.calculate(GameMetric.LeveragedTime, currentTime);
-          const newCapacity = effectManager.calculate(GameMetric.LeveragedTime, 0);
-          const delta = newTime - currentTime;
-          // Update through metrics slice if available
+          // Use shared utility for leveraged time capacity updates
+          // In this context, we need to use updateMetrics if available, otherwise calculate manually
           if ((store as any).updateMetrics) {
-            let newLeveragedTime = metrics.leveragedTime;
-            
-            if (delta > 0) {
-              // When adding effects: add to both time and capacity
-              newLeveragedTime = metrics.leveragedTime + delta;
-            } else {
-              // When removing effects: decrease both time and capacity
-              // Also clamp time to not exceed the new capacity
-              newLeveragedTime = Math.min(metrics.leveragedTime, newCapacity);
+            // Calculate the updates using our utility logic
+            const newCapacity = effectManager.calculate(GameMetric.LeveragedTime, 0);
+            const currentCapacity = metrics.leveragedTimeCapacity;
+            const capacityDelta = newCapacity - currentCapacity;
+
+            if (capacityDelta !== 0) {
+              let newLeveragedTime = metrics.leveragedTime;
+
+              if (capacityDelta > 0) {
+                // When adding effects: add to both time and capacity
+                newLeveragedTime = metrics.leveragedTime + capacityDelta;
+              } else {
+                // When removing effects: decrease both time and capacity
+                // Also clamp time to not exceed the new capacity
+                newLeveragedTime = Math.min(metrics.leveragedTime, newCapacity);
+              }
+
+              (store as any).updateMetrics({
+                leveragedTime: Math.max(0, Math.round(newLeveragedTime)),
+                leveragedTimeCapacity: Math.max(0, newCapacity),
+              });
             }
-            
-            (store as any).updateMetrics({ 
-              leveragedTime: Math.max(0, Math.round(newLeveragedTime)),
-              leveragedTimeCapacity: Math.max(0, newCapacity),
-            });
           }
         }
       } else if (effect.metric === GameMetric.Exp) {
@@ -808,30 +813,8 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
                   store.applyTimeChange(delta);
                 }
               } else if (resolvedEffect.metric === GameMetric.LeveragedTime) {
-                const currentTime = metrics.leveragedTime;
-                const newTime = effectManager.calculate(GameMetric.LeveragedTime, currentTime);
-                const newCapacity = effectManager.calculate(GameMetric.LeveragedTime, 0);
-                const delta = newTime - currentTime;
-                set((state) => {
-                  let newLeveragedTime = state.metrics.leveragedTime;
-                  
-                  if (delta > 0) {
-                    // When adding effects: add to both time and capacity
-                    newLeveragedTime = state.metrics.leveragedTime + delta;
-                  } else {
-                    // When removing effects: decrease both time and capacity
-                    // Also clamp time to not exceed the new capacity
-                    newLeveragedTime = Math.min(state.metrics.leveragedTime, newCapacity);
-                  }
-                  
-                  return {
-                    metrics: {
-                      ...state.metrics,
-                      leveragedTime: Math.max(0, Math.round(newLeveragedTime)),
-                      leveragedTimeCapacity: Math.max(0, newCapacity),
-                    },
-                  };
-                });
+                // Use shared utility for leveraged time capacity updates
+                updateLeveragedTimeCapacity(metrics, set);
               }
             } else if (resolvedEffect.metric === GameMetric.Exp) {
               const currentExp = metrics.exp;
@@ -949,30 +932,8 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
                 const newTime = effectManager.calculate(GameMetric.MyTime, currentTime);
                 store.applyTimeChange(newTime - currentTime);
               } else if (resolvedEffect.metric === GameMetric.LeveragedTime) {
-                const currentTime = metrics.leveragedTime;
-                const newTime = effectManager.calculate(GameMetric.LeveragedTime, currentTime);
-                const newCapacity = effectManager.calculate(GameMetric.LeveragedTime, 0);
-                const delta = newTime - currentTime;
-                set((state) => {
-                  let newLeveragedTime = state.metrics.leveragedTime;
-                  
-                  if (delta > 0) {
-                    // When adding effects: add to both time and capacity
-                    newLeveragedTime = state.metrics.leveragedTime + delta;
-                  } else {
-                    // When removing effects: decrease both time and capacity
-                    // Also clamp time to not exceed the new capacity
-                    newLeveragedTime = Math.min(state.metrics.leveragedTime, newCapacity);
-                  }
-                  
-                  return {
-                    metrics: {
-                      ...state.metrics,
-                      leveragedTime: Math.max(0, Math.round(newLeveragedTime)),
-                      leveragedTimeCapacity: Math.max(0, newCapacity),
-                    },
-                  };
-                });
+                // Use shared utility for leveraged time capacity updates
+                updateLeveragedTimeCapacity(metrics, set);
               }
             } else if (resolvedEffect.metric === GameMetric.Exp) {
               const currentExp = metrics.exp;

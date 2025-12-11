@@ -13,6 +13,7 @@ import { effectManager, GameMetric, EffectType } from '@/lib/game/effectManager'
 import { getAvailability } from '@/lib/game/requirementChecker';
 import { SourceType, SourceInfo } from '@/lib/config/sourceTypes';
 import { SourceHelpers } from '@/lib/utils/financialTracking';
+import { updateLeveragedTimeCapacity } from '@/lib/utils/metricUpdates';
 import { IndustryId } from '@/lib/game/types';
 
 const findUpgradeDefinition = (industryId: IndustryId, upgradeId: UpgradeId): UpgradeDefinition | undefined => {
@@ -448,34 +449,8 @@ export const createUpgradesSlice: StateCreator<GameStore, [], [], UpgradesSlice>
       recordEventExpense: store.recordEventExpense,
     });
 
-    // Immediately update leveraged time from effects (don't wait for month transition)
-    // Calculate new capacity from all effects
-    const newLeveragedTimeCapacity = effectManager.calculate(GameMetric.LeveragedTime, 0);
-    const currentCapacity = store.metrics.leveragedTimeCapacity;
-    const capacityDelta = newLeveragedTimeCapacity - currentCapacity;
-    
-    if (capacityDelta !== 0) {
-      set((state) => {
-        let newLeveragedTime = state.metrics.leveragedTime;
-        
-        if (capacityDelta > 0) {
-          // When adding effects: add to both time and capacity
-          newLeveragedTime = state.metrics.leveragedTime + capacityDelta;
-        } else {
-          // When removing effects: decrease both time and capacity
-          // Also clamp time to not exceed the new capacity
-          newLeveragedTime = Math.min(state.metrics.leveragedTime, newLeveragedTimeCapacity);
-        }
-        
-        return {
-          metrics: {
-            ...state.metrics,
-            leveragedTime: Math.max(0, newLeveragedTime),
-            leveragedTimeCapacity: Math.max(0, newLeveragedTimeCapacity),
-          },
-        };
-      });
-    }
+    // Immediately update leveraged time capacity from effects (don't wait for month transition)
+    updateLeveragedTimeCapacity(store.metrics, set);
 
     // Set flag if upgrade sets one
     if (upgrade.setsFlag) {

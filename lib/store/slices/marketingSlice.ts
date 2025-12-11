@@ -11,6 +11,7 @@ import type { Lead } from '@/lib/features/leads';
 import { generateLeads } from '@/lib/features/leads';
 import { SourceType, SourceInfo } from '@/lib/config/sourceTypes';
 import { SourceHelpers } from '@/lib/utils/financialTracking';
+import { updateLeveragedTimeCapacity } from '@/lib/utils/metricUpdates';
 
 // Marketing campaign effect (simplified from full Effect, no ID/source yet)
 export interface CampaignEffect {
@@ -326,6 +327,9 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
         }
       }
 
+      // Immediately update leveraged time capacity from effects (don't wait for month transition)
+      updateLeveragedTimeCapacity(store.metrics, set);
+
       // Update level
       set((state) => ({
         campaignLevels: {
@@ -425,8 +429,8 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
       }
 
       //To change unlimited campaigns to overriding:
-      //Add before line 391: removeMarketingEffects(campaignId);  
-      
+      //Add before line 391: removeMarketingEffects(campaignId);
+
       // Register effects (effects from multiple launches will stack)
       const store = get();
       // Use gameTime + 10 to ensure effects don't expire immediately due to timing issues
@@ -448,6 +452,9 @@ export const createMarketingSlice: StateCreator<GameStore, [], [], MarketingSlic
           }));
         },
       });
+
+      // Immediately update leveraged time capacity from effects (don't wait for month transition)
+      updateLeveragedTimeCapacity(store.metrics, set);
 
       // Set flag if campaign sets one
       if (campaign.setsFlag) {
