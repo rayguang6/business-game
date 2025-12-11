@@ -181,7 +181,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
   
   [GameMetric.LeadsPerMonth]: {
     id: GameMetric.LeadsPerMonth,
-    displayLabel: 'Leads Per Month',
+    displayLabel: 'Leads/Month',
     description: 'Number of leads spawned per industry month. Internally converted to spawn interval for game mechanics.',
     defaultValueSource: 'businessStats',
     defaultValuePath: 'leadsPerMonth',
@@ -193,7 +193,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
       showOnHUD: true,
       showInDetails: false,
       showInAdmin: false,
-      unit: ' leads/month',
+      unit: '/m',
     },
     canBeModifiedByEffects: true,
   },

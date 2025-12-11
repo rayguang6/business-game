@@ -206,7 +206,7 @@ export function EventEffectEditor({
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Duration (s)</label>
+            <label className="block text-xs text-slate-400 mb-1">Duration (months)</label>
             <NumberInput
               min="0"
               step="1"

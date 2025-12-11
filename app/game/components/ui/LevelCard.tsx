@@ -13,17 +13,7 @@ import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
 import { getMetricIcon } from '@/lib/game/metrics/registry';
 import type { UpgradeEffect } from '@/lib/game/types';
-
-const formatMagnitude = (value: number): string => {
-  return Number.isInteger(value) ? Math.abs(value).toString() : Math.abs(value).toFixed(2);
-};
-
-const formatRawNumber = (value: number): string => {
-  return Number.isInteger(value) ? value.toString() : value.toFixed(2);
-};
-
-const formatCurrency = (value: number): string => `$${Math.abs(value).toLocaleString()}`;
-const formatRawCurrency = (value: number): string => `${value < 0 ? '-' : ''}$${Math.abs(value).toLocaleString()}`;
+import { LevelEffectsDisplay } from './LevelEffectsDisplay';
 
 // Use centralized metric icons from registry
 // const getEffectIcon = (metric: GameMetric) => getMetricIcon(metric);
@@ -97,108 +87,6 @@ export function LevelCard() {
       });
   }, [currentLevel, industryId]);
 
-  const formatEffect = useCallback((effect: UpgradeEffect): string => {
-    const { metric, type, value } = effect;
-    const label = getDisplayLabel(metric);
-    const sign = value >= 0 ? '+' : '-';
-    const absValue = Math.abs(value);
-
-    // Get unit from metric definition
-    const metricDef = getMergedDefinition(metric);
-    const unit = metricDef.display.unit || '';
-
-    if (type === EffectType.Add) {
-      switch (metric) {
-        case GameMetric.Cash:
-        case GameMetric.MonthlyExpenses:
-        case GameMetric.ServiceRevenueFlatBonus:
-          return `${sign}${formatCurrency(value)} ${label}`;
-        case GameMetric.MyTime:
-          return `${sign}${formatMagnitude(value)}h ${label}`;
-        case GameMetric.LeadsPerMonth:
-          return `${sign}${formatMagnitude(value)} ${label}`;
-        case GameMetric.ServiceCapacity:
-          return `${sign}${formatMagnitude(value)} ${label}`;
-        default:
-          return `${sign}${formatMagnitude(value)}${unit} ${label}`;
-      }
-    }
-
-    if (type === EffectType.Percent) {
-      const percent = Math.round(absValue);
-      switch (metric) {
-        case GameMetric.LeadsPerMonth:
-          return `${sign}${percent}% ${label}`;
-        default:
-          return `${sign}${percent}% ${label}`;
-      }
-    }
-
-    if (type === EffectType.Multiply) {
-      const multiplier = Number.isInteger(value) ? value.toString() : value.toFixed(2);
-      return `×${multiplier} ${label}`;
-    }
-
-    if (type === EffectType.Set) {
-      switch (metric) {
-        case GameMetric.MonthlyExpenses:
-        case GameMetric.ServiceRevenueFlatBonus:
-          return `Set ${label} to ${formatRawCurrency(value)}`;
-        case GameMetric.LeadsPerMonth:
-          return `Set ${label} to ${formatRawNumber(value)}`;
-        default:
-          return `Set ${label} to ${formatRawNumber(value)}`;
-      }
-    }
-
-    return `${sign}${formatMagnitude(value)}${unit} ${label}`;
-  }, [getDisplayLabel, getMergedDefinition]);
-
-  // Format effect value for display
-  const formatEffectValue = useCallback((effect: UpgradeEffect): string => {
-    const { metric, type, value } = effect;
-    const sign = value >= 0 ? '+' : '-';
-    const absValue = Math.abs(value);
-
-    // Get unit from metric definition
-    const metricDef = getMergedDefinition(metric);
-    const unit = metricDef.display.unit || '';
-
-    if (type === EffectType.Add) {
-      switch (metric) {
-        case GameMetric.Cash:
-        case GameMetric.MonthlyExpenses:
-        case GameMetric.ServiceRevenueFlatBonus:
-          return `${sign}${formatCurrency(value)}`;
-        case GameMetric.MyTime:
-          return `${sign}${formatMagnitude(value)}h`;
-        default:
-          return `${sign}${formatMagnitude(value)}${unit}`;
-      }
-    }
-
-    if (type === EffectType.Percent) {
-      const percent = Math.round(absValue);
-      return `${sign}${percent}%`;
-    }
-
-    if (type === EffectType.Multiply) {
-      const multiplier = Number.isInteger(value) ? value.toString() : value.toFixed(2);
-      return `×${multiplier}${unit}`;
-    }
-
-    if (type === EffectType.Set) {
-      switch (metric) {
-        case GameMetric.MonthlyExpenses:
-        case GameMetric.ServiceRevenueFlatBonus:
-          return formatRawCurrency(value);
-        default:
-          return formatRawNumber(value);
-      }
-    }
-
-    return `${sign}${formatMagnitude(value)}${unit}`;
-  }, [getMergedDefinition]);
 
   // Helper function to calculate cumulative effects up to a specific level
   const calculateCumulativeEffects = useCallback((targetLevel: number): UpgradeEffect[] => {
@@ -280,25 +168,6 @@ export function LevelCard() {
   }, [nextLevelReward, nextLevelEffects]);
 
 
-  // Combine all unique effects from current and next level for comparison
-  const allEffectKeys = useMemo(() => {
-    const keys = new Set<string>();
-    currentLevelEffects.forEach(effect => {
-      keys.add(`${effect.metric}_${effect.type}`);
-    });
-    if (hasNextLevel) {
-      nextLevelEffects.forEach(effect => {
-        keys.add(`${effect.metric}_${effect.type}`);
-      });
-    }
-    return Array.from(keys);
-  }, [currentLevelEffects, nextLevelEffects, hasNextLevel]);
-
-  // Get effect value for a specific level
-  const getEffectValue = useCallback((effects: UpgradeEffect[], metric: GameMetric, type: EffectType): number | null => {
-    const effect = effects.find(e => e.metric === metric && e.type === type);
-    return effect ? effect.value : null;
-  }, []);
 
   // If config not ready, show loading
   if (configStatus !== 'ready') {
@@ -363,68 +232,16 @@ export function LevelCard() {
         </div>
 
         {/* Effects Comparison */}
-        {allEffectKeys.length > 0 ? (
-          <div className="space-y-3 p-3 bg-secondary/5 rounded-lg border border-secondary/10">
-            {allEffectKeys.map((key) => {
-              const [metricStr, typeStr] = key.split('_');
-              const metric = metricStr as GameMetric;
-              const type = typeStr as EffectType;
-
-              const currentValue = getEffectValue(currentLevelEffects, metric, type);
-              const nextValue = getEffectValue(nextLevelEffects, metric, type);
-              const label = getDisplayLabel(metric);
-
-              // Only show if there's a current or next value
-              if (currentValue === null && nextValue === null) {
-                return null;
-              }
-
-              return (
-                <div key={key} className="grid grid-cols-12 items-center">
-                  {/* Metric Label Box */}
-                  <div className="col-span-5">
-                    <span className="text-sm text-secondary font-medium">
-                      {label}
-                    </span>
-                  </div>
-
-                  {/* Values Box - centered within remaining space */}
-                  <div className="col-span-7 flex items-center justify-center gap-2">
-                    {/* Current Level Value */}
-                    <span className="text-sm font-semibold text-primary">
-                      {currentValue !== null ? formatEffectValue({ metric, type, value: currentValue } as UpgradeEffect) : '0'}
-                    </span>
-
-                    {/* Arrow and Next Value (only if next level exists) */}
-                    {hasNextLevel && (
-                      <>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-tertiary flex-shrink-0">
-                          <path d="M5 12h14M12 5l7 7-7 7" />
-                        </svg>
-                        <span
-                          className={`text-sm font-semibold ${
-                            nextValue !== null && nextValue !== currentValue ? 'text-green-500' : 'text-primary'
-                          }`}
-                        >
-                          {nextValue !== null ? formatEffectValue({ metric, type, value: nextValue } as UpgradeEffect) : '0'}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-8 px-4">
-            <div className="text-2xl mb-2">🏆</div>
-            <div className="text-sm text-tertiary">
-              {hasNextLevel
-                ? 'No level rewards configured yet.'
-                : 'Maximum level reached! All bonuses unlocked.'}
-            </div>
-          </div>
-        )}
+        <LevelEffectsDisplay
+          effects={currentLevelEffects}
+          currentLevelEffects={currentLevelEffects}
+          nextLevelEffects={nextLevelEffects}
+          getDisplayLabel={getDisplayLabel}
+          getMergedDefinition={getMergedDefinition}
+          showOneTimeBonuses={false}
+          hasNextLevel={hasNextLevel}
+          className="p-3 bg-secondary/5 rounded-lg border border-secondary/10"
+        />
       </div>
     </Card>
   );

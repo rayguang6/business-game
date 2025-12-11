@@ -6,6 +6,8 @@ import { fetchLevelReward, fetchLevelRewards } from '@/lib/server/actions/adminA
 import type { LevelReward } from '@/lib/data/levelRewardsRepository';
 import type { UpgradeEffect } from '@/lib/game/types';
 import type { GameStore } from '@/lib/store/gameStore';
+import type { Lead } from '@/lib/features/leads';
+import { SourceType } from '@/lib/config/sourceTypes';
 
 // Cache for level rewards per industry (loaded once per game session)
 const levelRewardsCache = new Map<IndustryId, LevelReward[]>();
@@ -41,18 +43,108 @@ export function clearLevelRewardsCache(industryId?: IndustryId): void {
 }
 
 /**
- * Apply effects from a level reward through effectManager
+ * Check if an effect should be applied as a one-time bonus rather than a persistent effect
+ */
+function shouldApplyAsOneTimeBonus(metric: GameMetric, type: EffectType): boolean {
+  // One-time bonuses: Add effects on spendable resources
+  if (type === EffectType.Add) {
+    return [
+      GameMetric.Cash,
+      GameMetric.MyTime,
+      GameMetric.LeveragedTime,
+      GameMetric.Exp,
+      GameMetric.GenerateLeads,
+    ].includes(metric);
+  }
+
+  // All other effects (Percent, Multiply, Set) are persistent modifiers
+  return false;
+}
+
+/**
+ * Apply effects from a level reward
+ * Some effects are granted immediately (one-time bonuses), others are persistent modifiers
  */
 function applyLevelRewardEffects(
   levelReward: LevelReward,
+  store: GameStore,
   gameTime: number,
 ): void {
   const sourceId = `level-${levelReward.level}`;
   const sourceName = levelReward.title;
 
   levelReward.effects.forEach((effect: UpgradeEffect, index: number) => {
+    // Check if this should be a one-time bonus
+    if (shouldApplyAsOneTimeBonus(effect.metric as GameMetric, effect.type as EffectType)) {
+      // Apply as one-time bonus
+      switch (effect.metric) {
+        case GameMetric.Cash: {
+          const { recordEventRevenue } = store;
+          if (recordEventRevenue) {
+            const sourceInfo = {
+              type: SourceType.Event,
+              id: sourceId,
+              name: sourceName,
+            };
+            recordEventRevenue(effect.value, sourceInfo, `Level ${levelReward.level} reward: ${levelReward.title}`);
+          }
+          break;
+        }
+
+        case GameMetric.MyTime: {
+          const { applyTimeChange } = store;
+          if (applyTimeChange) {
+            applyTimeChange(effect.value);
+          }
+          break;
+        }
+
+        case GameMetric.LeveragedTime: {
+          // For leveraged time, we need to update the metrics directly
+          const { updateMetrics } = store;
+          if (updateMetrics) {
+            updateMetrics({
+              leveragedTime: store.metrics.leveragedTime + effect.value,
+            });
+          }
+          break;
+        }
+
+        case GameMetric.Exp: {
+          const { applyExpChange } = store;
+          if (applyExpChange) {
+            applyExpChange(effect.value);
+          }
+          break;
+        }
+
+        case GameMetric.GenerateLeads: {
+          // Generate the specified number of leads immediately
+          const { spawnLead, updateLeads, leads } = store;
+          if (spawnLead && updateLeads) {
+            const leadsToAdd: Lead[] = [];
+            const count = Math.max(1, Math.floor(effect.value)); // Ensure at least 1 lead
+
+            for (let i = 0; i < count; i++) {
+              const lead = spawnLead();
+              leadsToAdd.push(lead);
+            }
+
+            // Add all leads at once
+            updateLeads([...leads, ...leadsToAdd]);
+
+            console.log(`[LevelRewards] Generated ${count} leads for level ${levelReward.level} reward`);
+          }
+          break;
+        }
+      }
+
+      return; // Don't apply through effectManager for one-time bonuses
+    }
+
+    // For persistent effects, apply through effectManager as before
     const effectId = `${sourceId}-effect-${index}`;
-    
+
     effectManager.add(
       {
         id: effectId,
@@ -126,7 +218,7 @@ export async function checkAndApplyLevelUp(
     }
 
     // Apply effects
-    applyLevelRewardEffects(levelReward, gameTime);
+    applyLevelRewardEffects(levelReward, store, gameTime);
 
     // Set flags
     applyLevelRewardFlags(levelReward, store);
