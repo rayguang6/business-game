@@ -351,10 +351,6 @@ export function EventsTab({
     const description = consequenceForm.description.trim();
     const weight = Number(consequenceForm.weight);
 
-    if (!label) {
-      error('Consequence label is required.');
-      return;
-    }
     if (!Number.isFinite(weight) || weight < 1) {
       error('Consequence weight must be a positive integer.');
       return;
