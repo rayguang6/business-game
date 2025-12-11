@@ -232,6 +232,15 @@ export function useEvents(industryId: string, eventId?: string) {
     const missingFields: string[] = [];
     if (!title) missingFields.push('Title');
 
+    // Validate GoodBad events have consequences
+    if (category === EventCategory.GoodBad) {
+      const hasValidChoice = choices.length === 1 && choices[0].consequences && choices[0].consequences.length > 0;
+      if (!hasValidChoice) {
+        error('Good/Bad events must have exactly one choice with at least one consequence. Add consequences to the auto-created choice.');
+        return;
+      }
+    }
+
     if (missingFields.length > 0) {
       error(`Saved locally. Missing required fields: ${missingFields.join(', ')}. Fill them to persist.`);
       return;

@@ -144,7 +144,7 @@ export const useRandomEventTrigger = () => {
                 // Auto-resolve by selecting the first (and only) choice
                 const choiceToResolve = selectedEvent.choices[0];
                 if (choiceToResolve) {
-                  resolveEventChoice(choiceToResolve.id);
+                  resolveEventChoice(choiceToResolve.id, selectedEvent);
                 }
               } else {
                 setCurrentEvent(selectedEvent);
@@ -160,7 +160,7 @@ export const useRandomEventTrigger = () => {
                 // Auto-resolve by selecting the first (and only) choice
                 const choiceToResolve = randomEvent.choices[0];
                 if (choiceToResolve) {
-                  resolveEventChoice(choiceToResolve.id);
+                  resolveEventChoice(choiceToResolve.id, randomEvent);
                 }
               } else {
                 setCurrentEvent(randomEvent);
@@ -175,7 +175,7 @@ export const useRandomEventTrigger = () => {
               // Auto-resolve by selecting the first (and only) choice
               const choiceToResolve = randomEvent.choices[0];
               if (choiceToResolve) {
-                resolveEventChoice(choiceToResolve.id);
+                resolveEventChoice(choiceToResolve.id, randomEvent);
               }
             } else {
               setCurrentEvent(randomEvent);

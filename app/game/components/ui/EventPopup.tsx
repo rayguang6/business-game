@@ -8,7 +8,7 @@ import { useConfigStore } from '@/lib/store/configStore';
 import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { IndustryId } from '@/lib/game/types';
-import { EventCategory } from '@/lib/game/constants/eventCategories';
+import { EventCategory, AUTO_RESOLVE_CATEGORIES } from '@/lib/game/constants/eventCategories';
 
 const getEffectIcon = (type: GameEventEffect['type']) => {
   switch (type) {
@@ -107,6 +107,13 @@ const EventPopup: React.FC = () => {
     }
 
     if (!currentEvent) {
+      setCountdown(null);
+      return;
+    }
+
+    // Auto-resolve categories should never reach the choice popup
+    // But if they do, don't auto-select - just skip the timer
+    if (AUTO_RESOLVE_CATEGORIES.has(currentEvent.category)) {
       setCountdown(null);
       return;
     }

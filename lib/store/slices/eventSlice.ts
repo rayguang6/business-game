@@ -219,7 +219,7 @@ export interface EventSlice {
   pendingDelayedConsequences: PendingDelayedConsequence[];
   lastDelayedOutcome: ResolvedDelayedOutcome | null;
   setCurrentEvent: (event: GameEvent | null) => void;
-  resolveEventChoice: (choiceId: string) => void;
+  resolveEventChoice: (choiceId: string, event?: GameEvent) => void;
   clearLastEventOutcome: () => void;
   clearLastDelayedOutcome: () => void;
   resetEvents: () => void;
@@ -507,9 +507,9 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
       currentEvent: null,
     });
   },
-  resolveEventChoice: (choiceId) => {
+  resolveEventChoice: (choiceId, eventOverride) => {
     const store = get();
-    const event = store.currentEvent;
+    const event = eventOverride || store.currentEvent;
 
     if (!event) {
       return;
