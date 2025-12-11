@@ -268,10 +268,29 @@ export function EventsTab({
   const selectConsequence = (consequence: GameEventConsequence) => {
     if (!consequence) return;
     setIsCreatingConsequence(false);
-    setSelectedConsequenceId(consequence.id);
+
+    // Ensure the consequence has an ID, generate one if missing
+    let consequenceId = consequence.id?.trim();
+    if (!consequenceId) {
+      const choiceIndex = eventChoices.findIndex((c) => c.id === selectedChoiceId);
+      if (choiceIndex !== -1) {
+        const existingIds = new Set(eventChoices[choiceIndex].consequences.map(cs => cs.id));
+        consequenceId = generateUniqueId('consequence', existingIds, consequence.label);
+
+        // Update the consequence with the new ID
+        const updatedChoices = [...eventChoices];
+        const consequenceIndex = updatedChoices[choiceIndex].consequences.findIndex(cs => cs === consequence);
+        if (consequenceIndex !== -1) {
+          updatedChoices[choiceIndex].consequences[consequenceIndex] = { ...consequence, id: consequenceId };
+          onUpdateEventChoices(updatedChoices);
+        }
+      }
+    }
+
+    setSelectedConsequenceId(consequenceId);
     const delayed = consequence.delayedConsequence;
     setConsequenceForm({
-      id: consequence.id || '',
+      id: consequenceId,
       label: consequence.label ?? '',
       description: consequence.description ?? '',
       weight: String(consequence.weight || 1),

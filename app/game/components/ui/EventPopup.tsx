@@ -225,24 +225,26 @@ const EventPopup: React.FC = () => {
         <div className="relative z-10 w-full max-w-[70%] md:max-w-md pointer-events-auto">
           {/* Game-style frame */}
           <div className="absolute inset-0 bg-gradient-to-br from-[var(--game-primary-light)]/20 via-[var(--game-primary)]/15 to-[var(--game-primary-dark)]/20 rounded-md md:rounded-2xl border-2 border-[var(--game-primary)]/30 shadow-[0_0_30px_rgba(35,170,246,0.3)]" />
-          
+
           <div className="relative bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-secondary)] rounded-md md:rounded-2xl shadow-xl p-2.5 md:p-6 border-2 border-[var(--border-primary)] max-h-[calc(100vh-5rem)] md:max-h-[70vh] overflow-y-auto">
-            <div className="flex items-center gap-1 md:gap-1.5 mb-1.5 md:mb-3">
-              <span className="text-[var(--game-primary-light)] text-sm md:text-xl drop-shadow-[0_0_4px_rgba(35,170,246,0.6)]">⏰</span>
-              <h3 className="text-sm md:text-lg font-semibold text-[var(--text-primary)] leading-tight flex-1" style={{
+            {/* Main Title - Delayed Outcome Title */}
+            <div className="mb-1.5 md:mb-3">
+              <h3 className="text-sm md:text-lg font-semibold text-[var(--text-primary)] leading-tight" style={{
                 textShadow: '0 1px 2px rgba(0,0,0,0.8)'
               }}>
-                {lastDelayedOutcome.label || 'Additional Event Outcome'}
+                {lastDelayedOutcome.label || 'Delayed Event Outcome'}
               </h3>
             </div>
+
+            {/* Event Summary - Shows source event and choice */}
             <p className="text-[10px] md:text-sm text-[var(--text-secondary)] mb-1.5 md:mb-3 leading-snug">
               From <span className="font-semibold text-[var(--game-primary-light)]">{lastDelayedOutcome.eventTitle}</span> - <span className="font-semibold text-[var(--game-primary-light)]">{lastDelayedOutcome.choiceLabel}</span>
             </p>
+
+            {/* Consequence Description */}
             {lastDelayedOutcome.description && (
               <div className={`text-[10px] md:text-sm text-[var(--text-primary)] mb-1 md:mb-2 bg-[var(--bg-tertiary)]/50 rounded p-1.5 md:p-2 border border-[var(--border-secondary)] ${lastDelayedOutcome.success ? 'border-green-500/50' : 'border-red-500/50'}`}>
-                <div className="text-[var(--text-secondary)]">
-                  {lastDelayedOutcome.description}
-                </div>
+                <span className="font-medium">{lastDelayedOutcome.description}</span>
               </div>
             )}
             {lastDelayedOutcome.appliedEffects.length > 0 && (
@@ -269,27 +271,27 @@ const EventPopup: React.FC = () => {
                 </ul>
               </div>
             )}
-            <button
-              type="button"
-              onClick={() => {
-                if (outcomeTimeoutRef.current) {
-                  clearTimeout(outcomeTimeoutRef.current);
-                  outcomeTimeoutRef.current = null;
-                }
-                if (outcomeIntervalRef.current) {
-                  clearInterval(outcomeIntervalRef.current);
-                  outcomeIntervalRef.current = null;
-                }
-                setOutcomeCountdown(null);
-                clearLastDelayedOutcome();
-              }}
-              className="mt-1.5 md:mt-3 w-full bg-gradient-to-b from-[var(--game-primary-light)] via-[var(--game-primary)] to-[var(--game-primary-dark)] hover:from-[var(--game-primary)] hover:via-[var(--game-primary-dark)] hover:to-[var(--game-primary-dark)] text-white text-[10px] md:text-sm font-semibold py-1.5 md:py-2 rounded border-2 border-black/20 shadow-lg hover:shadow-xl transition-all duration-200"
-              style={{
-                textShadow: '0 1px 2px rgba(0,0,0,0.8)'
-              }}
-            >
-              Continue{outcomeCountdown !== null && outcomeCountdown > 0 ? ` (${outcomeCountdown}s)` : ''}
-            </button>
+            <div className="mt-1.5 md:mt-3">
+              <GameButton
+                color="blue"
+                fullWidth
+                size="sm"
+                onClick={() => {
+                  if (outcomeTimeoutRef.current) {
+                    clearTimeout(outcomeTimeoutRef.current);
+                    outcomeTimeoutRef.current = null;
+                  }
+                  if (outcomeIntervalRef.current) {
+                    clearInterval(outcomeIntervalRef.current);
+                    outcomeIntervalRef.current = null;
+                  }
+                  setOutcomeCountdown(null);
+                  clearLastDelayedOutcome();
+                }}
+              >
+                Continue{outcomeCountdown !== null && outcomeCountdown > 0 ? ` (${outcomeCountdown}s)` : ''}
+              </GameButton>
+            </div>
           </div>
         </div>
       </div>
@@ -322,6 +324,14 @@ const EventPopup: React.FC = () => {
               </p>
             )}
 
+            {/* Choice Info (only for Opportunity events) */}
+            {lastEventOutcome.eventCategory === EventCategory.Opportunity && (
+              <p className="text-[10px] md:text-sm text-[var(--text-secondary)] mb-1.5 md:mb-3 leading-snug">
+                You chose <span className="font-semibold text-[var(--game-primary-light)]">{lastEventOutcome.choiceLabel}</span>
+                {lastEventOutcome.costPaid > 0 && <span className="text-red-400 ml-1">(-${lastEventOutcome.costPaid})</span>}
+              </p>
+            )}
+
             {/* Consequence Label as Small Subtitle */}
             {lastEventOutcome.consequenceLabel && (
               <div className="mb-1.5 md:mb-3">
@@ -331,14 +341,6 @@ const EventPopup: React.FC = () => {
                   {lastEventOutcome.consequenceLabel}
                 </h4>
               </div>
-            )}
-
-            {/* Choice Info (only for non-GoodBad events) */}
-            {lastEventOutcome.eventCategory !== EventCategory.GoodBad && (
-              <p className="text-[10px] md:text-sm text-[var(--text-secondary)] mb-1.5 md:mb-3 leading-snug">
-                You chose <span className="font-semibold text-[var(--game-primary-light)]">{lastEventOutcome.choiceLabel}</span>
-                {lastEventOutcome.costPaid > 0 && <span className="text-red-400 ml-1">(-${lastEventOutcome.costPaid})</span>}
-              </p>
             )}
 
             {/* Consequence Description */}
