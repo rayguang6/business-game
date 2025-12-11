@@ -1,15 +1,16 @@
 import { effectManager, GameMetric } from '@/lib/game/effectManager';
+import { GameStore } from '@/lib/store/gameStore';
 
 /**
  * Updates leveraged time capacity and current time based on active effects
  * This should be called whenever effects that modify LeveragedTime are added or removed
  *
  * @param currentMetrics - Current metrics state
- * @param setMetrics - Function to update metrics state
+ * @param set - Zustand set function to update the full store state
  */
 export function updateLeveragedTimeCapacity(
   currentMetrics: { leveragedTime: number; leveragedTimeCapacity: number },
-  setMetrics: (updater: (state: Record<string, unknown>) => Record<string, unknown>) => void
+  set: (partial: GameStore | Partial<GameStore> | ((state: GameStore) => GameStore | Partial<GameStore>), replace?: false | undefined) => void
 ): void {
   // Calculate new capacity from all effects
   const newLeveragedTimeCapacity = effectManager.calculate(GameMetric.LeveragedTime, 0);
@@ -17,7 +18,7 @@ export function updateLeveragedTimeCapacity(
   const capacityDelta = newLeveragedTimeCapacity - currentCapacity;
 
   if (capacityDelta !== 0) {
-    setMetrics((state) => {
+    set((state) => {
       let newLeveragedTime = state.metrics.leveragedTime;
 
       if (capacityDelta > 0) {

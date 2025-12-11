@@ -244,33 +244,31 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
   return (
     <div className="relative">
       {/* ====================================================================
-          MAIN CHARACTER USERNAME DISPLAY
+          STAFF NAME DISPLAY
           ====================================================================
-          Show username above main character sprite to identify it
+          Show name above staff sprite to identify it
           */}
-      {isMainChar && (
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          left: `${renderX * TILE_SIZE + TILE_SIZE / 2}px`,
+          top: `${renderY * TILE_SIZE - 15}px`,
+          transform: 'translateX(-50%)',
+          whiteSpace: 'nowrap',
+          zIndex: 12, // Above everything
+        }}
+      >
         <div
-          className="absolute pointer-events-none"
+          className="text-black-500 rounded px-2 py-0.5 text-xs font-semibold"
           style={{
-            left: `${renderX * TILE_SIZE + TILE_SIZE / 2}px`,
-            top: `${renderY * TILE_SIZE - 15}px`,
-            transform: 'translateX(-50%)',
-            whiteSpace: 'nowrap',
-            zIndex: 12, // Above everything
+            fontSize: '6px',
+            lineHeight: '12px',
+            textShadow: '0 1px 2px rgba(0,0,0,0.8)',
           }}
         >
-          <div
-            className="text-black-500 rounded px-2 py-0.5 text-xs font-semibold"
-            style={{
-              fontSize: '6px',
-              lineHeight: '12px',
-              textShadow: '0 1px 2px rgba(0,0,0,0.8)',
-            }}
-          >
-            {staff.name}
-          </div>
+          {staff.name}
         </div>
-      )}
+      </div>
 
       {/* ====================================================================
           ACTION BUBBLES FOR MAIN CHARACTER

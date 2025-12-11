@@ -158,14 +158,13 @@ export function UpgradesTab() {
       {/* Staff Section */}
       <section className="space-y-3 sm:space-y-4 md:space-y-6">
 
-        {/* Current Staff */}
-        {hiredStaff.length > 0 && (
+        {/* Current Staff - Commented out */}
+        {/* {hiredStaff.length > 0 && (
           <div className="space-y-2 sm:space-y-3 md:space-y-4">
             <div className="text-center">
               <h4 className="text-heading text-primary mb-1 sm:mb-2">Current Team</h4>
             </div>
             <div className="max-w-6xl mx-auto">
-              {/* Mobile: 2 columns, Tablet+: Grid layout */}
               <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 px-1 sm:px-1.5 md:px-2 lg:px-3">
                 {hiredStaff.map((member) => (
                   <div key={member.id} className="w-full">
@@ -175,7 +174,7 @@ export function UpgradesTab() {
               </div>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Available Staff */}
         <div className="space-y-2 sm:space-y-3 md:space-y-4">
