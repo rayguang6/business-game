@@ -15,6 +15,7 @@ import { useAudioControls } from '@/hooks/useAudio';
 import { FullscreenToggle } from '@/app/game/components/ui/FullscreenToggle';
 import EventPopup from '@/app/game/components/ui/EventPopup';
 import GameOverPopup from '@/app/game/components/ui/GameOverPopup';
+import LevelUpPopup from '@/app/game/components/ui/LevelUpPopup';
 import { FlagDebug } from '@/app/game/components/ui/FlagDebug';
 import { TierMultiplierDebug } from '@/app/game/components/ui/TierMultiplierDebug';
 import { ExpenseValidatorDebug } from '@/app/game/components/ui/ExpenseValidatorDebug';
@@ -147,6 +148,7 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
           <div className="relative z-10 w-full h-full bg-gray-800 flex items-center justify-center">
             <GameCanvas />
             <EventPopup />
+            <LevelUpPopup />
             <GameOverPopup />
             {process.env.NODE_ENV === 'development' && (
               <>

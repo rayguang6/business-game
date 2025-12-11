@@ -23,6 +23,7 @@ import { getLayoutConfig } from '@/lib/game/config';
 import { getStaffPositions } from '@/lib/game/positioning';
 import { getLevel } from '@/lib/store/types';
 import { checkAndApplyLevelUp } from '@/lib/features/levelRewards';
+import type { LevelReward } from '@/lib/data/levelRewardsRepository';
 
 /**
  * Load username from localStorage (if available)
@@ -85,6 +86,7 @@ const getInitialGameState = (
     username: null,
     mainCharacter: null, // Will be created from username when game starts
     previousLevel: 1, // Initialize to Level 1 (starting level)
+    levelUpReward: null, // No level up reward initially
     ...(keepIndustry ? {} : { selectedIndustry: null }),
   };
 };
@@ -131,6 +133,10 @@ export interface GameSlice {
 
   // Level tracking
   previousLevel: number; // Track previous level for level-up detection
+  levelUpReward: Partial<LevelReward> | null; // Current level up reward being displayed
+
+  setLevelUpReward: (reward: LevelReward | null) => void;
+  clearLevelUpReward: () => void;
 
   startGame: () => void;
   pauseGame: () => void;
@@ -188,6 +194,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
     flags: {},
     eventSequenceIndex: 0,
     previousLevel: 1, // Initialize to Level 1 (starting level)
+    levelUpReward: null, // No level up reward initially
 
     // Leads
     leads: [],
@@ -501,43 +508,55 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       // Exp changed from services - check for level-up and apply rewards
       const industryId = (currentState.selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
       const gameTime = currentState.gameTime;
-      
-      // Use async IIFE to handle the async checkAndApplyLevelUp
-      (async () => {
-        try {
-          const levelReward = await checkAndApplyLevelUp(
-            newExp,
-            previousExp,
-            industryId,
-            currentState,
-            gameTime,
-          );
-          
-          // Update previousLevel after checking level-up
-          if (levelReward) {
-            const expPerLevel = getExpPerLevel(industryId);
-            const currentLevel = getLevel(newExp, expPerLevel);
-            set((state) => ({
-              previousLevel: currentLevel,
-            }));
-            
-            console.log(`[LevelUp] Level ${levelReward.level} reached: ${levelReward.title}`);
-          } else {
-            // Still update previousLevel even if no reward (in case level changed but no reward configured)
-            const expPerLevel = getExpPerLevel(industryId);
-            const currentLevel = getLevel(newExp, expPerLevel);
-            const previousLevelFromExp = getLevel(previousExp, expPerLevel);
-            if (currentLevel > previousLevelFromExp) {
+
+      // Check for level up synchronously first to avoid delay
+      const expPerLevel = getExpPerLevel(industryId);
+      const currentLevel = getLevel(newExp, expPerLevel);
+      const previousLevelFromExp = getLevel(previousExp, expPerLevel);
+      const leveledUp = currentLevel > previousLevelFromExp;
+
+      // Update previousLevel immediately
+      if (leveledUp) {
+        // Create a temporary level reward object for immediate popup display
+        const tempLevelReward: Partial<LevelReward> = {
+          level: currentLevel,
+          title: `Level ${currentLevel}`,
+          effects: [],
+          unlocksFlags: [],
+        };
+
+        set((state) => ({
+          previousLevel: currentLevel,
+          levelUpReward: tempLevelReward, // Show level up popup immediately
+        }));
+
+        console.log(`[LevelUp] Level ${currentLevel} reached - showing popup immediately`);
+
+        // Use async IIFE to handle the async checkAndApplyLevelUp and update popup with details
+        (async () => {
+          try {
+            const levelReward = await checkAndApplyLevelUp(
+              newExp,
+              previousExp,
+              industryId,
+              currentState,
+              gameTime,
+            );
+
+            // Update popup with full reward details if available
+            if (levelReward) {
               set((state) => ({
-                previousLevel: currentLevel,
+                levelUpReward: levelReward, // Update with full details
               }));
+
+              console.log(`[LevelUp] Level ${levelReward.level} details loaded: ${levelReward.title}`);
             }
+          } catch (error) {
+            console.error('[LevelRewards] Error checking level-up from service exp:', error);
+            // Continue game even if level-up check fails - popup already shown
           }
-        } catch (error) {
-          console.error('[LevelRewards] Error checking level-up from service exp:', error);
-          // Continue game even if level-up check fails
-        }
-      })();
+        })();
+      }
     }
     
     // Check if a new month just started (month transition happened)
@@ -742,10 +761,9 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
         const currentLevel = getLevel(newExp, expPerLevel);
         set((state) => ({
           previousLevel: currentLevel,
+          levelUpReward: levelReward, // Show level up popup
         }));
-        
-        // TODO: Show level-up popup/card with levelReward info
-        // This will be implemented in the UI phase
+
         console.log(`[LevelUp] Level ${levelReward.level} reached: ${levelReward.title}`);
       } else {
         // Still update previousLevel even if no reward (in case level changed but no reward configured)
@@ -1128,6 +1146,15 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       }
       return { mainCharacter: { ...state.mainCharacter, ...updates } };
     });
+  },
+
+  // Level up reward methods
+  setLevelUpReward: (reward: LevelReward | null) => {
+    set({ levelUpReward: reward });
+  },
+
+  clearLevelUpReward: () => {
+    set({ levelUpReward: null });
   },
 });
 };
