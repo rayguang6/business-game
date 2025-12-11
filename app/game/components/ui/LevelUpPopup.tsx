@@ -190,30 +190,30 @@ const LevelUpPopup: React.FC = () => {
   return (
     <div className="absolute inset-0 z-30 flex items-center justify-center px-2 md:px-6 pt-16 md:pt-6 pb-2 md:pb-6 pointer-events-none">
       <div className="absolute inset-0 bg-black/10 backdrop-blur-[0.5px] pointer-events-auto" />
-      <div className="relative z-10 w-full max-w-[75%] md:max-w-md pointer-events-auto">
+      <div className="relative z-10 w-full max-w-[90%] sm:max-w-[85%] md:max-w-md pointer-events-auto">
         {/* Subtle frame */}
         <div className="absolute inset-0 bg-gradient-to-br from-[var(--bg-card)]/70 to-[var(--bg-secondary)]/70 backdrop-blur-sm rounded-lg border border-[var(--game-primary)]/30 shadow-lg" />
 
-        <div className="relative bg-[var(--bg-card)]/85 backdrop-blur-sm rounded-lg shadow-lg p-3 md:p-4 border border-[var(--border-primary)]/40 max-h-[calc(100vh-6rem)] md:max-h-[60vh] overflow-y-auto">
+        <div className="relative bg-[var(--bg-card)]/85 backdrop-blur-sm rounded-lg shadow-lg p-4 md:p-4 border border-[var(--border-primary)]/40 max-h-[calc(100vh-6rem)] md:max-h-[60vh] overflow-y-auto">
           {/* Header */}
-          <div className="mb-2 md:mb-3">
-            <div className="flex items-center gap-2 mb-1">
+          <div className="mb-3 md:mb-3">
+            <div className="flex items-center gap-2 mb-2">
               <span className="text-xl">🎉</span>
-              <h3 className="text-sm font-bold text-[var(--text-primary)] leading-tight">
+              <h3 className="text-base md:text-sm font-bold text-[var(--text-primary)] leading-tight">
                 Congratulations!
               </h3>
             </div>
-            <h4 className="text-xs md:text-sm font-semibold text-[var(--game-primary)] mb-1">
+            <h4 className="text-sm md:text-sm font-semibold text-[var(--game-primary)] mb-2">
               You've Reached Level {levelUpReward.level}
             </h4>
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <span className="text-xs font-medium text-tertiary px-2 py-1 bg-[var(--bg-tertiary)]/60 rounded text-center">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 mb-3">
+              <span className="text-xs sm:text-xs font-medium text-tertiary px-2 py-1 bg-[var(--bg-tertiary)]/60 rounded text-center min-w-0 truncate max-w-[200px]">
                 {previousTitle}
               </span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--game-primary)] flex-shrink-0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--game-primary)] flex-shrink-0 rotate-90 sm:rotate-0">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
-              <span className="text-xs font-semibold text-[var(--game-primary)] px-2 py-1 bg-[var(--game-primary)]/25 rounded text-center">
+              <span className="text-sm sm:text-xs font-semibold text-[var(--game-primary)] px-2 py-1 bg-[var(--game-primary)]/25 rounded text-center min-w-0 truncate max-w-[200px]">
                 {currentTitle}
               </span>
             </div>
@@ -242,11 +242,11 @@ const LevelUpPopup: React.FC = () => {
             </div>
           )} */}
 
-          <div className="mt-2">
+          <div className="mt-4">
             <GameButton
               color="blue"
               fullWidth
-              size="sm"
+              size="md"
               onClick={() => {
                 if (timeoutRef.current) {
                   clearTimeout(timeoutRef.current);

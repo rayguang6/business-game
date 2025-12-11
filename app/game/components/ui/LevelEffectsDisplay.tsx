@@ -139,7 +139,7 @@ export function LevelEffectsDisplay({
     return (
       <div className={`text-center py-4 px-2 ${className}`}>
         <div className="text-lg mb-1">🏆</div>
-        <div className="text-xs text-tertiary opacity-80">
+        <div className="text-sm text-tertiary opacity-80">
           No level rewards configured
         </div>
       </div>
@@ -150,11 +150,11 @@ export function LevelEffectsDisplay({
     <div className={`space-y-2 ${className}`}>
       {/* Persistent Effects with Before/After */}
       {hasPersistentEffects && (
-        <div className="p-2 bg-[var(--bg-secondary)]/40 rounded border border-[var(--border-primary)]/30">
-          {/* <div className="text-xs font-semibold text-[var(--text-primary)] mb-2 text-center opacity-90">
+        <div className="p-3 bg-[var(--bg-secondary)]/40 rounded border border-[var(--border-primary)]/30">
+          {/* <div className="text-sm font-semibold text-[var(--text-primary)] mb-2 text-center opacity-90">
             📈 Permanent Upgrades
           </div> */}
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {persistentEffects.map((effect, index) => {
               const label = getDisplayLabel(effect.metric);
               const metric = effect.metric as GameMetric;
@@ -169,28 +169,28 @@ export function LevelEffectsDisplay({
               const afterValue = getEffectValueForLevel(afterEffects, metric, type);
 
               return (
-                <div key={`persistent-${effect.metric}_${effect.type}`} className="flex items-center justify-between py-1">
-                  <span className="text-xs text-secondary font-medium opacity-90 flex-1">
+                <div key={`persistent-${effect.metric}_${effect.type}`} className="flex items-center justify-between py-1.5">
+                  <span className="text-sm text-secondary font-medium opacity-90 flex-1">
                     {label}
                   </span>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     {afterValue !== null ? (
                       <>
-                        <span className="text-xs text-tertiary">
+                        <span className="text-sm text-tertiary">
                           {beforeValue !== null
                             ? formatEffectValue({ metric, type, value: beforeValue } as UpgradeEffect)
                             : formatEffectValue({ metric, type, value: 0 } as UpgradeEffect)
                           }
                         </span>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white flex-shrink-0">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white flex-shrink-0">
                           <path d="M5 12h14M12 5l7 7-7 7" />
                         </svg>
-                        <span className={`text-xs font-semibold ${hasNextLevel && afterValue !== (beforeValue ?? 0) ? 'text-green-500' : 'text-white'}`}>
+                        <span className={`text-sm font-semibold ${hasNextLevel && afterValue !== (beforeValue ?? 0) ? 'text-green-500' : 'text-white'}`}>
                           {formatEffectValue({ metric, type, value: afterValue } as UpgradeEffect)}
                         </span>
-                      </>
+                      </> 
                     ) : (
-                      <span className="text-xs font-semibold text-white">
+                      <span className="text-sm font-semibold text-white">
                         {formatEffectValue(effect)}
                       </span>
                     )}
@@ -204,19 +204,19 @@ export function LevelEffectsDisplay({
 
       {/* One-time Bonuses */}
       {hasOneTimeBonuses && (
-        <div className="p-2 bg-green-500/10 rounded border border-green-500/30">
-          <div className="text-xs font-semibold text-green-400 mb-2 text-center">
+        <div className="p-3 bg-green-500/10 rounded border border-green-500/30">
+          <div className="text-sm font-semibold text-green-400 mb-2 text-center">
             {oneTimeBonusesTitle}
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             {oneTimeBonuses.map((effect, index) => {
               const label = getDisplayLabel(effect.metric);
               return (
-                <div key={`bonus-${effect.metric}_${effect.type}`} className="flex items-center justify-between py-0.5">
-                  <span className="text-xs text-secondary font-medium opacity-90">
+                <div key={`bonus-${effect.metric}_${effect.type}`} className="flex items-center justify-between py-1">
+                  <span className="text-sm text-secondary font-medium opacity-90">
                     {label}
                   </span>
-                  <span className="text-xs font-bold text-green-400">
+                  <span className="text-sm font-bold text-green-400">
                     +{formatEffectValue(effect).replace(/^\+/, '')}
                   </span>
                 </div>
