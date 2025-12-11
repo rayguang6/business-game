@@ -229,14 +229,14 @@ const EventPopup: React.FC = () => {
             </div>
 
             {/* Event Summary - Shows source event and choice */}
-            <p className="text-[10px] md:text-sm text-[var(--text-secondary)] mb-1.5 md:mb-3 leading-snug">
+            <p className="text-[10px] md:text-sm text-[var(--text-secondary)] mb-1.5 md:mb-3 leading-snug italic">
               From <span className="font-semibold text-[var(--game-primary-light)]">{lastDelayedOutcome.eventTitle}</span> - <span className="font-semibold text-[var(--game-primary-light)]">{lastDelayedOutcome.choiceLabel}</span>
             </p>
 
             {/* Consequence Description */}
             {lastDelayedOutcome.description && (
               <div className={`text-[10px] md:text-sm text-[var(--text-primary)] mb-1 md:mb-2 bg-[var(--bg-tertiary)]/50 rounded p-1.5 md:p-2 border border-[var(--border-secondary)] ${lastDelayedOutcome.success ? 'border-green-500/50' : 'border-red-500/50'}`}>
-                <span className="font-medium">{lastDelayedOutcome.description}</span>
+                <span className="font-medium italic">{lastDelayedOutcome.description}</span>
               </div>
             )}
             {lastDelayedOutcome.appliedEffects.length > 0 && (
@@ -320,14 +320,14 @@ const EventPopup: React.FC = () => {
 
             {/* Event Summary */}
             {lastEventOutcome.eventSummary && (
-              <p className="text-[10px] md:text-sm text-[var(--text-secondary)] mb-1.5 md:mb-3 leading-snug">
+              <p className="text-[10px] md:text-sm text-[var(--text-secondary)] mb-1.5 md:mb-3 leading-snug italic">
                 {lastEventOutcome.eventSummary}
               </p>
             )}
 
             {/* Choice Info (only for Opportunity events) */}
             {lastEventOutcome.eventCategory === EventCategory.Opportunity && (
-              <p className="text-[10px] md:text-sm text-[var(--text-secondary)] mb-1.5 md:mb-3 leading-snug">
+              <p className="text-[10px] md:text-sm text-[var(--text-secondary)] mb-1.5 md:mb-3 leading-snug italic">
                 You chose <span className="font-semibold text-[var(--game-primary-light)]">{lastEventOutcome.choiceLabel}</span>
                 {lastEventOutcome.costPaid > 0 && <span className="text-red-400 ml-1">(-${lastEventOutcome.costPaid})</span>}
               </p>
@@ -347,7 +347,7 @@ const EventPopup: React.FC = () => {
             {/* Consequence Description */}
             {lastEventOutcome.consequenceDescription && (
               <div className="text-[10px] md:text-sm text-[var(--text-primary)] mb-1 md:mb-2 bg-[var(--bg-tertiary)]/50 rounded p-1.5 md:p-2 border border-[var(--border-secondary)]">
-                <span className="font-medium">{lastEventOutcome.consequenceDescription}</span>
+                <span className="font-medium italic">{lastEventOutcome.consequenceDescription}</span>
               </div>
             )}
             {lastEventOutcome.appliedEffects.length > 0 && (
@@ -469,7 +469,7 @@ const EventPopup: React.FC = () => {
           </div>
           
           {/* Summary */}
-          <p className="text-[10px] md:text-sm text-[var(--text-secondary)] mb-1.5 md:mb-4 leading-tight line-clamp-2">{currentEvent.summary}</p>
+          <p className="text-[10px] md:text-sm text-[var(--text-secondary)] mb-1.5 md:mb-4 leading-tight line-clamp-2 italic">{currentEvent.summary}</p>
 
           {/* Choices - only show for opportunity events */}
           {shouldShowChoices && (
