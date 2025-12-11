@@ -174,7 +174,7 @@ function CampaignCard({ campaign, canAfford, isOnCooldown, cooldownRemaining, cu
     // GenerateLeads is an immediate action - duration doesn't apply
     if (effect.metric === GameMetric.GenerateLeads) {
       const count = Math.floor(effect.value);
-      return `${label} +${count} (immediate)`;
+      return `${label} +${count}`;
     }
 
     const durationLabel = formatDurationLabel(effect.durationMonths);

@@ -135,9 +135,9 @@ export function LevelEffectsDisplay({
       {/* Persistent Effects with Before/After */}
       {hasPersistentEffects && (
         <div className="p-2 bg-[var(--bg-secondary)]/40 rounded border border-[var(--border-primary)]/30">
-          <div className="text-xs font-semibold text-[var(--text-primary)] mb-2 text-center opacity-90">
+          {/* <div className="text-xs font-semibold text-[var(--text-primary)] mb-2 text-center opacity-90">
             📈 Permanent Upgrades
-          </div>
+          </div> */}
           <div className="space-y-1.5">
             {persistentEffects.map((effect, index) => {
               const label = getDisplayLabel(effect.metric);

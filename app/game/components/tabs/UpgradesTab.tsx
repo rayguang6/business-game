@@ -249,19 +249,19 @@ function UpgradeCard({ upgrade }: UpgradeCardProps) {
               </p>
             </div>
 
-            {nextLevelConfig.description && (
+            {/* {nextLevelConfig.description && (
               <div>
                 <p className="text-sm text-secondary leading-relaxed break-words whitespace-normal">
                   {nextLevelConfig.description}
                 </p>
               </div>
-            )}
+            )} */}
 
             {nextLevelEffects.length > 0 && (
               <div className="space-y-0.5">
-                <div className="text-sm font-semibold text-primary uppercase tracking-wide">
+                {/* <div className="text-sm font-semibold text-primary uppercase tracking-wide">
                   Effects:
-                </div>
+                </div> */}
                 <ul className="space-y-0.5">
                   {nextLevelEffects.map((effect, idx) => {
                     const effectData = nextLevelConfig?.effects[idx];
@@ -906,20 +906,11 @@ export function UpgradesTab() {
 
       {/* Staff Section */}
       <section className="space-y-3 sm:space-y-4 md:space-y-6">
-        <div className="text-center">
-          <SectionHeading>Staff Management</SectionHeading>
-          <p className="text-sm sm:text-sm md:text-base lg:text-lg text-secondary mb-3 sm:mb-4 md:mb-6 lg:mb-8 text-center px-2">
-            Oversee your talented team. Happy staff, happy customers!
-          </p>
-        </div>
 
         {/* Current Staff */}
-        <div className="space-y-2 sm:space-y-3 md:space-y-4 lg:space-y-6">
+        {/* <div className="space-y-2 sm:space-y-3 md:space-y-4 lg:space-y-6">
           <div className="text-center">
             <h4 className="text-base sm:text-lg md:text-xl font-bold text-primary mb-1 sm:mb-2">Our Staff</h4>
-            <p className="text-sm sm:text-sm md:text-base text-secondary">
-              Meet the team running your business every day.
-            </p>
           </div>
           <div className="max-w-6xl mx-auto flex flex-wrap justify-center items-stretch gap-2 sm:gap-3 md:gap-4 px-2 sm:px-3 md:px-4">
             {hiredStaff.map((member) => (
@@ -935,15 +926,12 @@ export function UpgradesTab() {
               </div>
             )}
           </div>
-        </div>
+        </div> */}
 
         {/* Available Staff */}
         <div className="space-y-2 sm:space-y-3 md:space-y-4 lg:space-y-6">
           <div className="text-center">
-            <h4 className="text-base sm:text-lg md:text-xl font-bold text-primary mb-1 sm:mb-2">Available Staff</h4>
-            <p className="text-sm sm:text-sm md:text-base text-secondary">
-              Choose who joins your business next. Hiring is instant and only adds their salary.
-            </p>
+            <h4 className="text-base sm:text-lg md:text-xl font-bold text-primary mb-1 sm:mb-2">Hire Staff</h4>
           </div>
           <div className="max-w-6xl mx-auto flex flex-wrap justify-center items-stretch gap-2 sm:gap-3 md:gap-4 px-2 sm:px-3 md:px-4">
             {availableStaff.map((candidate) => (

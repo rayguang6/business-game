@@ -423,7 +423,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
   
   [GameMetric.GenerateLeads]: {
     id: GameMetric.GenerateLeads,
-    displayLabel: 'Generate Leads',
+    displayLabel: 'Leads',
     description: 'Immediate lead generation (one-time action, not a displayable metric)',
     defaultValueSource: 'calculated',
     calculatedDefaultValue: 0,

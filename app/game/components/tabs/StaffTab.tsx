@@ -254,12 +254,12 @@ export function StaffTab() {
 
   return (
     <div className="space-y-6">
-      <div className="text-center">
+      {/* <div className="text-center">
         <h3 className="text-2xl sm:text-3xl font-extrabold mb-4 sm:mb-6 text-primary text-center">Staff Management</h3>
         <p className="text-base sm:text-lg text-secondary mb-6 sm:mb-8 text-center px-2">
           Oversee your talented team. Happy staff, happy customers!
         </p>
-      </div>
+      </div> */}
 
       {/* Current Staff */}
       <section className="space-y-4 sm:space-y-6">
