@@ -211,13 +211,13 @@ const EventPopup: React.FC = () => {
   // Prioritize showing delayed outcome over regular outcome
   if (lastDelayedOutcome && !currentEvent) {
     return (
-      <div className="absolute inset-0 z-30 flex items-start md:items-center justify-center px-2 md:px-6 pt-16 md:pt-6 pb-2 md:pb-6 pointer-events-none">
-        <div className="absolute inset-0 bg-black/35 md:bg-black/50 backdrop-blur-sm pointer-events-auto" />
-        <div className="relative z-10 w-full max-w-[70%] md:max-w-md pointer-events-auto">
+      <div className="absolute inset-0 z-[9999] flex items-center justify-center px-4 py-4 pointer-events-none">
+        <div className="absolute inset-0 bg-black/35 pointer-events-auto" />
+        <div className="relative z-10 w-full max-w-[90%] sm:max-w-md pointer-events-auto">
           {/* Game-style frame */}
           <div className="absolute inset-0 bg-gradient-to-br from-[var(--game-primary-light)]/20 via-[var(--game-primary)]/15 to-[var(--game-primary-dark)]/20 rounded-md md:rounded-2xl border-2 border-[var(--game-primary)]/30 shadow-[0_0_30px_rgba(35,170,246,0.3)]" />
 
-          <div className="relative bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-secondary)] rounded-md md:rounded-2xl shadow-xl p-2.5 md:p-6 border-2 border-[var(--border-primary)] max-h-[calc(100vh-5rem)] md:max-h-[70vh] overflow-y-auto">
+          <div className="relative bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-secondary)] rounded-md md:rounded-2xl shadow-xl p-3 md:p-6 border-2 border-[var(--border-primary)] max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--game-primary)]/30 scrollbar-track-transparent">
             {/* Main Title - Delayed Outcome Title */}
             <div className="mb-1.5 md:mb-3">
               <h3 className="text-sm md:text-lg font-semibold text-[var(--text-primary)] leading-tight" style={{
@@ -292,13 +292,13 @@ const EventPopup: React.FC = () => {
   // Prioritize showing the outcome if present
   if (lastEventOutcome && !currentEvent) {
     return (
-      <div className="absolute inset-0 z-30 flex items-start md:items-center justify-center px-2 md:px-6 pt-16 md:pt-6 pb-2 md:pb-6 pointer-events-none">
-        <div className="absolute inset-0 bg-black/35 md:bg-black/50 backdrop-blur-sm pointer-events-auto" />
-        <div className="relative z-10 w-full max-w-[70%] md:max-w-md pointer-events-auto">
+      <div className="absolute inset-0 z-[9999] flex items-center justify-center px-4 py-4 pointer-events-none">
+        <div className="absolute inset-0 bg-black/35 pointer-events-auto" />
+        <div className="relative z-10 w-full max-w-[90%] sm:max-w-md pointer-events-auto">
           {/* Game-style frame */}
           <div className="absolute inset-0 bg-gradient-to-br from-[var(--game-primary-light)]/20 via-[var(--game-primary)]/15 to-[var(--game-primary-dark)]/20 rounded-md md:rounded-2xl border-2 border-[var(--game-primary)]/30 shadow-[0_0_30px_rgba(35,170,246,0.3)]" />
-          
-          <div className="relative bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-secondary)] rounded-md md:rounded-2xl shadow-xl p-2.5 md:p-6 border-2 border-[var(--border-primary)] max-h-[calc(100vh-5rem)] md:max-h-[70vh] overflow-y-auto">
+
+          <div className="relative bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-secondary)] rounded-md md:rounded-2xl shadow-xl p-3 md:p-6 border-2 border-[var(--border-primary)] max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--game-primary)]/30 scrollbar-track-transparent">
             {/* Main Title - Event Title */}
             <div className="mb-1.5 md:mb-3">
               <h3 className="text-sm md:text-lg font-semibold text-[var(--text-primary)] leading-tight" style={{
@@ -428,14 +428,14 @@ const EventPopup: React.FC = () => {
   const defaultChoiceId = affordableChoice?.id || currentEvent.choices[0]?.id;
 
   return (
-    <div className="absolute inset-0 z-30 flex items-start md:items-center justify-center px-2 md:px-6 pt-16 md:pt-6 pb-2 md:pb-6 pointer-events-none">
-      <div className="absolute inset-0 bg-black/35 md:bg-black/50 backdrop-blur-sm pointer-events-auto" />
-      <div className="relative z-10 w-full max-w-[70%] md:max-w-lg pointer-events-auto">
+    <div className="absolute inset-0 z-[9999] flex items-center justify-center px-4 py-4 pointer-events-none">
+      <div className="absolute inset-0 bg-black/35 pointer-events-auto" />
+      <div className="relative z-10 w-full max-w-[90%] sm:max-w-md md:max-w-lg pointer-events-auto">
         {/* Game-style frame with category color */}
         <div className={`absolute inset-0 bg-gradient-to-br ${categoryGradient} rounded-md md:rounded-2xl border-2 ${categoryBorder} shadow-[0_0_30px_rgba(0,0,0,0.4)]`} />
         
 
-        <div className="relative bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-secondary)] rounded-md md:rounded-2xl shadow-xl p-2.5 md:p-5 lg:p-6 border-2 border-[var(--border-primary)] max-h-[calc(100vh-5rem)] md:max-h-[80vh] overflow-y-auto">
+        <div className="relative bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-secondary)] rounded-md md:rounded-2xl shadow-xl p-3 md:p-5 lg:p-6 border-2 border-[var(--border-primary)] max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--game-primary)]/30 scrollbar-track-transparent">
           {/* Header */}
           <div className="flex items-center gap-1 md:gap-1 mb-1.5 md:mb-3 pt-1">
             <span className={`text-sm md:text-2xl flex-shrink-0 drop-shadow-[0_0_4px_rgba(0,0,0,0.6)] ${isOpportunity ? 'text-green-400' : 'text-red-400'}`}>{eventIcon}</span>
@@ -454,7 +454,7 @@ const EventPopup: React.FC = () => {
 
           {/* Choices - only show for opportunity events */}
           {shouldShowChoices && (
-            <div className="space-y-1.5 md:space-y-2.5">
+            <div className="space-y-2 md:space-y-2.5">
               {currentEvent.choices
                 .sort((a, b) => {
                   // Null orders sort to the end
@@ -490,40 +490,40 @@ const EventPopup: React.FC = () => {
                   key={choice.id}
                   onClick={() => !isDisabled ? handleUserChoice(choice) : undefined}
                   disabled={isDisabled}
-                  className={`w-full text-left p-1.5 md:p-3 rounded transition-all duration-200 border ${choiceBg} ${choiceBorder} ${choiceText} text-[10px] md:text-sm flex flex-col items-start relative overflow-hidden group ${isDisabled ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}`}
+                  className={`w-full text-left p-2 md:p-3 rounded transition-all duration-200 border ${choiceBg} ${choiceBorder} ${choiceText} text-xs md:text-sm flex flex-col items-start relative overflow-hidden group ${isDisabled ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}`}
                 >
                   {/* Subtle gloss effect */}
                   <div className="absolute top-0 left-0 w-full h-1/2 bg-white/5 rounded-t-md opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
                   
                   <div className="relative z-10 flex items-center justify-between w-full gap-1 md:gap-1">
-                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                      <span className="text-[10px] md:text-sm font-bold opacity-70 flex-shrink-0">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="text-xs md:text-sm font-bold opacity-70 flex-shrink-0">
                         {String.fromCharCode(65 + index)}.
                       </span>
-                      <span className="font-semibold text-[10px] md:text-base leading-tight flex-1" style={{
+                      <span className="font-semibold text-sm md:text-base leading-tight flex-1" style={{
                         textShadow: '0 1px 2px rgba(0,0,0,0.5)'
                       }}>
                         {choice.label}
                       </span>
                     </div>
                     {isDefault && countdown !== null && countdown > 0 && (
-                      <div className="flex-shrink-0 px-1.5 md:px-2 py-0.5 md:py-1 bg-black/60 border border-white/30 rounded text-[9px] md:text-sm font-semibold text-white whitespace-nowrap">
+                      <div className="flex-shrink-0 px-2 py-1 bg-black/60 border border-white/30 rounded text-xs font-semibold text-white whitespace-nowrap">
                         ⏱ {countdown}s
                       </div>
                     )}
                     {hasCost && choice.cost !== undefined && (
-                      <div className="flex-shrink-0 px-1.5 md:px-2 py-0.5 md:py-1 bg-black/40 border border-black/60 rounded text-[9px] md:text-sm font-semibold text-red-300 whitespace-nowrap">
+                      <div className="flex-shrink-0 px-2 py-1 bg-black/40 border border-black/60 rounded text-xs font-semibold text-red-300 whitespace-nowrap">
                         ${choice.cost.toLocaleString()}
                       </div>
                     )}
                     {hasTimeCost && choice.timeCost !== undefined && (
-                      <div className="flex-shrink-0 px-1.5 md:px-2 py-0.5 md:py-1 bg-black/40 border border-black/60 rounded text-[9px] md:text-sm font-semibold text-blue-300 whitespace-nowrap">
+                      <div className="flex-shrink-0 px-2 py-1 bg-black/40 border border-black/60 rounded text-xs font-semibold text-blue-300 whitespace-nowrap">
                         ⏱ {choice.timeCost.toLocaleString()}h
                       </div>
                     )}
                   </div>
                   {choice.description && (
-                    <span className="relative z-10 text-white/80 text-[9px] md:text-sm leading-tight line-clamp-1 mt-0.5 pl-4 md:pl-5" style={{
+                    <span className="relative z-10 text-white/80 text-xs md:text-sm leading-tight line-clamp-2 mt-1 pl-5 md:pl-6" style={{
                       textShadow: '0 1px 1px rgba(0,0,0,0.5)'
                     }}>
                       {choice.description}

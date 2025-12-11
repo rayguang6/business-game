@@ -129,6 +129,10 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
     <ErrorBoundary>
       <GameQueryProvider>
         <div id="game-shell" className="h-screen relative flex flex-col md:flex-row overflow-hidden">
+          {/* Global Popups - Above everything */}
+          <EventPopup />
+          <LevelUpPopup />
+          <GameOverPopup />
         {/* Mobile: Top Section - Game Canvas Area (40% height) */}
         {/* Desktop: Left Section - Game Canvas Area (50% width) */}
         <div className="relative h-[40vh] md:h-full md:w-1/2 flex items-center justify-center py-4 md:py-0 overflow-hidden">
@@ -154,9 +158,6 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
           {/* Game Canvas - Full Area */}
           <div className="relative z-10 w-full h-full bg-gray-800 flex items-center justify-center">
             <GameCanvas />
-            <EventPopup />
-            <LevelUpPopup />
-            <GameOverPopup />
             {process.env.NODE_ENV === 'development' && (
               <>
                 <FlagDebug />
