@@ -220,7 +220,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
         {/* Max Level Message */}
         {isMaxed && (
           <div className="p-0.5 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded">
-            <p className="text-body-sm text-[var(--success)] font-semibold text-center break-words whitespace-normal">
+            <p className="text-body text-[var(--success)] font-semibold text-center break-words whitespace-normal">
               🎉 Max Level
             </p>
           </div>
