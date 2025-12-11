@@ -103,7 +103,7 @@ export function LevelRewardsTab({
       <div className="p-6 border-b border-slate-800">
         <h2 className="text-2xl font-semibold">Level Rewards</h2>
         <p className="text-sm text-slate-400 mt-1">
-          Configure rewards that unlock when players level up. Rewards start at Level 2 (Level 1 is the starting level).
+          Configure rewards that unlock when players level up. Level 1 is the starting level.
         </p>
       </div>
       <div className="p-6 space-y-6">
@@ -152,11 +152,10 @@ export function LevelRewardsTab({
                       <NumberInput
                         value={levelRewardForm.level}
                         onChange={(e) => onUpdateForm({ level: e.target.value })}
-                        min="2"
-                        placeholder="2"
+                        placeholder="1"
                         className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                       />
-                      <p className="text-xs text-slate-400 mt-1">Level 1 is starting level (no reward)</p>
+                      <p className="text-xs text-slate-400 mt-1">Level number (1, 2, 3, ...)</p>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-slate-300 mb-1">Title</label>

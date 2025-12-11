@@ -192,8 +192,8 @@ export function useLevelRewards(industryId: string, levelRewardId?: string) {
     }
 
     const level = Number(levelStr);
-    if (!Number.isFinite(level) || level < 2) {
-      error('Level must be >= 2 (Level 1 is the starting level with no reward).');
+    if (!Number.isFinite(level) || level < 0) {
+      error('Level must be >= 0.');
       return;
     }
 

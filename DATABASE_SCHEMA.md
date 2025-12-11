@@ -370,14 +370,14 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 ---
 
 ### `level_rewards`
-**Purpose:** Store level-up rewards per industry (rewards start at Level 2, Level 1 is starting level)
+**Purpose:** Store level-up rewards per industry (Level 1 is the starting level)
 
 **Primary Key:** `id` (TEXT)
 
 **Columns:**
 - `id` (TEXT, PRIMARY KEY) - UUID (auto-generated)
 - `industry_id` (TEXT, NOT NULL) - Industry identifier (references industries.id)
-- `level` (INTEGER, NOT NULL) - Level number (2, 3, 4, ...). Level 1 is starting level with no reward
+- `level` (INTEGER, NOT NULL) - Level number (0, 1, 2, ...). Level 0/1 are starting levels
 - `title` (TEXT, NOT NULL) - Level title (e.g., "Early Skill Builder", "Solid Beginner")
 - `narrative` (TEXT, optional) - Narrative description shown to player
 - `effects` (JSONB, NOT NULL, DEFAULT '[]') - Array of effect objects (same format as upgrade_levels.effects)
@@ -394,7 +394,7 @@ The database uses PostgreSQL (via Supabase) with the following key design princi
 - Index on `level` for efficient level queries
 
 **Notes:**
-- Rewards start at Level 2 (Level 1 is the starting level with no reward)
+- Level 1 is the starting level (can have rewards)
 - When a player levels up, the corresponding reward's effects are automatically applied
 - Flags specified in `unlocks_flags` are set when the level is reached
 - Effects use the same format as upgrade levels (see `upgrade_levels.effects`)

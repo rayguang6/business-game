@@ -1,5 +1,5 @@
 -- Migration: Create level_rewards table
--- Purpose: Store level-up rewards per industry (rewards start at Level 2, Level 1 is starting level)
+-- Purpose: Store level-up rewards per industry (Level 1 is the starting level)
 -- Date: 2025
 
 CREATE TABLE IF NOT EXISTS level_rewards (
@@ -22,9 +22,9 @@ CREATE INDEX IF NOT EXISTS idx_level_rewards_industry ON level_rewards(industry_
 CREATE INDEX IF NOT EXISTS idx_level_rewards_level ON level_rewards(level);
 
 -- Comments
-COMMENT ON TABLE level_rewards IS 'Stores level-up rewards per industry. Rewards start at Level 2 (Level 1 is starting level).';
+COMMENT ON TABLE level_rewards IS 'Stores level-up rewards per industry. Level 1 is the starting level.';
 COMMENT ON COLUMN level_rewards.industry_id IS 'Industry identifier (references industries.id)';
-COMMENT ON COLUMN level_rewards.level IS 'Level number (2, 3, 4, ...). Level 1 is starting level with no reward.';
+COMMENT ON COLUMN level_rewards.level IS 'Level number (0, 1, 2, ...). Level 0/1 are starting levels.';
 COMMENT ON COLUMN level_rewards.title IS 'Level title (e.g., "Early Skill Builder", "Solid Beginner")';
 COMMENT ON COLUMN level_rewards.narrative IS 'Narrative description shown to player';
 COMMENT ON COLUMN level_rewards.effects IS 'Array of effect objects (same format as upgrade_levels.effects)';

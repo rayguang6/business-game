@@ -90,10 +90,11 @@ export function LevelCard() {
 
   // Helper function to calculate cumulative effects up to a specific level
   const calculateCumulativeEffects = useCallback((targetLevel: number): UpgradeEffect[] => {
-    // Filter rewards from level 2 up to target level (level 1 has no reward)
+    // Filter rewards from level 0 up to target level (include all levels that have rewards)
     const applicableRewards = allLevelRewards
-      .filter(reward => reward.level >= 2 && reward.level <= targetLevel)
+      .filter(reward => reward.level <= targetLevel)
       .sort((a, b) => a.level - b.level);
+
 
     if (applicableRewards.length === 0) {
       return [];
@@ -156,6 +157,7 @@ export function LevelCard() {
   const nextLevelEffects = useMemo(() => {
     return calculateCumulativeEffects(nextLevel);
   }, [calculateCumulativeEffects, nextLevel]);
+
 
   // Get next level reward info
   const nextLevelReward = useMemo(() => {
@@ -233,13 +235,14 @@ export function LevelCard() {
 
         {/* Effects Comparison */}
         <LevelEffectsDisplay
-          effects={currentLevelEffects}
+          effects={nextLevelReward?.effects || []}
           currentLevelEffects={currentLevelEffects}
           nextLevelEffects={nextLevelEffects}
           getDisplayLabel={getDisplayLabel}
           getMergedDefinition={getMergedDefinition}
-          showOneTimeBonuses={false}
+          showOneTimeBonuses={true}
           hasNextLevel={hasNextLevel}
+          oneTimeBonusesTitle="🎁 Next Level Rewards"
           className="p-3 bg-secondary/5 rounded-lg border border-secondary/10"
         />
       </div>

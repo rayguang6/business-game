@@ -42,6 +42,7 @@ interface LevelEffectsDisplayProps {
   showOneTimeBonuses?: boolean;
   showPersistentEffects?: boolean;
   hasNextLevel?: boolean; // For LevelCard layout
+  oneTimeBonusesTitle?: string; // Custom title for one-time bonuses section
   className?: string;
 }
 
@@ -55,6 +56,7 @@ export function LevelEffectsDisplay({
   showOneTimeBonuses = true,
   showPersistentEffects = true,
   hasNextLevel = false,
+  oneTimeBonusesTitle = '🎁 Level Rewards',
   className = '',
 }: LevelEffectsDisplayProps) {
   const formatEffectValue = useCallback((effect: UpgradeEffect): string => {
@@ -109,17 +111,31 @@ export function LevelEffectsDisplay({
   }, []);
 
   // Separate one-time bonuses from persistent effects
+  // For persistent effects comparison, include effects from both current and next levels
+  const allPersistentEffects = hasNextLevel && nextLevelEffects
+    ? [...effects, ...nextLevelEffects]
+    : effects;
+
+  // Remove duplicates by metric and type for persistent effects
+  const uniquePersistentEffects = allPersistentEffects.filter((effect, index, self) =>
+    index === self.findIndex(e => e.metric === effect.metric && e.type === effect.type)
+  );
+
+  // For one-time bonuses, only use current effects (not future levels)
   const oneTimeBonuses = effects.filter(effect =>
     shouldDisplayAsOneTimeBonus(effect.metric as GameMetric, effect.type as EffectType)
   );
-  const persistentEffects = effects.filter(effect =>
+  const persistentEffects = uniquePersistentEffects.filter(effect =>
     !shouldDisplayAsOneTimeBonus(effect.metric as GameMetric, effect.type as EffectType)
   );
 
   const hasPersistentEffects = persistentEffects.length > 0 && showPersistentEffects;
   const hasOneTimeBonuses = oneTimeBonuses.length > 0 && showOneTimeBonuses;
 
-  if (!hasPersistentEffects && !hasOneTimeBonuses) {
+  // For level cards, also show effects if there are next level effects to compare against
+  const hasNextLevelEffects = hasNextLevel && nextLevelEffects && nextLevelEffects.length > 0;
+
+  if (!hasPersistentEffects && !hasOneTimeBonuses && !hasNextLevelEffects) {
     return (
       <div className={`text-center py-4 px-2 ${className}`}>
         <div className="text-lg mb-1">🏆</div>
@@ -158,20 +174,23 @@ export function LevelEffectsDisplay({
                     {label}
                   </span>
                   <div className="flex items-center gap-1.5">
-                    {beforeValue !== null && afterValue !== null ? (
+                    {afterValue !== null ? (
                       <>
                         <span className="text-xs text-tertiary">
-                          {formatEffectValue({ metric, type, value: beforeValue } as UpgradeEffect)}
+                          {beforeValue !== null
+                            ? formatEffectValue({ metric, type, value: beforeValue } as UpgradeEffect)
+                            : formatEffectValue({ metric, type, value: 0 } as UpgradeEffect)
+                          }
                         </span>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--game-primary)] flex-shrink-0">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white flex-shrink-0">
                           <path d="M5 12h14M12 5l7 7-7 7" />
                         </svg>
-                        <span className={`text-xs font-semibold ${hasNextLevel && afterValue !== beforeValue ? 'text-green-500' : 'text-[var(--game-primary)]'}`}>
+                        <span className={`text-xs font-semibold ${hasNextLevel && afterValue !== (beforeValue ?? 0) ? 'text-green-500' : 'text-white'}`}>
                           {formatEffectValue({ metric, type, value: afterValue } as UpgradeEffect)}
                         </span>
                       </>
                     ) : (
-                      <span className="text-xs font-semibold text-[var(--game-primary)]">
+                      <span className="text-xs font-semibold text-white">
                         {formatEffectValue(effect)}
                       </span>
                     )}
@@ -187,7 +206,7 @@ export function LevelEffectsDisplay({
       {hasOneTimeBonuses && (
         <div className="p-2 bg-green-500/10 rounded border border-green-500/30">
           <div className="text-xs font-semibold text-green-400 mb-2 text-center">
-            🎁 Level Rewards
+            {oneTimeBonusesTitle}
           </div>
           <div className="space-y-1">
             {oneTimeBonuses.map((effect, index) => {

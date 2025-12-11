@@ -28,9 +28,9 @@ const LevelUpPopup: React.FC = () => {
 
   // Helper function to calculate cumulative effects up to a specific level
   const calculateCumulativeEffects = useCallback((targetLevel: number): UpgradeEffect[] => {
-    // Filter rewards from level 2 up to target level (level 1 has no reward)
+    // Filter rewards from level 0 up to target level
     const applicableRewards = allLevelRewards
-      .filter(reward => reward.level >= 2 && reward.level <= targetLevel)
+      .filter(reward => reward.level <= targetLevel)
       .sort((a, b) => a.level - b.level);
 
     if (applicableRewards.length === 0) {

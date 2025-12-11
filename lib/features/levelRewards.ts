@@ -204,11 +204,6 @@ export async function checkAndApplyLevelUp(
   let lastReward: LevelReward | null = null;
 
   for (let level = previousLevel + 1; level <= currentLevel; level++) {
-    // Level 1 has no reward (it's the starting level)
-    if (level === 1) {
-      continue;
-    }
-
     // Load level reward from database
     const levelReward = await fetchLevelReward(industryId, level);
     
