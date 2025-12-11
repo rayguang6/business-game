@@ -160,6 +160,7 @@ import { DynamicValueEvaluator } from '@/lib/game/dynamicValueEvaluator';
 import { SourceType } from '@/lib/config/sourceTypes';
 import { SourceHelpers } from '@/lib/utils/financialTracking';
 import { generateLeads } from '@/lib/features/leads';
+import { EventCategory, AUTO_RESOLVE_CATEGORIES } from '@/lib/game/constants/eventCategories';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // 🎯 RESOLVED EFFECT TYPES - Update this when adding new effects (STEP 2)

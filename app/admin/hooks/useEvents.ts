@@ -6,11 +6,12 @@ import type { Operation } from './types';
 import type { Requirement } from '@/lib/game/types';
 import { useToastFunctions } from '../components/ui/ToastContext';
 import { generateUniqueId } from '../components/utils';
+import { EventCategory, EventCategoryType } from '@/lib/game/constants/eventCategories';
 
 interface EventForm {
   id: string;
   title: string;
-  category: 'opportunity' | 'risk';
+  category: EventCategoryType;
   summary?: string;
   requirements?: Requirement[];
 }
@@ -26,7 +27,7 @@ export function useEvents(industryId: string, eventId?: string) {
   const [form, setForm] = useState<EventForm>({
     id: '',
     title: '',
-    category: 'opportunity',
+    category: EventCategory.Opportunity,
     summary: '',
   });
   const [choices, setChoices] = useState<GameEventChoice[]>([]);
@@ -116,7 +117,7 @@ export function useEvents(industryId: string, eventId?: string) {
       setForm({
         id: '',
         title: '',
-        category: 'opportunity',
+        category: EventCategory.Opportunity,
         summary: '',
         requirements: [],
       });
@@ -171,7 +172,7 @@ export function useEvents(industryId: string, eventId?: string) {
     setForm({
       id: '',
       title: '',
-      category: 'opportunity',
+      category: EventCategory.Opportunity,
       summary: '',
       requirements: [],
     });
@@ -276,7 +277,7 @@ export function useEvents(industryId: string, eventId?: string) {
       setForm({
         id: '',
         title: '',
-        category: 'opportunity',
+        category: EventCategory.Opportunity,
         summary: '',
       });
       setChoices([]);

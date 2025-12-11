@@ -11,6 +11,7 @@ import { RequirementsSelector } from './RequirementsSelector';
 import { NumberInput } from './NumberInput';
 import { makeUniqueId, slugify, generateUniqueId } from './utils';
 import { useToastFunctions } from './ui/ToastContext';
+import { EventCategory, EventCategoryType, AUTO_RESOLVE_CATEGORIES } from '@/lib/game/constants/eventCategories';
 
 // Import the new extracted components
 import { EventList } from './events/EventList';
@@ -28,7 +29,7 @@ interface EventsTabProps {
   eventForm: {
     id: string;
     title: string;
-    category: 'opportunity' | 'risk';
+    category: EventCategoryType;
     summary?: string;
     requirements?: Requirement[];
   };
@@ -111,6 +112,29 @@ export function EventsTab({
     setIsCreatingConsequence(false);
     setConsequenceForm({ id: '', label: '', description: '', weight: '1', effects: [] });
   }, [selectedEventId, isCreatingEvent]);
+
+  // Auto-select first choice for GoodBad events
+  useEffect(() => {
+    if (eventForm.category === EventCategory.GoodBad && eventChoices.length === 1 && !selectedChoiceId && !isCreatingChoice) {
+      setSelectedChoiceId(eventChoices[0].id);
+    }
+  }, [eventForm.category, eventChoices, selectedChoiceId, isCreatingChoice]);
+
+  // Auto-create default choice when switching to GoodBad category
+  useEffect(() => {
+    if (eventForm.category === EventCategory.GoodBad && eventChoices.length === 0 && (selectedEventId || isCreatingEvent)) {
+      const defaultChoice: GameEventChoice = {
+        id: 'default-choice',
+        label: 'Auto-resolve',
+        description: 'This choice will be automatically selected for Good/Bad events',
+        consequences: []
+      };
+      onUpdateEventChoices([defaultChoice]);
+    } else if (eventForm.category === EventCategory.Opportunity && eventChoices.length === 1 && eventChoices[0].id === 'default-choice') {
+      // Remove auto-created choice when switching back to Opportunity
+      onUpdateEventChoices([]);
+    }
+  }, [eventForm.category, eventChoices.length, selectedEventId, isCreatingEvent, onUpdateEventChoices]);
 
   // Helper to convert delayed consequence effects
   const convertDelayedEffects = (effects: GameEventEffect[]): Array<
@@ -481,11 +505,11 @@ export function EventsTab({
               <label className="block text-sm font-semibold text-slate-300 mb-1">Category</label>
               <select
                 value={eventForm.category}
-                onChange={(e) => onUpdateEventForm({ category: e.target.value as 'opportunity' | 'risk' })}
+                onChange={(e) => onUpdateEventForm({ category: e.target.value as EventCategoryType })}
                 className="w-full rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-slate-200"
               >
-                <option value="opportunity">Opportunity</option>
-                <option value="risk">Risk</option>
+                <option value={EventCategory.Opportunity}>Opportunity</option>
+                <option value={EventCategory.GoodBad}>Good/Bad</option>
               </select>
             </div>
             <div className="md:col-span-2">
@@ -541,8 +565,8 @@ export function EventsTab({
         </div>
       )}
 
-      {/* Choices Section */}
-      {(selectedEventId || isCreatingEvent) && (
+      {/* Choices Section - Only for Opportunity events */}
+      {(selectedEventId || isCreatingEvent) && eventForm.category === EventCategory.Opportunity && (
         <div className="p-4 bg-slate-900/60 rounded-lg border border-slate-700">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-lg font-semibold text-slate-200">Choices</h4>
@@ -582,7 +606,7 @@ export function EventsTab({
             </div>
           )}
 
-          {/* Consequences Section */}
+          {/* Consequences Section for Opportunity events */}
           {(selectedChoiceId || isCreatingChoice) && (
             <div className="mt-6">
               <div className="flex items-center justify-between mb-2">
@@ -625,6 +649,61 @@ export function EventsTab({
                   />
                 </div>
               )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Consequences Section - For GoodBad events (direct access) */}
+      {(selectedEventId || isCreatingEvent) && eventForm.category === EventCategory.GoodBad && (
+        <div className="p-4 bg-slate-900/60 rounded-lg border border-slate-700">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-lg font-semibold text-slate-200">Consequences</h4>
+            <div className="text-xs text-slate-400">
+              Good/Bad events auto-resolve with one consequence
+            </div>
+          </div>
+
+          <ConsequenceList
+            consequences={currentConsequences}
+            selectedConsequenceId={selectedConsequenceId}
+            isCreatingConsequence={isCreatingConsequence}
+            onSelectConsequence={selectConsequence}
+            onCreateConsequence={handleCreateConsequence}
+          />
+
+          {/* Consequence Editor */}
+          {(selectedConsequenceId || isCreatingConsequence) && (
+            <div className="mt-4">
+              <ConsequenceEditor
+                consequenceForm={consequenceForm}
+                isCreatingConsequence={isCreatingConsequence}
+                eventTitle={eventForm.title}
+                metricOptions={metricOptions}
+                effectTypeOptions={effectTypeOptions}
+                flags={flags}
+                flagsLoading={flagsLoading}
+                upgrades={upgrades}
+                staffRoles={staffRoles}
+                marketingCampaigns={marketingCampaigns}
+                onUpdate={(updates) => setConsequenceForm(prev => ({ ...prev, ...updates }))}
+                onSave={handleSaveConsequence}
+                onReset={handleResetConsequence}
+                onDelete={handleDeleteConsequence}
+              />
+            </div>
+          )}
+
+          {/* Add Consequence Button */}
+          {currentConsequences.length === 0 && !isCreatingConsequence && (
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={handleCreateConsequence}
+                className="px-4 py-3 text-sm font-medium rounded-lg border border-amber-500 text-amber-200 hover:bg-amber-500/10"
+              >
+                + Add Consequence
+              </button>
             </div>
           )}
         </div>

@@ -9,11 +9,13 @@ import {
 import { IndustryId } from '../lib/game/types';
 import { checkRequirements } from '../lib/game/requirementChecker';
 import { getEventsFromStore, useConfigStore } from '@/lib/store/configStore';
+import { EventCategory, AUTO_RESOLVE_CATEGORIES } from '@/lib/game/constants/eventCategories';
 
 export const useRandomEventTrigger = () => {
   const gameTime = useGameStore((state) => state.gameTime);
   const currentEvent = useGameStore((state) => state.currentEvent);
   const setCurrentEvent = useGameStore((state) => state.setCurrentEvent);
+  const resolveEventChoice = useGameStore((state) => state.resolveEventChoice);
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
   const currentMonth = useGameStore((state) => state.currentMonth);
   const store = useGameStore();
@@ -137,18 +139,47 @@ export const useRandomEventTrigger = () => {
                 store.advanceEventSequence();
               }
 
-              setCurrentEvent(selectedEvent);
+              // Handle auto-resolve events (GoodBad category)
+              if (AUTO_RESOLVE_CATEGORIES.has(selectedEvent.category)) {
+                // Auto-resolve by selecting the first (and only) choice
+                const choiceToResolve = selectedEvent.choices[0];
+                if (choiceToResolve) {
+                  resolveEventChoice(choiceToResolve.id);
+                }
+              } else {
+                setCurrentEvent(selectedEvent);
+              }
             } else {
               // Advance sequence by 1 so we don't get stuck on the same ineligible event
               store.advanceEventSequence();
               const randomIndex = Math.floor(Math.random() * eligibleEvents.length);
               const randomEvent = eligibleEvents[randomIndex];
-              setCurrentEvent(randomEvent);
+
+              // Handle auto-resolve events (GoodBad category)
+              if (AUTO_RESOLVE_CATEGORIES.has(randomEvent.category)) {
+                // Auto-resolve by selecting the first (and only) choice
+                const choiceToResolve = randomEvent.choices[0];
+                if (choiceToResolve) {
+                  resolveEventChoice(choiceToResolve.id);
+                }
+              } else {
+                setCurrentEvent(randomEvent);
+              }
             }
           } else {
             const randomIndex = Math.floor(Math.random() * eligibleEvents.length);
             const randomEvent = eligibleEvents[randomIndex];
-            setCurrentEvent(randomEvent);
+
+            // Handle auto-resolve events (GoodBad category)
+            if (AUTO_RESOLVE_CATEGORIES.has(randomEvent.category)) {
+              // Auto-resolve by selecting the first (and only) choice
+              const choiceToResolve = randomEvent.choices[0];
+              if (choiceToResolve) {
+                resolveEventChoice(choiceToResolve.id);
+              }
+            } else {
+              setCurrentEvent(randomEvent);
+            }
           }
         }
         break;

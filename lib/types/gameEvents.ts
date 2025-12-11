@@ -1,7 +1,6 @@
 import { EffectType, GameMetric } from '@/lib/game/effectManager';
 import type { Requirement } from '@/lib/game/types';
-
-export type EventCategory = 'opportunity' | 'risk';
+import type { EventCategoryType } from '@/lib/game/constants/eventCategories';
 
 // Enum for event effect types - single source of truth
 // Prevents typos and makes refactoring easier
@@ -53,7 +52,7 @@ export interface GameEventChoice {
 export interface GameEvent {
   id: string;
   title: string;
-  category: EventCategory;
+  category: EventCategoryType;
   summary?: string;
   choices: GameEventChoice[];
   requirements?: Requirement[]; // Array of requirements (all must be met = AND logic)

@@ -8,6 +8,7 @@ import { useConfigStore } from '@/lib/store/configStore';
 import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { IndustryId } from '@/lib/game/types';
+import { EventCategory } from '@/lib/game/constants/eventCategories';
 
 const getEffectIcon = (type: GameEventEffect['type']) => {
   switch (type) {
@@ -398,7 +399,8 @@ const EventPopup: React.FC = () => {
     resolveEventChoice(choice.id);
   };
 
-  const isOpportunity = currentEvent.category === 'opportunity';
+  const isOpportunity = currentEvent.category === EventCategory.Opportunity;
+  const shouldShowChoices = currentEvent.category === EventCategory.Opportunity;
   const eventIcon = isOpportunity ? '✨' : '⚠️';
   const eventTitleColor = isOpportunity ? 'text-green-300' : 'text-red-300';
   const categoryGradient = isOpportunity 
@@ -452,9 +454,10 @@ const EventPopup: React.FC = () => {
           {/* Summary */}
           <p className="text-[10px] md:text-sm text-[var(--text-secondary)] mb-1.5 md:mb-4 leading-tight line-clamp-2">{currentEvent.summary}</p>
 
-          {/* Choices */}
-          <div className="space-y-1.5 md:space-y-2.5">
-            {currentEvent.choices.map((choice, index) => {
+          {/* Choices - only show for opportunity events */}
+          {shouldShowChoices && (
+            <div className="space-y-1.5 md:space-y-2.5">
+              {currentEvent.choices.map((choice, index) => {
               const isDefault = choice.id === defaultChoiceId;
               const hasCost = choice.cost !== undefined && choice.cost > 0;
               const hasTimeCost = choice.timeCost !== undefined && choice.timeCost > 0;
@@ -524,7 +527,8 @@ const EventPopup: React.FC = () => {
                 </button>
               );
             })}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

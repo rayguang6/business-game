@@ -10,6 +10,7 @@ import { EventEffectType } from '@/lib/types/gameEvents';
 import type { IndustryId, Requirement } from '@/lib/game/types';
 import { EffectType, GameMetric } from '@/lib/game/effectManager';
 import { validateAndParseGameEventEffects } from '@/lib/utils/effectValidation';
+import { EventCategoryType } from '@/lib/game/constants/eventCategories';
 
 interface EventRow {
   id: string;
@@ -197,7 +198,7 @@ export async function fetchEventsForIndustry(industryId: IndustryId): Promise<Ga
       mapped.push({
         id: row.id,
         title: row.title,
-        category: row.category as GameEvent['category'],
+        category: row.category as EventCategoryType,
         summary: row.summary,
         choices,
         requirements,
