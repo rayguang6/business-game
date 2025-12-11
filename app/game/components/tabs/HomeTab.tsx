@@ -190,13 +190,13 @@ export function HomeTab() {
       <LevelCard />
       
       {/* Lifetime Totals - Leads, Customers, Time - At Top */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {/* Total Leads Card */}
         <Card>
-          <div className="flex flex-col items-center text-center py-2">
-            <span className="text-xl mb-1">💡</span>
-            <div className="text-sm text-secondary mb-1">Total Leads</div>
-            <div className="text-xl font-bold" style={{ color: 'var(--game-primary)' }}>
+          <div className="flex flex-col items-center text-center py-3 sm:py-2">
+            <span className="text-lg sm:text-xl mb-1">💡</span>
+            <div className="text-xs sm:text-sm text-secondary mb-1">Total Leads</div>
+            <div className="text-lg sm:text-xl font-bold" style={{ color: 'var(--game-primary)' }}>
               {totalLeadsSpawned.toLocaleString()}
             </div>
           </div>
@@ -204,14 +204,14 @@ export function HomeTab() {
 
         {/* Total Customers Card */}
         <Card>
-          <div className="flex flex-col items-center text-center py-2">
-            <span className="text-xl mb-1">👥</span>
-            <div className="text-sm text-secondary mb-1">Total Customers</div>
-            <div className="text-xl font-bold mb-1.5" style={{ color: 'var(--game-primary)' }}>
+          <div className="flex flex-col items-center text-center py-3 sm:py-2">
+            <span className="text-lg sm:text-xl mb-1">👥</span>
+            <div className="text-xs sm:text-sm text-secondary mb-1">Total Customers</div>
+            <div className="text-lg sm:text-xl font-bold mb-1.5" style={{ color: 'var(--game-primary)' }}>
               {totalCustomersGenerated.toLocaleString()}
             </div>
             <div className="pt-1.5 border-t w-full" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
-              <div className="space-y-1 text-sm">
+              <div className="space-y-0.5 sm:space-y-1 text-xs sm:text-sm">
                 <div className="flex justify-between items-center px-1">
                   <span className="text-tertiary flex items-center gap-1">
                     <span>✅</span>
@@ -247,10 +247,10 @@ export function HomeTab() {
         {/* Total Time Spent Card */}
         {showTime && (
           <Card>
-            <div className="flex flex-col items-center text-center py-2">
-              <span className="text-xl mb-1">⏰</span>
-              <div className="text-sm text-secondary mb-1">Total Time Spent</div>
-              <div className="text-xl font-bold" style={{ color: 'var(--warning)' }}>
+            <div className="flex flex-col items-center text-center py-3 sm:py-2">
+              <span className="text-lg sm:text-xl mb-1">⏰</span>
+              <div className="text-xs sm:text-sm text-secondary mb-1">Total Time Spent</div>
+              <div className="text-lg sm:text-xl font-bold" style={{ color: 'var(--warning)' }}>
                 {totalTimeSpent.toFixed(1)}h
               </div>
             </div>
@@ -259,38 +259,38 @@ export function HomeTab() {
       </div>
 
       {/* Lifetime Totals - Financial */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-3 sm:gap-4">
         <Card>
           <div className="flex flex-col">
-            <div className="text-sm text-secondary mb-2 flex items-center gap-2">
+            <div className="text-xs sm:text-sm text-secondary mb-1.5 sm:mb-2 flex items-center gap-1.5 sm:gap-2">
               <span style={{ color: 'var(--game-primary)' }}>💰</span>
               <span>Total Revenue</span>
             </div>
-            <div className="text-2xl font-bold" style={{ color: 'var(--success)' }}>
+            <div className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--success)' }}>
               ${lifetimeRevenue.toLocaleString()}
             </div>
           </div>
         </Card>
-        
+
         <Card>
           <div className="flex flex-col">
-            <div className="text-sm text-secondary mb-2 flex items-center gap-2">
+            <div className="text-xs sm:text-sm text-secondary mb-1.5 sm:mb-2 flex items-center gap-1.5 sm:gap-2">
               <span style={{ color: 'var(--game-primary)' }}>💸</span>
               <span>Total Expenses</span>
             </div>
-            <div className="text-2xl font-bold" style={{ color: 'var(--error)' }}>
+            <div className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--error)' }}>
               ${lifetimeExpenses.toLocaleString()}
             </div>
           </div>
         </Card>
-        
+
         <Card>
           <div className="flex flex-col">
-            <div className="text-sm text-secondary mb-2 flex items-center gap-2">
+            <div className="text-xs sm:text-sm text-secondary mb-1.5 sm:mb-2 flex items-center gap-1.5 sm:gap-2">
               <span style={{ color: 'var(--game-primary)' }}>📊</span>
               <span>Total Profit</span>
             </div>
-            <div className={`text-2xl font-bold ${lifetimeProfit >= 0 ? '' : ''}`} style={{ color: lifetimeProfit >= 0 ? 'var(--success)' : 'var(--error)' }}>
+            <div className={`text-xl sm:text-2xl font-bold ${lifetimeProfit >= 0 ? '' : ''}`} style={{ color: lifetimeProfit >= 0 ? 'var(--success)' : 'var(--error)' }}>
               ${lifetimeProfit.toLocaleString()}
             </div>
           </div>
@@ -299,24 +299,24 @@ export function HomeTab() {
 
       {/* Monthly Expenses - Burn Rate */}
       <Card>
-        <div 
+        <div
           className="flex items-center justify-between cursor-pointer"
           onClick={() => setIsMonthlyExpensesExpanded(!isMonthlyExpensesExpanded)}
         >
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🔥</span>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="text-lg sm:text-2xl">🔥</span>
             <div className="flex flex-col">
-              <div className="text-sm font-semibold text-secondary">Monthly Expenses (Burn Rate)</div>
-              <div className="text-sm text-tertiary">Recurring expenses deducted at month end</div>
+              <div className="text-xs sm:text-sm font-semibold text-secondary">Monthly Expenses (Burn Rate)</div>
+              <div className="text-xs sm:text-sm text-tertiary">Recurring expenses deducted at month end</div>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <div className="flex flex-col items-end">
-              <div className="text-3xl font-bold" style={{ color: 'var(--error)' }}>
+              <div className="text-xl sm:text-3xl font-bold" style={{ color: 'var(--error)' }}>
                 ${monthlyExpenses.toLocaleString()}/mo
               </div>
             </div>
-            <div className="text-lg" style={{ color: 'var(--error)' }}>
+            <div className="text-base sm:text-lg" style={{ color: 'var(--error)' }}>
               {isMonthlyExpensesExpanded ? '▼' : '▶'}
             </div>
           </div>
@@ -416,22 +416,22 @@ export function HomeTab() {
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-6">
+                      <div className="flex items-center gap-3 sm:gap-6">
                         <div className="flex flex-col items-end">
-                          <div className="text-sm text-secondary mb-0.5">Revenue</div>
-                          <div className="text-sm font-bold" style={{ color: 'var(--success)' }}>
+                          <div className="text-xs sm:text-sm text-secondary mb-0.5">Revenue</div>
+                          <div className="text-xs sm:text-sm font-bold" style={{ color: 'var(--success)' }}>
                             ${w.revenue.toLocaleString()}
                           </div>
                         </div>
                         <div className="flex flex-col items-end">
-                          <div className="text-sm text-secondary mb-0.5">Expenses</div>
-                          <div className="text-sm font-bold" style={{ color: 'var(--error)' }}>
+                          <div className="text-xs sm:text-sm text-secondary mb-0.5">Expenses</div>
+                          <div className="text-xs sm:text-sm font-bold" style={{ color: 'var(--error)' }}>
                             ${w.expenses.toLocaleString()}
                           </div>
                         </div>
                         <div className="flex flex-col items-end">
-                          <div className="text-sm text-secondary mb-0.5">Profit</div>
-                          <div className={`text-lg font-bold ${w.profit >= 0 ? '' : ''}`} style={{ color: w.profit >= 0 ? 'var(--success)' : 'var(--error)' }}>
+                          <div className="text-xs sm:text-sm text-secondary mb-0.5">Profit</div>
+                          <div className={`text-sm sm:text-lg font-bold ${w.profit >= 0 ? '' : ''}`} style={{ color: w.profit >= 0 ? 'var(--success)' : 'var(--error)' }}>
                             ${w.profit.toLocaleString()}
                           </div>
                         </div>
@@ -441,7 +441,7 @@ export function HomeTab() {
                     {(w.leadsSpawned !== undefined || 
                       w.customersGenerated !== undefined || 
                       (showTime && w.timeSpent !== undefined)) && (
-                      <div className="flex items-center gap-4 text-sm pt-2 border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+                      <div className="flex items-center gap-4 text-xs sm:text-sm pt-2 border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
                         {w.leadsSpawned !== undefined && (
                           <div className="flex items-center gap-1.5">
                             <span>💡</span>
@@ -479,31 +479,31 @@ export function HomeTab() {
                   {/* Detailed Breakdown - Only when Expanded */}
                   {isExpanded && (
                     <div className="mt-4 pt-4 border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
-                      <div className="grid grid-cols-2 gap-6">
+                      <div className="grid grid-cols-2 gap-4 sm:gap-6">
                         {/* Revenue Section */}
                         <div className="space-y-3">
                           <div className="flex justify-between items-baseline pb-2 border-b" style={{ borderColor: 'rgba(16, 185, 129, 0.3)' }}>
-                            <span className="text-sm font-medium text-secondary">Revenue</span>
-                            <span className="text-lg font-bold" style={{ color: 'var(--success)' }}>
+                            <span className="text-xs sm:text-sm font-medium text-secondary">Revenue</span>
+                            <span className="text-base sm:text-lg font-bold" style={{ color: 'var(--success)' }}>
                               ${w.revenue.toLocaleString()}
                             </span>
                           </div>
-                          <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                            <div className="space-y-1.5">
+                          <div className="rounded-lg p-2 sm:p-3" style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                            <div className="space-y-1 sm:space-y-1.5">
                               {revenueBreakdown.map((entry, rbIndex) => {
                                 // Use sourceType for icon if available, otherwise fall back to category/label
-                                const icon = entry.sourceType 
+                                const icon = entry.sourceType
                                   ? getIconForSourceType(entry.sourceType)
                                   : getRevenueIcon(entry.category, entry.label, entry.sourceType);
                                 const displayLabel = getRevenueDisplayLabel(entry);
-                                
+
                                 return (
                                   <div key={rbIndex} className="flex justify-between items-center py-1 px-2 rounded" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}>
-                                    <span className="text-sm text-tertiary flex items-center gap-1.5">
+                                    <span className="text-xs sm:text-sm text-tertiary flex items-center gap-1 sm:gap-1.5">
                                       <span>{icon}</span>
                                       <span>{displayLabel}</span>
                                     </span>
-                                    <span className="text-sm font-semibold" style={{ color: 'var(--success)' }}>
+                                    <span className="text-xs sm:text-sm font-semibold" style={{ color: 'var(--success)' }}>
                                       ${entry.amount.toLocaleString()}
                                     </span>
                                   </div>
@@ -516,36 +516,36 @@ export function HomeTab() {
                         {/* Expenses Section */}
                         <div className="space-y-3">
                           <div className="flex justify-between items-baseline pb-2 border-b" style={{ borderColor: 'rgba(239, 68, 68, 0.3)' }}>
-                            <span className="text-sm font-medium text-secondary">Total Expenses</span>
-                            <span className="text-lg font-bold" style={{ color: 'var(--error)' }}>
+                            <span className="text-xs sm:text-sm font-medium text-secondary">Total Expenses</span>
+                            <span className="text-base sm:text-lg font-bold" style={{ color: 'var(--error)' }}>
                               ${w.expenses.toLocaleString()}
                             </span>
                           </div>
                           <div className="space-y-3">
                             {/* Operating Expenses - Grouped */}
                             {w.expenseBreakdown && w.expenseBreakdown.length > 0 ? (
-                              <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                              <div className="rounded-lg p-2 sm:p-3" style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
                                 <div className="flex justify-between items-center mb-2 pb-2 border-b" style={{ borderColor: 'rgba(239, 68, 68, 0.3)' }}>
-                                  <span className="text-sm font-semibold text-secondary">Operating Expenses (Monthly)</span>
-                                  <span className="text-sm font-bold" style={{ color: 'var(--error)' }}>
+                                  <span className="text-xs sm:text-sm font-semibold text-secondary">Operating Expenses (Monthly)</span>
+                                  <span className="text-xs sm:text-sm font-bold" style={{ color: 'var(--error)' }}>
                                     ${operatingExpenses.toLocaleString()}
                                   </span>
                                 </div>
-                                <div className="space-y-1.5">
+                                <div className="space-y-1 sm:space-y-1.5">
                                   {w.expenseBreakdown.map((expense, expIndex) => {
                                     // Use sourceType for icon if available, otherwise use category
-                                    const icon = expense.sourceType 
+                                    const icon = expense.sourceType
                                       ? getIconForSourceType(expense.sourceType)
                                       : getExpenseBreakdownIcon(expense.category);
                                     const displayLabel = getExpenseDisplayLabel(expense);
-                                    
+
                                     return (
                                       <div key={`exp-${expIndex}`} className="flex justify-between items-center py-1 px-2 rounded" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}>
-                                        <span className="text-sm text-tertiary flex items-center gap-1.5">
+                                        <span className="text-xs sm:text-sm text-tertiary flex items-center gap-1 sm:gap-1.5">
                                           <span>{icon}</span>
                                           <span>{displayLabel}</span>
                                         </span>
-                                        <span className="text-sm font-semibold" style={{ color: 'var(--error)' }}>
+                                        <span className="text-xs sm:text-sm font-semibold" style={{ color: 'var(--error)' }}>
                                           ${expense.amount.toLocaleString()}
                                         </span>
                                       </div>
@@ -554,10 +554,10 @@ export function HomeTab() {
                                 </div>
                               </div>
                             ) : (
-                              <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                              <div className="rounded-lg p-2 sm:p-3" style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-sm text-tertiary">Operating expenses</span>
-                                  <span className="text-sm font-semibold" style={{ color: 'var(--error)' }}>
+                                  <span className="text-xs sm:text-sm text-tertiary">Operating expenses</span>
+                                  <span className="text-xs sm:text-sm font-semibold" style={{ color: 'var(--error)' }}>
                                     ${operatingExpenses.toLocaleString()}
                                   </span>
                                 </div>
@@ -565,28 +565,28 @@ export function HomeTab() {
                             )}
                             {/* One-Time Expenses - Grouped */}
                             {w.oneTimeCosts && w.oneTimeCosts.length > 0 && (
-                              <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+                              <div className="rounded-lg p-2 sm:p-3" style={{ backgroundColor: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
                                 <div className="flex justify-between items-center mb-2 pb-2 border-b" style={{ borderColor: 'rgba(251, 191, 36, 0.3)' }}>
-                                  <span className="text-sm font-semibold text-secondary">One-Time Expenses</span>
-                                  <span className="text-sm font-bold" style={{ color: 'var(--warning)' }}>
+                                  <span className="text-xs sm:text-sm font-semibold text-secondary">One-Time Expenses</span>
+                                  <span className="text-xs sm:text-sm font-bold" style={{ color: 'var(--warning)' }}>
                                     ${oneTimeCostsTotal.toLocaleString()}
                                   </span>
                                 </div>
-                                <div className="space-y-1.5">
+                                <div className="space-y-1 sm:space-y-1.5">
                                   {w.oneTimeCosts.map((cost, costIndex) => {
                                     // Use sourceType for icon if available, otherwise use category
-                                    const icon = cost.sourceType 
+                                    const icon = cost.sourceType
                                       ? getIconForSourceType(cost.sourceType)
                                       : getOneTimeCostIcon(cost.category);
                                     const displayLabel = getExpenseDisplayLabel(cost);
-                                    
+
                                     return (
                                       <div key={`one-time-${costIndex}`} className="flex justify-between items-center py-1 px-2 rounded" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}>
-                                        <span className="text-sm text-tertiary flex items-center gap-1.5">
+                                        <span className="text-xs sm:text-sm text-tertiary flex items-center gap-1 sm:gap-1.5">
                                           <span>{icon}</span>
                                           <span>{displayLabel}</span>
                                         </span>
-                                        <span className="text-sm font-semibold" style={{ color: 'var(--warning)' }}>
+                                        <span className="text-xs sm:text-sm font-semibold" style={{ color: 'var(--warning)' }}>
                                           ${cost.amount.toLocaleString()}
                                         </span>
                                       </div>
@@ -604,28 +604,28 @@ export function HomeTab() {
                         <div className="mt-4 pt-4 border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
                           <div className="space-y-3">
                             <div className="flex justify-between items-baseline pb-2 border-b" style={{ borderColor: 'rgba(251, 191, 36, 0.3)' }}>
-                              <span className="text-sm font-medium text-secondary">Time Spent</span>
-                              <span className="text-lg font-bold" style={{ color: 'var(--warning)' }}>
+                              <span className="text-xs sm:text-sm font-medium text-secondary">Time Spent</span>
+                              <span className="text-base sm:text-lg font-bold" style={{ color: 'var(--warning)' }}>
                                 {(w.timeSpent ?? 0).toFixed(1)}h
                               </span>
                             </div>
                             {w.timeSpentDetails && w.timeSpentDetails.length > 0 ? (
-                              <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
-                                <div className="space-y-1.5">
+                              <div className="rounded-lg p-2 sm:p-3" style={{ backgroundColor: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+                                <div className="space-y-1 sm:space-y-1.5">
                                   {w.timeSpentDetails.map((timeEntry, timeIndex) => {
                                     // Use sourceType for icon if available, otherwise fallback to default time icon
-                                    const icon = timeEntry.sourceType 
+                                    const icon = timeEntry.sourceType
                                       ? getIconForSourceType(timeEntry.sourceType)
                                       : '⏰';
                                     const displayLabel = timeEntry.sourceName || timeEntry.label || 'Time spent';
-                                    
+
                                     return (
                                       <div key={`time-${timeIndex}`} className="flex justify-between items-center py-1 px-2 rounded" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}>
-                                        <span className="text-sm text-tertiary flex items-center gap-1.5">
+                                        <span className="text-xs sm:text-sm text-tertiary flex items-center gap-1 sm:gap-1.5">
                                           <span>{icon}</span>
                                           <span>{displayLabel}</span>
                                         </span>
-                                        <span className="text-sm font-semibold" style={{ color: 'var(--warning)' }}>
+                                        <span className="text-xs sm:text-sm font-semibold" style={{ color: 'var(--warning)' }}>
                                           {timeEntry.amount.toFixed(1)}h
                                         </span>
                                       </div>
@@ -634,10 +634,10 @@ export function HomeTab() {
                                 </div>
                               </div>
                             ) : (
-                              <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+                              <div className="rounded-lg p-2 sm:p-3" style={{ backgroundColor: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-sm text-tertiary">Time spent</span>
-                                  <span className="text-sm font-semibold" style={{ color: 'var(--warning)' }}>
+                                  <span className="text-xs sm:text-sm text-tertiary">Time spent</span>
+                                  <span className="text-xs sm:text-sm font-semibold" style={{ color: 'var(--warning)' }}>
                                     {(w.timeSpent ?? 0).toFixed(1)}h
                                   </span>
                                 </div>
