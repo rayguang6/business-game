@@ -5,6 +5,7 @@ import type { GameEvent, GameEventChoice } from '@/lib/types/gameEvents';
 import type { Operation } from './types';
 import type { Requirement } from '@/lib/game/types';
 import { useToastFunctions } from '../components/ui/ToastContext';
+import { generateUniqueId } from '../components/utils';
 
 interface EventForm {
   id: string;
@@ -19,7 +20,7 @@ const eventsQueryKey = (industryId: string) => ['events', industryId] as const;
 
 export function useEvents(industryId: string, eventId?: string) {
   const queryClient = useQueryClient();
-  const { success, error } = useToastFunctions();
+  const { success: toastSuccess, error } = useToastFunctions();
   const [selectedId, setSelectedId] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState<EventForm>({
@@ -75,9 +76,10 @@ export function useEvents(industryId: string, eventId?: string) {
       error(err instanceof Error ? err.message : 'Failed to save event.');
     },
     onSuccess: (savedEvent) => {
-      success('Event saved.');
       setIsCreating(false);
       setSelectedId(savedEvent.id);
+      // Update form with the saved event ID in case it was auto-generated
+      setForm(prev => ({ ...prev, id: savedEvent.id }));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: eventsQueryKey(industryId) });
@@ -119,7 +121,7 @@ export function useEvents(industryId: string, eventId?: string) {
         requirements: [],
       });
       setChoices([]);
-      success('Event deleted.');
+      toastSuccess('Event deleted.');
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: eventsQueryKey(industryId) });
@@ -179,35 +181,41 @@ export function useEvents(industryId: string, eventId?: string) {
 
   const persistEventWithChoices = useCallback(
     async (nextChoices: GameEventChoice[], successMessage: string = 'Event saved.') => {
-      if (!industryId || !form.id) {
+      if (!industryId) {
         error('Saved locally. Save Event to persist.');
         return;
       }
-      const id = form.id.trim();
+
       const title = form.title.trim();
-      const summary = form.summary.trim();
+      const summary = form.summary?.trim() || '';
       const category = form.category;
 
       // Check which required fields are missing and provide specific error message
       const missingFields: string[] = [];
-      if (!id) missingFields.push('ID');
       if (!title) missingFields.push('Title');
 
       if (missingFields.length > 0) {
         error(`Saved locally. Missing required fields: ${missingFields.join(', ')}. Fill them to persist.`);
         return;
       }
+
+      // Auto-generate ID if not provided
+      let id = form.id.trim();
+      if (!id) {
+        const existingIds = new Set(events.map(e => e.id));
+        id = generateUniqueId('event', existingIds, title);
+      }
       const payload: GameEvent = {
         id,
         title,
         category,
-        ...(summary ? { summary } : {}),
+        summary,
         choices: nextChoices,
         requirements: form.requirements && form.requirements.length > 0 ? form.requirements : undefined,
       } as GameEvent;
       saveMutation.mutate(payload, {
         onSuccess: () => {
-          error(successMessage);
+          toastSuccess(successMessage);
         },
       });
     },
@@ -215,10 +223,41 @@ export function useEvents(industryId: string, eventId?: string) {
   );
 
   const saveEvent = useCallback(async () => {
-    await persistEventWithChoices(choices, 'Event saved.');
-    setIsCreating(false);
-    setSelectedId(form.id.trim());
-  }, [choices, form, persistEventWithChoices]);
+    const title = form.title.trim();
+    const summary = form.summary?.trim() || '';
+    const category = form.category;
+
+    // Check which required fields are missing and provide specific error message
+    const missingFields: string[] = [];
+    if (!title) missingFields.push('Title');
+
+    if (missingFields.length > 0) {
+      error(`Saved locally. Missing required fields: ${missingFields.join(', ')}. Fill them to persist.`);
+      return;
+    }
+
+    // Auto-generate ID if not provided
+    let id = form.id.trim();
+    if (!id) {
+      const existingIds = new Set(events.map(e => e.id));
+      id = generateUniqueId('event', existingIds, title);
+    }
+
+    const payload: GameEvent = {
+      id,
+      title,
+      category,
+      summary,
+      choices,
+      requirements: form.requirements && form.requirements.length > 0 ? form.requirements : undefined,
+    } as GameEvent;
+
+    saveMutation.mutate(payload, {
+      onSuccess: () => {
+        toastSuccess('Event saved.');
+      },
+    });
+  }, [choices, form, saveMutation, events, toastSuccess, error]);
 
   const deleteEventHandler = useCallback(async () => {
     if (isCreating || !selectedId) return;
@@ -254,7 +293,9 @@ export function useEvents(industryId: string, eventId?: string) {
   }, []);
 
   const updateStatus = useCallback((newStatus: string | null) => {
-    error(newStatus);
+    if (newStatus) {
+      error(newStatus);
+    }
   }, []);
 
   const operation: Operation = isLoading ? 'loading' : saveMutation.isPending ? 'saving' : deleteMutation.isPending ? 'deleting' : 'idle';

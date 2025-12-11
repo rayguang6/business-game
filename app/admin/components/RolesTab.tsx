@@ -212,7 +212,7 @@ export function RolesTab({
                       metricOptions={metricOptions}
                       effectTypeOptions={effectTypeOptions}
                       showDuration={false}
-                      title="Effects (permanent)"
+                      title="Effects"
                       description="Staff effects are permanent while hired. Add = flat, Percent = +/-%, Multiply = × factor, Set = exact value."
                       defaultEffect={{
                         metric: metricOptions[0]?.value ?? GameMetric.ServiceSpeedMultiplier,

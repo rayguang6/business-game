@@ -188,7 +188,7 @@ export function LevelRewardsTab({
                       metricOptions={METRIC_OPTIONS}
                       effectTypeOptions={EFFECT_TYPE_OPTIONS}
                       title="Effects"
-                      description="Effects applied when this level is reached (permanent)"
+                      description="Effects applied when this level is reached"
                       onEffectsChange={handleEffectsChange}
                     />
 
