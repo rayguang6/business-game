@@ -144,6 +144,7 @@ export function KeyMetrics() {
         let icon: string | null = '💵';
         let image: string | null = null;
         let color = 'text-green-400';
+        let valueColor: string | undefined = undefined; // Optional color override for value
         let key = def.id;
         let feedback: FeedbackItem[] = [];
 
@@ -179,6 +180,7 @@ export function KeyMetrics() {
             icon = getMetricIcon(def.id);
             image = iconPath; // Use merged iconPath (DB → registry fallback)
             color = 'text-cyan-400';
+            valueColor = metrics.myTime < 40 ? 'text-red-400' : undefined;
             feedback = feedbackByMetric.myTime || [];
             break;
           }
@@ -241,6 +243,7 @@ export function KeyMetrics() {
           value,
           label: merged.displayLabel, // Use merged label (DB override if available)
           color,
+          valueColor,
           feedback,
         };
       });
@@ -297,7 +300,7 @@ export function KeyMetrics() {
               {metric.label}
             </span>
             <span
-              className="text-white text-label font-bold"
+              className={`${metric.valueColor || 'text-white'} text-label font-bold`}
               style={{
                 textShadow: '0 0 3px rgba(0, 0, 0, 1), 0 1px 2px rgba(0, 0, 0, 0.9), 0 -1px 2px rgba(0, 0, 0, 0.9)'
               }}

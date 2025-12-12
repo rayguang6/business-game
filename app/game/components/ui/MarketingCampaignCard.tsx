@@ -295,7 +295,7 @@ export function MarketingCampaignCard({
                   : isLeveled && !canUpgradeMore
                     ? 'Max Level'
                     : canAfford
-                      ? `Upgrade`
+                      ? (!isLeveled ? 'Get Leads' : 'Upgrade')
                       : needText}
           </GameButton>
           {requirementDescriptions.length > 0 && availability === 'locked' && (
