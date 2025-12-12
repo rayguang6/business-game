@@ -160,9 +160,9 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
           {/* Global Popups - Above everything */}
           <EventPopup />
           <LevelUpPopup />
-        {/* Mobile: Top Section - Game Canvas Area (35% height) */}
-        {/* Desktop: Left Section - Game Canvas Area (50% width) */}
-        <div className="relative h-[35vh] sm:h-full sm:w-1/2 flex items-center justify-center py-4 sm:py-0 overflow-hidden bg-[#8ed0fb]">
+        {/* Mobile: Top Section - Game Canvas Area (30% height) */}
+        {/* Desktop: Left Section - Game Canvas Area (45% width) */}
+        <div className="relative h-[30vh] sm:h-full sm:w-[45%] flex items-center justify-center py-4 sm:py-0 overflow-hidden bg-[#8ed0fb]">
           {/* Unified Top HUD Container */}
           <div className="absolute top-0 left-0 z-20 pt-2 sm:pt-3 md:pt-4 px-2 sm:px-3 md:px-4">
             <div className="flex flex-col items-start gap-2">
@@ -178,8 +178,8 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
             </div>
           </div>
 
-          {/* Rank Display - Bottom left corner of game canvas */}
-          <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 z-15">
+          {/* Rank Display - Moved to bottom right corner of game canvas */}
+          <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 z-15">
             <span
               key={rankChangeKey}
               className={`font-semibold text-body-sm sm:text-body md:text-heading-sm flex-shrink-0 px-2 py-0.5 rounded-md transition-all duration-300 ease-out transform ${getRankBackgroundColor(currentRank, allRanks)} ${getRankTextColor(currentRank, allRanks)}`}
@@ -191,10 +191,10 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
             </span>
           </div>
 
-          {/* Fullscreen Button - Bottom right corner of game canvas */}
-          <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 z-30">
+          {/* Fullscreen Button - Bottom left corner of game canvas */}
+          {/* <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 z-30">
             <FullscreenToggle targetId="game-shell" />
-          </div>
+          </div> */}
           
           {/* Game Canvas - Full Area */}
           <div className="relative z-10 w-full h-full bg-[#8ed0fb] flex items-center justify-center">

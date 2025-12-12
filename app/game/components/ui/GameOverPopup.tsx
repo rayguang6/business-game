@@ -94,15 +94,15 @@ const GameOverPopup: React.FC = () => {
 
   return (
     <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none">
-      <div className="pointer-events-auto bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl p-4 sm:p-6 max-w-[280px] sm:max-w-sm w-full mx-2 border-2 border-gray-200">
+      <div className="pointer-events-auto bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl p-3 sm:p-4 max-w-[240px] sm:max-w-[280px] w-full mx-2 border-2 border-gray-200">
         <div className="text-center">
-          <div className="text-4xl sm:text-5xl mb-3 sm:mb-4">{icon}</div>
-          <h2 className={`text-xl sm:text-2xl font-bold mb-3 sm:mb-4 ${
+          <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">{icon}</div>
+          <h2 className={`text-lg sm:text-xl font-bold mb-2 sm:mb-3 ${
             color === 'green' ? 'text-green-600' :
             color === 'orange' ? 'text-orange-600' :
             'text-red-600'
           }`}>{title}</h2>
-          <p className="text-gray-700 mb-4 sm:mb-6 text-sm sm:text-base leading-relaxed">{message}</p>
+          <p className="text-gray-700 mb-3 sm:mb-4 text-xs sm:text-sm leading-relaxed">{message}</p>
 
           <GameButton
             color={color === 'green' ? 'green' : 'blue'}

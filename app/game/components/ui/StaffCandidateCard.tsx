@@ -68,7 +68,7 @@ export function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProp
       <div className="">
         {/* Header with Role */}
         <div className="px-3 md:px-4 py-2 bg-slate-700 border-b border-slate-600 flex items-center justify-between h-10 md:h-12">
-          <span className="text-xs md:text-sm font-bold text-slate-200 uppercase tracking-wide leading-tight line-clamp-2">
+          <span className="text-caption font-bold sm:text-body-sm text-slate-200 uppercase tracking-wide leading-tight line-clamp-2">
             {candidate.role}
           </span>
           {availability === 'locked' && (
@@ -96,13 +96,13 @@ export function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProp
 
       {/* Name */}
         <div className="px-3 md:px-4 pb-1 text-center">
-          <h5 className="text-white font-bold text-xs md:text-sm truncate">
+          <h5 className="text-white font-bold text-caption sm:text-body-sm truncate">
             {candidate.name}
           </h5>
         </div>
 
         {/* Stats Panel */}
-        <div className="px-3 md:px-4">
+        <div className="px-0.5">
           <div className="">
             {Array.from({ length: 2 }, (_, index) => {
               const effect = candidate.effects[index];
@@ -110,7 +110,7 @@ export function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProp
                 const formattedEffect = formatStaffEffect(effect);
                 return (
                   <div key={index} className="flex items-center gap-1 min-w-0">
-                    <span className="text-slate-300 text-[10px] flex items-center gap-0.5 min-w-0 flex-1">
+                    <span className="text-slate-300 text-caption sm:text-body-sm flex items-center gap-0.5 min-w-0 flex-1">
                       {getMetricIcon(effect.metric) ? (
                         <img
                           src={getMetricIcon(effect.metric)!}
@@ -118,7 +118,7 @@ export function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProp
                           className="w-4 h-4 flex-shrink-0"
                         />
                       ) : (
-                        <span className="text-[10px] flex-shrink-0">{getMetricEmojiIcon(effect.metric)}</span>
+                        <span className="text-caption sm:text-body-sm flex-shrink-0">{getMetricEmojiIcon(effect.metric)}</span>
                       )}
                       <span className="break-words">{formattedEffect}</span>
                     </span>
@@ -128,8 +128,8 @@ export function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProp
                 // Empty effect line for consistent height
                 return (
                   <div key={index} className="flex items-center gap-1 min-w-0 opacity-0">
-                    <span className="text-slate-300 text-[10px] flex items-center gap-0.5 min-w-0 flex-1">
-                      <span className="text-[10px] flex-shrink-0">📊</span>
+                    <span className="text-slate-300 text-caption sm:text-body-sm flex items-center gap-0.5 min-w-0 flex-1">
+                      <span className="text-caption sm:text-body-sm flex-shrink-0">📊</span>
                       <span className="truncate">Placeholder +0</span>
                     </span>
                   </div>
@@ -144,7 +144,7 @@ export function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProp
       <div className="px-3 md:px-4 pb-3 space-y-0.5">
         {/* Salary - Bottom aligned */}
         <div className="text-center">
-          <div className={`text-xs font-bold ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
+          <div className={`text-caption sm:text-body-sm font-bold ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
             ${Math.round(candidate.salary).toLocaleString()}/m
           </div>
         </div>
@@ -157,7 +157,7 @@ export function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProp
             color={availability === 'available' && canAfford ? "purple" : "gray"}
             fullWidth
             size="sm"
-            className="w-full text-xs py-1.5"
+            className="w-full text-caption sm:text-body-sm py-1.5"
           >
             {!canAfford ? 'Need Cash' : availability === 'available' ? `Hire` : 'Locked'}
           </GameButton>

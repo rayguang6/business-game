@@ -361,8 +361,8 @@ const EventPopup: React.FC = () => {
               </div>
             )}
 
-            {/* Consequence Description */}
-            {lastEventOutcome.consequenceDescription && (
+            {/* Consequence Description - only show for GoodBad events */}
+            {lastEventOutcome.consequenceDescription && lastEventOutcome.eventCategory === EventCategory.GoodBad && (
               <div className="text-base md:text-base text-[var(--text-primary)] mb-4 md:mb-3 bg-[var(--bg-tertiary)]/50 rounded p-4 md:p-3 border border-[var(--border-secondary)]">
                 <span className="font-medium italic">{lastEventOutcome.consequenceDescription}</span>
               </div>

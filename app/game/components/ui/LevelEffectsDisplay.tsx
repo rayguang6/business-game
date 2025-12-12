@@ -206,7 +206,24 @@ export function LevelEffectsDisplay({
     !shouldDisplayAsOneTimeBonus(effect.metric as GameMetric, effect.type as EffectType)
   );
 
-  const hasPersistentEffects = persistentEffects.length > 0 && showPersistentEffects;
+  // Filter out unchanged persistent effects
+  const filteredPersistentEffects = persistentEffects.filter(effect => {
+    const metric = effect.metric as GameMetric;
+    const type = effect.type as EffectType;
+
+    // Determine which effects to compare based on context
+    const beforeEffects = hasNextLevel ? currentLevelEffects : previousLevelEffects;
+    const afterEffects = hasNextLevel ? nextLevelEffects : currentLevelEffects;
+
+    // Get before and after values if available
+    const beforeValue = getEffectValueForLevel(beforeEffects, metric, type);
+    const afterValue = getEffectValueForLevel(afterEffects, metric, type);
+
+    // Skip if effect is unchanged (before and after values are the same)
+    return !(beforeValue !== null && afterValue !== null && beforeValue === afterValue);
+  });
+
+  const hasPersistentEffects = filteredPersistentEffects.length > 0 && showPersistentEffects;
   const hasOneTimeBonuses = oneTimeBonuses.length > 0 && showOneTimeBonuses;
 
   // For level cards, also show effects if there are next level effects to compare against
@@ -232,9 +249,9 @@ export function LevelEffectsDisplay({
             📈 Permanent Upgrades
           </div> */}
           <div className="space-y-2">
-            {persistentEffects.map((effect, index) => {
+            {filteredPersistentEffects.map((effect, index) => {
               // For level rewards, show "Potential Earnings" for ServiceRevenueMultiplier (both Add and Percent types)
-              const label = effect.metric === GameMetric.ServiceRevenueMultiplier && 
+              const label = effect.metric === GameMetric.ServiceRevenueMultiplier &&
                 (effect.type === EffectType.Percent || effect.type === EffectType.Add)
                 ? 'Potential Earnings'
                 : getDisplayLabel(effect.metric);
