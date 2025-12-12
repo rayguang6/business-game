@@ -252,7 +252,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
           {/* Action Button */}
           <div className="relative">
             <GameButton
-              color={isMaxed ? 'gold' : canAfford && availability === 'available' ? 'blue' : 'gold'}
+              color={isMaxed ? 'gold' : canAfford && availability === 'available' ? 'blue' : 'gray'}
               fullWidth
               size="sm"
               disabled={buttonDisabled}

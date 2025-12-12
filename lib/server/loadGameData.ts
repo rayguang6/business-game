@@ -11,8 +11,9 @@ import { fetchStaffDataForIndustry } from '@/lib/data/staffRepository';
 import { fetchFlagsForIndustry } from '@/lib/data/flagRepository';
 import { fetchConditionsForIndustry } from '@/lib/data/conditionRepository';
 import { fetchLevelRewardsForIndustry } from '@/lib/data/levelRewardsRepository';
+import { fetchCategoriesForIndustry } from '@/lib/data/categoryRepository';
 import { fetchIndustriesFromSupabase } from '@/lib/data/industryRepository';
-import type { SimulationLayoutConfig } from '@/lib/game/types';
+import type { SimulationLayoutConfig, Category } from '@/lib/game/types';
 
 export interface IndustryContentLoadResult extends IndustryContentConfig {
   staffDataAvailable: boolean;
@@ -101,6 +102,7 @@ export async function loadIndustryContent(
     upgradesResult,
     eventsResult,
     marketingResult,
+    categoriesResult,
     staffResult,
     flagsResult,
     conditionsResult,
@@ -111,6 +113,7 @@ export async function loadIndustryContent(
     fetchUpgradesForIndustry(industryId),
     fetchEventsForIndustry(industryId),
     fetchMarketingCampaignsForIndustry(industryId),
+    fetchCategoriesForIndustry(industryId),
     fetchStaffDataForIndustry(industryId),
     fetchFlagsForIndustry(industryId),
     fetchConditionsForIndustry(industryId),
@@ -124,6 +127,7 @@ export async function loadIndustryContent(
     upgradesResult === null ||
     eventsResult === null ||
     marketingResult === null ||
+    categoriesResult === null ||
     flagsResult === null ||
     conditionsResult === null ||
     levelRewardsResult === null
@@ -136,6 +140,7 @@ export async function loadIndustryContent(
   const upgrades = upgradesResult;
   const events = eventsResult;
   const marketingCampaigns = marketingResult;
+  const categories = categoriesResult;
   const flags = flagsResult;
   const conditions = conditionsResult;
   const levelRewards = levelRewardsResult;
@@ -173,6 +178,7 @@ export async function loadIndustryContent(
     upgrades,
     events,
     marketingCampaigns,
+    categories,
     staffRoles: staffResult?.roles ?? [],
     staffPresets: staffResult?.initialStaff ?? [],
     staffNamePool: staffResult?.namePool ?? undefined,

@@ -65,7 +65,7 @@ export function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProp
   return (
     <div className="w-full flex flex-col justify-between bg-slate-800 rounded-lg border border-slate-600 hover:bg-slate-750 transition-colors">
       {/* Top Content Section */}
-      <div className="space-y-0.5">
+      <div className="">
         {/* Header with Role */}
         <div className="px-3 md:px-4 py-2 bg-slate-700 border-b border-slate-600 flex items-center justify-between h-10 md:h-12">
           <span className="text-xs md:text-sm font-bold text-slate-200 uppercase tracking-wide leading-tight line-clamp-2">
@@ -78,7 +78,7 @@ export function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProp
 
         {/* Avatar Section */}
         <div className="flex justify-center py-2">
-          <div className="relative w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 bg-slate-600 rounded border border-slate-500 overflow-hidden">
+          <div className="relative w-10 h-10 md:w-8 md:h-8 lg:w-10 lg:h-10 bg-slate-600 rounded border border-slate-500 overflow-hidden">
             <img
               src={candidate.spriteImage || '/images/staff/staff1.png'}
               alt={candidate.name}
@@ -102,8 +102,8 @@ export function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProp
         </div>
 
         {/* Stats Panel */}
-        <div className="px-3 md:px-4 pb-1 space-y-0.5">
-          <div className="space-y-0.5">
+        <div className="px-3 md:px-4">
+          <div className="">
             {Array.from({ length: 2 }, (_, index) => {
               const effect = candidate.effects[index];
               if (effect) {
@@ -141,7 +141,7 @@ export function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProp
       </div>
 
       {/* Bottom Section: Salary and Button */}
-      <div className="px-3 md:px-4 pb-3 space-y-1">
+      <div className="px-3 md:px-4 pb-3 space-y-0.5">
         {/* Salary - Bottom aligned */}
         <div className="text-center">
           <div className={`text-xs font-bold ${canAfford ? 'text-green-400' : 'text-red-400'}`}>

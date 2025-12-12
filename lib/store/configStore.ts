@@ -34,6 +34,7 @@ const cloneIndustryConfig = (
       effects: (level.effects || []).map((effect) => ({ ...effect })),
     })) : undefined,
   })),
+  categories: (config.categories || []).map((category) => ({ ...category })),
   staffRoles: (config.staffRoles || []).map((role) => ({
     ...role,
     effects: (role.effects || []).map((effect) => ({ ...effect })),
@@ -112,11 +113,13 @@ export const useConfigStore = create<ConfigStore>((set) => ({
 const EMPTY_SERVICES: IndustryServiceDefinition[] = [];
 const EMPTY_UPGRADES: UpgradeDefinition[] = [];
 const EMPTY_EVENTS: GameEvent[] = [];
+const EMPTY_CATEGORIES: import('@/lib/game/types').Category[] = [];
 const EMPTY_LEVEL_REWARDS: import('@/lib/data/levelRewardsRepository').LevelReward[] = [];
 
 const servicesCache = new WeakMap<IndustryContentConfig, IndustryServiceDefinition[]>();
 const upgradesCache = new WeakMap<IndustryContentConfig, UpgradeDefinition[]>();
 const eventsCache = new WeakMap<IndustryContentConfig, GameEvent[]>();
+const categoriesCache = new WeakMap<IndustryContentConfig, import('@/lib/game/types').Category[]>();
 const levelRewardsCache = new WeakMap<IndustryContentConfig, import('@/lib/data/levelRewardsRepository').LevelReward[]>();
 
 const cloneService = (service: IndustryServiceDefinition): IndustryServiceDefinition => ({
@@ -183,6 +186,19 @@ const getEventsSnapshot = (config: IndustryContentConfig): GameEvent[] => {
   return cloned;
 };
 
+const getCategoriesSnapshot = (config: IndustryContentConfig): import('@/lib/game/types').Category[] => {
+  if (config.categories.length === 0) {
+    return EMPTY_CATEGORIES;
+  }
+  const cached = categoriesCache.get(config);
+  if (cached) {
+    return cached;
+  }
+  const cloned = config.categories.map((category) => ({ ...category }));
+  categoriesCache.set(config, cloned);
+  return cloned;
+};
+
 const getLevelRewardsSnapshot = (config: IndustryContentConfig): import('@/lib/data/levelRewardsRepository').LevelReward[] => {
   if (config.levelRewards.length === 0) {
     return EMPTY_LEVEL_REWARDS;
@@ -226,6 +242,16 @@ export const selectEventsForIndustry =
     return getEventsSnapshot(config);
   };
 
+export const selectCategoriesForIndustry =
+  (industryId: IndustryId) =>
+  (state: ConfigStore): import('@/lib/game/types').Category[] => {
+    const config = state.industryConfigs[industryId];
+    if (!config) {
+      return EMPTY_CATEGORIES;
+    }
+    return getCategoriesSnapshot(config);
+  };
+
 export const selectLevelRewardsForIndustry =
   (industryId: IndustryId) =>
   (state: ConfigStore): import('@/lib/data/levelRewardsRepository').LevelReward[] => {
@@ -258,6 +284,14 @@ export function getEventsFromStore(industryId: IndustryId): GameEvent[] {
     return EMPTY_EVENTS;
   }
   return getEventsSnapshot(config);
+}
+
+export function getCategoriesFromStore(industryId: IndustryId): import('@/lib/game/types').Category[] {
+  const config = useConfigStore.getState().industryConfigs[industryId];
+  if (!config) {
+    return EMPTY_CATEGORIES;
+  }
+  return getCategoriesSnapshot(config);
 }
 
 export function getLevelRewardsFromStore(industryId: IndustryId): import('@/lib/data/levelRewardsRepository').LevelReward[] {

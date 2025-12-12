@@ -7,6 +7,7 @@ import type {
   SimulationLayoutConfig,
   UpgradeDefinition,
   MapConfig,
+  Category,
 } from '@/lib/game/types';
 import type { GameEvent } from '@/lib/types/gameEvents';
 import type { MarketingCampaign } from '@/lib/store/slices/marketingSlice';
@@ -43,6 +44,7 @@ export interface IndustryContentConfig {
   upgrades: UpgradeDefinition[];
   events: GameEvent[];
   marketingCampaigns: MarketingCampaign[];
+  categories: Category[];
   staffRoles: StaffRoleConfig[];
   staffPresets: StaffPreset[];
   staffNamePool?: string[];
