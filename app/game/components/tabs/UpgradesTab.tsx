@@ -106,7 +106,7 @@ export function UpgradesTab() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-4 md:space-y-6 pb-safe">
+    <div className="space-y-3 sm:space-y-4 md:space-y-6 pb-safe pb-8">
       {/* Upgrades Section */}
       <section>
         <SectionHeading>Available Upgrades</SectionHeading>

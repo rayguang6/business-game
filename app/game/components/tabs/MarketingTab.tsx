@@ -145,7 +145,7 @@ export function MarketingTab() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-4 md:space-y-6 pb-safe">
+    <div className="space-y-3 sm:space-y-4 md:space-y-6 pb-safe pb-8">
       <div>
         <SectionHeading>Marketing Campaigns</SectionHeading>
         <p className="text-secondary text-sm sm:text-sm">
