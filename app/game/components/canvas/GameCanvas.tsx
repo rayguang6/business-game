@@ -65,13 +65,27 @@ export function GameCanvas() {
     const updateCanvasSize = () => {
       const width = window.innerWidth;
       const height = window.innerHeight;
-      
+
       // Determine canvas size based on screen size
       let size = CANVAS_CONFIG.BREAKPOINTS.mobile;
-      if (width >= 2160) size = CANVAS_CONFIG.BREAKPOINTS.large;      
-      else if (width >= 1024) size = CANVAS_CONFIG.BREAKPOINTS.desktop; 
-      else if (width >= 768) size = CANVAS_CONFIG.BREAKPOINTS.tablet;   
-      
+      if (width >= 2160) size = CANVAS_CONFIG.BREAKPOINTS.large;
+      else if (width >= 1024) size = CANVAS_CONFIG.BREAKPOINTS.desktop;
+      else if (width >= 768) size = CANVAS_CONFIG.BREAKPOINTS.tablet;
+
+      // On mobile, also consider available height to fit within parent container
+      // The parent container uses vh units (like h-[35vh]), so we need to calculate
+      // the actual available space dynamically
+      if (width < 768 && canvasRef.current) {
+        // Get the actual parent container dimensions
+        const parentRect = canvasRef.current.parentElement?.getBoundingClientRect();
+        if (parentRect) {
+          const availableWidth = parentRect.width - 32; // Account for padding
+          const availableHeight = parentRect.height - 32; // Account for padding
+          const maxSize = Math.min(availableWidth, availableHeight);
+          size = Math.min(size, maxSize);
+        }
+      }
+
       setCanvasSize(size);
       setScaleFactor(size / CANVAS_CONFIG.REFERENCE_SIZE);
     };

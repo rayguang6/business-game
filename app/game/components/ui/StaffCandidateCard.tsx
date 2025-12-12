@@ -120,7 +120,7 @@ export function StaffCandidateCard({ candidate, onHire }: StaffCandidateCardProp
                       ) : (
                         <span className="text-[10px] flex-shrink-0">{getMetricEmojiIcon(effect.metric)}</span>
                       )}
-                      <span className="truncate">{formattedEffect}</span>
+                      <span className="break-words">{formattedEffect}</span>
                     </span>
                   </div>
                 );
