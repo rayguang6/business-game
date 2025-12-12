@@ -179,7 +179,7 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
           </div>
 
           {/* Rank Display - Bottom left corner of game canvas */}
-          <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 z-30">
+          <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 z-5">
             <span
               key={rankChangeKey}
               className={`font-semibold text-body-sm sm:text-body md:text-heading-sm flex-shrink-0 px-2 py-0.5 rounded-md transition-all duration-300 ease-out transform ${getRankBackgroundColor(currentRank, allRanks)} ${getRankTextColor(currentRank, allRanks)}`}

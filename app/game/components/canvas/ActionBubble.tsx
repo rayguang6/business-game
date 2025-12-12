@@ -37,21 +37,13 @@ export function ActionBubble({ notification, index, scaleFactor, characterX, cha
 
   // Keep full opacity until hidden
   const opacity = isVisible ? 1 : 0;
-  const translateY = -12 - (index * 8); // Smaller stacking gap
 
-  // Position above character's head with vertical stacking (higher to avoid blocking)
+  // Position above character's head with tighter vertical stacking (allowing some overlap)
   const absoluteLeft = characterX * TILE_SIZE + TILE_SIZE / 2;
-  const absoluteTop = characterY * TILE_SIZE - 28 - (index * 12 * scaleFactor);
+  const absoluteTop = characterY * TILE_SIZE - 40 - (index * 16 * scaleFactor); // Higher base position, 16px gap
 
   const getIcon = () => {
-    switch (notification.type) {
-      case 'upgrade':
-        return '⬆️';
-      case 'marketing':
-        return '📢';
-      default:
-        return '💡';
-    }
+    return ''; // Remove emoji icons
   };
 
   const getColorClass = () => {
@@ -68,11 +60,12 @@ export function ActionBubble({ notification, index, scaleFactor, characterX, cha
   return (
     <div
       className={`
-        absolute pointer-events-none z-50
+        absolute pointer-events-none
         transition-all duration-300 ease-out
         ${getColorClass()}
       `}
       style={{
+        zIndex: 45 + index, // Higher index = newer bubble = higher z-index
         opacity,
         transform: `translateX(-50%) scale(${Math.min(scaleFactor * 0.6, 0.6)})`, // Small scale
         left: `${absoluteLeft}px`,
@@ -80,9 +73,10 @@ export function ActionBubble({ notification, index, scaleFactor, characterX, cha
         transformOrigin: 'center bottom',
       }}
     >
-      <div className="flex items-start gap-0.5 px-1.5 py-1 rounded-md border max-w-24">
-        <span className="text-[9px] mt-0.5 flex-shrink-0">{getIcon()}</span>
-        <span className="text-[8px] font-medium leading-tight break-words">
+      <div className="flex items-start px-2 py-1.5 rounded-md border max-w-56">
+        <span className="text-body-sm sm:text-caption font-medium leading-tight break-words" style={{
+          textShadow: '0 0 3px rgba(0, 0, 0, 1), 0 1px 2px rgba(0, 0, 0, 0.9), 0 -1px 2px rgba(0, 0, 0, 0.9)'
+        }}>
           {notification.title}
         </span>
       </div>

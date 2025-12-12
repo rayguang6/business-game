@@ -220,14 +220,14 @@ const LevelUpPopup: React.FC = () => {
                 {currentRank}
               </span>
             </div>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 mb-3">
-              <span className="text-sm font-bold text-white/80 text-center min-w-0 truncate max-w-[200px]">
+            <div className="flex items-center justify-center gap-1 sm:gap-2 mb-3">
+              <span className="text-sm font-bold text-white/80 text-center min-w-0 break-words max-w-[200px]">
                 {previousTitle}
               </span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white flex-shrink-0 rotate-90 sm:rotate-0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white flex-shrink-0">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
-              <span className="text-sm font-bold text-green-300 border-2 border-green-400 bg-green-500/10 px-3 py-1 rounded-lg text-center min-w-0 truncate max-w-[250px]">
+              <span className="text-sm font-bold text-green-300 border-2 border-green-400 bg-green-500/10 px-3 py-1 rounded-lg text-center min-w-0 break-words max-w-[250px]">
                 {currentTitle}
               </span>
             </div>
