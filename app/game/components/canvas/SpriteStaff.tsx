@@ -261,8 +261,8 @@ export function SpriteStaff({ staff, position, scaleFactor }: SpriteStaffProps) 
         <div
           className="text-black-500 rounded px-2 py-0.5 text-xs font-semibold"
           style={{
-            fontSize: '6px',
-            lineHeight: '12px',
+            fontSize: '8px',
+            lineHeight: '14px',
             textShadow: '0 1px 2px rgba(0,0,0,0.8)',
           }}
         >

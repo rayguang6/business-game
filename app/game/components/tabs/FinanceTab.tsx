@@ -24,7 +24,7 @@ export function FinanceTab() {
   const eventExpenses = monthlyExpenseBreakdown.filter((entry) => entry.category === 'event');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-safe">
       <SectionHeading>
         {getMetricIcon(GameMetric.Cash) ? (
           <img

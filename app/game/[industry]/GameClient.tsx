@@ -21,7 +21,10 @@ import { TierMultiplierDebug } from '@/app/game/components/ui/TierMultiplierDebu
 import { ExpenseValidatorDebug } from '@/app/game/components/ui/ExpenseValidatorDebug';
 import { useRandomEventTrigger } from '@/hooks/useRandomEventTrigger';
 import Image from 'next/image';
-import { IndustryId } from '@/lib/game/types';
+import { IndustryId, DEFAULT_INDUSTRY_ID } from '@/lib/game/types';
+import { getLevel, getRankBackgroundColor, getRankTextColor } from '@/lib/store/types';
+import { getLevelRewardsFromStore } from '@/lib/store/configStore';
+import { getExpPerLevel } from '@/lib/game/config';
 import GameButton from '@/app/components/ui/GameButton';
 import { useConfigStore } from '@/lib/store/configStore';
 import { ConfigErrorPage } from '@/app/game/components/ui/ConfigErrorPage';
@@ -47,6 +50,7 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
   const resetAllGame = useGameStore((state) => state.resetAllGame);
   const setAvailableConditions = useGameStore((state) => state.setAvailableConditions);
   const setAvailableFlags = useGameStore((state) => state.setAvailableFlags);
+  const metrics = useGameStore((state) => state.metrics);
   const router = useRouter();
   const pathname = usePathname();
   const [activeTab, setActiveTab] = React.useState<TabType>('home');
@@ -56,6 +60,31 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
   const setGlobalConfigState = useConfigStore((state) => state.setGlobalConfig);
   const setIndustryConfigState = useConfigStore((state) => state.setIndustryConfig);
   const setConfigStatus = useConfigStore((state) => state.setConfigStatus);
+
+  // Rank calculation logic
+  const configStatus = useConfigStore((state) => state.configStatus);
+  const [rankChangeKey, setRankChangeKey] = React.useState(0);
+  const previousRankRef = React.useRef('Unknown Rank');
+
+  const industryId = selectedIndustry ? (selectedIndustry.id ?? DEFAULT_INDUSTRY_ID) as IndustryId : null;
+  const expPerLevel = industryId ? getExpPerLevel(industryId) : 200;
+  const currentLevel = getLevel(metrics.exp, expPerLevel);
+  const levelRewards = industryId ? getLevelRewardsFromStore(industryId) : [];
+  const currentLevelReward = levelRewards.find(
+    reward => reward.level === currentLevel
+  );
+  const currentRank = configStatus === 'ready' && currentLevelReward?.rank ? currentLevelReward.rank : 'Rank';
+
+  const allRanks = Array.from(
+    new Set(levelRewards.map(r => r.rank).filter(Boolean))
+  ) as string[];
+
+  React.useEffect(() => {
+    if (previousRankRef.current !== currentRank) {
+      previousRankRef.current = currentRank;
+      setRankChangeKey(prev => prev + 1);
+    }
+  }, [currentRank]);
 
   // Play game music when component mounts
   useAudio('game', true);
@@ -127,7 +156,7 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
   return (
     <ErrorBoundary>
       <GameQueryProvider>
-        <div id="game-shell" className="h-screen relative flex flex-col md:flex-row overflow-hidden">
+        <div id="game-shell" className="game-root relative flex flex-col md:flex-row overflow-hidden">
           {/* Global Popups - Above everything */}
           <EventPopup />
           <LevelUpPopup />
@@ -147,6 +176,19 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
                 <KeyMetrics />
               </div>
             </div>
+          </div>
+
+          {/* Rank Display - Bottom left corner of game canvas */}
+          <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 z-30">
+            <span
+              key={rankChangeKey}
+              className={`font-semibold text-body-sm sm:text-body md:text-heading-sm flex-shrink-0 px-2 py-0.5 rounded-md transition-all duration-300 ease-out transform ${getRankBackgroundColor(currentRank, allRanks)} ${getRankTextColor(currentRank, allRanks)}`}
+              style={{
+                animation: rankChangeKey > 0 ? 'rankPulse 0.3s ease-out' : undefined,
+              }}
+            >
+              {currentRank}
+            </span>
           </div>
 
           {/* Fullscreen Button - Bottom right corner of game canvas */}

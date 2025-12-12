@@ -175,7 +175,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
           : ''
     }`}>
       {/* Level Badge - Absolute positioned */}
-      <div className={`absolute top-1 right-1 sm:top-2 sm:right-2 md:top-3 md:right-3 px-1.5 py-0.5 rounded border text-body-sm sm:text-label font-bold z-10 bg-black/40 backdrop-blur-sm ${
+      <div className={`absolute top-1 right-1 sm:top-2 sm:right-2 md:top-3 md:right-3 px-1.5 py-0.5 rounded border text-body-sm sm:text-label font-bold z-10 bg-black/10 ${
         currentLevel > 0
           ? 'text-green-300 border-green-400'
           : 'text-gray-300 border-gray-500'
@@ -262,7 +262,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
               {isMaxed
                 ? 'Max Level'
                 : availability === 'locked'
-                  ? 'Requirements Not Met'
+                  ? 'Not Met'
                   : canAfford
                     ? `Upgrade`
                     : needText}

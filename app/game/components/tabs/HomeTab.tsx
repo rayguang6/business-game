@@ -186,7 +186,7 @@ export function HomeTab() {
   const allMonths = [currentMonthEntry, ...monthlyHistory];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-safe">
       {/* Level Card - At Very Top */}
       <LevelCard />
       

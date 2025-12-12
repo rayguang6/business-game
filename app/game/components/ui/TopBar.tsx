@@ -65,17 +65,8 @@ export function TopBar() {
         <div className="flex items-center w-full pr-1 sm:pr-2 md:pr-3">
           <div className="flex flex-col flex-1 min-w-0 bg-gradient-to-r from-blue-600 to-blue-600/40 rounded-md overflow-hidden">
             <div className="flex items-center py-0.5 sm:py-1 md:py-1.5 pl-2 sm:pl-3 pr-1 sm:pr-2">
-              <div className="text-white mr-1 sm:mr-1.5 md:mr-2 flex-shrink-0 text-body-sm sm:text-body md:text-heading-sm">{selectedIndustry.icon}</div>
-              <span className="text-white font-bold text-body-sm sm:text-body md:text-heading-sm">{selectedIndustry.name}</span>
-              <span
-                key={rankChangeKey}
-                className={`font-semibold text-body-sm sm:text-body md:text-heading-sm ml-1 sm:ml-1.5 md:ml-2 flex-shrink-0 px-2 py-0.5 rounded-md transition-all duration-300 ease-out transform ${getRankBackgroundColor(currentRank, allRanks)} ${getRankTextColor(currentRank, allRanks)}`}
-                style={{
-                  animation: rankChangeKey > 0 ? 'rankPulse 0.3s ease-out' : undefined,
-                }}
-              >
-                {currentRank}
-              </span>
+            <div className="text-white mr-1 sm:mr-1.5 md:mr-2 flex-shrink-0 text-body-sm sm:text-body md:text-heading-sm">{selectedIndustry.icon}</div>
+            <span className="text-white font-bold text-body-sm sm:text-body md:text-heading-sm">{selectedIndustry.name}</span>
             </div>
           </div>
         </div>
@@ -95,15 +86,6 @@ export function TopBar() {
           <div className="flex items-center py-0.5 sm:py-1 md:py-1.5 pl-2 sm:pl-3 pr-1 sm:pr-2">
             <div className="text-white mr-1 sm:mr-1.5 md:mr-2 flex-shrink-0 text-body-sm sm:text-body md:text-heading-sm">{selectedIndustry.icon}</div>
             <span className="text-white font-bold text-body-sm sm:text-body md:text-heading-sm">{selectedIndustry.name}</span>
-            <span
-              key={rankChangeKey}
-              className={`font-semibold text-body-sm sm:text-body md:text-heading-sm ml-1 sm:ml-1.5 md:ml-2 flex-shrink-0 px-2 py-0.5 rounded-md transition-all duration-300 ease-out transform ${getRankBackgroundColor(currentRank, allRanks)} ${getRankTextColor(currentRank, allRanks)}`}
-              style={{
-                animation: rankChangeKey > 0 ? 'rankPulse 0.3s ease-out' : undefined,
-              }}
-            >
-              {currentRank}
-            </span>
           </div>
 
           {/* Progress Section */}

@@ -7,7 +7,7 @@ import { UpgradeCard } from '../ui/UpgradeCard';
 import { StaffCandidateCard } from '../ui/StaffCandidateCard';
 import { HiredStaffCard } from '../ui/HiredStaffCard';
 import type { Staff } from '@/lib/features/staff';
-import { selectCategoriesForIndustry } from '@/lib/store/configStore';
+import { useCategories } from '../../hooks/useCategories';
 import { useGameStore } from '@/lib/store/gameStore';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
@@ -81,7 +81,7 @@ export function UpgradesTab() {
     [industryId],
   );
   const availableUpgrades = useConfigStore(upgradesSelector);
-  const categories = useConfigStore(selectCategoriesForIndustry(industryId));
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories(industryId);
 
   // Staff-related state
   const hiredStaff = useGameStore((state) => state.hiredStaff);
@@ -106,7 +106,7 @@ export function UpgradesTab() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-4 md:space-y-6">
+    <div className="space-y-3 sm:space-y-4 md:space-y-6 pb-safe">
       {/* Upgrades Section */}
       <section>
         <SectionHeading>Available Upgrades</SectionHeading>
@@ -187,7 +187,7 @@ export function UpgradesTab() {
             <h4 className="text-heading text-primary mb-2 sm:mb-3">Hire Staff</h4>
           </div>
           <div className="max-w-5xl mx-auto">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-4">
               {availableStaff.map((candidate) => (
                 <StaffCandidateCard
                   key={candidate.id}

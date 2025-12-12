@@ -184,7 +184,7 @@ export function MarketingCampaignCard({
     }`}>
       {/* Level Badge - Absolute positioned */}
       {isLeveled && (
-        <div className={`absolute top-1 right-1 sm:top-1.5 sm:right-1.5 md:top-2 md:right-2 px-1.5 py-0.5 rounded border text-body-sm sm:text-label font-bold z-10 bg-black/20 ${
+        <div className={`absolute top-1 right-1 sm:top-1.5 sm:right-1.5 md:top-2 md:right-2 px-1.5 py-0.5 rounded border text-body-sm sm:text-label font-bold z-10 bg-black/10 ${
           level > 0
             ? 'text-green-300 border-green-400'
             : 'text-gray-300 border-gray-500'
@@ -291,7 +291,7 @@ export function MarketingCampaignCard({
               : isOnCooldown
                 ? `Cooldown: ${formatSeconds(cooldownRemaining)}`
                 : availability === 'locked'
-                  ? 'Requirements Not Met'
+                  ? 'Not Met'
                   : isLeveled && !canUpgradeMore
                     ? 'Max Level'
                     : canAfford

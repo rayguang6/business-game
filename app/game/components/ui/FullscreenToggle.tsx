@@ -112,9 +112,9 @@ export function FullscreenToggle({ targetId }: FullscreenToggleProps) {
     };
   }, [targetId]);
 
-  // Show button on all devices - iOS will show it but fullscreen may not work
-  // This allows users to discover the functionality even if it's limited on iOS
-  if (!isSupported && !isIOS) {
+  // Hide button on iOS since fullscreen doesn't work properly
+  // Hide button on unsupported devices
+  if (!isSupported || isIOS) {
     return null;
   }
 
@@ -161,9 +161,9 @@ export function FullscreenToggle({ targetId }: FullscreenToggleProps) {
       <Image
         src={isFullscreen ? "/images/icons/exit-fullscreen.png" : "/images/icons/enter-fullscreen.png"}
         alt={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-        width="50"
-        height="50"
-        className="w-10 h-10"
+        width="24"
+        height="24"
+        className="w-6 h-6"
       />
     </button>
   );

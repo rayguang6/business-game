@@ -112,7 +112,7 @@ function StaffCandidateCard({ candidate, onHire, formatEffect }: StaffCandidateC
 
   return (
     <div
-      className={`relative w-full flex flex-col justify-between bg-gradient-to-b ${styles.cardGradient} rounded-2xl border-2 ${styles.borderColor} ${styles.borderGlow} hover:scale-[1.02] transition-all duration-300 overflow-hidden group transform-gpu`}
+      className={`relative w-full flex flex-col justify-between bg-gradient-to-b ${styles.cardGradient} rounded-2xl border-2 ${styles.borderColor} ${styles.borderGlow} hover:scale-[1.02] transition-all duration-300 overflow-hidden group transform-gpu pb-safe`}
       style={{ transformOrigin: 'center' }}
     >
       {/* Hero Banner - Top decorative section */}
@@ -220,7 +220,7 @@ function StaffCandidateCard({ candidate, onHire, formatEffect }: StaffCandidateC
           fullWidth
           className="w-full"
         >
-          {!canAfford ? 'Need Cash' : requirementsMet ? `Hire ${candidate.name.split(' ')[0]}` : 'Requirements Not Met'}
+          {!canAfford ? 'Need Cash' : requirementsMet ? `Hire ${candidate.name.split(' ')[0]}` : 'Not Met'}
         </GameButton>
         {requirementDescriptions.length > 0 && !requirementsMet && (
           <button

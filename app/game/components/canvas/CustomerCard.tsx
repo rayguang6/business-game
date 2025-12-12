@@ -121,15 +121,15 @@ export function CustomerCard({ customer, showPatience = false, showServiceProgre
           
           {/* Service info */}
           <div className="flex-1 min-w-0">
-            <div 
+            <div
               className="font-medium text-gray-800 truncate"
-              style={{ fontSize: `${12 * scaleFactor}px` }}
+              style={{ fontSize: `${14 * scaleFactor}px` }}
             >
               {customer.service.name}
             </div>
-            <div 
+            <div
               className="text-gray-600"
-              style={{ fontSize: `${10 * scaleFactor}px` }}
+              style={{ fontSize: `${12 * scaleFactor}px` }}
             >
               ${getEffectivePrice(customer.service).toFixed(2)}
             </div>
@@ -138,25 +138,25 @@ export function CustomerCard({ customer, showPatience = false, showServiceProgre
           {/* Status icon in top right */}
           <div className="flex-shrink-0">
             {customer.status === CustomerStatus.Waiting && (
-              <span 
+              <span
                 className="text-yellow-600"
-                style={{ fontSize: `${14 * scaleFactor}px` }}
+                style={{ fontSize: `${16 * scaleFactor}px` }}
               >
                 ⏳
               </span>
             )}
             {customer.status === CustomerStatus.InService && (
-              <span 
+              <span
                 className="text-blue-600"
-                style={{ fontSize: `${14 * scaleFactor}px` }}
+                style={{ fontSize: `${16 * scaleFactor}px` }}
               >
                 🔧
               </span>
             )}
             {customer.status === CustomerStatus.LeavingAngry && (
-              <span 
+              <span
                 className="text-red-600"
-                style={{ fontSize: `${14 * scaleFactor}px` }}
+                style={{ fontSize: `${16 * scaleFactor}px` }}
               >
                 😡
               </span>
@@ -177,8 +177,8 @@ export function CustomerCard({ customer, showPatience = false, showServiceProgre
                     marginTop: `${4 * scaleFactor}px`
                   }}
                 >
-                  <span 
-                    style={{ fontSize: `${12 * scaleFactor}px` }}
+                  <span
+                    style={{ fontSize: `${14 * scaleFactor}px` }}
                   >
                     {getPatienceEmoji(progress)}
                   </span>
@@ -198,9 +198,9 @@ export function CustomerCard({ customer, showPatience = false, showServiceProgre
                       }}
                     />
                   </div>
-                  <span 
+                  <span
                     className="text-gray-600"
-                    style={{ fontSize: `${10 * scaleFactor}px` }}
+                    style={{ fontSize: `${12 * scaleFactor}px` }}
                   >
                     {Math.ceil(ticksToSeconds(customer.patienceLeft, industryId))}s
                   </span>
@@ -220,9 +220,9 @@ export function CustomerCard({ customer, showPatience = false, showServiceProgre
                 marginTop: `${4 * scaleFactor}px`
               }}
             >
-              <span 
+              <span
                 className="text-blue-600"
-                style={{ fontSize: `${12 * scaleFactor}px` }}
+                style={{ fontSize: `${14 * scaleFactor}px` }}
               >
                 🔧
               </span>
@@ -242,9 +242,9 @@ export function CustomerCard({ customer, showPatience = false, showServiceProgre
                   }}
                 />
               </div>
-              <span 
+              <span
                 className="text-blue-600 font-medium"
-                style={{ fontSize: `${10 * scaleFactor}px` }}
+                style={{ fontSize: `${12 * scaleFactor}px` }}
               >
                 {Math.ceil(ticksToSeconds(customer.serviceTimeLeft, industryId))}s
               </span>
@@ -261,15 +261,15 @@ export function CustomerCard({ customer, showPatience = false, showServiceProgre
               marginTop: `${4 * scaleFactor}px`
             }}
           >
-            <span 
+            <span
               className="text-red-600"
-              style={{ fontSize: `${12 * scaleFactor}px` }}
+              style={{ fontSize: `${14 * scaleFactor}px` }}
             >
               😡
             </span>
-            <span 
+            <span
               className="text-red-600 font-medium"
-              style={{ fontSize: `${10 * scaleFactor}px` }}
+              style={{ fontSize: `${12 * scaleFactor}px` }}
             >
               Reputation -1
             </span>

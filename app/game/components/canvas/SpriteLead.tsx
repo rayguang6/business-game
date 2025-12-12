@@ -94,8 +94,8 @@ export function SpriteLead({ lead, scaleFactor }: SpriteLeadProps) {
           <div
             className="bg-white rounded-lg shadow-md border border-gray-300 px-1.5 py-0.5 max-w-[90px]"
             style={{
-              fontSize: '7px',
-              lineHeight: '9px',
+              fontSize: '9px',
+              lineHeight: '11px',
               textAlign: 'center',
               whiteSpace: 'nowrap',
               overflow: 'hidden',

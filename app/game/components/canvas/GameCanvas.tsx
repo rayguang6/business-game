@@ -712,15 +712,15 @@ export function GameCanvas() {
               }}
             >
               <div className="flex items-center justify-between mb-2">
-                <h4 
+                <h4
                   className="font-semibold text-gray-700"
-                  style={{ fontSize: `${12 * scaleFactor}px` }}
+                  style={{ fontSize: `${14 * scaleFactor}px` }}
                 >
                   {serviceCapacityLabel}
                 </h4>
-                <div 
+                <div
                   className="text-gray-500"
-                  style={{ fontSize: `${12 * scaleFactor}px` }}
+                  style={{ fontSize: `${14 * scaleFactor}px` }}
                 >
                   {customers.filter((c) => c.status === CustomerStatus.InService).length}/{serviceCapacity} in service
                 </div>

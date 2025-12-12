@@ -58,7 +58,7 @@ export function GridOverlay({ scaleFactor, showGrid = false }: GridOverlayProps)
             style={{
               left: `${x * TILE_SIZE + 2}px`,
               top: `${y * TILE_SIZE + 2}px`,
-              fontSize: `${8 * scaleFactor}px`
+              fontSize: `${10 * scaleFactor}px`
             }}
           >
             {x},{y}

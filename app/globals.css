@@ -43,29 +43,29 @@
   --border-accent: #23aaf6;
   
   /* Typography Scale - Mobile First (base) */
-  --text-xxs-mobile: 0.375rem;    /* 6px - Micro text, extreme compact */
-  --text-xs-mobile: 0.5rem;      /* 8px - Ultra small labels */
-  --text-sm-mobile: 0.5625rem;   /* 9px - Very small labels */
-  --text-base-mobile: 0.625rem;  /* 10px - Tiny labels, captions */
-  --text-md-mobile: 0.6875rem;   /* 11px - Small labels */
-  --text-lg-mobile: 0.75rem;     /* 12px - Body text */
-  --text-xl-mobile: 0.875rem;    /* 14px - Emphasized body */
-  --text-2xl-mobile: 1rem;       /* 16px - Small headings */
-  --text-3xl-mobile: 1.125rem;   /* 18px - Medium headings */
-  --text-4xl-mobile: 1.25rem;    /* 20px - Large headings */
-  --text-5xl-mobile: 1.5rem;     /* 24px - Extra large headings */
-  
+  --text-xxs-mobile: 0.5rem;     /* 8px - Micro text, extreme compact */
+  --text-xs-mobile: 0.625rem;    /* 10px - Ultra small labels */
+  --text-sm-mobile: 0.6875rem;   /* 11px - Very small labels */
+  --text-base-mobile: 0.75rem;   /* 12px - Tiny labels, captions */
+  --text-md-mobile: 0.8125rem;   /* 13px - Small labels */
+  --text-lg-mobile: 0.875rem;    /* 14px - Body text */
+  --text-xl-mobile: 1rem;        /* 16px - Emphasized body */
+  --text-2xl-mobile: 1.125rem;   /* 18px - Small headings */
+  --text-3xl-mobile: 1.25rem;    /* 20px - Medium headings */
+  --text-4xl-mobile: 1.375rem;   /* 22px - Large headings */
+  --text-5xl-mobile: 1.625rem;   /* 26px - Extra large headings */
+
   /* Typography Scale - Desktop (md+) */
-  --text-xxs-desktop: 0.5rem;    /* 8px */
-  --text-xs-desktop: 0.625rem;   /* 10px */
-  --text-sm-desktop: 0.75rem;    /* 12px */
-  --text-base-desktop: 0.875rem; /* 14px */
-  --text-md-desktop: 1rem;       /* 16px */
-  --text-lg-desktop: 1.125rem;   /* 18px */
-  --text-xl-desktop: 1.25rem;    /* 20px */
-  --text-2xl-desktop: 1.5rem;    /* 24px */
-  --text-3xl-desktop: 1.875rem;  /* 30px */
-  --text-4xl-desktop: 2.25rem;   /* 36px */
+  --text-xxs-desktop: 0.625rem;  /* 10px */
+  --text-xs-desktop: 0.75rem;    /* 12px */
+  --text-sm-desktop: 0.875rem;   /* 14px */
+  --text-base-desktop: 1rem;     /* 16px */
+  --text-md-desktop: 1.125rem;   /* 18px */
+  --text-lg-desktop: 1.25rem;    /* 20px */
+  --text-xl-desktop: 1.375rem;   /* 22px */
+  --text-2xl-desktop: 1.625rem;  /* 26px */
+  --text-3xl-desktop: 2rem;      /* 32px */
+  --text-4xl-desktop: 2.375rem;  /* 38px */
 }
 
 @theme inline {
@@ -75,10 +75,28 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html,
 body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
   background: var(--bg-primary);
   color: var(--text-primary);
   font-family: var(--font-open-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.game-root {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+
+  display: flex;
+  flex-direction: column;
 }
 
 /* Reusable Text Stroke Utilities */

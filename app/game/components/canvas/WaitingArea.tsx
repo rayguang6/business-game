@@ -16,15 +16,15 @@ export function WaitingArea({ customers, scaleFactor }: WaitingAreaProps) {
   return (
     <div className="flex-1">
       <div className="flex items-center justify-between mb-1">
-        <h4 
+        <h4
           className="font-semibold text-gray-700"
-          style={{ fontSize: `${12 * scaleFactor}px` }}
+          style={{ fontSize: `${14 * scaleFactor}px` }}
         >
           Waiting Area
         </h4>
-        <div 
+        <div
           className="text-gray-500"
-          style={{ fontSize: `${12 * scaleFactor}px` }}
+          style={{ fontSize: `${14 * scaleFactor}px` }}
         >
           {waitingCustomers.length} waiting
         </div>

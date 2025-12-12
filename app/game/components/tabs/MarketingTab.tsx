@@ -14,7 +14,7 @@ import { Modal } from '@/app/components/ui/Modal';
 import GameButton from '@/app/components/ui/GameButton';
 import { MarketingCampaignCard } from '../ui/MarketingCampaignCard';
 import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
-import { selectCategoriesForIndustry } from '@/lib/store/configStore';
+import { useCategories } from '../../hooks/useCategories';
 
 const formatSeconds = (seconds: number): string => {
   return `${Math.max(0, Math.floor(seconds))}s`;
@@ -93,7 +93,7 @@ export function MarketingTab() {
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
   const { getDisplayLabel } = useMetricDisplayConfigs(industryId);
-  const categories = useConfigStore(selectCategoriesForIndustry(industryId));
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories(industryId);
   const availableCampaigns = useConfigStore(
     useCallback(
       (state) => {
@@ -145,7 +145,7 @@ export function MarketingTab() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-4 md:space-y-6">
+    <div className="space-y-3 sm:space-y-4 md:space-y-6 pb-safe">
       <div>
         <SectionHeading>Marketing Campaigns</SectionHeading>
         <p className="text-secondary text-sm sm:text-sm">

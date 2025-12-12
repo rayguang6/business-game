@@ -23,15 +23,15 @@ export function TreatmentRoom({ roomId, customers, scaleFactor }: TreatmentRoomP
       }}
     >
       <div className="flex items-center justify-between mb-1">
-        <span 
+        <span
           className="font-medium text-gray-700"
-          style={{ fontSize: `${12 * scaleFactor}px` }}
+          style={{ fontSize: `${14 * scaleFactor}px` }}
         >
           Room {roomId}
         </span>
-        <span 
+        <span
           className="text-gray-500"
-          style={{ fontSize: `${12 * scaleFactor}px` }}
+          style={{ fontSize: `${14 * scaleFactor}px` }}
         >
           {isOccupied ? 'Occupied' : 'Available'}
         </span>
