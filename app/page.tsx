@@ -1,8 +1,7 @@
-'use client';
-
+import { redirect } from 'next/navigation';
 import Image from 'next/image';
 import GameButton from '@/app/components/ui/GameButton';
-import { useAudio } from '@/hooks/useAudio';
+import { supabaseServer } from '@/lib/server/supabaseServer';
 
 // Welcome page constants
 const WELCOME_CONFIG = {
@@ -13,9 +12,24 @@ const WELCOME_CONFIG = {
   startGameHref: "/select-industry"
 } as const;
 
-export default function WelcomePage() {
-  // Play welcome music when component mounts
-  // useAudio('welcome', true);
+// Event route protection - redirects users during offline events
+async function checkRouteProtection() {
+  if (!supabaseServer) return;
+
+  const { data } = await supabaseServer
+    .from('route_protection')
+    .select('enabled, redirect_target')
+    .limit(1)
+    .maybeSingle();
+
+  if (data?.enabled && data?.redirect_target) {
+    redirect(data.redirect_target);
+  }
+}
+
+export default async function WelcomePage() {
+  // Check route protection for offline events
+  await checkRouteProtection();
 
   return (
     <div

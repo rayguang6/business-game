@@ -1,10 +1,30 @@
+import { redirect } from 'next/navigation';
 import { loadIndustries } from '@/lib/server/loadGameData';
 import SelectIndustryClient from './SelectIndustryClient';
+import { supabaseServer } from '@/lib/server/supabaseServer';
 
 // Force dynamic rendering to ensure fresh data from database
 export const dynamic = 'force-dynamic';
 
+// Event route protection - redirects users during offline events
+async function checkRouteProtection() {
+  if (!supabaseServer) return;
+
+  const { data } = await supabaseServer
+    .from('route_protection')
+    .select('enabled, redirect_target')
+    .limit(1)
+    .maybeSingle();
+
+  if (data?.enabled && data?.redirect_target) {
+    redirect(data.redirect_target);
+  }
+}
+
 export default async function SelectIndustryPage() {
+  // Check route protection for offline events
+  await checkRouteProtection();
+
   const industriesData = await loadIndustries();
   
   if (!industriesData) {

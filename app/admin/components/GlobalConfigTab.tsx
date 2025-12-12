@@ -13,6 +13,11 @@ type UiConfig = {
   outcomePopupDurationSeconds?: number;
 };
 
+type RouteProtectionConfig = {
+  enabled: boolean;
+  redirectTarget?: string;
+};
+
 interface GlobalConfigTabProps {
   globalLoading: boolean;
   globalSaving: boolean;
@@ -23,6 +28,7 @@ interface GlobalConfigTabProps {
   loseCondition: LoseCondition | null;
   uiConfig: UiConfig;
   customerImages: string[];
+  routeProtection: RouteProtectionConfig | null;
   onUpdateMetrics: (updates: Partial<BusinessMetrics>) => void;
   onUpdateStats: (updates: Partial<BusinessStats>) => void;
   onUpdateMovement: (movement: MovementConfig | null) => void;
@@ -30,6 +36,7 @@ interface GlobalConfigTabProps {
   onUpdateLoseCondition: (updates: Partial<LoseCondition>) => void;
   onUpdateUiConfig: (updates: Partial<UiConfig>) => void;
   onUpdateMediaConfig: (updates: { customerImages?: string[] }) => void;
+  onUpdateRouteProtection: (updates: Partial<RouteProtectionConfig>) => void;
   onSave: () => Promise<void>;
 }
 
@@ -43,6 +50,7 @@ export function GlobalConfigTab({
   loseCondition,
   uiConfig,
   customerImages,
+  routeProtection,
   onUpdateMetrics,
   onUpdateStats,
   onUpdateMovement,
@@ -50,6 +58,7 @@ export function GlobalConfigTab({
   onUpdateLoseCondition,
   onUpdateUiConfig,
   onUpdateMediaConfig,
+  onUpdateRouteProtection,
   onSave,
 }: GlobalConfigTabProps) {
   // Helper to get value or empty string for inputs
@@ -643,6 +652,48 @@ export function GlobalConfigTab({
               </div>
               <p className="text-xs text-slate-500 mt-2">
                 Customer images are used for customer sprites in the game. Each customer gets assigned an image based on their ID.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Route Protection Section */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-200">Route Protection</h3>
+              <p className="text-sm text-slate-400">Control redirects during offline events</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                id="routeProtectionEnabled"
+                checked={routeProtection?.enabled ?? false}
+                onChange={(e) => onUpdateRouteProtection({ enabled: e.target.checked })}
+                className="w-4 h-4 text-blue-600 bg-slate-800 border-slate-700 rounded focus:ring-blue-500 focus:ring-2"
+              />
+              <label htmlFor="routeProtectionEnabled" className="text-sm font-medium text-slate-300">
+                Enable Route Protection
+              </label>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-300 mb-2">
+                Redirect Target URL
+              </label>
+              <input
+                type="text"
+                value={routeProtection?.redirectTarget ?? ''}
+                onChange={(e) => onUpdateRouteProtection({ redirectTarget: e.target.value || undefined })}
+                placeholder="/industry/freelance"
+                className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200 text-sm"
+                disabled={!(routeProtection?.enabled ?? false)}
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                When enabled, visitors to / and /select-industry will be redirected to this URL during events.
               </p>
             </div>
           </div>

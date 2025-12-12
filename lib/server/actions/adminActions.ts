@@ -26,7 +26,7 @@ import type { GameCondition } from '@/lib/types/conditions';
 import type { BusinessMetrics, BusinessStats, MovementConfig, MapConfig } from '@/lib/game/types';
 import type { WinCondition, LoseCondition } from '@/lib/game/winConditions';
 import type { SimulationLayoutConfig, GridPosition, ServiceRoomConfig } from '@/lib/game/types';
-
+import { getRouteProtectionConfig, updateRouteProtectionConfig } from '../../data/routeProtectionRepository';
 // Fetch Actions
 export async function fetchIndustries() {
   return await fetchIndustriesFromSupabase();
@@ -283,5 +283,14 @@ export async function deleteMetricDisplayConfigAction(
 
 export async function seedMetricDisplayConfigAction() {
   return await seedMetricDisplayConfig();
+}
+
+// Route Protection Actions
+export async function fetchRouteProtection() {
+  return await getRouteProtectionConfig();
+}
+
+export async function updateRouteProtection(enabled: boolean, redirectTarget?: string) {
+  return await updateRouteProtectionConfig({ enabled, redirectTarget });
 }
 
