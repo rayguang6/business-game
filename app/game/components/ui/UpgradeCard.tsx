@@ -57,15 +57,15 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
         case GameMetric.Cash:
         case GameMetric.MonthlyExpenses:
         case GameMetric.ServiceRevenueFlatBonus:
-          return `${sign}${formatCurrency(value)}${label}`;
+          return `${sign}${formatCurrency(value)} ${label}`;
         case GameMetric.MyTime:
-          return `${sign}${formatMagnitude(value)}h${label}`;
+          return `${sign}${formatMagnitude(value)}h ${label}`;
         case GameMetric.LeadsPerMonth:
-          return `${sign}${formatMagnitude(value)}${label}`;
+          return `${sign}${formatMagnitude(value)} ${label}`;
         case GameMetric.ServiceCapacity:
-          return `${sign}${formatMagnitude(value)}${label}`;
+          return `${sign}${formatMagnitude(value)} ${label}`;
         default:
-          return `${sign}${formatMagnitude(value)}${label}`;
+          return `${sign}${formatMagnitude(value)} ${label}`;
       }
     }
 
@@ -171,7 +171,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
       wasActivatedThisMonth
         ? '!border-green-500 dark:!border-green-400'
         : isMaxed
-          ? '!bg-amber-100 dark:!bg-amber-900/50 !border-amber-300 dark:!border-amber-600'
+          ? '!bg-green-400 dark:!bg-green-600 !border-green-500 dark:!border-green-500'
           : ''
     }`}>
       {/* Level Badge - Absolute positioned */}
@@ -184,11 +184,11 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
       </div>
 
       {/* Top Content Section */}
-      <div className="flex-1 space-y-0.5">
+      <div className="flex-1 space-y-0.5 p-1">
         {/* Header: Upgrade Name */}
         <div className="flex items-center">
           <div className="flex items-center gap-1 flex-1 min-w-0">
-            <span className="text-caption font-bold sm:text-body-sm text-primary break-words whitespace-normal leading-tight">
+            <span className="text-body-sm sm:text-body md:text-heading-sm font-bold text-primary break-words whitespace-normal leading-tight">
               {upgrade.name}
             </span>
           </div>
@@ -198,7 +198,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
         {nextLevelConfig && !isMaxed && (
           <>
             <div>
-              <p className="text-caption font-semibold text-primary leading-tight break-words whitespace-normal">
+              <p className="text-body-sm sm:text-body md:text-heading-sm font-semibold text-primary leading-tight break-words whitespace-normal">
                 {nextLevelConfig.name}
               </p>
             </div>
@@ -211,15 +211,15 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
                     const mergedDef = effectData ? getMergedDefinition(effectData.metric) : null;
                     const iconPath = mergedDef?.iconPath ?? null;
                     return (
-                      <li key={idx} className="flex items-center gap-1 text-caption sm:text-body-sm text-secondary leading-tight">
+                      <li key={idx} className="flex items-center gap-2 text-body sm:text-heading-sm md:text-heading text-secondary leading-tight">
                         {iconPath ? (
                           <img
                             src={iconPath}
                             alt=""
-                            className="w-4 h-4 mt-0.5 flex-shrink-0"
+                            className="w-4 h-4 self-center flex-shrink-0"
                           />
                         ) : (
-                          <span className="text-primary mt-0.5 flex-shrink-0">•</span>
+                          <span className="text-primary self-center flex-shrink-0">•</span>
                         )}
                         <span className="flex-1 break-words whitespace-normal">{effect}</span>
                       </li>
@@ -233,8 +233,8 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
 
         {/* Max Level Message */}
         {isMaxed && (
-          <div className="p-0.5 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded">
-            <p className="text-body text-[var(--success)] font-semibold text-center break-words whitespace-normal">
+          <div className="p-0.5 bg-white/90 dark:bg-black/30 border border-white/50 dark:border-black/50 rounded">
+            <p className="text-body-sm sm:text-body md:text-heading-sm text-green-800 dark:text-green-200 font-bold text-center break-words whitespace-normal">
               🎉 Max Level
             </p>
           </div>
@@ -248,7 +248,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
 
       {/* Bottom Section: Button and Cost */}
       {nextLevelConfig && !isMaxed && (
-        <div className="space-y-1">
+        <div className="space-y-1 p-1">
           {/* Action Button */}
           <div className="relative">
             <GameButton
@@ -257,7 +257,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
               size="sm"
               disabled={buttonDisabled}
               onClick={handlePurchase}
-              className="text-caption sm:text-body-sm py-1 sm:py-2 px-2 sm:px-4"
+              className="text-body-sm sm:text-body md:text-heading-sm py-1 sm:py-2 px-2 sm:px-4"
             >
               {isMaxed
                 ? 'Max Level'
@@ -299,7 +299,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
                     <span className="text-body-sm">💵</span>
                   );
                 })()}
-                <span className="text-caption font-bold sm:text-body-sm">
+                <span className="text-body-sm font-bold sm:text-body md:text-heading-sm">
                   ${upgradeCost.toLocaleString()}
                 </span>
               </div>
@@ -323,7 +323,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
                     <span className="text-body-sm">⏱️</span>
                   );
                 })()}
-                <span className="text-caption font-bold sm:text-body-sm">
+                <span className="text-body-sm font-bold sm:text-body md:text-heading-sm">
                   {upgradeTimeCost}h
                 </span>
               </div>
@@ -331,7 +331,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
             {!needsCash && !needsTime && (
               <div className="flex items-center gap-0.5 text-green-600 dark:text-green-400">
                 <span className="text-body-sm">🆓</span>
-                <span className="text-caption font-bold sm:text-body-sm">Free</span>
+                <span className="text-body-sm font-bold sm:text-body md:text-heading-sm">Free</span>
               </div>
             )}
           </div>

@@ -272,16 +272,7 @@ export function HomeTab() {
         <Card>
           <div className="flex flex-col">
             <div className="text-xs sm:text-sm text-secondary mb-1.5 sm:mb-2 flex items-center gap-1.5 sm:gap-2">
-              {getMetricIcon(GameMetric.Cash) ? (
-                <img
-                  src={getMetricIcon(GameMetric.Cash)!}
-                  alt="Revenue"
-                  className="w-4 h-4"
-                  style={{ filter: 'brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(1352%) hue-rotate(187deg) brightness(101%) contrast(105%)' }}
-                />
-              ) : (
-                <span style={{ color: 'var(--game-primary)' }}>💰</span>
-              )}
+              <span style={{ color: 'var(--game-primary)' }}>💰</span>
               <span>Total Revenue</span>
             </div>
             <div className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--success)' }}>
@@ -314,16 +305,7 @@ export function HomeTab() {
         <Card>
           <div className="flex flex-col">
             <div className="text-xs sm:text-sm text-secondary mb-1.5 sm:mb-2 flex items-center gap-1.5 sm:gap-2">
-              {getMetricIcon(GameMetric.Cash) ? (
-                <img
-                  src={getMetricIcon(GameMetric.Cash)!}
-                  alt="Profit"
-                  className="w-4 h-4"
-                  style={{ filter: 'brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(1352%) hue-rotate(187deg) brightness(101%) contrast(105%)' }}
-                />
-              ) : (
-                <span style={{ color: 'var(--game-primary)' }}>📊</span>
-              )}
+              <span style={{ color: 'var(--game-primary)' }}>📈</span>
               <span>Total Profit</span>
             </div>
             <div className={`text-xl sm:text-2xl font-bold ${lifetimeProfit >= 0 ? '' : ''}`} style={{ color: lifetimeProfit >= 0 ? 'var(--success)' : 'var(--error)' }}>

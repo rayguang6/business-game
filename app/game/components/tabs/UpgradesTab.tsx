@@ -147,7 +147,7 @@ export function UpgradesTab() {
                         <span className="text-caption text-secondary">• {category.description}</span>
                       )}
                     </div>
-                    <div className="max-w-5xl mx-auto grid grid-cols-3 gap-4">
+                    <div className="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-3 gap-4">
                       {sortedUpgrades.map((upgrade) => (
                         <UpgradeCard key={upgrade.id} upgrade={upgrade} />
                       ))}

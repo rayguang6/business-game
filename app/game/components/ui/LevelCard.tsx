@@ -96,8 +96,8 @@ export function LevelCard() {
   }, [allLevelRewards]);
 
   // Get ranks for current and next levels
-  const currentRank = isLoading ? 'Rank' : (currentLevelReward?.rank || 'Unknown Rank');
-  const nextRank = isLoading ? 'Rank' : (nextLevelReward?.rank || 'Unknown Rank');
+  const currentRank = isLoading ? 'Rank' : (currentLevelReward?.rank || 'Rank');
+  const nextRank = isLoading ? 'Rank' : (nextLevelReward?.rank || 'Rank');
 
 
 

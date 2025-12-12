@@ -73,7 +73,7 @@ export function ActionBubble({ notification, index, scaleFactor, characterX, cha
         transformOrigin: 'center bottom',
       }}
     >
-      <div className="flex items-start px-2 py-1.5 rounded-md border max-w-56">
+      <div className="flex items-start px-2 py-1.5 rounded-md border max-w-100">
         <span className="text-body font-medium leading-tight break-words" style={{
           textShadow: '0 0 3px rgba(0, 0, 0, 1), 0 1px 2px rgba(0, 0, 0, 0.9), 0 -1px 2px rgba(0, 0, 0, 0.9)'
         }}>

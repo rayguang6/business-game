@@ -1,8 +1,13 @@
 'use client';
 
-import React, { useCallback } from 'react';
-import { EffectType, GameMetric } from '@/lib/game/effectManager';
-import type { UpgradeEffect } from '@/lib/game/types';
+import React, { useCallback, useMemo } from 'react';
+import { EffectType, GameMetric, effectManager } from '@/lib/game/effectManager';
+import type { UpgradeEffect, IndustryServiceDefinition } from '@/lib/game/types';
+import { getServicesForIndustry } from '@/lib/features/services';
+import { getAvailability } from '@/lib/game/requirementChecker';
+import type { GameStore } from '@/lib/store/gameStore';
+import { getBusinessStats } from '@/lib/game/config';
+import { ServicePricingCategory } from '@/lib/game/types';
 
 /**
  * Check if an effect should be displayed as a one-time bonus rather than a persistent effect
@@ -44,6 +49,8 @@ interface LevelEffectsDisplayProps {
   hasNextLevel?: boolean; // For LevelCard layout
   oneTimeBonusesTitle?: string; // Custom title for one-time bonuses section
   className?: string;
+  store?: GameStore; // Game store for requirement checking
+  industryId?: string; // Industry ID for service checking
 }
 
 export function LevelEffectsDisplay({
@@ -58,8 +65,62 @@ export function LevelEffectsDisplay({
   hasNextLevel = false,
   oneTimeBonusesTitle = '🎁 Level Rewards',
   className = '',
+  store,
+  industryId,
 }: LevelEffectsDisplayProps) {
-  const formatEffectValue = useCallback((effect: UpgradeEffect): string => {
+
+  // Get the highest price from unlocked services
+  const getHighestUnlockedServicePrice = useCallback((): number => {
+    if (!store || !industryId) return 500; // Default fallback
+
+    const services = getServicesForIndustry(industryId as any);
+    if (services.length === 0) return 500;
+
+    // Filter services that are available (not hidden/locked)
+    const availableServices = services.filter(service => {
+      if (!service.requirements || service.requirements.length === 0) {
+        return true; // No requirements means always available
+      }
+      const availability = getAvailability(service.requirements, store);
+      return availability === 'available';
+    });
+
+    if (availableServices.length === 0) return 500;
+
+    // Find the highest price among available services
+    const highestPrice = Math.max(...availableServices.map(s => s.price));
+    return highestPrice;
+  }, [store, industryId]);
+
+  // Calculate potential earnings for level rewards: $500 * (1 + revenueBonus/100)
+  // This shows the total final price including the base 100%
+  const calculateLevelRewardPotentialEarnings = useCallback((revenueBonusPercentage: number): number => {
+    // Calculation: $500 * (1 + revenueBonus/100) = $500 * (100 + revenueBonus) / 100
+    // revenueBonusPercentage is already a percentage (e.g., 10 means 10%)
+    // So if bonus is 10%, result is $500 * 1.10 = $550 (total final price)
+    const potentialEarnings = 500 * (1 + revenueBonusPercentage / 100);
+    return Math.round(potentialEarnings * 100) / 100; // Round to 2 decimal places
+  }, []);
+
+  // Calculate potential earnings for persistent effects (uses complex calculation)
+  const calculatePotentialEarnings = useCallback((revenueBonusPercentage: number): number => {
+    const servicePrice = getHighestUnlockedServicePrice();
+
+    // Get tier revenue multiplier for the highest tier (usually high tier gives highest multiplier)
+    const tierRevenueMultiplier = effectManager.calculate(GameMetric.HighTierServiceRevenueMultiplier, 1);
+
+    // Get service revenue scale from business stats
+    const businessStats = getBusinessStats(industryId as any);
+    const serviceRevenueScale = businessStats?.serviceRevenueScale ?? 10;
+
+    // Calculate potential earnings using only the revenue bonus (not other multipliers)
+    // Formula: servicePrice * tierMultiplier * (revenueBonus / 100) * serviceRevenueScale
+    const potentialEarnings = servicePrice * tierRevenueMultiplier * (revenueBonusPercentage / 100) * serviceRevenueScale;
+
+    return Math.round(potentialEarnings * 100) / 100; // Round to 2 decimal places
+  }, [getHighestUnlockedServicePrice, industryId]);
+
+  const formatEffectValue = useCallback((effect: UpgradeEffect, isLevelReward: boolean = false): string => {
     const { metric, type, value } = effect;
     const sign = value >= 0 ? '+' : '-';
     const absValue = Math.abs(value);
@@ -69,6 +130,13 @@ export function LevelEffectsDisplay({
     const unit = metricDef.display.unit || '';
 
     if (type === EffectType.Add) {
+      // Special handling for ServiceRevenueMultiplier with Add type - show potential earnings
+      // When Add is used, the value is added to the base (e.g., base 100 + 100 = 200, which is +100% bonus)
+      if (metric === GameMetric.ServiceRevenueMultiplier && isLevelReward) {
+        // The value represents percentage points to add (e.g., 100 = +100 percentage points = +100% bonus)
+        const potentialEarnings = calculateLevelRewardPotentialEarnings(absValue);
+        return `$${potentialEarnings.toLocaleString()}`;
+      }
       switch (metric) {
         case GameMetric.Cash:
         case GameMetric.MonthlyExpenses:
@@ -82,6 +150,15 @@ export function LevelEffectsDisplay({
     }
 
     if (type === EffectType.Percent) {
+      // Special handling for ServiceRevenueMultiplier - show potential earnings
+      if (metric === GameMetric.ServiceRevenueMultiplier) {
+        // For level rewards, use simple $500 * revenueBonus calculation
+        // For persistent effects, use complex calculation
+        const potentialEarnings = isLevelReward 
+          ? calculateLevelRewardPotentialEarnings(absValue)
+          : calculatePotentialEarnings(absValue);
+        return `$${potentialEarnings.toLocaleString()}`;
+      }
       const percent = Math.round(absValue);
       return `${sign}${percent}%`;
     }
@@ -102,7 +179,7 @@ export function LevelEffectsDisplay({
     }
 
     return `${sign}${formatMagnitude(value)}${unit}`;
-  }, [getMergedDefinition]);
+  }, [getMergedDefinition, calculateLevelRewardPotentialEarnings, calculatePotentialEarnings]);
 
   // Get effect value for a specific level
   const getEffectValueForLevel = useCallback((effects: UpgradeEffect[], metric: GameMetric, type: EffectType): number | null => {
@@ -156,7 +233,11 @@ export function LevelEffectsDisplay({
           </div> */}
           <div className="space-y-2">
             {persistentEffects.map((effect, index) => {
-              const label = getDisplayLabel(effect.metric);
+              // For level rewards, show "Potential Earnings" for ServiceRevenueMultiplier (both Add and Percent types)
+              const label = effect.metric === GameMetric.ServiceRevenueMultiplier && 
+                (effect.type === EffectType.Percent || effect.type === EffectType.Add)
+                ? 'Potential Earnings'
+                : getDisplayLabel(effect.metric);
               const metric = effect.metric as GameMetric;
               const type = effect.type as EffectType;
 
@@ -178,8 +259,8 @@ export function LevelEffectsDisplay({
                       <>
                         <span className="text-sm text-white/70">
                           {beforeValue !== null
-                            ? formatEffectValue({ metric, type, value: beforeValue } as UpgradeEffect)
-                            : formatEffectValue({ metric, type, value: 0 } as UpgradeEffect)
+                            ? formatEffectValue({ metric, type, value: beforeValue } as UpgradeEffect, true)
+                            : formatEffectValue({ metric, type, value: 0 } as UpgradeEffect, true)
                           }
                         </span>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white flex-shrink-0">
@@ -197,12 +278,12 @@ export function LevelEffectsDisplay({
                             ? 'text-green-400 font-bold'
                             : 'text-white'
                         }`}>
-                          {formatEffectValue({ metric, type, value: afterValue } as UpgradeEffect)}
+                          {formatEffectValue({ metric, type, value: afterValue } as UpgradeEffect, true)}
                         </span>
                       </> 
                     ) : (
                       <span className="text-sm font-semibold text-white">
-                        {formatEffectValue(effect)}
+                        {formatEffectValue(effect, true)}
                       </span>
                     )}
                   </div>
@@ -221,14 +302,18 @@ export function LevelEffectsDisplay({
           </div>
           <div className="space-y-1.5">
             {oneTimeBonuses.map((effect, index) => {
-              const label = getDisplayLabel(effect.metric);
+              // For level rewards, show "Potential Earnings" for ServiceRevenueMultiplier (both Add and Percent types)
+              const label = effect.metric === GameMetric.ServiceRevenueMultiplier && 
+                (effect.type === EffectType.Percent || effect.type === EffectType.Add)
+                ? 'Potential Earnings'
+                : getDisplayLabel(effect.metric);
               return (
                 <div key={`bonus-${effect.metric}_${effect.type}`} className="flex items-center justify-between py-1">
                   <span className="text-sm text-white/80 font-medium opacity-90">
                     {label}
                   </span>
                   <span className="text-sm font-bold text-white">
-                    +{formatEffectValue(effect).replace(/^\+/, '')}
+                    +{formatEffectValue(effect, true).replace(/^\+/, '')}
                   </span>
                 </div>
               );

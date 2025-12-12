@@ -297,7 +297,7 @@ export function getRankBackgroundColor(rank: string, allRanks: string[] = []): s
   }
 
   const rankIndex = allRanks.indexOf(rank);
-  if (rankIndex === -1) return 'bg-red-500'; // Default to solid red for unknown ranks
+  if (rankIndex === -1) return 'bg-green-500'; // Default to green for unknown ranks
 
   // RPG color progression based on rank position - solid colors
   const rankColors = [
@@ -324,9 +324,14 @@ export function getRankTextColor(rank: string, allRanks: string[] = []): string 
     return 'text-white';
   }
 
-  // Black text for defaults (no ranks available or unknown rank)
-  if (allRanks.length === 0 || allRanks.indexOf(rank) === -1) {
+  // Black text only for when no ranks are available (red background)
+  if (allRanks.length === 0) {
     return 'text-black';
+  }
+
+  // White text for unknown ranks (now green background) or when rank is not found
+  if (allRanks.indexOf(rank) === -1) {
+    return 'text-white';
   }
 
   // White text for all known ranks

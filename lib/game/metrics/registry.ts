@@ -195,6 +195,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
       showOnHUD: true,
       showInDetails: false,
       showInAdmin: false,
+      priority: 5,
       unit: '/m',
     },
     iconPath: '/images/icons/leads-per-month.png',
@@ -211,10 +212,9 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
       min: 0.1,
     },
     display: {
-      showOnHUD: true, // NEW: Add to HUD in Phase 2
+      showOnHUD: false,
       showInDetails: true,
       showInAdmin: true,
-      priority: 5,
       unit: '%',
     },
     iconPath: null, // No specific icon for conversion rate
@@ -292,6 +292,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
       showOnHUD: true,
       showInDetails: true,
       showInAdmin: true,
+      priority: 3,
       unit: 'h',
     },
     iconPath: '/images/icons/my-time.png',
@@ -312,7 +313,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
       showOnHUD: true, // Show on HUD when leveraged time exists
       showInDetails: true,
       showInAdmin: true,
-      priority: 3, // Display after MyTime
+      priority: 4, // Display after MyTime
       unit: 'h',
     },
     iconPath: '/images/icons/leveraged-time.png',
@@ -438,7 +439,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
       showInDetails: false,
       showInAdmin: true,
     },
-    iconPath: '/images/icons/leads.png',
+    iconPath: '/images/icons/leads-per-month.png',
     canBeModifiedByEffects: true,
   },
 };
