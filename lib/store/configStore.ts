@@ -44,6 +44,7 @@ const cloneIndustryConfig = (
   flags: (config.flags || []).map((flag) => ({ ...flag })),
   conditions: (config.conditions || []).map((condition) => ({ ...condition })),
   levelRewards: (config.levelRewards || []).map((reward) => ({ ...reward })),
+  metricDisplayConfigs: config.metricDisplayConfigs ? { ...config.metricDisplayConfigs } : {},
   layout: config.layout
     ? {
         entryPosition: { ...config.layout.entryPosition },

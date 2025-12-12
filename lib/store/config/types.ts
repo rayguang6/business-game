@@ -51,6 +51,7 @@ export interface IndustryContentConfig {
   flags: GameFlag[];
   conditions: GameCondition[];
   levelRewards: LevelReward[];
+  metricDisplayConfigs?: Record<string, any>; // Metric display configurations
   layout?: SimulationLayoutConfig;
   // Industry-specific simulation config overrides
   businessMetrics?: BusinessMetrics;

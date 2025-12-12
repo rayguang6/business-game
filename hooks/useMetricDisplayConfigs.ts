@@ -1,9 +1,8 @@
 'use client';
 
 import { useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { fetchMetricDisplayConfigs } from '@/lib/server/actions/adminActions';
 import { getMergedMetricDefinition, getAllMetrics } from '@/lib/game/metrics/registry';
+import { useConfigStore } from '@/lib/store/configStore';
 import type { GameMetric } from '@/lib/game/effectManager';
 import type { IndustryId } from '@/lib/game/types';
 import type { MetricDefinition } from '@/lib/game/metrics/registry';
@@ -15,18 +14,14 @@ import type { MetricDisplayConfig } from '@/lib/data/metricDisplayConfigReposito
  * Uses React Query for caching and sharing data across components
  */
 export function useMetricDisplayConfigs(industryId: IndustryId) {
-  const {
-    data: configs = {} as Record<GameMetric, MetricDisplayConfig | null>,
-    isLoading: loading,
-    error: queryError,
-  } = useQuery({
-    queryKey: ['metricDisplayConfigs', industryId],
-    queryFn: () => fetchMetricDisplayConfigs(industryId),
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+  // Get metric display configs from pre-loaded config store
+  const configs = useConfigStore((state) => {
+    const industryConfig = state.industryConfigs[industryId];
+    return (industryConfig?.metricDisplayConfigs as Record<GameMetric, MetricDisplayConfig | null>) || {};
   });
 
-  const error = queryError instanceof Error ? queryError : queryError ? new Error('Failed to load metric display configs') : null;
+  const loading = false;
+  const error = null;
 
   /**
    * Get merged metric definition (code + database override)

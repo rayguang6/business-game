@@ -10,9 +10,9 @@ import { getRankBackgroundColor, getRankTextColor } from '@/lib/store/types';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { IndustryId } from '@/lib/game/types';
 import type { LevelReward } from '@/lib/data/levelRewardsRepository';
-import { fetchLevelRewards } from '@/lib/server/actions/adminActions';
 import type { UpgradeEffect } from '@/lib/game/types';
 import { LevelEffectsDisplay } from './LevelEffectsDisplay';
+import { useLevelRewards } from '@/hooks/useLevelRewards';
 
 
 const LevelUpPopup: React.FC = () => {
@@ -23,9 +23,8 @@ const LevelUpPopup: React.FC = () => {
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
   const { getDisplayLabel, getMergedDefinition } = useMetricDisplayConfigs(industryId);
 
-  // State for all level rewards to calculate cumulative effects
-  const [allLevelRewards, setAllLevelRewards] = useState<LevelReward[]>([]);
-  const [isLoadingRewards, setIsLoadingRewards] = useState(false);
+  // Get level rewards from pre-loaded config store
+  const { allLevelRewards, isLoading: isLoadingRewards } = useLevelRewards(industryId);
 
 
   // Helper function to calculate cumulative effects up to a specific level
@@ -92,22 +91,7 @@ const LevelUpPopup: React.FC = () => {
     return levelUpReward.effects;
   }, [levelUpReward?.effects]);
 
-  // Fetch all level rewards when popup appears
-  useEffect(() => {
-    if (levelUpReward && industryId) {
-      setIsLoadingRewards(true);
-      fetchLevelRewards(industryId)
-        .then((rewards) => {
-          setAllLevelRewards(rewards || []);
-          setIsLoadingRewards(false);
-        })
-        .catch((error) => {
-          console.error('[LevelUpPopup] Failed to fetch level rewards:', error);
-          setAllLevelRewards([]);
-          setIsLoadingRewards(false);
-        });
-    }
-  }, [levelUpReward, industryId]);
+  // Level rewards are now loaded from pre-loaded config store
 
   // Get previous level reward for title progression
   const previousLevelReward = useMemo(() => {
