@@ -231,14 +231,14 @@ const EventPopup: React.FC = () => {
     return (
       <div className="absolute inset-0 z-[9999] flex items-center justify-center px-4 py-4 pointer-events-none">
         <div className="absolute inset-0 bg-black/35 pointer-events-auto" />
-        <div className="relative z-10 w-full max-w-[90%] sm:max-w-md pointer-events-auto">
+        <div className="relative z-10 w-full max-w-[95%] sm:max-w-md pointer-events-auto">
           {/* Game-style frame */}
           <div className="absolute inset-0 bg-gradient-to-br from-[var(--game-primary-light)]/20 via-[var(--game-primary)]/15 to-[var(--game-primary-dark)]/20 rounded-md md:rounded-2xl border-2 border-[var(--game-primary)]/30 shadow-[0_0_30px_rgba(35,170,246,0.3)]" />
 
-          <div className="relative bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-secondary)] rounded-md md:rounded-2xl shadow-xl p-4 md:p-8 border-2 border-[var(--border-primary)] max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--game-primary)]/30 scrollbar-track-transparent">
+          <div className="relative bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-secondary)] rounded-md md:rounded-2xl shadow-xl p-8 md:p-8 border-2 border-[var(--border-primary)] max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--game-primary)]/30 scrollbar-track-transparent">
             {/* Main Title - Delayed Outcome Title */}
-            <div className="mb-2 md:mb-4">
-              <h3 className="text-sm md:text-lg font-semibold text-[var(--text-primary)] leading-tight" style={{
+            <div className="mb-4 md:mb-4">
+              <h3 className="text-lg md:text-lg font-semibold text-[var(--text-primary)] leading-tight" style={{
                 textShadow: '0 1px 2px rgba(0,0,0,0.8)'
               }}>
                 {lastDelayedOutcome.label || 'Delayed Event Outcome'}
@@ -246,20 +246,20 @@ const EventPopup: React.FC = () => {
             </div>
 
             {/* Event Summary - Shows source event and choice */}
-            <p className="text-xs md:text-base text-[var(--text-secondary)] mb-2 md:mb-4 leading-snug italic">
+            <p className="text-base md:text-base text-[var(--text-secondary)] mb-4 md:mb-4 leading-snug italic">
               From <span className="font-semibold text-[var(--game-primary-light)]">{lastDelayedOutcome.eventTitle}</span> - <span className="font-semibold text-[var(--game-primary-light)]">{lastDelayedOutcome.choiceLabel}</span>
             </p>
 
             {/* Consequence Description */}
             {lastDelayedOutcome.description && (
-              <div className={`text-xs md:text-base text-[var(--text-primary)] mb-2 md:mb-3 bg-[var(--bg-tertiary)]/50 rounded p-2 md:p-3 border border-[var(--border-secondary)] ${lastDelayedOutcome.success ? 'border-green-500/50' : 'border-red-500/50'}`}>
+              <div className={`text-base md:text-base text-[var(--text-primary)] mb-4 md:mb-3 bg-[var(--bg-tertiary)]/50 rounded p-4 md:p-3 border border-[var(--border-secondary)] ${lastDelayedOutcome.success ? 'border-green-500/50' : 'border-red-500/50'}`}>
                 <span className="font-medium italic">{lastDelayedOutcome.description}</span>
               </div>
             )}
             {lastDelayedOutcome.appliedEffects.length > 0 && (
-              <div className="bg-[var(--bg-tertiary)]/60 rounded p-2 md:p-4 mb-2 md:mb-3 border border-[var(--border-secondary)]">
-                <div className="text-xs md:text-base font-semibold text-[var(--text-primary)] mb-0.5 md:mb-1">Effects:</div>
-                <ul className="space-y-0.5 text-[11px] md:text-base">
+              <div className="bg-[var(--bg-tertiary)]/60 rounded p-4 md:p-4 mb-4 md:mb-3 border border-[var(--border-secondary)]">
+                <div className="text-base md:text-base font-semibold text-[var(--text-primary)] mb-2 md:mb-1">Effects:</div>
+                <ul className="space-y-2 text-base md:text-base">
                   {lastDelayedOutcome.appliedEffects.map((effect, index) => {
                     if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.Exp) {
                       const iconPath = effect.type === EventEffectType.Cash ? getMetricIcon(GameMetric.Cash) : getMetricIcon(GameMetric.Exp);
@@ -321,14 +321,14 @@ const EventPopup: React.FC = () => {
     return (
       <div className="absolute inset-0 z-[9999] flex items-center justify-center px-4 py-4 pointer-events-none">
         <div className="absolute inset-0 bg-black/35 pointer-events-auto" />
-        <div className="relative z-10 w-full max-w-[90%] sm:max-w-md pointer-events-auto">
+        <div className="relative z-10 w-full max-w-[95%] sm:max-w-md pointer-events-auto">
           {/* Game-style frame */}
           <div className="absolute inset-0 bg-gradient-to-br from-[var(--game-primary-light)]/20 via-[var(--game-primary)]/15 to-[var(--game-primary-dark)]/20 rounded-md md:rounded-2xl border-2 border-[var(--game-primary)]/30 shadow-[0_0_30px_rgba(35,170,246,0.3)]" />
 
-          <div className="relative bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-secondary)] rounded-md md:rounded-2xl shadow-xl p-4 md:p-8 border-2 border-[var(--border-primary)] max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--game-primary)]/30 scrollbar-track-transparent">
+          <div className="relative bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-secondary)] rounded-md md:rounded-2xl shadow-xl p-8 md:p-8 border-2 border-[var(--border-primary)] max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--game-primary)]/30 scrollbar-track-transparent">
             {/* Main Title - Event Title */}
-            <div className="mb-2 md:mb-4">
-              <h3 className="text-sm md:text-lg font-semibold text-[var(--text-primary)] leading-tight" style={{
+            <div className="mb-4 md:mb-4">
+              <h3 className="text-lg md:text-lg font-semibold text-[var(--text-primary)] leading-tight" style={{
                 textShadow: '0 1px 2px rgba(0,0,0,0.8)'
               }}>
                 {lastEventOutcome.eventTitle}
@@ -337,14 +337,14 @@ const EventPopup: React.FC = () => {
 
             {/* Event Summary */}
             {lastEventOutcome.eventSummary && (
-              <p className="text-xs md:text-base text-[var(--text-secondary)] mb-2 md:mb-4 leading-snug italic">
+              <p className="text-base md:text-base text-[var(--text-secondary)] mb-4 md:mb-4 leading-snug italic">
                 {lastEventOutcome.eventSummary}
               </p>
             )}
 
             {/* Choice Info (only for Opportunity events) */}
             {lastEventOutcome.eventCategory === EventCategory.Opportunity && (
-              <p className="text-xs md:text-base text-[var(--text-secondary)] mb-2 md:mb-4 leading-snug italic">
+              <p className="text-base md:text-base text-[var(--text-secondary)] mb-4 md:mb-4 leading-snug italic">
                 You chose <span className="font-semibold text-[var(--game-primary-light)]">{lastEventOutcome.choiceLabel}</span>
                 {lastEventOutcome.costPaid > 0 && <span className="text-red-400 ml-1">(-${lastEventOutcome.costPaid})</span>}
               </p>
@@ -352,8 +352,8 @@ const EventPopup: React.FC = () => {
 
             {/* Consequence Label as Small Subtitle */}
             {lastEventOutcome.consequenceLabel && (
-              <div className="mb-2 md:mb-4">
-                <h4 className="text-sm md:text-base font-medium text-[var(--game-primary-light)]" style={{
+              <div className="mb-4 md:mb-4">
+                <h4 className="text-lg md:text-base font-medium text-[var(--game-primary-light)]" style={{
                   textShadow: '0 1px 2px rgba(0,0,0,0.6)'
                 }}>
                   {lastEventOutcome.consequenceLabel}
@@ -363,14 +363,14 @@ const EventPopup: React.FC = () => {
 
             {/* Consequence Description */}
             {lastEventOutcome.consequenceDescription && (
-              <div className="text-xs md:text-base text-[var(--text-primary)] mb-2 md:mb-3 bg-[var(--bg-tertiary)]/50 rounded p-2 md:p-3 border border-[var(--border-secondary)]">
+              <div className="text-base md:text-base text-[var(--text-primary)] mb-4 md:mb-3 bg-[var(--bg-tertiary)]/50 rounded p-4 md:p-3 border border-[var(--border-secondary)]">
                 <span className="font-medium italic">{lastEventOutcome.consequenceDescription}</span>
               </div>
             )}
             {lastEventOutcome.appliedEffects.length > 0 && (
-              <div className="bg-[var(--bg-tertiary)]/60 rounded p-2 md:p-4 mb-2 md:mb-3 border border-[var(--border-secondary)]">
-                <div className="text-xs md:text-base font-semibold text-[var(--text-primary)] mb-0.5 md:mb-1">Effects:</div>
-                <ul className="space-y-0.5 text-[11px] md:text-base">
+              <div className="bg-[var(--bg-tertiary)]/60 rounded p-4 md:p-4 mb-4 md:mb-3 border border-[var(--border-secondary)]">
+                <div className="text-base md:text-base font-semibold text-[var(--text-primary)] mb-2 md:mb-1">Effects:</div>
+                <ul className="space-y-2 text-base md:text-base">
                   {lastEventOutcome.appliedEffects.map((effect, index) => {
                     if (effect.type === EventEffectType.Cash || effect.type === EventEffectType.Exp) {
                       const iconPath = effect.type === EventEffectType.Cash ? getMetricIcon(GameMetric.Cash) : getMetricIcon(GameMetric.Exp);
@@ -477,12 +477,12 @@ const EventPopup: React.FC = () => {
         <div className={`absolute inset-0 bg-gradient-to-br ${categoryGradient} rounded-md md:rounded-2xl border-2 ${categoryBorder} shadow-[0_0_30px_rgba(0,0,0,0.4)]`} />
         
 
-        <div className="relative bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-secondary)] rounded-md md:rounded-2xl shadow-xl p-4 md:p-6 lg:p-8 border-2 border-[var(--border-primary)] max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--game-primary)]/30 scrollbar-track-transparent">
+        <div className="relative bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-secondary)] rounded-md md:rounded-2xl shadow-xl p-8 md:p-8 lg:p-8 border-2 border-[var(--border-primary)] max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--game-primary)]/30 scrollbar-track-transparent">
           {/* Header */}
-          <div className="flex items-center gap-1 md:gap-1 mb-2 md:mb-4 pt-1">
+          <div className="flex items-center gap-1 md:gap-1 mb-4 md:mb-4 pt-1">
             <span className={`text-sm md:text-2xl flex-shrink-0 drop-shadow-[0_0_4px_rgba(0,0,0,0.6)] ${isOpportunity ? 'text-green-400' : 'text-red-400'}`}>{eventIcon}</span>
-            <h2 
-              className={`text-sm md:text-2xl font-semibold md:font-bold ${eventTitleColor} leading-tight flex-1 line-clamp-2`}
+            <h2
+              className={`text-lg md:text-2xl font-semibold md:font-bold ${eventTitleColor} leading-tight flex-1 line-clamp-2`}
               style={{
                 textShadow: '0 1px 2px rgba(0,0,0,0.8)'
               }}
@@ -492,11 +492,11 @@ const EventPopup: React.FC = () => {
           </div>
           
           {/* Summary */}
-          <p className="text-xs md:text-base text-[var(--text-secondary)] mb-1.5 md:mb-4 leading-tight line-clamp-2 italic">{currentEvent.summary}</p>
+          <p className="text-base md:text-base text-[var(--text-secondary)] mb-4 md:mb-5 leading-tight line-clamp-2 italic">{currentEvent.summary}</p>
 
           {/* Choices - only show for opportunity events */}
           {shouldShowChoices && (
-            <div className="space-y-2 md:space-y-2.5">
+            <div className="space-y-5 md:space-y-4">
               {currentEvent.choices
                 .sort((a, b) => {
                   // Null orders sort to the end
@@ -532,7 +532,7 @@ const EventPopup: React.FC = () => {
                   key={choice.id}
                   onClick={() => !isDisabled ? handleUserChoice(choice) : undefined}
                   disabled={isDisabled}
-                  className={`w-full text-left p-2 md:p-3 rounded transition-all duration-200 border ${isDisabled ? disabledChoiceStyling : choiceBg} ${choiceBorder} ${choiceText} text-sm md:text-base flex flex-col items-start relative overflow-hidden group ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                  className={`w-full text-left p-5 md:p-4 rounded transition-all duration-200 border ${isDisabled ? disabledChoiceStyling : choiceBg} ${choiceBorder} ${choiceText} text-base md:text-base flex flex-col items-start relative overflow-hidden group ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                 >
                   {/* Subtle gloss effect */}
                   <div className="absolute top-0 left-0 w-full h-1/2 bg-white/5 rounded-t-md opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
@@ -542,7 +542,7 @@ const EventPopup: React.FC = () => {
                       <span className="text-sm md:text-base font-bold opacity-70 flex-shrink-0">
                         {String.fromCharCode(65 + index)}.
                       </span>
-                      <span className="font-semibold text-base md:text-lg leading-tight flex-1" style={{
+                      <span className="font-semibold text-xl md:text-lg leading-tight flex-1" style={{
                         textShadow: '0 1px 2px rgba(0,0,0,0.5)'
                       }}>
                         {choice.label}
@@ -574,7 +574,7 @@ const EventPopup: React.FC = () => {
                     )}
                   </div>
                   {choice.description && (
-                    <span className="relative z-10 text-white/80 text-sm md:text-base leading-tight line-clamp-2 mt-1 pl-5 md:pl-6" style={{
+                    <span className="relative z-10 text-white/80 text-base md:text-base leading-tight line-clamp-2 mt-4 pl-6 md:pl-6" style={{
                       textShadow: '0 1px 1px rgba(0,0,0,0.5)'
                     }}>
                       {choice.description}

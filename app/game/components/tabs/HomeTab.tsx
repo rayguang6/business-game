@@ -322,7 +322,7 @@ export function HomeTab() {
           onClick={() => setIsMonthlyExpensesExpanded(!isMonthlyExpensesExpanded)}
         >
           <div className="flex items-center gap-2 sm:gap-3">
-            <span className="text-lg sm:text-2xl">🔥</span>
+            <span className="text-lg sm:text-2xl">💸</span>
             <div className="flex flex-col">
               <div className="text-xs sm:text-sm font-semibold text-secondary">Monthly Expenses (Burn Rate)</div>
               <div className="text-xs sm:text-sm text-tertiary">Recurring expenses deducted at month end</div>
