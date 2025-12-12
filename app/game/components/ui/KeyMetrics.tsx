@@ -250,14 +250,14 @@ export function KeyMetrics() {
   if (!isConfigReady) {
     return (
       <div className="grid grid-cols-1 gap-1 sm:gap-1.5 md:gap-2">
-        <div className="flex items-center bg-black/65 py-0.5 sm:py-0.5 md:py-1 px-0.5 sm:px-0.5 md:px-1.5 rounded relative w-full min-w-0">
+        <div className="flex items-center bg-black/65 py-0.5 sm:py-0.5 md:py-1 px-0.5 sm:px-0.5 md:px-1.5 rounded relative w-[180px]">
           {/* Icon positioned outside from the left with overflow design */}
-          <div className="absolute -left-1 sm:-left-1.5 md:-left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 md:w-6 md:h-6 flex items-center justify-center z-10 overflow-hidden">
-            <span className="text-white text-micro sm:text-ultra-sm md:text-sm">💵</span>
+          <div className="absolute -left-1 sm:-left-1.5 md:-left-2 top-1/2 transform -translate-y-1/2 w-5 h-5 sm:w-7 sm:h-7 md:w-9 md:h-9 flex items-center justify-center z-10">
+            <span className="text-white text-base sm:text-lg md:text-xl">💵</span>
           </div>
 
-          <div className="flex flex-col min-w-0 flex-1 pl-1 sm:pl-2 md:pl-3">
-            <span className="text-caption font-semibold text-green-400 truncate">Cash</span>
+          <div className="flex flex-col min-w-0 flex-1 pl-3 sm:pl-4 md:pl-5">
+            <span className="text-caption font-semibold text-green-400">Cash</span>
             <span className="text-white text-label font-bold">{metrics.cash.toLocaleString()}</span>
           </div>
         </div>
@@ -268,12 +268,12 @@ export function KeyMetrics() {
   return (
     <div className="grid grid-cols-1 gap-1 sm:gap-1.5 md:gap-2">
       {metricsData.map((metric, index) => (
-        <div 
-          key={index} 
-          className="flex items-center bg-black/65 py-0.5 sm:py-0.5 md:py-1 px-0.5 sm:px-0.5 md:px-1.5 rounded relative w-full min-w-0"
+        <div
+          key={index}
+          className="flex items-center bg-black/65 py-0.5 sm:py-0.5 md:py-1 px-0.5 sm:px-0.5 md:px-1.5 rounded relative w-[180px]"
         >
           {/* Icon positioned outside from the left with overflow design */}
-          <div className="absolute -left-1 sm:-left-1.5 md:-left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 md:w-6 md:h-6 flex items-center justify-center z-10 overflow-hidden">
+          <div className="absolute -left-1 sm:-left-1.5 md:-left-2 top-1/2 transform -translate-y-1/2 w-5 h-5 sm:w-7 sm:h-7 md:w-9 md:h-9 flex items-center justify-center z-10">
             {/* IMAGE-FIRST MODE: Use database images as single source of truth with icon fallback */}
             {metric.image ? (
               <Image
@@ -283,13 +283,13 @@ export function KeyMetrics() {
                 className="object-cover"
               />
             ) : (
-              <span className="text-white text-sm sm:text-base md:text-lg">{metric.icon}</span>
+              <span className="text-white text-lg sm:text-xl md:text-2xl">{metric.icon}</span>
             )}
           </div>
 
-          <div className="flex flex-col min-w-0 flex-1 pl-2 sm:pl-3 md:pl-4">
+          <div className="flex flex-col min-w-0 flex-1 pl-4 sm:pl-5 md:pl-6">
             <span
-              className={`text-caption font-semibold ${metric.color} truncate`}
+              className={`text-caption font-semibold ${metric.color}`}
               style={{
                 textShadow: '0 0 2px rgba(0, 0, 0, 0.95), 0 1px 1px rgba(0, 0, 0, 0.8), 0 -1px 1px rgba(0, 0, 0, 0.8)'
               }}

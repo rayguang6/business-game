@@ -172,7 +172,7 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
               </div>
 
               {/* Bottom Section: KeyMetrics HUD */}
-              <div className="flex-shrink-0 max-w-[140px]">
+              <div className="flex-shrink-0 w-[200px]">
                 <KeyMetrics />
               </div>
             </div>
