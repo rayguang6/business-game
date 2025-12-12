@@ -556,6 +556,7 @@ body {
 /* Responsive background images for start screen */
 .bg-responsive-start {
   background-image: url('/images/start-screen-bg.jpg'); /* Mobile default */
+  background-attachment: fixed; /* Fixed background for mobile */
 }
 
 @media (min-width: 768px) {

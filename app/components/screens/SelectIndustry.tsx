@@ -11,24 +11,27 @@ interface SelectIndustryProps {
 
 export default function SelectIndustry({ industries, onIndustrySelect }: SelectIndustryProps) {
   return (
-    <div 
+    <div
       className="min-h-screen p-4 sm:p-6 md:p-8 relative overflow-hidden"
       style={{
-        background: `linear-gradient(135deg, 
-          rgba(10, 14, 26, 0.95) 0%,
-          rgba(26, 31, 46, 0.98) 50%,
-          rgba(10, 14, 26, 0.95) 100%
+        background: `linear-gradient(135deg,
+          rgba(13, 71, 161, 0.95) 0%,
+          rgba(25, 118, 210, 0.98) 25%,
+          rgba(33, 150, 243, 0.95) 50%,
+          rgba(66, 165, 245, 0.98) 75%,
+          rgba(100, 181, 246, 0.95) 100%
         )`
       }}
     >
       {/* Animated background pattern (subtle game-style) */}
-      <div className="absolute inset-0 opacity-5">
-        <div 
+      <div className="absolute inset-0 opacity-8">
+        <div
           className="absolute inset-0 animate-pulse-slow"
           style={{
-            backgroundImage: `radial-gradient(circle at 20% 50%, rgba(35, 170, 246, 0.3) 0%, transparent 50%),
-                              radial-gradient(circle at 80% 80%, rgba(255, 215, 0, 0.2) 0%, transparent 50%),
-                              radial-gradient(circle at 40% 20%, rgba(35, 170, 246, 0.2) 0%, transparent 50%)`,
+            backgroundImage: `radial-gradient(circle at 20% 50%, rgba(144, 202, 249, 0.4) 0%, transparent 50%),
+                              radial-gradient(circle at 80% 80%, rgba(77, 182, 172, 0.3) 0%, transparent 50%),
+                              radial-gradient(circle at 40% 20%, rgba(129, 212, 250, 0.4) 0%, transparent 50%),
+                              radial-gradient(circle at 60% 30%, rgba(100, 181, 246, 0.3) 0%, transparent 50%)`,
             backgroundSize: '100% 100%'
           }}
         />
@@ -56,16 +59,16 @@ export default function SelectIndustry({ industries, onIndustrySelect }: SelectI
             <div className="h-1 w-16 sm:w-24 bg-gradient-to-l from-transparent via-[var(--game-secondary)] to-[var(--game-secondary)] rounded-full" />
           </div>
 
-          <h1 
+          <h1
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-4 sm:mb-6 text-white relative inline-block"
             style={{
               textShadow: `
-                0 0 20px rgba(35, 170, 246, 0.5),
-                0 4px 20px rgba(0, 0, 0, 0.8),
-                0 2px 8px rgba(0, 0, 0, 0.6),
-                0 0 40px rgba(35, 170, 246, 0.3)
+                0 0 20px rgba(100, 181, 246, 0.6),
+                0 4px 20px rgba(13, 71, 161, 0.4),
+                0 2px 8px rgba(13, 71, 161, 0.3),
+                0 0 40px rgba(66, 165, 245, 0.4)
               `,
-              WebkitTextStroke: '1px rgba(35, 170, 246, 0.3)'
+              WebkitTextStroke: '1px rgba(100, 181, 246, 0.4)'
             }}
           >
             Choose Your Industry
@@ -109,11 +112,11 @@ export default function SelectIndustry({ industries, onIndustrySelect }: SelectI
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pb-6 sm:pb-8">
           <Link
             href="/"
-            className="inline-flex items-center gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-[var(--bg-secondary)]/80 via-[var(--bg-tertiary)]/80 to-[var(--bg-secondary)]/80 backdrop-blur-md border-2 border-[var(--border-primary)] hover:border-[var(--game-primary)] hover:bg-gradient-to-r hover:from-[var(--game-primary)]/20 hover:via-[var(--game-primary-dark)]/20 hover:to-[var(--game-primary)]/20 hover:shadow-[0_0_20px_rgba(35,170,246,0.3)] active:scale-95 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-[var(--game-primary)]/30"
+            className="group inline-flex items-center gap-3 px-8 sm:px-10 py-4 sm:py-5 rounded-2xl font-bold text-white bg-gradient-to-r from-white/20 via-blue-400/30 to-white/20 backdrop-blur-lg border-2 border-white/40 hover:border-white/80 hover:bg-gradient-to-r hover:from-blue-500/40 hover:via-blue-600/50 hover:to-blue-500/40 hover:shadow-[0_0_25px_rgba(100,181,246,0.5),0_0_50px_rgba(66,165,245,0.3)] hover:scale-105 active:scale-95 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-300/50 shadow-[0_0_15px_rgba(255,255,255,0.2)]"
             aria-label="Return to home page"
           >
-            <span className="text-xl sm:text-2xl">←</span>
-            <span className="text-base sm:text-lg">Back to Home</span>
+            <span className="text-2xl sm:text-3xl group-hover:scale-110 group-hover:-translate-x-1 transition-all duration-300">←</span>
+            <span className="text-lg sm:text-xl tracking-wide">Back to Home</span>
           </Link>
         </div>
       </div>
