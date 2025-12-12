@@ -156,7 +156,7 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
   return (
     <ErrorBoundary>
       <GameQueryProvider>
-        <div id="game-shell" className="game-root relative flex flex-col md:flex-row overflow-hidden">
+        <div id="game-shell" className="h-screen relative flex flex-col md:flex-row overflow-hidden">
           {/* Global Popups - Above everything */}
           <EventPopup />
           <LevelUpPopup />

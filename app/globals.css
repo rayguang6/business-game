@@ -86,17 +86,29 @@ body {
   font-family: var(--font-open-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
-.game-root {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100dvh;
+/* Full-screen game layout for mobile */
+@media (max-width: 768px) {
+  .game-root {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100dvh;
 
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
 
-  display: flex;
-  flex-direction: column;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* Desktop layout - normal flow */
+@media (min-width: 769px) {
+  .game-root {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
 }
 
 /* Reusable Text Stroke Utilities */
