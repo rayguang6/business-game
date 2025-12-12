@@ -162,7 +162,7 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
           <LevelUpPopup />
         {/* Mobile: Top Section - Game Canvas Area (40% height) */}
         {/* Desktop: Left Section - Game Canvas Area (50% width) */}
-        <div className="relative h-[40vh] sm:h-full sm:w-1/2 flex items-center justify-center py-4 sm:py-0 overflow-hidden">
+        <div className="relative h-[40vh] sm:h-full sm:w-1/2 flex items-center justify-center py-4 sm:py-0 overflow-hidden bg-[#8ed0fb]">
           {/* Unified Top HUD Container */}
           <div className="absolute top-0 left-0 z-20 pt-2 sm:pt-3 md:pt-4 px-2 sm:px-3 md:px-4">
             <div className="flex flex-col items-start gap-2">
@@ -179,7 +179,7 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
           </div>
 
           {/* Rank Display - Bottom left corner of game canvas */}
-          <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 z-5">
+          <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 z-15">
             <span
               key={rankChangeKey}
               className={`font-semibold text-body-sm sm:text-body md:text-heading-sm flex-shrink-0 px-2 py-0.5 rounded-md transition-all duration-300 ease-out transform ${getRankBackgroundColor(currentRank, allRanks)} ${getRankTextColor(currentRank, allRanks)}`}
@@ -197,7 +197,7 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
           </div>
           
           {/* Game Canvas - Full Area */}
-          <div className="relative z-10 w-full h-full bg-gray-800 flex items-center justify-center">
+          <div className="relative z-10 w-full h-full bg-[#8ed0fb] flex items-center justify-center">
             <GameCanvas />
             {process.env.NODE_ENV === 'development' && (
               <>

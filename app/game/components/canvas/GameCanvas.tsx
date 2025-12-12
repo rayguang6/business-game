@@ -539,7 +539,7 @@ export function GameCanvas() {
           height: `${canvasSize}px`,
           aspectRatio: '1/1',
           backgroundImage: `url(${mapBackground})`,
-          backgroundSize: "contain",
+          backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat"
         }}

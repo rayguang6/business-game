@@ -250,7 +250,7 @@ export function KeyMetrics() {
   if (!isConfigReady) {
     return (
       <div className="grid grid-cols-1 gap-1 sm:gap-1.5 md:gap-2">
-        <div className="flex items-center bg-black/65 py-0.5 sm:py-0.5 md:py-1 px-0.5 sm:px-0.5 md:px-1.5 rounded relative w-[180px]">
+        <div className="flex items-center bg-black/65 py-0.5 sm:py-0.5 md:py-1 px-0.5 sm:px-0.5 md:px-1.5 rounded relative w-[140px] sm:w-[180px]">
           {/* Icon positioned outside from the left with overflow design */}
           <div className="absolute -left-1 sm:-left-1.5 md:-left-2 top-1/2 transform -translate-y-1/2 w-5 h-5 sm:w-7 sm:h-7 md:w-9 md:h-9 flex items-center justify-center z-10">
             <span className="text-white text-base sm:text-lg md:text-xl">💵</span>
@@ -270,7 +270,7 @@ export function KeyMetrics() {
       {metricsData.map((metric, index) => (
         <div
           key={index}
-          className="flex items-center bg-black/65 py-0.5 sm:py-0.5 md:py-1 px-0.5 sm:px-0.5 md:px-1.5 rounded relative w-[180px]"
+          className="flex items-center bg-black/65 py-0.5 sm:py-0.5 md:py-1 px-0.5 sm:px-0.5 md:px-1.5 rounded relative w-[140px] sm:w-[180px]"
         >
           {/* Icon positioned outside from the left with overflow design */}
           <div className="absolute -left-1 sm:-left-1.5 md:-left-2 top-1/2 transform -translate-y-1/2 w-5 h-5 sm:w-7 sm:h-7 md:w-9 md:h-9 flex items-center justify-center z-10">
