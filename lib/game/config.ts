@@ -289,14 +289,15 @@ export function getCapacityImageForIndustry(industryId: IndustryId = DEFAULT_IND
 
 // Default lead dialogues (fallback if not configured)
 const DEFAULT_LEAD_DIALOGUES = [
-  "It's too expensive",
-  "I need to think about it",
-  "I found a better one",
-  "Maybe next time",
-  "Not sure if I can afford it",
-  "Let me check my budget",
+  "Too expensive",
+  "Need to think",
+  "Will consider",
+  "Found better",
+  "Maybe later",
+  "Can't afford",
+  "Budget issue",
   "Interesting, but...",
-  "I'll come back later"
+  "I'll be back"
 ];
 
 export function getLeadDialoguesForIndustry(industryId: IndustryId = DEFAULT_INDUSTRY_ID): string[] {

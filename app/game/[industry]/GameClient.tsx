@@ -160,9 +160,9 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
           {/* Global Popups - Above everything */}
           <EventPopup />
           <LevelUpPopup />
-        {/* Mobile: Top Section - Game Canvas Area (40% height) */}
+        {/* Mobile: Top Section - Game Canvas Area (35% height) */}
         {/* Desktop: Left Section - Game Canvas Area (50% width) */}
-        <div className="relative h-[40vh] sm:h-full sm:w-1/2 flex items-center justify-center py-4 sm:py-0 overflow-hidden bg-[#8ed0fb]">
+        <div className="relative h-[35vh] sm:h-full sm:w-1/2 flex items-center justify-center py-4 sm:py-0 overflow-hidden bg-[#8ed0fb]">
           {/* Unified Top HUD Container */}
           <div className="absolute top-0 left-0 z-20 pt-2 sm:pt-3 md:pt-4 px-2 sm:px-3 md:px-4">
             <div className="flex flex-col items-start gap-2">

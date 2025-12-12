@@ -264,6 +264,7 @@ export const METRIC_REGISTRY: Record<GameMetric, MetricDefinition> = {
     id: GameMetric.MonthlyExpenses,
     displayLabel: 'Monthly Expenses',
     description: 'Base monthly expenses (before upgrades)',
+    iconPath: '/images/icons/finance.png',
     defaultValueSource: 'businessMetrics',
     defaultValuePath: 'monthlyExpenses',
     constraints: {

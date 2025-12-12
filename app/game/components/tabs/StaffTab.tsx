@@ -181,7 +181,7 @@ function StaffCandidateCard({ candidate, onHire, formatEffect }: StaffCandidateC
                     ) : (
                       <span className="flex-shrink-0">•</span>
                     )}
-                    <span className="truncate">{label}</span>
+                                <span>{label}</span>
                   </span>
                   <span className="text-green-400 font-bold text-xs whitespace-nowrap flex-shrink-0">{value}</span>
                 </div>

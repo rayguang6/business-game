@@ -113,7 +113,7 @@ export function HiredStaffCard({ member, onFire }: HiredStaffCardProps) {
                       ) : (
                         <span className="text-[10px] flex-shrink-0">{getMetricEmojiIcon(effect.metric)}</span>
                       )}
-                      <span className="truncate">{formattedEffect}</span>
+                      <span>{formattedEffect}</span>
                     </span>
                   </div>
                 );

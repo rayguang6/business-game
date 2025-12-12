@@ -189,7 +189,7 @@ export function KeyMetrics() {
             value = `${metrics.leveragedTime}/${maxLeveragedTime}${unit}`;
             icon = getMetricIcon(def.id);
             image = iconPath; // Use merged iconPath (DB → registry fallback)
-            color = 'text-purple-400';
+            color = 'text-purple-300';
             feedback = feedbackByMetric.leveragedTime || [];
             break;
           }
