@@ -61,6 +61,18 @@ export function useAudio(track: AudioTrack, autoPlay: boolean = true) {
       audioManager.setVolume(volume);
       setAudioState(audioManager.getState());
     },
+    setSoundEffectVolume: (volume: number) => {
+      audioManager.setSoundEffectVolume(volume);
+      setAudioState(audioManager.getState());
+    },
+    toggleMusicMute: () => {
+      audioManager.toggleMusicMute();
+      setAudioState(audioManager.getState());
+    },
+    toggleSoundEffectsMute: () => {
+      audioManager.toggleSoundEffectsMute();
+      setAudioState(audioManager.getState());
+    },
     toggleMute: () => {
       audioManager.toggleMute();
       setAudioState(audioManager.getState());
@@ -94,6 +106,18 @@ export function useAudioControls() {
     audioState,
     setVolume: (volume: number) => {
       audioManager.setVolume(volume);
+      setAudioState(audioManager.getState());
+    },
+    setSoundEffectVolume: (volume: number) => {
+      audioManager.setSoundEffectVolume(volume);
+      setAudioState(audioManager.getState());
+    },
+    toggleMusicMute: () => {
+      audioManager.toggleMusicMute();
+      setAudioState(audioManager.getState());
+    },
+    toggleSoundEffectsMute: () => {
+      audioManager.toggleSoundEffectsMute();
       setAudioState(audioManager.getState());
     },
     toggleMute: () => {

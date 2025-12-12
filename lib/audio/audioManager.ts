@@ -4,12 +4,36 @@
  */
 
 export type AudioTrack = 'welcome' | 'selection' | 'game' | 'none';
-export type AudioFx = 'buttonClick' | 'serviceFinished';
+export type AudioFx =
+  // UI Actions
+  | 'buttonClick'
+  | 'buttonClickDisabled'
+  | 'clickButton'
+  // Business Actions
+  | 'hireLetsDoThis'
+  | 'hireLetsGo'
+  | 'hireWooHoo'
+  | 'upgrade'
+  // Service & Customer
+  | 'serviceFinished'
+  | 'jobDone'
+  | 'jobLost'
+  // Game Events
+  | 'eventCardPopup'
+  | 'eventCardGood'
+  | 'eventCardBad'
+  // Progression
+  | 'levelUp'
+  | 'monthChange';
 
 export interface AudioState {
   currentTrack: AudioTrack;
   isPlaying: boolean;
   volume: number;
+  soundEffectVolume: number;
+  isMusicMuted: boolean;
+  isSoundEffectsMuted: boolean;
+  // Legacy property for backward compatibility
   isMuted: boolean;
 }
 
@@ -19,6 +43,9 @@ class AudioManager {
   private isPlaying: boolean = false;
   private volume: number = 0.5; // Default volume (50%)
   private soundEffectVolume: number = 0.8; // Default sound effect volume (80%)
+  private isMusicMuted: boolean = false;
+  private isSoundEffectsMuted: boolean = false;
+  // Legacy property for backward compatibility
   private isMuted: boolean = false;
   private isInitialized: boolean = false;
   private soundEffectElements: Map<AudioFx, HTMLAudioElement> = new Map();
@@ -76,8 +103,29 @@ class AudioManager {
     }
 
     const soundEffects: { effect: AudioFx; src: string }[] = [
+      // UI Actions
       { effect: 'buttonClick', src: '/audio/button-click.mp3' },
+      { effect: 'buttonClickDisabled', src: '/audio/Click Button Disabled_effect.MP3' },
+
+      // Business Actions
+      { effect: 'hireLetsDoThis', src: '/audio/Hiring_Lets_Do_This.MP3' },
+      { effect: 'hireLetsGo', src: '/audio/Hiring_Lets_Go.MP3' },
+      { effect: 'hireWooHoo', src: '/audio/Hiring_Woo_Hoo.MP3' },
+      { effect: 'upgrade', src: '/audio/Upgrade_effect.MP3' },
+
+      // Service & Customer
       { effect: 'serviceFinished', src: '/audio/service-finished.mp3' },
+      { effect: 'jobDone', src: '/audio/Job Done_effect.mp3' },
+      { effect: 'jobLost', src: '/audio/Job Lost_effect.MP3' },
+
+      // Game Events
+      { effect: 'eventCardPopup', src: '/audio/Event Card Pop-up_effect.MP3' },
+      // { effect: 'eventCardGood', src: '/audio/Event Card-Good_effect.MP3' },
+      // { effect: 'eventCardBad', src: '/audio/Event Card-Bad_effect.MP3' },
+
+      // Progression
+      { effect: 'levelUp', src: '/audio/Level Up_effect.MP3' },
+      { effect: 'monthChange', src: '/audio/Month Change_effect.MP3' },
     ];
 
     soundEffects.forEach(({ effect, src }) => {
@@ -245,16 +293,49 @@ class AudioManager {
   }
 
   /**
-   * Toggle mute state
+   * Toggle music mute state
+   */
+  toggleMusicMute(): void {
+    this.isMusicMuted = !this.isMusicMuted;
+
+    // Only update on client side
+    if (typeof window !== 'undefined') {
+      // Update all music audio elements
+      this.audioElements.forEach((audio) => {
+        audio.volume = this.isMusicMuted ? 0 : this.volume;
+      });
+    }
+  }
+
+  /**
+   * Toggle sound effects mute state
+   */
+  toggleSoundEffectsMute(): void {
+    this.isSoundEffectsMuted = !this.isSoundEffectsMuted;
+
+    // Only update on client side
+    if (typeof window !== 'undefined') {
+      // Update all sound effect elements
+      this.soundEffectElements.forEach((audio) => {
+        audio.volume = this.isSoundEffectsMuted ? 0 : this.soundEffectVolume;
+      });
+    }
+  }
+
+  /**
+   * Toggle mute state (legacy method for backward compatibility)
    */
   toggleMute(): void {
     this.isMuted = !this.isMuted;
-    
+
     // Only update on client side
     if (typeof window !== 'undefined') {
       // Update all audio elements
       this.audioElements.forEach((audio) => {
         audio.volume = this.isMuted ? 0 : this.volume;
+      });
+      this.soundEffectElements.forEach((audio) => {
+        audio.volume = this.isMuted ? 0 : this.soundEffectVolume;
       });
     }
   }
@@ -267,6 +348,10 @@ class AudioManager {
       currentTrack: this.currentTrack,
       isPlaying: this.isPlaying,
       volume: this.volume,
+      soundEffectVolume: this.soundEffectVolume,
+      isMusicMuted: this.isMusicMuted,
+      isSoundEffectsMuted: this.isSoundEffectsMuted,
+      // Legacy property for backward compatibility
       isMuted: this.isMuted,
     };
   }

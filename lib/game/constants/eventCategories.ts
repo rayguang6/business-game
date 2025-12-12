@@ -9,3 +9,4 @@ export type EventCategoryType =
 export const AUTO_RESOLVE_CATEGORIES = new Set<EventCategoryType>([
   EventCategory.GoodBad,
 ]);
+

@@ -31,7 +31,7 @@ export interface BusinessStats {
   //   array[1] = EXP needed to go from level 2 to 3
   //   etc.
   // baseHappyProbability removed - customers are happy/angry based on patience, not probability
-  eventTriggerSeconds?: number[];
+  eventTriggerSeconds?: number[] | string;
   serviceRevenueMultiplier: number;
   serviceRevenueScale?: number;
   conversionRate?: number; // How much progress each lead adds toward customer conversion

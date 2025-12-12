@@ -11,6 +11,7 @@ import type { IndustryId } from '@/lib/game/types';
 import { EventCategory, AUTO_RESOLVE_CATEGORIES } from '@/lib/game/constants/eventCategories';
 import { getEventEffectIcon, getEventCategoryIcon, getMetricIcon } from '@/lib/game/metrics/registry';
 import { GameMetric } from '@/lib/game/effectManager';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
 
 
 const getEffectColorClass = (type: GameEventEffect['type'], amount: number) => {
@@ -52,6 +53,22 @@ const EventPopup: React.FC = () => {
   const selectedIndustry = useGameStore((state) => state.selectedIndustry);
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
   const { getDisplayLabel } = useMetricDisplayConfigs(industryId);
+  const { playEventCardPopup } = useSoundEffects();
+  const playedSoundRef = useRef<string | null>(null);
+
+  // Play popup sound whenever any event popup appears (only once per popup)
+  useEffect(() => {
+    const popupId = currentEvent?.id || lastEventOutcome?.eventId || lastDelayedOutcome?.eventId;
+    const hasPopup = currentEvent || lastEventOutcome || lastDelayedOutcome;
+
+    if (hasPopup && popupId && playedSoundRef.current !== popupId) {
+      playEventCardPopup();
+      playedSoundRef.current = popupId;
+    } else if (!hasPopup) {
+      // Reset when no popup is showing
+      playedSoundRef.current = null;
+    }
+  }, [currentEvent, lastEventOutcome, lastDelayedOutcome, playEventCardPopup]);
 
   const formatMetricEffect = (effect: GameEventEffect & { type: EventEffectType.Metric }) => {
     const label = getDisplayLabel(effect.metric);

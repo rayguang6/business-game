@@ -518,3 +518,19 @@ body {
 .animate-shimmer {
   animation: shimmer 3s ease-in-out infinite;
 }
+
+/* ============================================
+   RESPONSIVE BACKGROUND IMAGES
+   For start screen backgrounds
+   ============================================ */
+
+/* Responsive background images for start screen */
+.bg-responsive-start {
+  background-image: url('/images/start-screen-bg.png'); /* Mobile default */
+}
+
+@media (min-width: 768px) {
+  .bg-responsive-start {
+    background-image: url('/images/start-screen-bg-desktop.png'); /* Desktop override */
+  }
+}

@@ -7,9 +7,10 @@ import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { UpgradeEffect, UpgradeDefinition } from '@/lib/game/config';
 import { IndustryId } from '@/lib/game/types';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
-import { getMetricIcon, getMetricEmojiIcon } from '@/lib/game/metrics/registry';
+import { getMetricIcon } from '@/lib/game/metrics/registry';
 import { useRequirements } from '@/lib/hooks/useRequirements';
 import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { Card } from '@/app/components/ui/Card';
 import { Modal } from '@/app/components/ui/Modal';
 
@@ -42,6 +43,9 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
   const { availability, descriptions: requirementDescriptions } = useRequirements(upgrade.requirements);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
 
+  // Sound effects
+  const { playUpgrade } = useSoundEffects();
+
   const formatEffect = useCallback((effect: UpgradeEffect): string => {
     const { metric, type, value } = effect;
     const label = getDisplayLabel(metric);
@@ -53,15 +57,15 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
         case GameMetric.Cash:
         case GameMetric.MonthlyExpenses:
         case GameMetric.ServiceRevenueFlatBonus:
-          return `${sign}${formatCurrency(value)} ${label}`;
+          return `${sign}${formatCurrency(value)}${label}`;
         case GameMetric.MyTime:
-          return `${sign}${formatMagnitude(value)}h ${label}`;
+          return `${sign}${formatMagnitude(value)}h${label}`;
         case GameMetric.LeadsPerMonth:
-          return `${sign}${formatMagnitude(value)} ${label}`;
+          return `${sign}${formatMagnitude(value)}${label}`;
         case GameMetric.ServiceCapacity:
-          return `${sign}${formatMagnitude(value)} ${label}`;
+          return `${sign}${formatMagnitude(value)}${label}`;
         default:
-          return `${sign}${formatMagnitude(value)} ${label}`;
+          return `${sign}${formatMagnitude(value)}${label}`;
       }
     }
 
@@ -69,15 +73,15 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
       const percent = Math.round(absValue);
       switch (metric) {
         case GameMetric.LeadsPerMonth:
-          return `${sign}${percent}% ${label}`;
+          return `${sign}${percent}%${label}`;
         default:
-          return `${sign}${percent}% ${label}`;
+          return `${sign}${percent}%${label}`;
       }
     }
 
     if (type === EffectType.Multiply) {
       const multiplier = Number.isInteger(value) ? value.toString() : value.toFixed(2);
-      return `×${multiplier} ${label}`;
+      return `×${multiplier}${label}`;
     }
 
     if (type === EffectType.Set) {
@@ -144,8 +148,9 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
   const handlePurchase = useCallback(() => {
     if (!buttonDisabled) {
       purchaseUpgrade(upgrade.id);
+      playUpgrade();
     }
-  }, [buttonDisabled, purchaseUpgrade, upgrade.id]);
+  }, [buttonDisabled, purchaseUpgrade, upgrade.id, playUpgrade]);
 
   const handleRequirementsClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -170,7 +175,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
           : ''
     }`}>
       {/* Level Badge - Absolute positioned */}
-      <div className={`absolute top-1 right-1 sm:top-2 sm:right-2 md:top-3 md:right-3 px-1.5 py-0.5 rounded border text-body-sm sm:text-label font-bold z-10 bg-black/20 ${
+      <div className={`absolute top-1 right-1 sm:top-2 sm:right-2 md:top-3 md:right-3 px-1.5 py-0.5 rounded border text-body-sm sm:text-label font-bold z-10 bg-black/40 backdrop-blur-sm ${
         currentLevel > 0
           ? 'text-green-300 border-green-400'
           : 'text-gray-300 border-gray-500'
@@ -193,7 +198,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
         {nextLevelConfig && !isMaxed && (
           <>
             <div>
-              <p className="text-xs font-semibold text-primary leading-tight break-words whitespace-normal">
+              <p className="text-caption font-semibold text-primary leading-tight break-words whitespace-normal">
                 {nextLevelConfig.name}
               </p>
             </div>
@@ -203,18 +208,18 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
                 <ul className="space-y-0.5">
                   {nextLevelEffects.map((effect, idx) => {
                     const effectData = nextLevelConfig?.effects[idx];
-                    const iconPath = effectData ? getMetricIcon(effectData.metric) : null;
-                    const emojiIcon = effectData ? getMetricEmojiIcon(effectData.metric) : '📊';
+                    const mergedDef = effectData ? getMergedDefinition(effectData.metric) : null;
+                    const iconPath = mergedDef?.iconPath ?? null;
                     return (
                       <li key={idx} className="flex items-center gap-1 text-caption sm:text-body-sm text-secondary leading-tight">
                         {iconPath ? (
                           <img
                             src={iconPath}
                             alt=""
-                            className="w-4 h-4 flex-shrink-0"
+                            className="w-4 h-4 mt-0.5 flex-shrink-0"
                           />
                         ) : (
-                          <span className="text-primary flex-shrink-0">{emojiIcon}</span>
+                          <span className="text-primary mt-0.5 flex-shrink-0">•</span>
                         )}
                         <span className="flex-1 break-words whitespace-normal">{effect}</span>
                       </li>
@@ -247,7 +252,7 @@ export function UpgradeCard({ upgrade }: UpgradeCardProps) {
           {/* Action Button */}
           <div className="relative">
             <GameButton
-              color={isMaxed ? 'gold' : buttonDisabled ? 'gray' : 'blue'}
+              color={isMaxed ? 'gold' : canAfford && availability === 'available' ? 'blue' : 'gold'}
               fullWidth
               size="sm"
               disabled={buttonDisabled}

@@ -6,7 +6,8 @@ import { useAudio } from '@/hooks/useAudio';
 
 // Welcome page constants
 const WELCOME_CONFIG = {
-  backgroundImage: "/images/start-screen-bg.png",
+  backgroundImageMobile: "/images/start-screen-bg.png",
+  backgroundImageDesktop: "/images/start-screen-bg-desktop.png",
   titleImage: "/images/business-empire-title.png",
   titleAlt: "Business Empire",
   startGameHref: "/select-industry"
@@ -14,45 +15,28 @@ const WELCOME_CONFIG = {
 
 export default function WelcomePage() {
   // Play welcome music when component mounts
-  useAudio('welcome', true);
+  // useAudio('welcome', true);
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center p-4 sm:p-6 md:p-8 relative bg-cover bg-center bg-no-repeat"
+    <div
+      className="min-h-screen flex flex-col p-4 sm:p-6 md:p-8 relative"
       style={{
-        backgroundImage: `url('${WELCOME_CONFIG.backgroundImage}')`
+        background: `linear-gradient(to bottom,
+          rgba(35, 170, 246, 0.3),
+          rgba(16, 87, 218, 0.5)
+        )`
       }}
     >
-      {/* Fallback background gradient using design system colors */}
-      <div 
-        className="absolute inset-0 -z-10"
-        style={{
-          background: `linear-gradient(to bottom, 
-            rgba(35, 170, 246, 0.3), 
-            rgba(16, 87, 218, 0.5)
-          )`
-        }}
+      {/* Background image overlay that loads on top */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-responsive-start"
       />
-      
-      {/* Content Container */}
-      <div className="relative z-10 text-center w-full max-w-2xl">
-        {/* Game Title Image */}
-        <div className="mb-10 sm:mb-12 md:mb-16 flex justify-center">
-          <div className="relative w-[280px] sm:w-96 md:w-[448px] lg:w-[512px]">
-            <div className="relative pb-[66.67%]">
-              <Image
-                src={WELCOME_CONFIG.titleImage}
-                alt={WELCOME_CONFIG.titleAlt}
-                fill
-                sizes="(max-width: 640px) 280px, (max-width: 768px) 384px, (max-width: 1024px) 448px, 512px"
-                className="object-contain drop-shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
-                priority
-              />
-            </div>
-          </div>
-        </div>
-        
-        {/* Game Buttons */}
+
+      {/* Spacer to push buttons to bottom */}
+      <div className="flex-1"></div>
+
+      {/* Game Buttons - positioned at bottom with space from edge */}
+      <div className="relative z-10 text-center w-full max-w-2xl mx-auto pb-12 sm:pb-16 md:pb-20">
         <div className="flex flex-col items-center justify-center gap-4 sm:gap-6">
           <GameButton color="blue" href={WELCOME_CONFIG.startGameHref}>
             🚀 Start Game

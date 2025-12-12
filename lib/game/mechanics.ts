@@ -284,6 +284,9 @@ function processMonthTransition({
   monthlyTimeSpent = 0,
   monthlyTimeSpentDetails = [],
 }: MonthTransitionParams): MonthTransitionResult {
+  // Play sound effect for month change
+  audioManager.playSoundEffect('monthChange');
+
   const monthResult = endOfMonth(
     metrics.cash,
     monthlyRevenue,
@@ -711,7 +714,7 @@ function processCustomersForTick({
       });
             
       // Play sound effect for service finished
-      audioManager.playSoundEffect('serviceFinished');
+      audioManager.playSoundEffect('jobDone');
       
       // Free staff or main character from service
       if (updatedCustomer.roomId) {

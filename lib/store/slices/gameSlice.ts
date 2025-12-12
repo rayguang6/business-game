@@ -764,6 +764,11 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
           levelUpReward: levelReward, // Show level up popup
         }));
 
+        // Play level up sound effect
+        import('@/lib/audio/audioManager').then(({ audioManager }) => {
+          audioManager.playSoundEffect('levelUp');
+        });
+
         console.log(`[LevelUp] Level ${levelReward.level} reached: ${levelReward.title}`);
       } else {
         // Still update previousLevel even if no reward (in case level changed but no reward configured)

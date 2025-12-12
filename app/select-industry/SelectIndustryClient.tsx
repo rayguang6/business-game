@@ -15,7 +15,7 @@ export default function SelectIndustryClient({ industries }: SelectIndustryClien
   const setSelectedIndustry = useGameStore((state) => state.setSelectedIndustry);
 
   // Play selection music (different from welcome and game pages)
-  useAudio('selection', true);
+  // useAudio('selection', true);
 
   const handleIndustrySelect = (industry: Industry) => {
     // Navigate to industry page (with username input) instead of directly to game
@@ -29,6 +29,7 @@ export default function SelectIndustryClient({ industries }: SelectIndustryClien
     />
   );
 }
+
 
 
 

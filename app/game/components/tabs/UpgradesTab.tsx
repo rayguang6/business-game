@@ -9,6 +9,7 @@ import { HiredStaffCard } from '../ui/HiredStaffCard';
 import type { Staff } from '@/lib/features/staff';
 import { useCategories } from '../../hooks/useCategories';
 import { useGameStore } from '@/lib/store/gameStore';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { IndustryId } from '@/lib/game/types';
     
@@ -88,8 +89,12 @@ export function UpgradesTab() {
   const hireStaff = useGameStore((state) => state.hireStaff);
   const fireStaff = useGameStore((state) => state.fireStaff);
 
+  // Sound effects
+  const { playRandomHireSound } = useSoundEffects();
+
   const handleHireStaff = (staffToHire: Staff) => {
     hireStaff(staffToHire);
+    playRandomHireSound();
   };
 
   const handleFireStaff = (staffId: string) => {

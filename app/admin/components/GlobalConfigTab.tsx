@@ -57,7 +57,8 @@ export function GlobalConfigTab({
     return val !== null && val !== undefined ? String(val) : '';
   };
 
-  const getArrayValue = (arr: number[] | null | undefined): string => {
+  const getArrayValue = (arr: number[] | string | null | undefined): string => {
+    if (typeof arr === 'string') return arr;
     return arr && arr.length > 0 ? arr.join(', ') : '';
   };
   // Keyboard shortcut for save
@@ -277,15 +278,7 @@ export function GlobalConfigTab({
                   type="text"
                   className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                   value={getArrayValue(stats?.eventTriggerSeconds)}
-                  onChange={(e) => {
-                    const value = e.target.value.trim();
-                    if (value === '') {
-                      onUpdateStats({ eventTriggerSeconds: [] });
-                    } else {
-                      const numbers = value.split(',').map(s => s.trim()).filter(s => s).map(s => Number(s)).filter(n => !isNaN(n));
-                      onUpdateStats({ eventTriggerSeconds: numbers });
-                    }
-                  }}
+                  onChange={(e) => onUpdateStats({ eventTriggerSeconds: e.target.value })}
                   placeholder="15, 30, 45"
                 />
                 <p className="text-xs text-slate-500 mt-1">Comma-separated list of seconds when events should trigger during a month</p>

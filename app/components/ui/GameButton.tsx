@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { useRouter } from "next/navigation";
-import { useAudio } from '@/hooks/useAudio';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
 import "./GameButton.css";
 
 type GameButtonProps = {
@@ -33,7 +33,7 @@ export default function GameButton({
   fullWidth = false,
 }: GameButtonProps) {
   const router = useRouter();
-  const { playSoundEffect } = useAudio('none', false);
+  const { playButtonClick, playButtonClickDisabled } = useSoundEffects();
 
   const handleClick = () => {
     if (disabled) {
@@ -46,8 +46,9 @@ export default function GameButton({
     } else if (onClick) {
       onClick();
     }
-    playSoundEffect('buttonClick');
+    playButtonClick();
   };
+
 
   return (
     <button

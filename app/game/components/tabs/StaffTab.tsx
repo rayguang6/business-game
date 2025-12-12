@@ -4,12 +4,13 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
 import type { Staff } from '@/lib/features/staff';
 import { GameMetric, EffectType } from '@/lib/game/effectManager';
-import { getMetricIcon, getMetricEmojiIcon } from '@/lib/game/metrics/registry';
+import { getMetricIcon } from '@/lib/game/metrics/registry';
 import { useRequirements } from '@/lib/hooks/useRequirements';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
 import { Modal } from '@/app/components/ui/Modal';
 import GameButton from '@/app/components/ui/GameButton';
 import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { IndustryId } from '@/lib/game/types';
 
@@ -215,7 +216,7 @@ function StaffCandidateCard({ candidate, onHire, formatEffect }: StaffCandidateC
         <GameButton
           onClick={handleHire}
           disabled={!requirementsMet || !canAfford}
-          color={requirementsMet && canAfford ? "purple" : "gray"}
+          color={requirementsMet ? "purple" : undefined}
           fullWidth
           className="w-full"
         >
@@ -243,6 +244,9 @@ export function StaffTab() {
   const availableStaff = useGameStore((state) => state.availableStaff);
   const hireStaff = useGameStore((state) => state.hireStaff);
 
+  // Sound effects
+  const { playRandomHireSound } = useSoundEffects();
+
   const formatEffect = useCallback((effect: { metric: GameMetric; type: EffectType; value: number }) => {
     const getTypeSymbol = (type: EffectType, value: number) => {
       switch (type) {
@@ -259,6 +263,7 @@ export function StaffTab() {
 
   const handleHireStaff = (staffToHire: Staff) => {
     hireStaff(staffToHire);
+    playRandomHireSound();
   };
 
   return (
@@ -339,9 +344,11 @@ export function StaffTab() {
                     {member.effects.length > 0 && (
                       <div className="space-y-1">
                         {member.effects.map((effect, index) => {
-                          const formattedEffect = formatEffect(effect);
+                          const effectParts = formatEffect(effect).split(' ');
+                          const value = effectParts[0];
+                          const label = effectParts.slice(1).join(' ');
                           return (
-                            <div key={index} className="flex items-center gap-2 min-w-0">
+                            <div key={index} className="flex items-center justify-between gap-2 min-w-0">
                               <span className="text-white text-xs font-medium flex items-center gap-1.5 min-w-0 flex-1">
                                 {getMetricIcon(effect.metric) ? (
                                   <img
@@ -350,10 +357,11 @@ export function StaffTab() {
                                     className="w-4 h-4 flex-shrink-0"
                                   />
                                 ) : (
-                                  <span className="flex-shrink-0">{getMetricEmojiIcon(effect.metric)}</span>
+                                  <span className="flex-shrink-0">•</span>
                                 )}
-                                <span className="truncate">{formattedEffect}</span>
+                                <span className="truncate">{label}</span>
                               </span>
+                              <span className="text-green-400 font-bold text-xs whitespace-nowrap flex-shrink-0">{value}</span>
                             </div>
                           );
                         })}

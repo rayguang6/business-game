@@ -51,14 +51,14 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
   const pathname = usePathname();
   const [activeTab, setActiveTab] = React.useState<TabType>('home');
   const [settingsOpen, setSettingsOpen] = React.useState(false);
-  const { audioState, setVolume, toggleMute } = useAudioControls();
+  const { audioState, setVolume, setSoundEffectVolume, toggleMusicMute, toggleSoundEffectsMute } = useAudioControls();
   const initializeStaffForIndustry = useGameStore((state) => state.initializeStaffForIndustry);
   const setGlobalConfigState = useConfigStore((state) => state.setGlobalConfig);
   const setIndustryConfigState = useConfigStore((state) => state.setIndustryConfig);
   const setConfigStatus = useConfigStore((state) => state.setConfigStatus);
 
   // Play game music when component mounts
-  useAudio('game', true);
+  // useAudio('game', true);
 
   // Initialize stores with server-loaded data
   useEffect(() => {
@@ -239,37 +239,74 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
               <p className="text-sm text-gray-600 mb-4">Game is paused while settings are open.</p>
               
               <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Audio Settings</h3>
-                
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-600">Music</span>
-                  <button
-                    onClick={toggleMute}
-                    className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                      audioState.isMuted 
-                        ? 'bg-red-100 text-red-700 hover:bg-red-200' 
-                        : 'bg-green-100 text-green-700 hover:bg-green-200'
-                    }`}
-                  >
-                    {audioState.isMuted ? '🔇 Muted' : '🔊 On'}
-                  </button>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Audio Settings</h3>
+
+                {/* Music Controls */}
+                <div className="mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-gray-600">Background Music</span>
+                    <button
+                      onClick={toggleMusicMute}
+                      className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                        audioState.isMusicMuted
+                          ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                          : 'bg-green-100 text-green-700 hover:bg-green-200'
+                      }`}
+                    >
+                      {audioState.isMusicMuted ? '🔇 Muted' : '🔊 On'}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500">Volume:</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={audioState.volume}
+                      onChange={(e) => setVolume(parseFloat(e.target.value))}
+                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      disabled={audioState.isMusicMuted}
+                    />
+                    <span className="text-sm text-gray-500 w-8">
+                      {Math.round(audioState.volume * 100)}%
+                    </span>
+                  </div>
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-500">Volume:</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.1"
-                    value={audioState.volume}
-                    onChange={(e) => setVolume(parseFloat(e.target.value))}
-                    className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                    disabled={audioState.isMuted}
-                  />
-                  <span className="text-sm text-gray-500 w-8">
-                    {Math.round(audioState.volume * 100)}%
-                  </span>
+
+                {/* Sound Effects Controls */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-gray-600">Sound Effects</span>
+                    <button
+                      onClick={toggleSoundEffectsMute}
+                      className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                        audioState.isSoundEffectsMuted
+                          ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                          : 'bg-green-100 text-green-700 hover:bg-green-200'
+                      }`}
+                    >
+                      {audioState.isSoundEffectsMuted ? '🔇 Muted' : '🔊 On'}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500">Volume:</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={audioState.soundEffectVolume}
+                      onChange={(e) => setSoundEffectVolume(parseFloat(e.target.value))}
+                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      disabled={audioState.isSoundEffectsMuted}
+                    />
+                    <span className="text-sm text-gray-500 w-8">
+                      {Math.round(audioState.soundEffectVolume * 100)}%
+                    </span>
+                  </div>
                 </div>
               </div>
               

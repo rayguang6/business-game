@@ -373,8 +373,13 @@ export function getEventTriggerSecondsForIndustry(
     return [];
   }
 
-  const configured = (stats.eventTriggerSeconds ?? [])
-    .filter((value) => value > 0 && value < duration);
+  let configured: number[];
+  if (typeof stats.eventTriggerSeconds === 'string') {
+    configured = stats.eventTriggerSeconds.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+  } else {
+    configured = (stats.eventTriggerSeconds ?? []);
+  }
+  configured = configured.filter((value) => value > 0 && value < duration);
 
   return [...new Set(configured)].sort((a, b) => a - b);
 }
