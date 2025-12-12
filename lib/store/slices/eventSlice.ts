@@ -195,6 +195,7 @@ export interface PendingDelayedConsequence {
   id: string; // Unique identifier
   eventId: string;
   eventTitle: string;
+  eventCategory: string;
   choiceId: string;
   choiceLabel: string;
   consequenceId: string;
@@ -206,6 +207,7 @@ export interface ResolvedDelayedOutcome {
   id: string;
   eventId: string;
   eventTitle: string;
+  eventCategory: string;
   choiceId: string;
   choiceLabel: string;
   consequenceId: string;
@@ -632,6 +634,7 @@ export const createEventSlice: StateCreator<GameStore, [], [], EventSlice> = (se
         id: delayedId,
         eventId: event.id,
         eventTitle: event.title,
+        eventCategory: event.category,
         choiceId: choice.id,
         choiceLabel: choice.label,
         consequenceId: consequence.id,

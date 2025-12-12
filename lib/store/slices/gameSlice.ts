@@ -615,7 +615,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       if (readyConsequences.length > 0) {
         // Process each ready delayed consequence
         readyConsequences.forEach((pending) => {
-          const { delayedConsequence, eventId, eventTitle, choiceId, choiceLabel, consequenceId } = pending;
+          const { delayedConsequence, eventId, eventTitle, eventCategory, choiceId, choiceLabel, consequenceId } = pending;
           
           // Check requirements to determine success/failure
           const hasRequirements = delayedConsequence.successRequirements && delayedConsequence.successRequirements.length > 0;
@@ -684,6 +684,7 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
             id: pending.id,
             eventId,
             eventTitle,
+            eventCategory,
             choiceId,
             choiceLabel,
             consequenceId,
