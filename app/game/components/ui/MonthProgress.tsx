@@ -26,17 +26,9 @@ export function MonthProgress() {
     roundDurationSeconds > 0 ? (timeIntoMonth / roundDurationSeconds) * 100 : 0;
 
   return (
-    <div className="bg-white rounded-lg p-4 mb-6 shadow-lg">
+    <div className="bg-white rounded-lg px-3 py-2 mb-6 shadow-lg w-fit">
       <div className="text-center">
-        <div className="text-3xl font-bold text-indigo-600 mb-2">Month {currentMonth}</div>
-        <div className="text-sm text-gray-600 mb-3">Business Month Progress</div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
-          <div
-            className="bg-indigo-500 h-3 rounded-full transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        <div className="text-sm text-gray-500 mt-2">
+        <div className="text-sm text-gray-500">
           {timeIntoMonth}s / {roundDurationSeconds}s (Month {currentMonth})
         </div>
       </div>

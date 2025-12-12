@@ -222,28 +222,14 @@ export function SpriteCustomer({ customer, scaleFactor }: SpriteCustomerProps) {
             {customer.service.name}
           </div>
 
-          {/* Price */}
-          <div className="text-green-600 font-bold">
-            ${customer.finalPrice?.toFixed(2) || '...'}
-          </div>
-
-          {/* Progress Bar & Time */}
-          <div className="flex items-center gap-0.5 mt-0.5">
-            <div
-              className="bg-gray-200 rounded-full overflow-hidden flex-1"
-              style={{
-                height: '2px',
-              }}
-            >
-              <div
-                className="h-full transition-all duration-300"
-                style={{
-                  width: `${progress}%`,
-                  backgroundColor: getProgressColor(),
-                }}
-              />
+          {/* Price & Time */}
+          <div className="flex items-center justify-between">
+            <div className="text-green-600 font-bold">
+              ${Math.floor(customer.finalPrice || 0)}
             </div>
-            <span className="text-gray-700 font-medium flex-shrink-0">{timeDisplay}</span>
+            <div className="text-gray-700 font-medium">
+              {timeDisplay.replace('s', '')}
+            </div>
           </div>
         </div>
       )}
