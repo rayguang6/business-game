@@ -156,13 +156,13 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
   return (
     <ErrorBoundary>
       <GameQueryProvider>
-        <div id="game-shell" className="game-root relative flex flex-col md:flex-row">
+        <div id="game-shell" className="game-root relative flex flex-col sm:flex-row">
           {/* Global Popups - Above everything */}
           <EventPopup />
           <LevelUpPopup />
         {/* Mobile: Top Section - Game Canvas Area (40% height) */}
         {/* Desktop: Left Section - Game Canvas Area (50% width) */}
-        <div className="relative h-[40vh] md:h-full md:w-1/2 flex items-center justify-center py-4 md:py-0 overflow-hidden">
+        <div className="relative h-[40vh] sm:h-full sm:w-1/2 flex items-center justify-center py-4 sm:py-0 overflow-hidden">
           {/* Unified Top HUD Container */}
           <div className="absolute top-0 left-0 z-20 pt-2 sm:pt-3 md:pt-4 px-2 sm:px-3 md:px-4">
             <div className="flex flex-col items-start gap-2">
@@ -211,23 +211,23 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
 
         {/* Mobile: Bottom Section - Navigation & Tabs (flexible height) */}
         {/* Desktop: Right Section - Navigation & Tabs (50% width) */}
-        <div 
-          className="relative z-20 border-t-2 md:border-t-0 md:border-l-2 flex-1 md:h-full md:w-1/2 flex flex-col overflow-hidden"
+        <div
+          className="relative z-20 border-t-2 sm:border-t-0 sm:border-l-2 flex-1 sm:h-full sm:w-1/2 flex flex-col overflow-hidden"
           style={{
             background: 'radial-gradient(circle at center, #2D1A69 0%, #1A0F3B 80%)',
             borderColor: 'rgba(58, 39, 138, 0.3)'
           }}
         >
           {/* Tab Content Area */}
-          <div className="flex-1 overflow-y-auto px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 pb-20 sm:pb-24 md:pb-6">
+          <div className="flex-1 overflow-y-auto px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 pb-20 sm:pb-6">
             {activeTab === 'home' && <HomeTab />}
             {activeTab === 'upgrades' && <UpgradesTab />}
             {activeTab === 'marketing' && <MarketingTab />}
           </div>
 
           {/* Bottom Navigation */}
-          <div 
-            className="fixed md:sticky bottom-0 left-0 right-0 z-30 flex-shrink-0"
+          <div
+            className="fixed sm:sticky bottom-0 left-0 right-0 z-30 flex-shrink-0"
             style={{
               background: '#4A1A8C',
               borderTop: '1px solid rgba(173, 216, 230, 0.3)'

@@ -105,9 +105,8 @@ body {
 /* Desktop layout - allows normal scrolling */
 @media (min-width: 769px) {
   .game-root {
-    min-height: 100vh;
+    height: 100vh;
     display: flex;
-    flex-direction: column;
   }
 }
 
@@ -556,12 +555,12 @@ body {
 
 /* Responsive background images for start screen */
 .bg-responsive-start {
-  background-image: url('/images/start-screen-bg.png'); /* Mobile default */
+  background-image: url('/images/start-screen-bg.jpg'); /* Mobile default */
 }
 
 @media (min-width: 768px) {
   .bg-responsive-start {
-    background-image: url('/images/start-screen-bg-desktop.png'); /* Desktop override */
+    background-image: url('/images/start-screen-bg-desktop.jpg'); /* Desktop override */
   }
 }
 
