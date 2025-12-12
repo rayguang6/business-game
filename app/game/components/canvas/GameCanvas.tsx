@@ -128,12 +128,12 @@ export function GameCanvas() {
   const industryId = (selectedIndustry?.id ?? DEFAULT_INDUSTRY_ID) as IndustryId;
   const configStatus = useConfigStore((state) => state.configStatus);
   const globalConfig = useConfigStore((state) => state.globalConfig);
-  const industryConfig = useConfigStore((state) => state.industryConfigs[industryId]);
-  
+  const industryConfig = useConfigStore(useCallback((state) => state.industryConfigs[industryId], [industryId]));
+
   // Get businessStats fresh each time (same as mechanics.ts does)
   // Depend on config store state so it recomputes when config is loaded
   const businessStats = useMemo(() => getBusinessStats(industryId), [industryId, globalConfig, industryConfig]);
-  const layoutOverride = useConfigStore((state) => state.industryConfigs[industryId]?.layout);
+  const layoutOverride = useConfigStore(useCallback((state) => state.industryConfigs[industryId]?.layout, [industryId]));
   const layout = useMemo(() => layoutOverride ?? getLayoutConfig(industryId), [layoutOverride, industryId, industryConfig]);
 
   // Define computeMetrics BEFORE conditional returns (Rules of Hooks)

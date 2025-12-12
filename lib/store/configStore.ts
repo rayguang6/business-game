@@ -263,6 +263,12 @@ export const selectLevelRewardsForIndustry =
     return getLevelRewardsSnapshot(config);
   };
 
+export const selectMetricDisplayConfigsForIndustry =
+  (industryId: IndustryId) =>
+  (state: ConfigStore): Record<string, import('@/lib/data/metricDisplayConfigRepository').MetricDisplayConfig | null> | null => {
+    return state.industryConfigs[industryId]?.metricDisplayConfigs ?? null;
+  };
+
 export function getServicesFromStore(industryId: IndustryId): IndustryServiceDefinition[] {
   const config = useConfigStore.getState().industryConfigs[industryId];
   if (!config) {

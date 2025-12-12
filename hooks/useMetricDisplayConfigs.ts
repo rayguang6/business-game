@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 import { getMergedMetricDefinition, getAllMetrics } from '@/lib/game/metrics/registry';
-import { useConfigStore } from '@/lib/store/configStore';
+import { useConfigStore, selectMetricDisplayConfigsForIndustry } from '@/lib/store/configStore';
 import type { GameMetric } from '@/lib/game/effectManager';
 import type { IndustryId } from '@/lib/game/types';
 import type { MetricDefinition } from '@/lib/game/metrics/registry';
@@ -11,59 +11,43 @@ import type { MetricDisplayConfig } from '@/lib/data/metricDisplayConfigReposito
 /**
  * Hook to fetch and cache metric display configs for the current industry
  * Returns merged metric definitions (code + database overrides)
- * Uses React Query for caching and sharing data across components
+ * Uses Zustand for caching and sharing data across components
  */
 export function useMetricDisplayConfigs(industryId: IndustryId) {
-  // Get metric display configs from pre-loaded config store
-  const configs = useConfigStore((state) => {
-    const industryConfig = state.industryConfigs[industryId];
-    return (industryConfig?.metricDisplayConfigs as Record<GameMetric, MetricDisplayConfig | null>) || {};
-  });
+  const configs = useConfigStore(selectMetricDisplayConfigsForIndustry(industryId));
 
-  const loading = false;
-  const error = null;
+  const getMergedDefinition = useCallback(
+    (metric: GameMetric): MetricDefinition => {
+      const dbConfig = configs?.[metric] ?? null;
+      return getMergedMetricDefinition(metric, dbConfig);
+    },
+    [configs]
+  );
 
-  /**
-   * Get merged metric definition (code + database override)
-   */
-  const getMergedDefinition = useCallback((metric: GameMetric): MetricDefinition => {
-    const dbConfig = configs[metric];
-    return getMergedMetricDefinition(metric, dbConfig);
-  }, [configs]);
+  const getDisplayLabel = useCallback(
+    (metric: GameMetric): string =>
+      getMergedDefinition(metric).displayLabel,
+    [getMergedDefinition]
+  );
 
-  /**
-   * Get display label for a metric (from DB if available, otherwise registry)
-   */
-  const getDisplayLabel = useCallback((metric: GameMetric): string => {
-    return getMergedDefinition(metric).displayLabel;
-  }, [getMergedDefinition]);
-
-  /**
-   * Get all metrics that should be shown on HUD (respecting DB configs)
-   */
   const getMetricsForHUD = useCallback((): MetricDefinition[] => {
-    const allMetrics = getAllMetrics();
-    return allMetrics
-      .map(metric => getMergedDefinition(metric.id))
-      .filter(metric => metric.display.showOnHUD)
+    return getAllMetrics()
+      .map((metric) => getMergedDefinition(metric.id))
+      .filter((metric) => metric.display.showOnHUD)
       .sort((a, b) => (a.display.priority ?? 999) - (b.display.priority ?? 999));
   }, [getMergedDefinition]);
 
-  /**
-   * Get all metrics that should be shown in details panel (respecting DB configs)
-   */
   const getMetricsForDetails = useCallback((): MetricDefinition[] => {
-    const allMetrics = getAllMetrics();
-    return allMetrics
-      .map(metric => getMergedDefinition(metric.id))
-      .filter(metric => metric.display.showInDetails)
+    return getAllMetrics()
+      .map((metric) => getMergedDefinition(metric.id))
+      .filter((metric) => metric.display.showInDetails)
       .sort((a, b) => (a.display.priority ?? 999) - (b.display.priority ?? 999));
   }, [getMergedDefinition]);
 
   return {
     configs,
-    loading,
-    error,
+    loading: false,
+    error: null,
     getMergedDefinition,
     getDisplayLabel,
     getMetricsForHUD,
