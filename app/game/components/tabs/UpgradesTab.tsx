@@ -109,7 +109,7 @@ export function UpgradesTab() {
     <div className="space-y-3 sm:space-y-4 md:space-y-6 pb-safe pb-8">
       {/* Upgrades Section */}
       <section>
-        <SectionHeading>Available Upgrades</SectionHeading>
+
         {(() => {
           // Group upgrades by category and sort
           const sortedCategories = categories
