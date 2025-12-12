@@ -87,7 +87,7 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
   }, [currentRank]);
 
   // Play game music when component mounts
-  useAudio('game', true);
+  // useAudio('game', true); // Commented out to disable background music
 
   // Initialize stores with server-loaded data
   useEffect(() => {
