@@ -149,6 +149,7 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
             </div>
           </div>
 
+          {/* Fullscreen Button - Bottom right corner of game canvas */}
           <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 z-30">
             <FullscreenToggle targetId="game-shell" />
           </div>

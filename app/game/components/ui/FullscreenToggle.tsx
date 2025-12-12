@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 type FullscreenToggleProps = {
   targetId: string;
@@ -14,25 +15,29 @@ type FullscreenElement = HTMLElement & {
 
 type FullscreenDocument = Document & {
   webkitExitFullscreen?: () => Promise<void> | void;
+  webkitFullscreenElement?: Element | null;
   mozCancelFullScreen?: () => Promise<void> | void;
   msExitFullscreen?: () => Promise<void> | void;
 };
 
-const requestFullscreen = (element: FullscreenElement) => {
+const requestFullscreen = async (element: FullscreenElement): Promise<void> => {
   if (element.requestFullscreen) {
     return element.requestFullscreen();
   }
 
   if (element.webkitRequestFullscreen) {
-    return element.webkitRequestFullscreen();
+    element.webkitRequestFullscreen();
+    return Promise.resolve();
   }
 
   if (element.mozRequestFullScreen) {
-    return element.mozRequestFullScreen();
+    element.mozRequestFullScreen();
+    return Promise.resolve();
   }
 
   if (element.msRequestFullscreen) {
-    return element.msRequestFullscreen();
+    element.msRequestFullscreen();
+    return Promise.resolve();
   }
 
   return Promise.resolve();
@@ -61,6 +66,7 @@ const exitFullscreen = (doc: FullscreenDocument) => {
 export function FullscreenToggle({ targetId }: FullscreenToggleProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -70,28 +76,45 @@ export function FullscreenToggle({ targetId }: FullscreenToggleProps) {
     const doc = document as FullscreenDocument;
     const target = (document.getElementById(targetId) || document.documentElement) as FullscreenElement | null;
 
+    // Enhanced fullscreen support detection for mobile devices
+    // Note: iOS Safari only supports fullscreen on video elements, not arbitrary elements
+    const detectedIsIOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
+    setIsIOS(detectedIsIOS);
+
     const supported = Boolean(
       target &&
+        !detectedIsIOS && // iOS Safari doesn't support fullscreen on non-video elements
         (target.requestFullscreen ||
           target.webkitRequestFullscreen ||
           target.mozRequestFullScreen ||
-          target.msRequestFullscreen)
+          target.msRequestFullscreen ||
+          // General webkit support check
+          (typeof document !== "undefined" && 'webkitFullscreenEnabled' in document && document.webkitFullscreenEnabled))
     );
     setIsSupported(supported);
-    setIsFullscreen(Boolean(doc.fullscreenElement));
+    setIsFullscreen(Boolean(doc.fullscreenElement || doc.webkitFullscreenElement));
 
     const handleChange = () => {
-      setIsFullscreen(Boolean(doc.fullscreenElement));
+      setIsFullscreen(Boolean(doc.fullscreenElement || doc.webkitFullscreenElement));
     };
 
+    // Add all possible fullscreen change event listeners
     document.addEventListener("fullscreenchange", handleChange);
+    document.addEventListener("webkitfullscreenchange", handleChange);
+    document.addEventListener("mozfullscreenchange", handleChange);
+    document.addEventListener("MSFullscreenChange", handleChange);
 
     return () => {
       document.removeEventListener("fullscreenchange", handleChange);
+      document.removeEventListener("webkitfullscreenchange", handleChange);
+      document.removeEventListener("mozfullscreenchange", handleChange);
+      document.removeEventListener("MSFullscreenChange", handleChange);
     };
   }, [targetId]);
 
-  if (!isSupported) {
+  // Show button on all devices - iOS will show it but fullscreen may not work
+  // This allows users to discover the functionality even if it's limited on iOS
+  if (!isSupported && !isIOS) {
     return null;
   }
 
@@ -107,10 +130,23 @@ export function FullscreenToggle({ targetId }: FullscreenToggleProps) {
       return;
     }
 
-    if (doc.fullscreenElement) {
+    // Check if already in fullscreen (including webkit)
+    const isCurrentlyFullscreen = Boolean(doc.fullscreenElement || doc.webkitFullscreenElement);
+
+    if (isCurrentlyFullscreen) {
       exitFullscreen(doc);
     } else {
-      requestFullscreen(target);
+      // iOS Safari requires user gesture, so we try the request
+      requestFullscreen(target).catch((error: any) => {
+        console.warn('Fullscreen request failed:', error);
+        // On iOS, fullscreen might not work but we can try to maximize viewport
+        if (isIOS) {
+          // Try to scroll to top and maximize viewport as fallback
+          window.scrollTo(0, 0);
+          // iOS Safari doesn't support programmatic fullscreen for web apps
+          // but we can at least try the standard request
+        }
+      });
     }
   };
 
@@ -118,49 +154,17 @@ export function FullscreenToggle({ targetId }: FullscreenToggleProps) {
     <button
       type="button"
       onClick={toggleFullscreen}
-      className="cursor-pointer hover:bg-black/30 active:scale-95 inline-flex items-center justify-center rounded-lg border-2 border-white/30 bg-black/70 px-2.5 py-2 text-white shadow-lg backdrop-blur-sm transition-all duration-200 hover:border-[var(--game-primary)]/50 hover:shadow-[0_0_10px_rgba(35,170,246,0.3)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--game-primary)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+      className="cursor-pointer hover:bg-black/30 active:scale-95 inline-flex items-center justify-center rounded-lg border-2 border-white/40 bg-black/80 px-1 py-1 sm:px-1 sm:py-1 text-white shadow-xl backdrop-blur-sm transition-all duration-200 hover:border-[var(--game-primary)]/60 hover:shadow-[0_0_15px_rgba(35,170,246,0.4)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--game-primary)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black min-w-[44px] min-h-[44px]"
       aria-pressed={isFullscreen}
       aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
     >
-      {isFullscreen ? (
-        // Exit fullscreen icon (compress - arrows pointing inward)
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="text-white"
-          aria-hidden="true"
-        >
-          <path
-            d="M6 6L3 3M10 6L13 3M6 10L3 13M10 10L13 13"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      ) : (
-        // Enter fullscreen icon (expand - arrows pointing outward)
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="text-white"
-          aria-hidden="true"
-        >
-          <path
-            d="M5 3H3V5M11 3H13V5M5 13H3V11M11 13H13V11"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      )}
+      <Image
+        src={isFullscreen ? "/images/icons/exit-fullscreen.png" : "/images/icons/enter-fullscreen.png"}
+        alt={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+        width="50"
+        height="50"
+        className="w-10 h-10"
+      />
     </button>
   );
 }
