@@ -139,7 +139,7 @@ export function LevelEffectsDisplay({
     return (
       <div className={`text-center py-4 px-2 ${className}`}>
         <div className="text-lg mb-1">🏆</div>
-        <div className="text-sm text-tertiary opacity-80">
+        <div className="text-sm text-white opacity-80">
           No level rewards configured
         </div>
       </div>
@@ -150,7 +150,7 @@ export function LevelEffectsDisplay({
     <div className={`space-y-2 ${className}`}>
       {/* Persistent Effects with Before/After */}
       {hasPersistentEffects && (
-        <div className="p-3 bg-[var(--bg-secondary)]/40 rounded border border-[var(--border-primary)]/30">
+        <div className="p-3 bg-white/10 rounded border border-white/20">
           {/* <div className="text-sm font-semibold text-[var(--text-primary)] mb-2 text-center opacity-90">
             📈 Permanent Upgrades
           </div> */}
@@ -170,13 +170,13 @@ export function LevelEffectsDisplay({
 
               return (
                 <div key={`persistent-${effect.metric}_${effect.type}`} className="flex items-center justify-between py-1.5">
-                  <span className="text-sm text-secondary font-medium opacity-90 flex-1">
+                  <span className="text-sm text-white font-medium opacity-90 flex-1">
                     {label}
                   </span>
                   <div className="flex items-center gap-2">
                     {afterValue !== null ? (
                       <>
-                        <span className="text-sm text-tertiary">
+                        <span className="text-sm text-white/70">
                           {beforeValue !== null
                             ? formatEffectValue({ metric, type, value: beforeValue } as UpgradeEffect)
                             : formatEffectValue({ metric, type, value: 0 } as UpgradeEffect)
@@ -185,7 +185,7 @@ export function LevelEffectsDisplay({
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white flex-shrink-0">
                           <path d="M5 12h14M12 5l7 7-7 7" />
                         </svg>
-                        <span className={`text-sm font-semibold`} style={{ color: afterValue !== null && ((beforeValue !== null && afterValue > beforeValue) || (beforeValue === null && afterValue > 0)) ? 'var(--success)' : 'var(--text-primary)' }}>
+                        <span className={`text-sm font-semibold text-white`}>
                           {formatEffectValue({ metric, type, value: afterValue } as UpgradeEffect)}
                         </span>
                       </> 
@@ -204,8 +204,8 @@ export function LevelEffectsDisplay({
 
       {/* One-time Bonuses */}
       {hasOneTimeBonuses && (
-        <div className="p-3 bg-green-500/10 rounded border border-green-500/30">
-          <div className="text-sm font-semibold text-green-400 mb-2 text-center">
+        <div className="p-3 bg-white/10 rounded border border-white/20">
+          <div className="text-sm font-semibold text-white mb-2 text-center">
             {oneTimeBonusesTitle}
           </div>
           <div className="space-y-1.5">
@@ -213,10 +213,10 @@ export function LevelEffectsDisplay({
               const label = getDisplayLabel(effect.metric);
               return (
                 <div key={`bonus-${effect.metric}_${effect.type}`} className="flex items-center justify-between py-1">
-                  <span className="text-sm text-secondary font-medium opacity-90">
+                  <span className="text-sm text-white/80 font-medium opacity-90">
                     {label}
                   </span>
-                  <span className="text-sm font-bold text-green-400">
+                  <span className="text-sm font-bold text-white">
                     +{formatEffectValue(effect).replace(/^\+/, '')}
                   </span>
                 </div>

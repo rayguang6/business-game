@@ -22,8 +22,9 @@ import { createMainCharacter, updateMainCharacterName, type MainCharacter } from
 import { getLayoutConfig } from '@/lib/game/config';
 import { getStaffPositions } from '@/lib/game/positioning';
 import { getLevel } from '@/lib/store/types';
-import { checkAndApplyLevelUp } from '@/lib/features/levelRewards';
+import { checkAndApplyLevelUp, applyLevelRewardEffects, applyLevelRewardFlags } from '@/lib/features/levelRewards';
 import type { LevelReward } from '@/lib/data/levelRewardsRepository';
+import { fetchLevelReward } from '@/lib/server/actions/adminActions';
 
 /**
  * Load username from localStorage (if available)
@@ -320,6 +321,22 @@ export const createGameSlice: StateCreator<GameStore, [], [], GameSlice> = (set,
       hiredStaff: staffWithPositions, // Update staff with initialized positions
       previousLevel: initialLevel, // Initialize previousLevel based on starting EXP
     });
+
+    // Apply level 1 rewards directly (without popup)
+    // Use async IIFE to handle the async fetchLevelReward
+    (async () => {
+      try {
+        const level1Reward = await fetchLevelReward(industryId, 1);
+        if (level1Reward) {
+          console.log('[LevelUp] Applying level 1 rewards during game initialization');
+          applyLevelRewardEffects(level1Reward, get() as GameStore, initialState.gameTime);
+          applyLevelRewardFlags(level1Reward, get() as GameStore);
+        }
+      } catch (error) {
+        console.error('[LevelRewards] Error applying level 1 rewards during game initialization:', error);
+        // Continue game even if level 1 reward application fails
+      }
+    })();
 
     // Apply level rewards for all levels reached due to high starting EXP
     // Use async IIFE to handle the async checkAndApplyLevelUp

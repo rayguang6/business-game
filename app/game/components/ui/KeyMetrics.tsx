@@ -141,7 +141,7 @@ export function KeyMetrics() {
       .map(def => {
         const merged = getMergedDefinition(def.id);
         let value = '';
-        let icon = '💵';
+        let icon: string | null = '💵';
         let image: string | null = null;
         let color = 'text-green-400';
         let key = def.id;
@@ -164,7 +164,7 @@ export function KeyMetrics() {
             const currentLevel = getLevel(metrics.exp, expPerLevel);
             const currentLevelProgress = getLevelProgress(metrics.exp, expPerLevel);
             const expRequiredForCurrentLevel = getExpRequiredForCurrentLevel(metrics.exp, expPerLevel);
-            value = `Level ${currentLevel} (${currentLevelProgress}/${expRequiredForCurrentLevel}${unit})`;
+            value = `LEVEL ${currentLevel} (${currentLevelProgress}/${expRequiredForCurrentLevel})`;
             icon = getMetricIcon(def.id);
             image = iconPath; // Use merged iconPath (DB → registry fallback)
             color = 'text-yellow-400';
@@ -189,7 +189,7 @@ export function KeyMetrics() {
             value = `${metrics.leveragedTime}/${maxLeveragedTime}${unit}`;
             icon = getMetricIcon(def.id);
             image = iconPath; // Use merged iconPath (DB → registry fallback)
-            color = 'text-cyan-400';
+            color = 'text-purple-400';
             feedback = feedbackByMetric.leveragedTime || [];
             break;
           }
@@ -258,7 +258,7 @@ export function KeyMetrics() {
 
           <div className="flex flex-col min-w-0 flex-1 pl-1 sm:pl-2 md:pl-3">
             <span className="text-caption font-semibold text-green-400 truncate">Cash</span>
-            <span className="text-white text-label font-bold truncate">{metrics.cash.toLocaleString()}</span>
+            <span className="text-white text-label font-bold">{metrics.cash.toLocaleString()}</span>
           </div>
         </div>
       </div>
@@ -296,8 +296,8 @@ export function KeyMetrics() {
             >
               {metric.label}
             </span>
-            <span 
-              className="text-white text-label font-bold truncate"
+            <span
+              className="text-white text-label font-bold"
               style={{
                 textShadow: '0 0 3px rgba(0, 0, 0, 1), 0 1px 2px rgba(0, 0, 0, 0.9), 0 -1px 2px rgba(0, 0, 0, 0.9)'
               }}

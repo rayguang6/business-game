@@ -4,7 +4,7 @@ import { useMemo, useEffect, useState, useCallback } from 'react';
 import { useGameStore } from '@/lib/store/gameStore';
 import { useConfigStore } from '@/lib/store/configStore';
 import { Card } from '@/app/components/ui/Card';
-import { getLevel } from '@/lib/store/types';
+import { getLevel, getRankBackgroundColor, getRankTextColor } from '@/lib/store/types';
 import { getExpPerLevel, getBusinessStats, DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { IndustryId } from '@/lib/game/types';
 import type { LevelReward } from '@/lib/data/levelRewardsRepository';
@@ -90,6 +90,15 @@ export function LevelCard() {
     return nextLevelReward !== null || nextLevelEffects.length > 0;
   }, [nextLevelReward, nextLevelEffects]);
 
+  // Get all unique ranks in order (based on first appearance in level rewards)
+  const allRanks = useMemo(() => {
+    return Array.from(new Set(allLevelRewards.map(r => r.rank).filter(Boolean))).filter(Boolean) as string[];
+  }, [allLevelRewards]);
+
+  // Get ranks for current and next levels
+  const currentRank = currentLevelReward?.rank || 'Unknown Rank';
+  const nextRank = nextLevelReward?.rank || 'Unknown Rank';
+
 
 
   // If config not ready, show loading
@@ -116,29 +125,50 @@ export function LevelCard() {
     <Card className="w-full overflow-hidden" variant="info">
       <div className="p-5">
         {/* Header with Current and Next Level Titles */}
-        <div className="mb-4 p-3 bg-primary/5 rounded-olg">
+        <div className="mb-4 p-3 rounded-lg">
           {hasNextLevel ? (
             /* Compact layout when next level exists */
-            <div className="flex items-center justify-center gap-3">
-              {/* Current Level Badge */}
-              <div className="text-sm font-semibold text-primary">
-                {currentTitle}
+            <div className="flex flex-col items-center gap-3">
+              {/* Rank Pills */}
+              <div className="flex items-center justify-center gap-2">
+                <span className={`text-xs font-semibold px-2 py-1 rounded-md ${getRankBackgroundColor(currentRank, allRanks)} ${getRankTextColor(currentRank, allRanks)}`}>
+                  {currentRank}
+                </span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-tertiary flex-shrink-0">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+                <span className={`text-xs font-semibold px-2 py-1 rounded-md ${getRankBackgroundColor(nextRank, allRanks)} ${getRankTextColor(nextRank, allRanks)}`}>
+                  {nextRank}
+                </span>
               </div>
 
-              {/* Arrow */}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-tertiary flex-shrink-0">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
+              {/* Level Titles */}
+              <div className="flex items-center justify-center gap-3">
+                {/* Current Level Badge */}
+                <div className="text-sm font-bold text-green-300 border-2 border-green-400 bg-green-500/10 px-3 py-1 rounded-lg">
+                  {currentTitle}
+                </div>
 
-              {/* Next Level Badge */}
-              <div className="text-sm font-semibold text-primary">
-                {nextTitle}
+                {/* Arrow */}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-tertiary flex-shrink-0">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+
+                {/* Next Level Badge */}
+                <div className="text-sm font-semibold text-primary">
+                  {nextTitle}
+                </div>
               </div>
             </div>
           ) : (
             /* Centered single level when at max level */
             <div className="text-center">
-              <div className="text-sm font-semibold text-primary">
+              <div className="flex justify-center mb-2">
+                <span className={`text-xs font-semibold px-2 py-1 rounded-md ${getRankBackgroundColor(currentRank, allRanks)} ${getRankTextColor(currentRank, allRanks)}`}>
+                  {currentRank}
+                </span>
+              </div>
+              <div className="text-sm font-bold text-green-300 border-2 border-green-400 bg-green-500/10 px-3 py-1 rounded-lg">
                 {currentTitle}
               </div>
             </div>
@@ -155,7 +185,7 @@ export function LevelCard() {
           showOneTimeBonuses={true}
           hasNextLevel={hasNextLevel}
           oneTimeBonusesTitle="🎁 Next Level Rewards"
-          className="p-3 bg-secondary/5 rounded-lg border border-secondary/10"
+          className="p-3 rounded-lg"
         />
       </div>
     </Card>

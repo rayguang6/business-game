@@ -10,7 +10,7 @@ import { fetchStaffDataForIndustry, upsertStaffRole, deleteStaffRole, upsertStaf
 import { fetchFlagsForIndustry, upsertFlagForIndustry, deleteFlagById } from '@/lib/data/flagRepository';
 import type { UpgradeEffect, Requirement } from '@/lib/game/types';
 import { fetchConditionsForIndustry, upsertConditionForIndustry, deleteConditionById } from '@/lib/data/conditionRepository';
-import { fetchLevelRewardsForIndustry, fetchLevelReward as fetchLevelRewardFromRepo, upsertLevelRewardForIndustry, deleteLevelRewardById, type LevelReward } from '@/lib/data/levelRewardsRepository';
+import { fetchLevelRewardsForIndustry, fetchLevelReward as fetchLevelRewardFromRepo, upsertLevelRewardForIndustry, deleteLevelRewardById, getLevelRank as getLevelRankFromRepo, type LevelReward } from '@/lib/data/levelRewardsRepository';
 // Import unified simulation config repository
 import { fetchSimulationConfig, upsertSimulationConfig } from '@/lib/data/simulationConfigRepository';
 import { fetchAllMetricDisplayConfigs, fetchIndustrySpecificMetricDisplayConfigs, upsertMetricDisplayConfig, deleteMetricDisplayConfig } from '@/lib/data/metricDisplayConfigRepository';
@@ -127,6 +127,10 @@ export async function upsertLevelReward(industryId: IndustryId, levelReward: Lev
 
 export async function deleteLevelReward(id: string) {
   return await deleteLevelRewardById(id);
+}
+
+export async function getLevelRank(industryId: IndustryId, level: number) {
+  return await getLevelRankFromRepo(industryId, level);
 }
 
 // Event Actions

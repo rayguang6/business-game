@@ -276,3 +276,50 @@ export function getExpRequiredForCurrentLevel(exp: number, expPerLevel: number |
   const currentLevel = getLevel(exp, expPerLevel);
   return getExpForLevelProgression(currentLevel, expPerLevel);
 }
+
+/**
+ * Get the background color class for a level rank based on its position in the rank hierarchy
+ * Follows RPG color progression: Green > Blue > Purple > Orange > Red
+ * Colors are assigned dynamically based on rank order, not hardcoded names
+ * @param rank - The level rank name
+ * @param allRanks - Array of all available rank names in order
+ * @returns Tailwind CSS background color class (solid colors)
+ */
+export function getRankBackgroundColor(rank: string, allRanks: string[] = []): string {
+  // If no ranks provided, default to solid red
+  if (allRanks.length === 0) {
+    return 'bg-red-500';
+  }
+
+  const rankIndex = allRanks.indexOf(rank);
+  if (rankIndex === -1) return 'bg-red-500'; // Default to solid red for unknown ranks
+
+  // RPG color progression based on rank position - solid colors
+  const rankColors = [
+    'bg-green-500',    // 0: Green (Novice)
+    'bg-blue-500',     // 1: Blue (Rising Freelancer)
+    'bg-purple-500',    // 2: Purple (Professional Marketer)
+    'bg-orange-500',    // 3: Orange (Elite Agency Builder)
+    'bg-red-500',       // 4+: Red (Millionaire Marketer and beyond)
+  ];
+
+  return rankColors[Math.min(rankIndex, rankColors.length - 1)];
+}
+
+/**
+ * Get the text color class for a level rank
+ * White text for known ranks, black text for defaults
+ * @param rank - The level rank name
+ * @param allRanks - Array of all available rank names in order
+ * @returns Tailwind CSS text color class
+ */
+export function getRankTextColor(rank: string, allRanks: string[] = []): string {
+  // Black text for defaults (no ranks available or unknown rank)
+  if (allRanks.length === 0 || allRanks.indexOf(rank) === -1) {
+    return 'text-black';
+  }
+
+  // White text for all known ranks
+  return 'text-white';
+}
+

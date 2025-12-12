@@ -10,6 +10,7 @@ interface LevelRewardForm {
   id: string;
   level: string;
   title: string;
+  rank: string;
   narrative: string;
   effects: Array<{ metric: GameMetric; type: EffectType; value: string }>;
   unlocksFlags: string[];
@@ -27,6 +28,7 @@ export function useLevelRewards(industryId: string, levelRewardId?: string) {
     id: '',
     level: '',
     title: '',
+    rank: '',
     narrative: '',
     effects: [],
     unlocksFlags: [],
@@ -139,6 +141,7 @@ export function useLevelRewards(industryId: string, levelRewardId?: string) {
       id: reward.id,
       level: String(reward.level),
       title: reward.title,
+      rank: reward.rank || '',
       narrative: reward.narrative || '',
       effects: reward.effects.map((e) => ({
         metric: e.metric,
@@ -224,6 +227,7 @@ export function useLevelRewards(industryId: string, levelRewardId?: string) {
       industryId: industryId as any,
       level,
       title,
+      rank: form.rank.trim() || undefined,
       narrative: narrative || undefined,
       effects,
       unlocksFlags: form.unlocksFlags.filter((f) => f.trim().length > 0),
@@ -252,6 +256,7 @@ export function useLevelRewards(industryId: string, levelRewardId?: string) {
         id: '',
         level: '',
         title: '',
+        rank: '',
         narrative: '',
         effects: [],
         unlocksFlags: [],

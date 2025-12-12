@@ -10,6 +10,7 @@ interface LevelRewardRow {
   level: number;
   title: string;
   narrative: string | null;
+  rank: string | null;
   effects: unknown;
   unlocks_flags: unknown;
   created_at: string;
@@ -23,6 +24,7 @@ export interface LevelReward {
   level: number;
   title: string;
   narrative?: string;
+  rank?: string;
   effects: UpgradeEffect[];
   unlocksFlags: string[];
   createdAt: string;
@@ -96,6 +98,7 @@ export async function fetchLevelRewardsForIndustry(
         level: row.level,
         title: row.title,
         narrative: row.narrative || undefined,
+        rank: row.rank || undefined,
         effects: parsedEffects,
         unlocksFlags,
         createdAt: row.created_at,
@@ -181,6 +184,7 @@ export async function fetchLevelReward(
       level: row.level,
       title: row.title,
       narrative: row.narrative || undefined,
+      rank: row.rank || undefined,
       effects: parsedEffects,
       unlocksFlags,
       createdAt: row.created_at,
@@ -209,6 +213,7 @@ export async function upsertLevelRewardForIndustry(
     level: levelReward.level,
     title: levelReward.title,
     narrative: levelReward.narrative || null,
+    rank: levelReward.rank || null,
     effects: levelReward.effects.map((effect) => ({
       metric: effect.metric,
       type: effect.type,
@@ -248,4 +253,35 @@ export async function deleteLevelRewardById(id: string): Promise<{ success: bool
   }
 
   return { success: true };
+}
+
+/**
+ * Get the rank for a specific level in an industry
+ */
+export async function getLevelRank(
+  industryId: IndustryId,
+  level: number,
+): Promise<string | null> {
+  if (!supabaseServer) {
+    console.error('[LevelRewards] Supabase client not configured. Unable to get level rank.');
+    return null;
+  }
+
+  const { data, error } = await supabaseServer
+    .from('level_rewards')
+    .select('rank')
+    .eq('industry_id', industryId)
+    .eq('level', level)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // No rows returned - level reward doesn't exist
+      return null;
+    }
+    console.error(`[LevelRewards] Failed to get level rank for industry "${industryId}" level ${level}:`, error);
+    return null;
+  }
+
+  return data.rank;
 }

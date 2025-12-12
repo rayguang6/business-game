@@ -18,6 +18,7 @@ interface LevelRewardsTabProps {
     id: string;
     level: string;
     title: string;
+    rank: string;
     narrative: string;
     effects: Array<{ metric: GameMetric; type: EffectType; value: string }>;
     unlocksFlags: string[];
@@ -165,6 +166,16 @@ export function LevelRewardsTab({
                         placeholder="e.g., Early Skill Builder"
                         className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-1">Rank</label>
+                      <input
+                        value={levelRewardForm.rank}
+                        onChange={(e) => onUpdateForm({ rank: e.target.value })}
+                        placeholder="e.g., Novice"
+                        className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-200"
+                      />
+                      <p className="text-xs text-slate-400 mt-1">Level rank name (shared across multiple levels)</p>
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-sm font-semibold text-slate-300 mb-1">Narrative</label>

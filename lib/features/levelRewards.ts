@@ -65,7 +65,7 @@ function shouldApplyAsOneTimeBonus(metric: GameMetric, type: EffectType): boolea
  * Apply effects from a level reward
  * Some effects are granted immediately (one-time bonuses), others are persistent modifiers
  */
-function applyLevelRewardEffects(
+export function applyLevelRewardEffects(
   levelReward: LevelReward,
   store: GameStore,
   gameTime: number,
@@ -168,7 +168,7 @@ function applyLevelRewardEffects(
 /**
  * Set flags from level reward unlocks
  */
-function applyLevelRewardFlags(
+export function applyLevelRewardFlags(
   levelReward: LevelReward,
   store: GameStore,
 ): void {

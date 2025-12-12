@@ -6,6 +6,7 @@ import { EffectType, GameMetric } from '@/lib/game/effectManager';
 import GameButton from '@/app/components/ui/GameButton';
 import { useConfigStore } from '@/lib/store/configStore';
 import { useMetricDisplayConfigs } from '@/hooks/useMetricDisplayConfigs';
+import { getRankBackgroundColor, getRankTextColor } from '@/lib/store/types';
 import { DEFAULT_INDUSTRY_ID } from '@/lib/game/config';
 import type { IndustryId } from '@/lib/game/types';
 import type { LevelReward } from '@/lib/data/levelRewardsRepository';
@@ -119,6 +120,15 @@ const LevelUpPopup: React.FC = () => {
     ? `Level ${levelUpReward.level}: ${levelUpReward.title}`
     : levelUpReward?.level ? `Level ${levelUpReward.level}` : '';
 
+  // Get all unique ranks in order (based on first appearance in level rewards)
+  const allRanks = useMemo(() => {
+    return Array.from(new Set(allLevelRewards.map(r => r.rank).filter(Boolean))).filter(Boolean) as string[];
+  }, [allLevelRewards]);
+
+  // Get ranks for previous and current levels
+  const previousRank = previousLevelReward?.rank || 'Unknown Rank';
+  const currentRank = levelUpReward?.rank || 'Unknown Rank';
+
   // Calculate cumulative effects for previous level (before level up)
   const previousLevelEffects = useMemo(() => {
     if (!levelUpReward?.level) return [];
@@ -189,31 +199,47 @@ const LevelUpPopup: React.FC = () => {
 
   return (
     <div className="absolute inset-0 z-30 flex items-center justify-center px-2 md:px-6 pt-16 md:pt-6 pb-2 md:pb-6 pointer-events-none">
-      <div className="absolute inset-0 bg-black/10 backdrop-blur-[0.5px] pointer-events-auto" />
+      <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] pointer-events-auto" />
       <div className="relative z-10 w-full max-w-[90%] sm:max-w-[85%] md:max-w-md pointer-events-auto">
         {/* Subtle frame */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[var(--bg-card)]/70 to-[var(--bg-secondary)]/70 backdrop-blur-sm rounded-lg border border-[var(--game-primary)]/30 shadow-lg" />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-100/80 via-blue-50/70 to-indigo-100/60 backdrop-blur-sm rounded-lg border-2 border-blue-300/50 shadow-xl" />
 
-        <div className="relative bg-[var(--bg-card)]/85 backdrop-blur-sm rounded-lg shadow-lg p-4 md:p-4 border border-[var(--border-primary)]/40 max-h-[calc(100vh-6rem)] md:max-h-[60vh] overflow-y-auto">
+        <div className="relative bg-gradient-to-br from-blue-500 via-blue-400 to-indigo-500 rounded-lg shadow-xl p-4 md:p-4 border border-blue-300/60 max-h-[calc(100vh-6rem)] md:max-h-[60vh] overflow-y-auto">
           {/* Header */}
-          <div className="mb-3 md:mb-3">
-            <div className="flex items-center gap-2 mb-2">
+          <div className="mb-3 md:mb-3 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
               <span className="text-xl">🎉</span>
-              <h3 className="text-base md:text-sm font-bold text-[var(--text-primary)] leading-tight">
+              <h3 className="text-base md:text-sm font-bold text-white leading-tight">
                 Congratulations!
               </h3>
             </div>
-            <h4 className="text-sm md:text-sm font-semibold text-[var(--game-primary)] mb-2">
-              You've Reached Level {levelUpReward.level}
-            </h4>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 mb-3">
-              <span className="text-xs sm:text-xs font-medium text-tertiary px-2 py-1 bg-[var(--bg-tertiary)]/60 rounded text-center min-w-0 truncate max-w-[200px]">
-                {previousTitle}
+            <div className="mb-2">
+              <span className="text-sm md:text-sm font-semibold text-white">
+                You've Reached{' '}
               </span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--game-primary)] flex-shrink-0 rotate-90 sm:rotate-0">
+              <span className="text-2xl md:text-xl font-bold text-white">
+                Level {levelUpReward.level}
+              </span>
+            </div>
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <span className={`text-xs font-semibold px-2 py-1 rounded-md ${getRankBackgroundColor(previousRank, allRanks)} ${getRankTextColor(previousRank, allRanks)}`}>
+                {previousRank}
+              </span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white flex-shrink-0">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
-              <span className="text-sm sm:text-xs font-semibold text-[var(--game-primary)] px-2 py-1 bg-[var(--game-primary)]/25 rounded text-center min-w-0 truncate max-w-[200px]">
+              <span className={`text-xs font-semibold px-2 py-1 rounded-md ${getRankBackgroundColor(currentRank, allRanks)} ${getRankTextColor(currentRank, allRanks)}`}>
+                {currentRank}
+              </span>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 mb-3">
+              <span className="text-sm font-bold text-white/80 text-center min-w-0 truncate max-w-[200px]">
+                {previousTitle}
+              </span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white flex-shrink-0 rotate-90 sm:rotate-0">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+              <span className="text-sm font-bold text-green-300 border-2 border-green-400 bg-green-500/10 px-3 py-1 rounded-lg text-center min-w-0 truncate max-w-[250px]">
                 {currentTitle}
               </span>
             </div>
@@ -244,7 +270,7 @@ const LevelUpPopup: React.FC = () => {
 
           <div className="mt-4">
             <GameButton
-              color="blue"
+              color="gold"
               fullWidth
               size="md"
               onClick={() => {
