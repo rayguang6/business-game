@@ -65,7 +65,7 @@ export function ActionBubble({ notification, index, scaleFactor, characterX, cha
         ${getColorClass()}
       `}
       style={{
-        zIndex: 45 + index, // Higher index = newer bubble = higher z-index
+        zIndex: 100 + index, // Higher index = newer bubble = higher z-index
         opacity,
         transform: `translateX(-50%) scale(${Math.min(scaleFactor * 0.6, 0.6)})`, // Small scale
         left: `${absoluteLeft}px`,
@@ -74,7 +74,7 @@ export function ActionBubble({ notification, index, scaleFactor, characterX, cha
       }}
     >
       <div className="flex items-start px-2 py-1.5 rounded-md border max-w-56">
-        <span className="text-body-sm sm:text-caption font-medium leading-tight break-words" style={{
+        <span className="text-body font-medium leading-tight break-words" style={{
           textShadow: '0 0 3px rgba(0, 0, 0, 1), 0 1px 2px rgba(0, 0, 0, 0.9), 0 -1px 2px rgba(0, 0, 0, 0.9)'
         }}>
           {notification.title}

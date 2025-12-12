@@ -211,37 +211,39 @@ export function SpriteCustomer({ customer, scaleFactor }: SpriteCustomerProps) {
             lineHeight: '8px',
           }}
         >
-          {/* Service Name */}
-          <div className="font-bold text-amber-600 truncate">
+          {/* Service Name (up to 2 lines) */}
+          <div className="font-semibold text-amber-600 break-words"
+               style={{
+                 display: '-webkit-box',
+                 WebkitLineClamp: 2,
+                 WebkitBoxOrient: 'vertical',
+                 overflow: 'hidden',
+               }}>
             {customer.service.name}
           </div>
 
           {/* Price */}
-          <div className="text-green-600">
+          <div className="text-green-600 font-bold">
             ${customer.finalPrice?.toFixed(2) || '...'}
           </div>
 
-          {/* Progress Bar */}
-          <div
-            className="bg-gray-200 rounded-full overflow-hidden my-0.5"
-            style={{
-              height: '2px',
-              width: '100%',
-            }}
-          >
+          {/* Progress Bar & Time */}
+          <div className="flex items-center gap-0.5 mt-0.5">
             <div
-              className="h-full transition-all duration-300"
+              className="bg-gray-200 rounded-full overflow-hidden flex-1"
               style={{
-                width: `${progress}%`,
-                backgroundColor: getProgressColor(),
+                height: '2px',
               }}
-            />
-          </div>
-
-          {/* Time & Emoji */}
-          <div className="flex justify-between items-center">
-            <span className="text-gray-700">{timeDisplay}</span>
-            <span style={{ fontSize: '8px' }}>{emoji}</span>
+            >
+              <div
+                className="h-full transition-all duration-300"
+                style={{
+                  width: `${progress}%`,
+                  backgroundColor: getProgressColor(),
+                }}
+              />
+            </div>
+            <span className="text-gray-700 font-medium flex-shrink-0">{timeDisplay}</span>
           </div>
         </div>
       )}
