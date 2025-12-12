@@ -28,7 +28,7 @@ export default function IndustryClient({ industry }: IndustryClientProps) {
   const [error, setError] = useState<string | null>(null);
   
   // Play selection music
-  useAudio('selection', true);
+  // useAudio('selection', true); // Commented out to disable background music
 
   const handleStartGame = () => {
     const trimmedUsername = username.trim();
