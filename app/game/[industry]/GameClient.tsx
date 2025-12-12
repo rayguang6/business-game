@@ -167,7 +167,7 @@ export default function GameClient({ industry, globalConfig, industryContent }: 
           <div className="absolute top-0 left-0 z-20 pt-2 sm:pt-3 md:pt-4 px-2 sm:px-3 md:px-4">
             <div className="flex flex-col items-start gap-2">
               {/* Top Section: Industry Info */}
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 w-[200px]">
                 <TopBar />
               </div>
 
