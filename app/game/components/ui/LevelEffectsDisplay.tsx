@@ -185,7 +185,18 @@ export function LevelEffectsDisplay({
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white flex-shrink-0">
                           <path d="M5 12h14M12 5l7 7-7 7" />
                         </svg>
-                        <span className={`text-sm font-semibold text-white`}>
+                        <span className={`text-sm font-semibold ${
+                          // Show green text for improvements
+                          (beforeValue !== null && (
+                            // For costs (lower is better)
+                            (metric === GameMetric.MonthlyExpenses || metric === GameMetric.FailureRate)
+                              ? afterValue < beforeValue
+                              // For benefits (higher is better)
+                              : afterValue > beforeValue
+                          ))
+                            ? 'text-green-400 font-bold'
+                            : 'text-white'
+                        }`}>
                           {formatEffectValue({ metric, type, value: afterValue } as UpgradeEffect)}
                         </span>
                       </> 

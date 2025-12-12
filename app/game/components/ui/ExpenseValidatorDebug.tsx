@@ -11,25 +11,21 @@ import { validateExpenses, printValidationResults, type ExpenseValidationResult 
  * Press 'V' key to toggle, or click the button
  */
 export function ExpenseValidatorDebug() {
-  // Only enable in development mode
-  if (process.env.NODE_ENV !== 'development') {
-    return null;
-  }
-
+  // 🔒 HOOKS FIRST — ALWAYS
   const [isVisible, setIsVisible] = useState(false);
   const [lastResult, setLastResult] = useState<ExpenseValidationResult | null>(null);
   const store = useGameStore();
 
   // Expose validation function to window for console access
   React.useEffect(() => {
-    // @ts-ignore - Adding to window for debugging
+    // @ts-expect-error - Adding to window for debugging
     window.validateExpenses = () => {
       const result = validateExpenses(store);
       printValidationResults(result);
       return result;
     };
-    
-    // @ts-ignore
+
+    // @ts-expect-error Adding debug function to window
     window.getExpenseDetails = () => {
       return {
         currentMonth: {
@@ -52,20 +48,15 @@ export function ExpenseValidatorDebug() {
     };
 
     return () => {
-      // @ts-ignore
+      // @ts-expect-error Removing debug function from window
       delete window.validateExpenses;
-      // @ts-ignore
+      // @ts-expect-error Removing debug function from window
       delete window.getExpenseDetails;
     };
   }, [store]);
 
   // Keyboard shortcut: Press 'V' to toggle (development mode only)
   React.useEffect(() => {
-    // Only enable in development mode
-    if (process.env.NODE_ENV !== 'development') {
-      return;
-    }
-
     const handleKeyPress = (e: KeyboardEvent) => {
       if ((e.key === 'v' || e.key === 'V') && e.target === document.body) {
         setIsVisible(prev => !prev);
@@ -81,6 +72,11 @@ export function ExpenseValidatorDebug() {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [isVisible, store]);
+
+  // 🧱 GUARD AFTER HOOKS
+  if (process.env.NODE_ENV !== 'development') {
+    return null;
+  }
 
   if (!isVisible) {
     return null; // Hidden - only accessible via 'V' key

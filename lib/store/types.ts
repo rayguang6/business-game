@@ -286,6 +286,11 @@ export function getExpRequiredForCurrentLevel(exp: number, expPerLevel: number |
  * @returns Tailwind CSS background color class (solid colors)
  */
 export function getRankBackgroundColor(rank: string, allRanks: string[] = []): string {
+  // Special case for loading/placeholder state - show first rank color (green)
+  if (rank === 'Rank') {
+    return 'bg-green-500';
+  }
+
   // If no ranks provided, default to solid red
   if (allRanks.length === 0) {
     return 'bg-red-500';
@@ -314,6 +319,11 @@ export function getRankBackgroundColor(rank: string, allRanks: string[] = []): s
  * @returns Tailwind CSS text color class
  */
 export function getRankTextColor(rank: string, allRanks: string[] = []): string {
+  // Special case for loading/placeholder state - use white text for green background
+  if (rank === 'Rank') {
+    return 'text-white';
+  }
+
   // Black text for defaults (no ranks available or unknown rank)
   if (allRanks.length === 0 || allRanks.indexOf(rank) === -1) {
     return 'text-black';

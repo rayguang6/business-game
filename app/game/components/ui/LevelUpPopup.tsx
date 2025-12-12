@@ -25,6 +25,7 @@ const LevelUpPopup: React.FC = () => {
 
   // State for all level rewards to calculate cumulative effects
   const [allLevelRewards, setAllLevelRewards] = useState<LevelReward[]>([]);
+  const [isLoadingRewards, setIsLoadingRewards] = useState(false);
 
 
   // Helper function to calculate cumulative effects up to a specific level
@@ -94,13 +95,16 @@ const LevelUpPopup: React.FC = () => {
   // Fetch all level rewards when popup appears
   useEffect(() => {
     if (levelUpReward && industryId) {
+      setIsLoadingRewards(true);
       fetchLevelRewards(industryId)
         .then((rewards) => {
           setAllLevelRewards(rewards || []);
+          setIsLoadingRewards(false);
         })
         .catch((error) => {
           console.error('[LevelUpPopup] Failed to fetch level rewards:', error);
           setAllLevelRewards([]);
+          setIsLoadingRewards(false);
         });
     }
   }, [levelUpReward, industryId]);
@@ -126,8 +130,8 @@ const LevelUpPopup: React.FC = () => {
   }, [allLevelRewards]);
 
   // Get ranks for previous and current levels
-  const previousRank = previousLevelReward?.rank || 'Unknown Rank';
-  const currentRank = levelUpReward?.rank || 'Unknown Rank';
+  const previousRank = isLoadingRewards ? 'Rank' : (previousLevelReward?.rank || 'Unknown Rank');
+  const currentRank = isLoadingRewards ? 'Rank' : (levelUpReward?.rank || 'Unknown Rank');
 
   // Calculate cumulative effects for previous level (before level up)
   const previousLevelEffects = useMemo(() => {
